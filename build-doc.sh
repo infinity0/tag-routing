@@ -11,6 +11,7 @@ mkdir -p "$BLD"
 cd "$SRC"
 
 for i in *.tex; do
+	if [ "$i" -ot "../$DOC/${i%.tex}.pdf" ]; then continue; fi
 	sed -e 's/\(\s\)"/\1``/g' "$i" > "../$BLD/$i" && pdflatex -output-directory "../$BLD" "$i"
 	cp "../$BLD/${i%.tex}.pdf" "../$DOC/${i%.tex}.pdf"
 done
