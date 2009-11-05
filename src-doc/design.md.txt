@@ -1,19 +1,24 @@
+[TOC]
 
-* System overview
-* Design assumptions
-  * Underlying storage network
-* Data structures
-  * `index`
-  * `tgraph`
-  * `btable`
-  * Design rationale
-  * Approval ratings, &alpha;
-* Algorithms
-  * Obtaining initial btables
-  * Combining tgraphs
-  * Combining &alpha; ratings for indexes
-  * Routing
-  * Ranking
-* UI
-  * Components
-  * Behaviour
+# System overview
+
+# Design assumptions
+## Underlying storage network
+
+# Data structures
+## `index`
+## `tgraph`
+## `btable`
+## Design rationale
+## Approval ratings, &alpha;
+
+# Algorithms
+## Obtaining initial btables
+## Combining tgraphs
+## Combining &alpha; ratings for indexes
+## Routing
+## Ranking
+
+# UI
+## Components
+## Behaviour

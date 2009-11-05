@@ -16,7 +16,7 @@ for i in *.tex; do
 done
 
 for i in *.md.txt; do
-	markdown "$i" > "../$DOC/${i%.md.txt}.html"
+	markdown -x toc "$i" > "../$DOC/${i%.md.txt}.html"
 done
 
 cd ..
