@@ -1,12 +1,19 @@
 
-
 * System overview
+* Design assumptions
+  * Underlying storage network
 * Data structures
-  * Design choices
+  * `index`
+  * `tgraph`
+  * `btable`
+  * Design rationale
+  * Approval ratings, &alpha;
 * Algorithms
-  * Combining tgraphs into one
-  * Combining \alpha scores
-
-
-
-
+  * Obtaining initial btables
+  * Combining tgraphs
+  * Combining &alpha; ratings for indexes
+  * Routing
+  * Ranking
+* UI
+  * Components
+  * Behaviour
