@@ -1,0 +1,12 @@
+
+
+* System overview
+* Data structures
+  * Design choices
+* Algorithms
+  * Combining tgraphs into one
+  * Combining \alpha scores
+
+
+
+

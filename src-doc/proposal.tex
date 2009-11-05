@@ -163,8 +163,12 @@ generate networks with statistical properties defined by various schemes. Some
 interesting properties to experiment with might include:
 
 \begin{description}
-\item [intra-index properties:] eg. how semantically unified a given index is (ie. to what extent are its tags mutually related), or how specialised a given index is (ie. whether its tags are more "general" or "specific").
-\item [inter-index properties:] eg. the cumulative distribution of indexes with varying levels of a given property, the types of neighbours an index with a given property is likely to link to.
+\item [intra-index properties:] eg. how semantically unified a given index is
+    (ie. to what extent are its tags mutually related), or how specialised a
+    given index is (ie. whether its tags are more "general" or "specific").
+\item [inter-index properties:] eg. the cumulative distribution of indexes with
+    varying levels of a given property, the types of neighbours an index with a
+    given property is likely to link to.
 \end{description}
 
 A collection of search requests will be simulated on each network generated, to
@@ -178,10 +182,14 @@ deviate from the structure defined by the given scheme, giving false data, etc.
 The project will have the following goals:
 
 \begin{itemize}
-\item To implement a versatile and extensible prototype of the system as a library.
-\item To obtain a representative set of realistic data, and to process it (as described previously) into a form suitable to use for simulations.
-\item To create a simulation suite that is flexible enough to run all the appropriate tests.
-\item To obtain a comprehensive set of test results on the performance of the routing algorithm under various conditions.
+\item To implement a versatile and extensible prototype of the system as a
+    library.
+\item To obtain a representative set of realistic data, and to process it (as
+    described previously) into a form suitable to use for simulations.
+\item To create a simulation suite that is flexible enough to run all the
+    appropriate tests.
+\item To obtain a comprehensive set of test results on the performance of the
+    routing algorithm under various conditions.
 \end{itemize}
 
 A successful outcome is one that accomplishes all these goals. The technically
@@ -203,17 +211,37 @@ dissertation as extended notes. This should reduce the time needed at the end
 of the project to finalise it and prepare it for submission.
 
 \begin{description}
-\item [2009-11-w0 - 2009-12-w0:] Design the specific details of the system, including the routing algorithm. Read up on research into similar systems to get a general idea of the issues that need to be addressed.
-\item [2009-12-w0 - 2009-12-w2:] Implement the library. This will include the data structures and algorithms designed in the previous step, as well as a high-level node class that could be deployed in a real system.
-\item [2010-01-w1 - 2010-01-w3:] Design the test suite, including selecting an underlying storage network to use, and algorithms for populating a test network with data.
-\item [2010-01-w3 - 2010-02-w0:] Implement the test suite. This will be a detachable adapter module between my library and the selected storage network.
-\item [2010-02-w0 - 2010-02-w1:] Implement data extraction code. This will involve writing a crawler and a parser for one of the websites noted previously.
-\item [2010-02-w1 - 2010-02-w3:] Design the set of properties for which to generate test data. During this time, the data extraction code will be running.
-\item [2010-02-w3 - 2010-03-w0:] Implement data processing code. This will take the data extracted previously and convert it into a form appropriate for my system.
-\item [2010-03-w0 - 2010-03-w2:] Implement test data generation code. During this time, the data processing code will be running.
-\item [2010-03-w2 - 2010-04-w0:] Generate test data and run tests. This should be a fairly straightforward and automatic process; during this time I will gather and structure my notes into a format appropriate for my dissertation.
-\item [2010-04-w0 - 2010-04-w2:] Evaluate results and add this to the dissertation.
-\item [2010-04-w2 - 2010-05-w1:] Finalise and proof-read dissertation and prepare it for submission.
+\item [2009-11-w0 - 2009-12-w0:] Design the specific details of the system,
+    including the routing algorithm. Read up on research into similar systems
+    to get a general idea of the issues that need to be addressed.
+\item [2009-12-w0 - 2009-12-w2:] Implement the library. This will include the
+    data structures and algorithms designed in the previous step, as well as a
+    high-level node class that could be deployed in a real system.
+\item [2010-01-w1 - 2010-01-w3:] Design the test suite, including selecting an
+    underlying storage network to use, and algorithms for populating a test
+    network with data.
+\item [2010-01-w3 - 2010-02-w0:] Implement the test suite. This will be a
+    detachable adapter module between my library and the selected storage
+    network.
+\item [2010-02-w0 - 2010-02-w1:] Implement data extraction code. This will
+    involve writing a crawler and a parser for one of the websites noted
+    previously.
+\item [2010-02-w1 - 2010-02-w3:] Design the set of properties for which to
+    generate test data. During this time, the data extraction code will be
+    running.
+\item [2010-02-w3 - 2010-03-w0:] Implement data processing code. This will take
+    the data extracted previously and convert it into a form appropriate for my
+    system.
+\item [2010-03-w0 - 2010-03-w2:] Implement test data generation code. During
+    this time, the data processing code will be running.
+\item [2010-03-w2 - 2010-04-w0:] Generate test data and run tests. This should
+    be a fairly straightforward and automatic process; during this time I will
+    gather and structure my notes into a format appropriate for my
+    dissertation.
+\item [2010-04-w0 - 2010-04-w2:] Evaluate results and add this to the
+    dissertation.
+\item [2010-04-w2 - 2010-05-w1:] Finalise and proof-read dissertation and
+    prepare it for submission.
 \end{description}
 
 \end{document}
