@@ -2,23 +2,82 @@
 
 # System overview
 
+Distributed network of data structures maintained by multiple independent
+parties.
+
+Much of the routing power of the system is delegated to the underlying social
+network and the innate information-retrieval heuristics we have as humans,
+rather than being enforced as properties of the system.
+
 # Design assumptions
+
+Assume identities are arranged as a natural social network.
+
 ## Underlying storage network
 
+System is independent of implementation of storage network.
+
+Data structures for now are assumed to be located abstractly "on the network"
+(rather than on the node of the maintainer) and can be retrieved at some cost
+which increases polynomially wrt the size of the data.
+
+This allows us to avoid dealing with the issue of churn.
+
+This also forces us to consider a iterative routing algorithm rather than a
+recursive one. The requestor pulls in data, then pulls in further data, etc,
+instead of passing on requests and waiting for replies.
+
+
 # Data structures
+
 ## `index`
+
+Maps tags to results and other indexes.
+
 ## `tgraph`
+
+Maps tags to other tags and other tgraphs.
+
 ## `btable`
-## Design rationale
+
+Each node has exactly one btable.
+
+A collection of pointers to tgraphs and indexes.
+
 ## Approval ratings, &alpha;
 
+These can be used to decide:
+
+- priority of traversal (indexes, tgraphs)
+- ranking of results
+
 # Algorithms
+
 ## Obtaining initial btables
+
 ## Combining tgraphs
+
 ## Combining &alpha; ratings for indexes
+
 ## Routing
+
+### Traversing the `tgraph` network
+
+### Traversing the `index` network
+
 ## Ranking
 
 # UI
+
 ## Components
+
 ## Behaviour
+
+# Design rationale
+
+## Initial requirements
+
+## Linking data structures
+
+## Security
+
