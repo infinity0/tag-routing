@@ -17,7 +17,7 @@ for i in *.tex; do
 done
 
 for i in *.md.txt; do
-	markdown -x toc "$i" > "../$DOC/${i%.md.txt}.html"
+	markdown -x toc -x def_list "$i" > "../$DOC/${i%.md.txt}.html"
 done
 
 cd ..
