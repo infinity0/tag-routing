@@ -118,41 +118,54 @@ MORE
 
 ## Pointer weights, &alpha;
 
-This is a number between 0 and 1, that gives all pointers a weight. There are
-three types of pointers:
+Each pointer will be assigned a weight. These weights can be used to decide:
+
+- priority of traversal of the routing and meta-routing networks
+- ranking of query results
+
+A natural way to compose two weights is multiplication, which gives rise to
+the restriction that all weights must be in the interval [0,1].
+
+There are several types of pointers:
 
 - tag:routing (index) mappings
 - tag:meta-routing (tgraph) mappings
 - id:object (ptable) mappings
 
-These can be used to decide:
+The precise meaning of a weight has not been decided yet, and is likely to
+depend on the specifics of the routing algorithm. Probability-based semantics
+are likely to be quite robust and reliable, since these can (in theory) be
+estimated objectively. It also fits well with multiplication and the [0,1]
+interval restriction.
 
-- priority of traversal of the routing and meta-routing networks
-- ranking of query results
-
-OPEN
-
-The precise meaning of a rating has not been decided yet. Some possible
-candidates are:
+Some possible candidates are: OPEN
 
 - tag:routing mapping
   - probability that a given mapping will satisfy a user's request
+  - OPEN
 - tag:meta-routing mapping
   - probability that a search for the target tag will return results for the
     source tag
-- id:object mapping
   - OPEN
-
-Regardless of the absolute semantic meaning of a weight,
-
+- id:object mapping
+  - probability that a ***
+  - OPEN
 
 These values allow for a finer level of processing and ranking that would
 otherwise be possible; however, care must be taken not to treat any of these
 values as authoritative, since users can input whatever values they wish.
-
 The same goes for actually creating the mappings in the first place; however,
 disagreements on mapping weights are likely to be harder to resolve than say,
 mapping existence.
+
+Note that, regardless of their absolute semantic meaning, weights of pointers
+from the same object can be used to calculate the relative preferences of the
+targets.
+
+Ultimately, the best solution would be to create an automatic way of assigning
+weights to mappings. This would solve the problem of users being inaccurate in
+their estimates, as well as the fact that it's tedious to manually estimate a
+weight for every mapping we add to our collections.
 
 ## Absent and negative mappings
 
