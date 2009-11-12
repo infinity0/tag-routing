@@ -1,17 +1,35 @@
 [TOC]
 
-# System overview
+# TODO
+
+- `DIAG`: draw diagrams for the given concept being discussion
+- `OPEN`: open issue; resolve or explain why we leave it open
+
+# System summary
 
 Distributed network of data structures maintained by multiple independent
 parties.
 
-Much of the routing power of the system is delegated to the underlying social
+Most of the routing power of the system is delegated to the underlying social
 network and the innate information-retrieval heuristics we have as humans,
-rather than being enforced as properties of the system.
+rather than being inherently built into the system.
+
+# System overview
+
+The system has three main networks / planes of information that link to each
+other.
+
+- routing network - see the `index` section
+- meta-routing network - see the `tgraph` section
+- social network - see the `ptable` section
+
+Some terminology:
+
+- identity - a user on the social network
+- tag - a semantic phrase used for describing objects
+
 
 # Design assumptions
-
-Assume identities are arranged as a natural social network.
 
 ## Underlying storage network
 
@@ -32,17 +50,56 @@ instead of passing on requests and waiting for replies.
 
 ## `index`
 
-Maps tags to results and other indexes.
+DIAG
+
+Maps tags to documents and other indexes.
+
+This data structure contains information on how to satisfy a search request. It
+contains mappings from tags to target documents, or to another index to forward
+the request onto.
+
+A mapping indicates some semantic relevance between the tag and the document,
+and a subjective judgement that a person searching for the tag did intend to
+retrieve information provided by the document.
+
+The network formed by the links between indexes is conceptually analogous to
+the network of routing tables existent in most typical navigable networks.
 
 ## `tgraph`
 
+DIAG
+
 Maps tags to other tags and other tgraphs.
 
-## `btable`
+This data structure contains information on how to traverse the routing
+network. It contains mappings from tags to other tags, or to another tgraph
+containing more data.
 
-Each node has exactly one btable.
+A mapping indicates a semantic relationship between the tags, and a subjective
+judgement that an index specialising in the target tag is likely to contain
+entries for the source tag.
 
-A collection of pointers to tgraphs and indexes.
+The purpose of defining such a semantic relationship is to provide a framework
+for traversing through index data. On most typical networks this framework is
+encoded into the addressing scheme. For example, numerical addresses (such as
+IP addresses) are naturally hierarchical, and can be prefix-matched on routing
+tables. Tags however do not intrinsically encode such information, so we need
+an extra plane to provide it.
+
+In other words, a tag can be thought of as a pure name (ie. conveys no
+information on the location of the target), and IP addresses as the exact
+opposite. DNS names are somewhere in between - a name like "www.example.com"
+provides some information on its location (ie. the subdomain hierarchy), but we
+still need to start at the root servers.
+
+## `ptable`
+
+DIAG
+
+A collection of pointers to tgraphs and indexes. This is one-per-identity only;
+an identity's ptable should represent its own personal recommendations.
+
+  used to "bootstrap" into a good part of the index network
 
 ## Approval ratings, &alpha;
 
@@ -51,9 +108,16 @@ These can be used to decide:
 - priority of traversal (indexes, tgraphs)
 - ranking of results
 
+## Negative mappings and absence of mappings
+
+Absence of mappings - does this mean "irrelevant", or information missing?
+
+Negative mappings - don't have these, why not?
+
+
 # Algorithms
 
-## Obtaining initial btables
+## Obtaining initial ptables
 
 ## Combining tgraphs
 
@@ -67,17 +131,22 @@ These can be used to decide:
 
 ## Ranking
 
+
 # UI
 
 ## Components
 
 ## Behaviour
 
+
 # Design rationale
 
 ## Initial requirements
 
 ## Linking data structures
+
+Pointing to mutable objects vs immutable objects
+
 
 ## Security
 
