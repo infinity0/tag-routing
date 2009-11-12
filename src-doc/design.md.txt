@@ -19,9 +19,9 @@ rather than being inherently built into the system.
 The system has three main networks / planes of information that link to each
 other.
 
-- routing network - see the `index` section
-- meta-routing network - see the `tgraph` section
-- social network - see the `ptable` section
+- routing plane - see the `index` section
+- meta-routing plane - see the `tgraph` section
+- social plane - see the `ptable` section
 
 Some terminology:
 
@@ -63,7 +63,8 @@ and a subjective judgement that a person searching for the tag did intend to
 retrieve information provided by the document.
 
 The network formed by the links between indexes is conceptually analogous to
-the network of routing tables existent in most typical navigable networks.
+the network of routing tables existent in most typical navigable networks, and
+so we'll call it the "routing plane".
 
 ## `tgraph`
 
@@ -86,20 +87,27 @@ IP addresses) are naturally hierarchical, and can be prefix-matched on routing
 tables. Tags however do not intrinsically encode such information, so we need
 an extra plane to provide it.
 
-In other words, a tag can be thought of as a pure name (ie. conveys no
-information on the location of the target), and IP addresses as the exact
+Conceptually, a tag can be thought of as a pure name (ie. the name conveys no
+information about the location of the target), and IP addresses as the exact
 opposite. DNS names are somewhere in between - a name like "www.example.com"
 provides some information on its location (ie. the subdomain hierarchy), but we
 still need to start at the root servers.
+
+The network formed by the links between tgraphs can be used to generate schemes
+for traversing the routing data, and so we'll call it the "meta-routing plane".
 
 ## `ptable`
 
 DIAG
 
-A collection of pointers to tgraphs and indexes. This is one-per-identity only;
-an identity's ptable should represent its own personal recommendations.
+A collection of pointers to tgraphs and indexes, linked to an identity.
 
-  used to "bootstrap" into a good part of the index network
+This data structure allows an identity to declare a personal list of preferred
+indexes and tgraphs to use for routing purposes.
+
+This is intended to provide a secure way of "bootstrapping" onto the routing
+and meta-routing planes.
+
 
 ## Approval ratings, &alpha;
 
@@ -139,14 +147,19 @@ Negative mappings - don't have these, why not?
 ## Behaviour
 
 
-# Design rationale
+# Design rationale and issues
 
 ## Initial requirements
 
-## Linking data structures
+## Identity-object pointers
 
-Pointing to mutable objects vs immutable objects
+vs. all-data-in-identity and identity-identity pointers
+
+## Object-object pointers vs identity-object pointers
+
+to decrease the number of identity-object pointers
+
+## Mutable object pointers vs immutable object pointers
 
 
-## Security
 
