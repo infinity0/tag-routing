@@ -22,7 +22,7 @@ Some terminology:
 - object - depending on context this will either mean generic storage object,
   or "indexes and tgraphs"
 - pointer - an indirection to some external resource
-- mapping - a pointer that also has a "from" assignment
+- mapping - a pointer that also has a "source" as well as a target
 
 
 # System overview
@@ -106,7 +106,9 @@ for traversing the routing data, and so we'll call it the "meta-routing plane".
 
 DIAG
 
-A collection of pointers to tgraphs and indexes, linked to an identity.
+A collection of pointers to tgraphs and indexes, linked to an identity. (Can
+also be thought of as a mapping whose source is implicitly the identity who
+defines the pointer.)
 
 This data structure allows an identity to declare a personal list of preferred
 indexes and tgraphs to use for routing purposes.
@@ -141,37 +143,37 @@ interval restriction.
 Some possible candidates are: OPEN
 
 - tag:routing mapping
-  - probability that a given mapping will satisfy a user's request
-  - OPEN
+	- probability that a given mapping will satisfy a user's request
+	- OPEN
 - tag:meta-routing mapping
-  - probability that a search for the target tag will return results for the
-    source tag
-  - OPEN
+	- probability that a search for the target tag will return results for the
+	  source tag
+	- OPEN
 - id:object mapping
-  - probability that a ***
-  - OPEN
+	- probability that a ***
+	- OPEN
 
 These values allow for a finer level of processing and ranking that would
 otherwise be possible; however, care must be taken not to treat any of these
 values as authoritative, since users can input whatever values they wish.
-The same goes for actually creating the mappings in the first place; however,
-disagreements on mapping weights are likely to be harder to resolve than say,
-mapping existence.
+The same goes for creating the pointers in the first place; however, assigning
+weights to pointers is more complex than a binary existence decision, and so
+it will be harder to both decide accuracy and resolve disagreements.
 
 Note that, regardless of their absolute semantic meaning, weights of pointers
 from the same object can be used to calculate the relative preferences of the
 targets.
 
-Ultimately, the best solution would be to create an automatic way of assigning
-weights to mappings. This would solve the problem of users being inaccurate in
-their estimates, as well as the fact that it's tedious to manually estimate a
-weight for every mapping we add to our collections.
+Ultimately, the best solution would be to install an automatic way of assigning
+weights to pointers. This would solve the problem of human inaccuracy, as well
+as laziness: it's tedious to manually estimate a weight for every pointer we
+add to our collections.
 
-## Absent and negative mappings
+## Absent and negative pointers
 
-Absence of mappings - does this mean "irrelevant", or information missing?
+Absence of pointers - does this mean "irrelevant", or information missing?
 
-Negative mappings - don't have these, why not?
+Negative pointers - don't have these, why not?
 
 
 # Algorithms
