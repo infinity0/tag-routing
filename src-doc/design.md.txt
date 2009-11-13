@@ -1,5 +1,3 @@
-[TOC]
-
 # TODO
 
 - `DIAG`: draw diagrams for the given concept being discussion

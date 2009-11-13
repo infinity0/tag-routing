@@ -17,7 +17,8 @@ for i in *.tex; do
 done
 
 for i in *.md.txt; do
-	markdown -x toc -x footnotes "$i" > "../$DOC/${i%.md.txt}.html"
+	# markdown -x toc -x footnotes "$i" > "../$DOC/${i%.md.txt}.html"
+	pandoc -s --toc "$i" > "../$DOC/${i%.md.txt}.html"
 done
 
 cd ..
