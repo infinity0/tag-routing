@@ -1,8 +1,9 @@
-# TODO
+# TODO and related tags
 
 - `DIAG`: draw diagrams for the given concept being discussion
-- `OPEN`: open issue; resolve or explain why we leave it open
+- `TODO`: open issue; resolve or explain why we leave it open
 - `MORE`: expand
+- `OPEN`: point intentionally left open for future research.
 
 # System summary
 
@@ -138,18 +139,18 @@ are likely to be quite robust and reliable, since these can (in theory) be
 estimated objectively. It also fits well with multiplication and the [0,1]
 interval restriction.
 
-Some possible candidates are: OPEN
+Some possible candidates are: TODO
 
 - tag:routing mapping
 	- probability that a given mapping will satisfy a user's request
-	- OPEN
+	- TODO
 - tag:meta-routing mapping
 	- probability that a search for the target tag will return results for the
 	  source tag
-	- OPEN
+	- TODO
 - id:object mapping
 	- probability that a ***
-	- OPEN
+	- TODO
 
 These values allow for a finer level of processing and ranking that would
 otherwise be possible; however, care must be taken not to treat any of these
@@ -163,15 +164,43 @@ from the same object can be used to calculate the relative preferences of the
 targets.
 
 Ultimately, the best solution would be to install an automatic way of assigning
-weights to pointers. This would solve the problem of human inaccuracy, as well
+weights to pointers. This would reduce the problem of human inaccuracy, as well
 as laziness: it's tedious to manually estimate a weight for every pointer we
-add to our collections.
+add to our collections. [OPEN]
 
-## Absent and negative pointers
+## Zero and negative pointer weights
 
-Absence of pointers - does this mean "irrelevant", or information missing?
+The current design can only represent the presence of a semantic relationship,
+and not its absence. This is a problem: any distributed system has to be able
+to deal with incomplete information, but here there is no way to tell if the
+absence of a pointer is due to incomplete information, or explicit rejection
+of the semantic relationship that the pointer represents.
 
-Negative pointers - don't have these, why not?
+Requiring explicit "zero-weight" pointers is not acceptable in this case, since
+most object pairs would then need to be linked, which would greatly increase
+the amount of data that needs to be stored.
+
+... arbitrary formulas for dealing with this ... MORE
+
+A related issue is negative-weight pointers, which would represent a judgement
+that the target is malicious (in some sense). In a network where it's possible
+to act aggressively towards particular nodes, these weights could provide
+useful information on who to attack (or equivalently, set up defences against),
+and in what way.
+
+As it stands, our routing system is a "dumb" network of data; the only way of
+interacting with other nodes is by publishing data objects for other nodes to
+read. We are unable to see other nodes' read requests, so it's impossible to
+attack a particular node. Hence, negative-weight pointers are not useful here.
+
+There are several other complications with negative-weight pointers in general.
+These would be relevant if our routing system is adapted into a form where one
+can perform targeted acts of aggression.
+
+- If positive-weight pointers are taken to be probabilities, it's not obvious
+  what negative-weight pointers should mean.
+- Complexity
+- MORE
 
 
 # Algorithms
