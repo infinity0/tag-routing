@@ -175,22 +175,23 @@ The current design can only represent the presence of a semantic relationship,
 and not its absence. This is a problem: any distributed system has to be able
 to deal with incomplete information, but here there is no way to tell if the
 absence of a pointer is due to incomplete information, or explicit rejection
-of the semantic relationship that the pointer represents.
+of the semantic relationship that the pointer represents. This is important for
+when (eg.) we want to combine weights from multiple sources - we need to know
+whether others disagree with a given mapping, or merely don't know about it.
 
 Requiring explicit "zero-weight" pointers is not acceptable for our purposes,
-since this equates to defining either a relationship or a non-relationship
-between all possible pairs of objects encountered; this results in quadratic
-data growth, which is not scalable.
+since this equates to defining *something* (either a relationship or its
+absence) between *all* possible pairs of objects encountered; this results in
+quadratic data growth, which is not scalable.
 
-Instead, we will look at various heuristics that attempt to resolve this
-ambiguity.
+Instead, we will look at heuristics that attempt to resolve this ambiguity.
 
 For an object consisting of mappings, such as `index` and `tgraph`, we observe
 that tha presence of a mapping (S,T) indicates that the maintainer knows of the
 existence of both S and T, and has enough information to make judgements about
 them ("knows about" S and T). Further, the maintainer has enough information to
-decide whether to define a mapping between any source and any target that it
-"knows about".
+decide whether to include a mapping between *any* source and *any* target that
+it "knows about".
 
 Conversely, for any given mapping (X,Y) *not* present in the object, if the
 object nevertheless "knows about" both X and Y, then it seems reasonable to
@@ -208,9 +209,26 @@ Specific examples of this general principle, as well as applications of it,
 will be explored further in relevant sections of the [Algorithms](#algorithms)
 chapter.
 
-For an object consisting only of source-less pointers, such as `ptable`, ...
+For an object consisting only of source-less pointers, such as `ptable`, there
+is no information that could be used for any heuristic to distinguish the two
+cases.^[Treating the pointers as mappings from a single source, and using the
+heuristic described above for mappings doesn't help: a pair (X,Y) cannot exist
+with the required properties since we only have one source.]
 
-MORE
+However, in the specific case of `ptable`, we could use the links present in
+the social network to infer more information; eg. identities that know each
+other are likely to "know about" similar sets of objects. A basic heuristic
+would be to assume that some fraction of an identity's friends "know about"
+each object that its `ptable` points to, but this is flawed since the actual
+fraction is unlikely to be constant, so the scheme would greatly disadvantage
+rare objects. We could take this into account, and estimate the "knows about"
+fraction based on the fraction of identities that explicitly reference the
+target, but this is getting increasingly complicated with more and more
+hand-waving arguments.
+
+In practice, such methods are hard to get accurate, and probably won't provide
+significantly enough benefit to justify the additional complexity - the social
+network should mitigate most serious attempts to abuse the system. MORE
 
 ## Negative-weight pointers
 
@@ -275,7 +293,7 @@ vs. all-data-in-identity and identity-identity pointers
 
 to decrease the number of identity-object pointers
 
-## Mutable object pointers vs immutable object pointers
+## Mutable-object pointers vs immutable-object pointers
 
 
 
