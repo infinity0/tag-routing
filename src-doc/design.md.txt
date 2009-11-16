@@ -210,25 +210,24 @@ will be explored further in relevant sections of the [Algorithms](#algorithms)
 chapter.
 
 For an object consisting only of source-less pointers, such as `ptable`, there
-is no information that could be used for any heuristic to distinguish the two
-cases.^[Treating the pointers as mappings from a single source, and using the
-heuristic described above for mappings doesn't help: a pair (X,Y) cannot exist
-with the required properties since we only have one source.]
+is no information within a single object that could be used for any heuristic
+to distinguish the two cases.^[Using the heuristic described above for mappings
+by treating the pointers as mappings from a single source doesn't help: a pair
+(X,Y) cannot exist with the required properties since we only have one source.]
 
 However, in the specific case of `ptable`, we could use the links present in
-the social network to infer more information; eg. identities that know each
-other are likely to "know about" similar sets of objects. A basic heuristic
-would be to assume that some fraction of an identity's friends "know about"
-each object that its `ptable` points to, but this is flawed since the actual
-fraction is unlikely to be constant, so the scheme would greatly disadvantage
-rare objects. We could take this into account, and estimate the "knows about"
-fraction based on the fraction of identities that explicitly reference the
-target, but this is getting increasingly complicated with more and more
-hand-waving arguments.
-
-In practice, such methods are hard to get accurate, and probably won't provide
-significantly enough benefit to justify the additional complexity - the social
-network should mitigate most serious attempts to abuse the system. MORE
+the social network to infer more information: eg. identities who are friends
+are likely to "know about" similar sets of objects. In practice, such methods
+are hard to get accurate^[A basic heuristic would be to assume that some
+fraction of an identity's friends "know about" each object that its `ptable`
+points to; however the real fraction is unlikely to be near-constant over all
+objects, so the scheme would greatly disadvantage rare objects. We could take
+this into account and estimate the "knows about" fraction based on the fraction
+of identities that explicitly reference the target, but this is becoming more
+and more complicated with increasingly hand-waving arguments.], and probably
+won't provide significantly enough benefit to justify the additional complexity
+- the social network should mitigate most serious attempts to abuse the system.
+MORE
 
 ## Negative-weight pointers
 
