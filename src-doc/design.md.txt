@@ -4,6 +4,7 @@
 - `TODO`: open issue; resolve or explain why we leave it open
 - `MORE`: expand
 - `OPEN`: point intentionally left open for future research.
+- `EXTN`: external issue for which research / infrastructure already exists
 
 # Introduction
 
@@ -251,8 +252,8 @@ These would be relevant if our routing system is adapted into a form where one
   structure are not well-defined, the algorithms that use it cannot be, either.
 - Depending on the algorithm used to combine weights from multiple sources,
   negative weights may allow the weight system itself to be used as an attack
-  vector. (Alternatively, this was possible already with positive-only weights
-  and the addition of negative weights makes no difference.)
+  vector. (Otherwise, this was already possible with positive-only weights and
+  the introduction of negative weights makes no difference.)
 - MORE
 
 
@@ -260,7 +261,38 @@ These would be relevant if our routing system is adapted into a form where one
 
 ## Obtaining initial ptables
 
+Assume a given identity is already connected to the social network. MORE
+
+Bootstrapping is an independent issue that applies to all systems whose core
+functionality depends on a social network. Luckily such systems are already
+widely deployed on the www; new networks can bootstrap themselves by extracting
+social data from existing networks in the form of invites, etc. [EXTN]
+
+For our purposes, we need an algorithm which takes our own identity as input,
+and outputs a set of identities to seed our routing algorithm with. (We assume
+that there already exists methods to obtain the `ptable` for a given identity,
+and to obtain the set of its friends, as part of a standard library for our
+system, which remains constant for all implementations of the interface.)
+
+    interface SeedSetGetter {
+
+      Set<Identity> getSeedSet(Identity self);
+
+    }
+
+A basic implementation of this would be to start at our own identity node, then
+obtain all nodes 2 hops into the network. This would grab a decent number of
+nodes whilst offering basic protection against the most common simple attacks.
+
+More advanced algorithms exist to filter the nodes that we encounter in the
+social network, which can neutralise more sophisticated attacks; our routing
+system can easily be upgraded to use these, and any future ones that are
+invented. [EXTN]
+
 ## Combining tgraphs
+
+The previous step gives us a mapping of m->
+
 
 ## Combining &alpha; ratings for indexes
 
