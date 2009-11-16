@@ -5,7 +5,7 @@
 - `MORE`: expand
 - `OPEN`: point intentionally left open for future research.
 
-# System summary
+# Introduction
 
 Distributed network of data structures maintained by multiple independent
 parties.
@@ -14,7 +14,7 @@ Most of the routing power of the system is delegated to the underlying social
 network and the innate information-retrieval heuristics we have as humans,
 rather than being inherently built into the system.
 
-Some terminology:
+## Terminology
 
 - identity - a user / node on the social network
 - tag - a semantic phrase used for describing objects
@@ -24,7 +24,7 @@ Some terminology:
 - mapping - a pointer that also has a "source" as well as a target
 
 
-# System overview
+# Overview
 
 The system has three main networks / planes of information that link to each
 other.
@@ -117,7 +117,7 @@ and meta-routing planes.
 
 MORE
 
-## Pointer weights, &alpha;
+# Pointer weights
 
 Each pointer will be assigned a weight. These weights can be used to decide:
 
@@ -169,7 +169,7 @@ weights to pointers. This would reduce the problem of human inaccuracy, as well
 as laziness: it's tedious to manually estimate a weight for every pointer we
 add to our collections. [OPEN]
 
-## Zero and negative pointer weights
+## Zero-weight pointers
 
 The current design can only represent the presence of a semantic relationship,
 and not its absence. This is a problem: any distributed system has to be able
@@ -177,17 +177,35 @@ to deal with incomplete information, but here there is no way to tell if the
 absence of a pointer is due to incomplete information, or explicit rejection
 of the semantic relationship that the pointer represents.
 
-Requiring explicit "zero-weight" pointers is not acceptable in this case, since
-most object pairs would then need to be linked, which would greatly increase
-the amount of data that needs to be stored.
+Requiring explicit "zero-weight" pointers is not acceptable here, since most
+object pairs are not related. Storing all of these non-relationships would
+greatly increase the amount of data that needs to be stored.
 
-... arbitrary formulas for dealing with this ... MORE
+Instead, we will look at various heuristics that attempt to resolve this
+ambiguity.
+
+Each `index` and `tgraph` will only contain mappings from a finite subset of
+the entire set of tags.
+
+MORE ... consider `index`
+
+For a given `tgraph` $g \subseteq T \times (T \cup G)$, let $T_g$ be the set of
+all tags that $g$ mentions - ie. $T_g \equiv ( dom(g) \cup img(g) ) \cap T$. It
+is probably reasonable to assume that the maintainer of $g$ has considered all
+members of $T_g \times T_g$ for inclusion in $g$, and hence any member of $T_g
+\times T_g$ who is not in $g$, can be assumed to be a zero-weight pointer, and
+not "missing information". (A variant would be to assign some probability to
+this claim, rather than assuming it outright.)
+
+MORE
+
+## Negative-weight pointers
 
 A related issue is negative-weight pointers, which would represent a judgement
-that the target is malicious (in some sense). In a network where it's possible
-to act aggressively towards particular nodes, these weights could provide
-useful information on who to attack (or equivalently, set up defences against),
-and in what way.
+that the target is malicious (in some sense), rather than neutral or "useless".
+In a network where it's possible to act aggressively towards particular nodes,
+these weights could provide information on who to attack (or equivalently, set
+up defences against), and in what way.
 
 As it stands, our routing system is a "dumb" network of data; the only way of
 interacting with other nodes is by publishing data objects for other nodes to
@@ -199,9 +217,12 @@ These would be relevant if our routing system is adapted into a form where one
 *can* perform targeted acts of aggression.
 
 - If positive-weight pointers are taken to be probabilities, it's not obvious
-  what negative-weight pointers should mean. Without a firm semantic background
-
-- Complexity
+  what negative-weight pointers should mean. If the semantics of the data
+  structure are not well-defined, the algorithms that use it cannot be, either.
+- Depending on the algorithm used to combine weights from multiple sources,
+  negative weights may allow the weight system itself to be used as an attack
+  vector. (Alternatively, this was possible already with positive-only weights
+  and the addition of negative weights makes no difference.)
 - MORE
 
 
