@@ -133,11 +133,15 @@ There are several types of pointers:
 - tag:meta-routing (tgraph) mappings
 - id:object (ptable) mappings
 
-The precise meaning of a weight has not been decided yet, and is likely to
-depend on the specifics of the routing algorithm. Probability-based semantics
-are likely to be quite robust and reliable, since these can (in theory) be
-estimated objectively. It also fits well with multiplication and the [0,1]
-interval restriction.
+The precise meaning of a pointer's weight is intrinsically interdepedent with
+the routing algorithm. Probability-based semantics are likely to be more robust
+and reliable, since these are objective properties and can (in theory) be
+estimated algorithmically. (It also fits well with multiplication and the [0,1]
+interval restriction).
+
+Note that, regardless of their absolute semantic meaning, weights of pointers
+from the same object can be used to calculate the relative preferences of the
+targets, from the point of view of that object.
 
 Some possible candidates are: TODO
 
@@ -152,18 +156,15 @@ Some possible candidates are: TODO
 	- probability that a ***
 	- TODO
 
-These values allow for a finer level of processing and ranking that would
-otherwise be possible; however, care must be taken not to treat any of these
-values as authoritative, since users can input whatever values they wish.
-The same goes for creating the pointers in the first place; however, assigning
-weights to pointers is more complex than a binary existence decision, and so
-it will be harder to both decide accuracy and resolve disagreements.
+These weights allow algorithms to achieve a finer level of preference-choosing
+than would otherwise be possible. However, care must be taken not to depend on
+the precise values too much, or to treat the data as authoritative: even if
+malicious data can be excluded, and the weights are defined on some objective
+property, there will still be some degree of inconsistency between different
+objects, since each publisher can only calculate weights from their subjective
+(and limited) view of the entire network.
 
-Note that, regardless of their absolute semantic meaning, weights of pointers
-from the same object can be used to calculate the relative preferences of the
-targets.
-
-Ultimately, the best solution would be to install an automatic way of assigning
+The best practical solution would be to install an automatic way of assigning
 weights to pointers. This would reduce the problem of human inaccuracy, as well
 as laziness: it's tedious to manually estimate a weight for every pointer we
 add to our collections. [OPEN]
@@ -195,10 +196,11 @@ attack a particular node. Hence, negative-weight pointers are not useful here.
 
 There are several other complications with negative-weight pointers in general.
 These would be relevant if our routing system is adapted into a form where one
-can perform targeted acts of aggression.
+*can* perform targeted acts of aggression.
 
 - If positive-weight pointers are taken to be probabilities, it's not obvious
-  what negative-weight pointers should mean.
+  what negative-weight pointers should mean. Without a firm semantic background
+
 - Complexity
 - MORE
 
