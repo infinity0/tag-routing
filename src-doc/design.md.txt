@@ -281,7 +281,9 @@ These would be relevant if our routing system is adapted into a form where one
 # Algorithms
 
 Since network latency is far greater than processing latency, we will design
-these algorithms to be inherently concurrent.
+these algorithms to be inherently concurrent. Operations involving retrieval
+of remote objects will be non-blocking and allow other work to be done whilst
+waiting for its results.
 
 ## Obtaining initial ptables
 
@@ -296,11 +298,10 @@ For our purposes, we need an algorithm which takes our own identity as input,
 and outputs a set of identities to seed our routing algorithm with, possibly
 with a weight associated with each identity.
 
-	interface SeedSetGetter {
-
-		Map<Identity, IdScore> getSeedSet(Identity self);
-
-	}
+Given
+:	- our own identity
+Return
+:	- a set of seed identities, with corresponding weights
 
 A basic implementation of this would be to return all nodes up to 2 hops away
 from our own node. This would grab a decent number of nodes whilst offering
@@ -314,10 +315,11 @@ scheme, including future ones not yet invented.
 
 ## Combining multiple `ptable` objects
 
-Given a set of `ptable`s $P_s = {(p_i, w_i)}$ ($p_i$ distinct);
-
-Return $p$ that "combines" all the information, with $dom(p) = \bigcup dom(p_i)$.
-In other words, combine weight ratings for each object.
+Given
+:	- a set of `ptable`s $P_s = {(p_i, w_i)}$ each mapped to their weights
+Return
+:	- $p$ that "combines" all the information, with $dom(p) = \bigcup dom(p_i)$.
+	  In other words, combine weight ratings for each object.
 
 Now define $G_s \subseteq G$ and $I_s \subseteq I$ such that $G_s + I_s = dom(p)$
 
@@ -337,17 +339,20 @@ MORE
 
 ### Combining `tgraph` objects
 
-Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and tag $t$;
-
-Return ${(g, w)}$, a set of mapping targets (which can be a tag or tgraph) and
-their weights; the source of each mapping being $t$.
+Given
+:	- a working set of `tgraph`s $G_w = {(g_i, w_i)}$
+	- a tag $t$
+Return
+:	- ${(g, w)}$, a set of mapping targets (which can be a tag or tgraph) and
+	  their weights; the source of each mapping being $t$.
 
 ### Determining `tgraph` traversal order
 
-Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and a partial spanning
-tree $T_w$ rooted at $t_0$
-
-Return an ordered list of tags ${t_i}$ to add to the tree.
+Given
+:	- a working set of `tgraph`s $G_w = {(g_i, w_i)}$
+	- a partial spanning tree $T_w$ rooted at $t_0$
+Return
+:	- an ordered list of tags ${t_i}$ to add to the tree
 
 If the first element can be added to the tree immediately, we do so, and call
 the method recursively, ignoring the other elements returned. In the other case
@@ -357,9 +362,11 @@ the same principle to $t_1$, etc...
 
 ### Weight of a `tgraph` not in the working set
 
-Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and a new `tgraph` $g_n$;
-
-Return a weight $w_n$.
+Given
+:	- a working set of `tgraph`s $G_w = {(g_i, w_i)}$
+	- a new `tgraph` $g_n$ not in the working set
+Return
+:	- a weight $w_n$ to assign to $g_n$
 
 MORE note the two different semantic meanings for pointer weights being used
 here (relevancy vs reliability) TODO explore this and its potential pitfalls
@@ -389,11 +396,12 @@ ancestors and descendents too.
 
 ### Determining `index` query order
 
-Given a working tree $T_w$ with a working `index` set mapping $I_w[t]$, and
-knowledge of which queries have already completed;
-
-Return an ordered list of (index, tag) pairs {(i_i, t_i)} to perform queries
-on.
+Given
+:	- a working tree $T_w$
+	- a working `index` set mapping $I_w[t]$
+	- knowledge of which queries have already completed;
+Return
+:	- an ordered list of queries ${(i_i, t_i)}$ to perform
 
 Tags further away from the root are less "related" to the original query, but
 searches for them are more likely to succeed, so the algorithm should proceed
@@ -442,3 +450,54 @@ to decrease the number of identity-object pointers
 
 
 
+# Java class definitions
+
+Note: I started doing these, then thought I'd leave it for the coding stage;
+Here's what I have so far.
+
+~~~{.java}
+	interface SeedSetGetter {
+
+		/**
+		** @param self
+		**  	A root identity (typically our own)
+		** @return
+		**  	A set of seed identities, with corresponding weights
+		*/
+		Map<Identity, IdScore> getSeedSet(Identity self);
+
+	}
+~~~
+
+
+~~~{.java}
+	interface TGraphComposer {
+
+		/**
+		** @param tables
+		**
+		** @return
+		**  	A set of mapping targets (which can be a tag or tgraph) and
+		**  	their weights; the source of each mapping being the source tag
+		**
+		*/
+		Map<TGraphEntry, EntryWeight> compositeTGraphNode(Map<TGraph, EntryWeight> , Tag source);
+
+	}
+~~~
+
+
+~~~{.java}
+	interface PTableComposer {
+
+		/**
+		** @param tables
+		**  	A set of ptables, each being mapped to its identity's score.
+		** @return
+		**  	A ptable that combines all of the input information, with
+		**  	$dom(p) = \bigcup dom(p_i)$.
+		*/
+		PTable composite(Map<PTable, IdScore> tables);
+
+	}
+~~~
