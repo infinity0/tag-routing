@@ -54,8 +54,8 @@ instead of passing on requests and waiting for replies.
 ## Network operations
 
 The system will be running on top of a distributed storage network. To preserve
-layering and its advantageous, we will define an adapter interface which
-converts our abstract higher-level functions into lower-level ones.
+layering and its advantageous, we define an adapter interface which converts
+our abstract higher-level functions into lower-level ones.
 
 	interface NetworkAdapter {
 
@@ -141,7 +141,7 @@ MORE
 
 # Pointer weights
 
-Each pointer will be assigned a weight. These weights can be used to decide:
+Each pointer is assigned a weight. These weights can be used to decide:
 
 - priority of traversal of the routing and meta-routing networks
 - ranking of query results
@@ -323,6 +323,18 @@ Now define $G_s \subseteq G$ and $I_s \subseteq I$ such that $G_s + I_s = dom(p)
 
 ## Meta-routing
 
+We want to construct a routing scheme from the `tgraph` plane, which will be
+relative to some given root tag $t_0$. Since `tgraph` data is distributed
+across many objects, we need various methods of combining these into a single
+tree of tags.
+
+We start from our seed `tgraph` set $G_s$. If $t_0$ does not appear in $G_s$,
+we are screwed, and need to ask the user to supply a bunch of related tags.
+This should not be a significant problem; people usually "have an idea" of what
+they are looking for.
+
+MORE
+
 ### Combining `tgraph` objects
 
 Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and tag $t$;
@@ -337,11 +349,11 @@ tree $T_w$ rooted at $t_0$
 
 Return an ordered list of tags ${t_i}$ to add to the tree.
 
-If the first element can be added to the tree immediately, we will do so, and
-call the method recursively, ignoring the other elements returned. In the other
-case (`tgraph`) we will need to wait for the object to be retrieved from the
-network; in the meantime we can go through the list and add the other elements,
-applying the same principle to $t_1$, etc...
+If the first element can be added to the tree immediately, we do so, and call
+the method recursively, ignoring the other elements returned. In the other case
+(`tgraph`) we need to wait for the object to be retrieved from the network; in
+the meantime we can go through the list and add the other elements, applying
+the same principle to $t_1$, etc...
 
 ### Weight of a `tgraph` not in the working set
 
@@ -363,21 +375,21 @@ working `index` set, $I_w[t]$.
 Intially, $T_w$ contains only our original search term $t_0$, and we associate
 it with $I_s$, our seed set (see [above](combining-multiple-ptable-objects)).
 
-In the background, $T_w$ will continually have new tags being added to it, by
+In the background, $T_w$ will be continually having new tags added to it, by
 the [meta-routing]() algorithms. When a new tag is added, we need to detect
 this, and initialise its working index set with a copy of its parent's.
 
-Meanwhile, we search every index in every working set for every tag, in some
-appropriate order. Each result set returned for a given query $(i,t)$ will
-remain associated with the query; this is useful for the [ranking]() algorithm.
-If the result set points to a new index $i'$, that might contain additional
-entries for $t$ and terms related to it. In this case, we will add such queries
-to our queue, by adding $i'$ to the working set of $t$, and that of all its
+Meanwhile, for every tag, we search every index in its working set for it, in
+some appropriate order. Each result set returned for a given query $(i,t)$
+remains associated with it; this is useful for the [ranking]() algorithm. If
+the result set points to a new index $i'$, that index might contain additional
+entries for $t$ and terms related to it. In this case, we add such queries to
+our queue, by adding $i'$ to the working set of $t$, and that of all its
 ancestors and descendents too.
 
 ### Determining `index` query order
 
-Given a working tree $T_w$ with a working index `set` mapping $I_w[t]$, and
+Given a working tree $T_w$ with a working `index` set mapping $I_w[t]$, and
 knowledge of which queries have already completed;
 
 Return an ordered list of (index, tag) pairs {(i_i, t_i)} to perform queries
@@ -391,6 +403,9 @@ MORE same principle about concurrency as mentioned before about tag/tgraphs.
 
 
 ## Ranking
+
+
+
 
 
 # Optimisations
