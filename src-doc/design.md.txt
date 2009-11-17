@@ -51,6 +51,27 @@ This also forces us to consider a iterative routing algorithm rather than a
 recursive one. The requestor pulls in data, then pulls in further data, etc,
 instead of passing on requests and waiting for replies.
 
+## Network operations
+
+The system will be running on top of a distributed storage network. To preserve
+layering and its advantageous, we will define an adapter interface which
+converts our abstract higher-level functions into lower-level ones.
+
+	interface NetworkAdapter {
+
+		Map<Identity, IdScore> getFriends(Identity id);
+
+		PTable getPTable(Identity id);
+
+		Index getIndex(ObjectID id);
+
+		TGraph getTGraph(ObjectID id);
+
+	}
+
+The implementation of these will depend on which storage network we happen to
+be using at the time, and should be fairly straightforward.
+
 
 # Data structures
 
@@ -269,32 +290,44 @@ widely deployed on the www; new networks can bootstrap themselves by extracting
 social data from existing networks in the form of invites, etc. [EXTN]
 
 For our purposes, we need an algorithm which takes our own identity as input,
-and outputs a set of identities to seed our routing algorithm with. (We assume
-that there already exists methods to obtain the `ptable` for a given identity,
-and to obtain the set of its friends, as part of a standard library for our
-system, which remains constant for all implementations of the interface.)
+and outputs a set of identities to seed our routing algorithm with, possibly
+with a weight associated with each identity.
 
-    interface SeedSetGetter {
+	interface SeedSetGetter {
 
-      Set<Identity> getSeedSet(Identity self);
+		Map<Identity, IdScore> getSeedSet(Identity self);
 
-    }
+	}
 
-A basic implementation of this would be to start at our own identity node, then
-obtain all nodes 2 hops into the network. This would grab a decent number of
-nodes whilst offering basic protection against the most common simple attacks.
+A basic implementation of this would be to return all nodes up to 2 hops away
+from our own node. This would grab a decent number of nodes whilst offering
+a basic level of protection against the most common and simple attacks.
 
-More advanced algorithms exist to filter the nodes that we encounter in the
-social network, which can neutralise more sophisticated attacks; our routing
-system can easily be upgraded to use these, and any future ones that are
-invented. [EXTN]
+Inferring attackers based on the link-structure of a social network is a whole
+topic in itself; more advanced algorithms exist that can detect and avoid more
+sophisticated attacks. The important thing here is that this component of our
+system is indepedent of the rest, and can always be upgraded to a more advanced
+scheme, including future ones not yet invented.
 
-## Combining tgraphs
+## Combining multiple `ptable` objects
 
-The previous step gives us a mapping of m->
+Given $P_s = {(p_i, w_i)}$ ($p_i$ distinct);
+
+Return $p$ that "combines" all of the input information, with $dom(p) = \bigcup dom(p_i)$
+
+In other words, combine weight ratings for each object.
+
+Define $G_s \subseteq G$ and $I_s \subseteq I$ such that $G_s + I_s = dom(p)$
+
+## Combining multiple `tgraph` objects
+
+Given $G_s = {(g_i, w_i)}$ ($g_i$ distinct);
+
+Return $g$ that "combines" all of the input information, with $dom(g) = \bigcup dom(g_i)$
+
+## Calculating weight of objects not in the seed set
 
 
-## Combining &alpha; ratings for indexes
 
 ## Routing
 
