@@ -311,29 +311,37 @@ scheme, including future ones not yet invented.
 
 ## Combining multiple `ptable` objects
 
-Given $P_s = {(p_i, w_i)}$ ($p_i$ distinct);
+Given a set of `ptable`s $P_s = {(p_i, w_i)}$ ($p_i$ distinct);
 
-Return $p$ that "combines" all of the input information, with $dom(p) = \bigcup dom(p_i)$
+Return $p$ that "combines" all the information, with $dom(p) = \bigcup dom(p_i)$
 
 In other words, combine weight ratings for each object.
 
-Define $G_s \subseteq G$ and $I_s \subseteq I$ such that $G_s + I_s = dom(p)$
+Now define $G_s \subseteq G$ and $I_s \subseteq I$ such that $G_s + I_s = dom(p)$
 
-## Combining multiple `tgraph` objects
+## Combining `tgraph` objects
 
-Given $G_s = {(g_i, w_i)}$ ($g_i$ distinct);
+Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and tag $t$;
 
-Return $g$ that "combines" all of the input information, with $dom(g) = \bigcup dom(g_i)$
+Return ${(g, w)}$, a set of mapping targets (which can be a tag or tgraph) and
+their weights; the source of each mapping being $t$.
 
-## Calculating weight of objects not in the seed set
+## Determining `tgraph` traversal order
 
+Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and a partial spanning tree $T_w$ rooted at $t$
 
+Return the next tag $t'$ to add to the tree.
+
+## Adding a new `tgraph` to the working set
+
+Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and a new `tgraph` $g_n$;
+
+Return a weight $w_n$.
 
 ## Routing
 
-### Traversing the `tgraph` network
-
-### Traversing the `index` network
+- Traversing the `tgraph` network
+- Traversing the `index` network
 
 ## Ranking
 
