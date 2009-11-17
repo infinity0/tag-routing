@@ -1,19 +1,4 @@
-# TODO and related tags
-
-- `DIAG`: draw diagrams for the given concept being discussion
-- `TODO`: open issue; resolve or explain why we leave it open
-- `MORE`: expand
-- `OPEN`: point intentionally left open for future research.
-- `EXTN`: external issue for which research / infrastructure already exists
-
-# Introduction
-
-Distributed network of data structures maintained by multiple independent
-parties.
-
-Most of the routing power of the system is delegated to the underlying social
-network and the innate information-retrieval heuristics we have as humans,
-rather than being inherently built into the system.
+# Meta
 
 ## Terminology
 
@@ -24,8 +9,34 @@ rather than being inherently built into the system.
 - pointer - an indirection to some external resource
 - mapping - a pointer that also has a "source" as well as a target
 
+## Symbols
+
+With no other context, the following symbols refer to the following object
+types; capitalised symbols refer to the set of all objects of the given type.
+
+- $g$ - `tgraph`
+- $h$ - `index`
+- $p$ - `ptable`
+- $d$ - document
+- $t$ - tag
+
+## TODO and related tags
+
+- `DIAG`: draw diagrams for the given concept being discussion
+- `TODO`: open issue; resolve or explain why we leave it open
+- `MORE`: expand
+- `OPEN`: point intentionally left open for future research.
+- `EXTN`: external issue for which research / infrastructure already exists
+
 
 # Overview
+
+Distributed network of data structures maintained by multiple independent
+parties.
+
+Most of the routing power of the system is delegated to the underlying social
+network and the innate information-retrieval heuristics we have as humans,
+rather than being inherently built into the system.
 
 The system has three main networks / planes of information that link to each
 other.
@@ -57,6 +68,7 @@ The system will be running on top of a distributed storage network. To preserve
 layering and its advantageous, we define an adapter interface which converts
 our abstract higher-level functions into lower-level ones.
 
+~~~{.java}
 	interface NetworkAdapter {
 
 		Map<Identity, IdScore> getFriends(Identity id);
@@ -68,6 +80,7 @@ our abstract higher-level functions into lower-level ones.
 		TGraph getTGraph(ObjectID id);
 
 	}
+~~~{.java}
 
 The implementation of these will depend on which storage network we happen to
 be using at the time, and should be fairly straightforward.
@@ -223,7 +236,7 @@ pointer (ie. non-relationship), rather than "missing information".
 - For a `tgraph` $g$, we guess that any $(t_1,t_2) \notin g$, with $t_1, t_2
   \in dom(g) \cup img(g)$, is "probably" a zero-weight pointer and not "missing
   information".
-- For an `index` $i$, we guess that any $(t,d) \notin i$, with $t \in dom(g)$
+- For an `index` $h$, we guess that any $(t,d) \notin h$, with $t \in dom(g)$
   and $d \in img(g)$, is "probably" a zero-weight pointer and not "missing
   information".
 
@@ -316,12 +329,12 @@ scheme, including future ones not yet invented.
 ## Combining multiple `ptable` objects
 
 Given
-:	- a set of `ptable`s $P_s = {(p_i, w_i)}$ each mapped to their weights
+:	- a set of `ptable`s $P_s = \{(p_i, w_i)\}$ each mapped to their weights
 Return
 :	- $p$ that "combines" all the information, with $dom(p) = \bigcup dom(p_i)$.
 	  In other words, combine weight ratings for each object.
 
-Now define $G_s \subseteq G$ and $I_s \subseteq I$ such that $G_s + I_s = dom(p)$
+Now define $G_s \subseteq G$ and $H_s \subseteq H$ such that $G_s + H_s = dom(p)$
 
 ## Meta-routing
 
@@ -340,19 +353,19 @@ MORE
 ### Combining `tgraph` objects
 
 Given
-:	- a working set of `tgraph`s $G_w = {(g_i, w_i)}$
+:	- a working set of `tgraph`s $G_w = \{(g_i, w_i)\}$
 	- a tag $t$
 Return
-:	- ${(g, w)}$, a set of mapping targets (which can be a tag or tgraph) and
+:	- $\{(g, w)\}$, a set of mapping targets (which can be a tag or tgraph) and
 	  their weights; the source of each mapping being $t$.
 
 ### Determining `tgraph` traversal order
 
 Given
-:	- a working set of `tgraph`s $G_w = {(g_i, w_i)}$
+:	- a working set of `tgraph`s $G_w = \{(g_i, w_i)\}$
 	- a partial spanning tree $T_w$ rooted at $t_0$
 Return
-:	- an ordered list of tags ${t_i}$ to add to the tree
+:	- an ordered list of tags $\{t_i\}$ to add to the tree
 
 If the first element can be added to the tree immediately, we do so, and call
 the method recursively, ignoring the other elements returned. In the other case
@@ -363,7 +376,7 @@ the same principle to $t_1$, etc...
 ### Weight of a `tgraph` not in the working set
 
 Given
-:	- a working set of `tgraph`s $G_w = {(g_i, w_i)}$
+:	- a working set of `tgraph`s $G_w = \{(g_i, w_i)\}$
 	- a new `tgraph` $g_n$ not in the working set
 Return
 :	- a weight $w_n$ to assign to $g_n$
@@ -375,33 +388,42 @@ here (relevancy vs reliability) TODO explore this and its potential pitfalls
 
 DIAG
 
-The data structure we use to keep track of routing progress is a working tree
-of tags, $T_w$, with each node (tag $t$) in the tree being associated with a
-working `index` set, $I_w[t]$.
+The data structure we use to keep track of routing progress is a working
+(mutable) tree of tags, $T_w$. For each tag $t \in T_w$, we keep track of its
+working `index` set, $H_w[t]$, and its queried `index` set, $H_c[t] \subseteq
+H_w[t]$. For each index $h \in H_c[t]$, we also keep track of the results that
+the query $(h, t)$ returned, as $R_c[t][h]$.
 
-Intially, $T_w$ contains only our original search term $t_0$, and we associate
-it with $I_s$, our seed set (see [above](combining-multiple-ptable-objects)).
+Define $Q(T_w, H_w) = \{(h,t): t \in T_w, h \in H_w[t]\}$, the set of all
+possible queries to be made.
+
+Initially, $T_w$ contains only our original search term $t_0$, and we let
+$H_w[t_0] = H_s$, our [seed set](#combining-multiple-ptable-objects)).
 
 In the background, $T_w$ will be continually having new tags added to it, by
 the [meta-routing]() algorithms. When a new tag is added, we need to detect
 this, and initialise its working index set with a copy of its parent's.
 
-Meanwhile, for every tag, we search every index in its working set for it, in
-some appropriate order. Each result set returned for a given query $(i,t)$
-remains associated with it; this is useful for the [ranking]() algorithm. If
-the result set points to a new index $i'$, that index might contain additional
+Meanwhile, we perform the queries in $Q(T_w, H_w)$, in some appropriate order.
+Multiple queries can be performed in parallel; this should not affect the final
+output (including ranking of results, etc), for a given final tracking state
+$(T_w, H_w, H_c, R_c)$.
+
+When a query $(h, t)$ completes, we update $H_c[t]$ and $R_c[t][h]$ accordingly.
+If the result set contains any new index pointers, these may contain additional
 entries for $t$ and terms related to it. In this case, we add such queries to
-our queue, by adding $i'$ to the working set of $t$, and that of all its
+our queue, by adding $h'$ to the working set of $t$, and that of all its
 ancestors and descendents too.
 
 ### Determining `index` query order
 
 Given
-:	- a working tree $T_w$
-	- a working `index` set mapping $I_w[t]$
-	- knowledge of which queries have already completed;
+:	- a working tree of tags $T_w$
+	- a map of each $t \in T_w$ to its $H_w[t]$
+	- a map of each $t \in T_w$ to its $H_c[t]$
 Return
-:	- an ordered list of queries ${(i_i, t_i)}$ to perform
+:	- an ordered list of queries $[(h_i, t_i)] \subseteq Q(T_w, H_w) \setminus
+	  Q(T_w, H_c)$ to perform
 
 Tags further away from the root are less "related" to the original query, but
 searches for them are more likely to succeed, so the algorithm should proceed
@@ -411,6 +433,17 @@ MORE same principle about concurrency as mentioned before about tag/tgraphs.
 
 
 ## Ranking
+
+### Combining results from different queries
+
+Given
+:	- a working tree of tags $T_w$
+	- a map of each $t \in T_w$ to its $H_w[t]$
+	- a map of each $t \in T_w$ to its $H_c[t]$
+	- a map of each "queried `index`" $h \in H_c[t]$ to its results set
+	  $R_c[t][h]$
+Return
+:	- a results map $R = \{(d_i, w_i)\}$ from documents to their weights
 
 
 
