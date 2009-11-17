@@ -343,7 +343,7 @@ case (`tgraph`) we will need to wait for the object to be retrieved from the
 network; in the meantime we can go through the list and add the other elements,
 applying the same principle to $t_1$, etc...
 
-### Adding a new `tgraph` to the working set
+### Weight of a `tgraph` not in the working set
 
 Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and a new `tgraph` $g_n$;
 
@@ -356,23 +356,26 @@ here (relevancy vs reliability) TODO explore this and its potential pitfalls
 
 DIAG
 
-Our data structure is a working tree of tags, $T_w$, with each node (tag $t$)
-in the tree being associated with a working `index` set, $I_w[t]$.
+The data structure we use to keep track of routing progress is a working tree
+of tags, $T_w$, with each node (tag $t$) in the tree being associated with a
+working `index` set, $I_w[t]$.
 
 Intially, $T_w$ contains only our original search term $t_0$, and we associate
-it with $I_s$, our seed `index` set.
+it with $I_s$, our seed set (see [above](combining-multiple-ptable-objects)).
 
-In a separate thread, $T_w$ will have new tags being added to it, using the
-algorithms from the previous section. When a new tag is added to the tree, its
-working index set is initialised with a copy of its parent's.
+In the background, $T_w$ will continually have new tags being added to it, by
+the [meta-routing]() algorithms. When a new tag is added, we need to detect
+this, and initialise its working index set with a copy of its parent's.
 
-In a separate thread, we will search every index in every working set for the
-tag associated with the working set, in some appropriate order.
+Meanwhile, we search every index in every working set for every tag, in some
+appropriate order. Each result set returned for a given query $(i,t)$ will
+remain associated with the query; this is useful for the [ranking]() algorithm.
+If the result set points to a new index $i'$, that might contain additional
+entries for $t$ and terms related to it. In this case, we will add such queries
+to our queue, by adding $i'$ to the working set of $t$, and that of all its
+ancestors and descendents too.
 
-If we find a new index in a given query $(i,t)$, we will add it to $I_w[t]$,
-and also its ancestors and descendents.
-
-### Determining query order
+### Determining `index` query order
 
 Given a working tree $T_w$ with a working index `set` mapping $I_w[t]$, and
 knowledge of which queries have already completed;
@@ -380,7 +383,11 @@ knowledge of which queries have already completed;
 Return an ordered list of (index, tag) pairs {(i_i, t_i)} to perform queries
 on.
 
-MORE same principle about concurrency as mention before about tag/tgraphs.
+Tags further away from the root are less "related" to the original query, but
+searches for them are more likely to succeed, so the algorithm should proceed
+by searching near the root, then further up the tree.
+
+MORE same principle about concurrency as mentioned before about tag/tgraphs.
 
 
 ## Ranking
