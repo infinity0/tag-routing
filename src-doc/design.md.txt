@@ -280,6 +280,9 @@ These would be relevant if our routing system is adapted into a form where one
 
 # Algorithms
 
+Since network latency is far greater than processing latency, we will design
+these algorithms to be inherently concurrent.
+
 ## Obtaining initial ptables
 
 Assume a given identity is already connected to the social network. MORE
@@ -313,37 +316,85 @@ scheme, including future ones not yet invented.
 
 Given a set of `ptable`s $P_s = {(p_i, w_i)}$ ($p_i$ distinct);
 
-Return $p$ that "combines" all the information, with $dom(p) = \bigcup dom(p_i)$
-
+Return $p$ that "combines" all the information, with $dom(p) = \bigcup dom(p_i)$.
 In other words, combine weight ratings for each object.
 
 Now define $G_s \subseteq G$ and $I_s \subseteq I$ such that $G_s + I_s = dom(p)$
 
-## Combining `tgraph` objects
+## Meta-routing
+
+### Combining `tgraph` objects
 
 Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and tag $t$;
 
 Return ${(g, w)}$, a set of mapping targets (which can be a tag or tgraph) and
 their weights; the source of each mapping being $t$.
 
-## Determining `tgraph` traversal order
+### Determining `tgraph` traversal order
 
-Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and a partial spanning tree $T_w$ rooted at $t$
+Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and a partial spanning
+tree $T_w$ rooted at $t_0$
 
-Return the next tag $t'$ to add to the tree.
+Return an ordered list of tags ${t_i}$ to add to the tree.
 
-## Adding a new `tgraph` to the working set
+If the first element can be added to the tree immediately, we will do so, and
+call the method recursively, ignoring the other elements returned. In the other
+case (`tgraph`) we will need to wait for the object to be retrieved from the
+network; in the meantime we can go through the list and add the other elements,
+applying the same principle to $t_1$, etc...
+
+### Adding a new `tgraph` to the working set
 
 Given a working set of `tgraph`s $G_w = {(g_i, w_i)}$ and a new `tgraph` $g_n$;
 
 Return a weight $w_n$.
 
+MORE note the two different semantic meanings for pointer weights being used
+here (relevancy vs reliability) TODO explore this and its potential pitfalls
+
 ## Routing
 
-- Traversing the `tgraph` network
-- Traversing the `index` network
+DIAG
+
+Our data structure is a working tree of tags, $T_w$, with each node (tag $t$)
+in the tree being associated with a working `index` set, $I_w[t]$.
+
+Intially, $T_w$ contains only our original search term $t_0$, and we associate
+it with $I_s$, our seed `index` set.
+
+In a separate thread, $T_w$ will have new tags being added to it, using the
+algorithms from the previous section. When a new tag is added to the tree, its
+working index set is initialised with a copy of its parent's.
+
+In a separate thread, we will search every index in every working set for the
+tag associated with the working set, in some appropriate order.
+
+If we find a new index in a given query $(i,t)$, we will add it to $I_w[t]$,
+and also its ancestors and descendents.
+
+### Determining query order
+
+Given a working tree $T_w$ with a working index `set` mapping $I_w[t]$, and
+knowledge of which queries have already completed;
+
+Return an ordered list of (index, tag) pairs {(i_i, t_i)} to perform queries
+on.
+
+MORE same principle about concurrency as mention before about tag/tgraphs.
+
 
 ## Ranking
+
+
+# Optimisations
+
+## Querying an `index` or `tgraph` for presence of a source tag
+
+Bloom filters
+
+## Querying an `index` or `tgraph` for weight of an external target
+
+...
 
 
 # UI
