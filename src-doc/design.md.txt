@@ -52,44 +52,70 @@ other.
 
 ## Abstract storage network
 
-System is independent of implementation of storage network.
-
-Data structures for now are assumed to be located abstractly "on the network"
-(rather than on the node of the maintainer) and can be retrieved at some cost
-which increases polynomially wrt the size of the data.
-
-This allows us to avoid dealing with the issue of churn.
+Our search system assumes that its data objects are located on some abstract
+lower-level storage network. Data objects can always be retrieved, instead of
+being stored locally with its maintainer, who may be offline. This simplifies
+our design, since it allows us to avoid dealing with the issue of churn by
+delegating it to an independent component. [EXTN]
 
 This also forces us to consider a iterative routing algorithm rather than a
-recursive one. The requestor pulls in data, then pulls in further data, etc,
-instead of passing on requests and waiting for replies.
+recursive one, since data objects are "dumb" and cannot respond to dynamic
+queries. Instead, a requestor must retrieve the data, process it themselves,
+then pull in further data, etc.
 
-## Underlying social network
+Any distributed storage network that has a global address scheme (such as a
+binary-key address space) would be suitable, since pointers to objects can be
+represented simply as its address. This includes all Distributed Hash Tables
+(DHTs), as well as more complex cryptokey-based addresses such as Freenet's
+Signed Subspace Keys network.
 
-MORE
-
-## Network operations
-
-The system will be running on top of a distributed storage network. To preserve
-layering and its advantageous, we define an adapter interface which converts
-our abstract higher-level functions into lower-level ones.
+An adaptor interface for this lower-level abstraction:
 
 ~~~{.java}
-	interface NetworkAdapter {
-
-		Map<Identity, IdScore> getFriends(Identity id);
-
-		PTable getPTable(Identity id);
+	interface NetworkStorageAdapter {
 
 		Index getIndex(ObjectID id);
 
 		TGraph getTGraph(ObjectID id);
 
 	}
-~~~{.java}
+~~~
 
-The implementation of these will depend on which storage network we happen to
-be using at the time, and should be fairly straightforward.
+## Underlying social network
+
+The bootstrap algorithm assumes a abstract lower-level social network where it
+can look for friends to query for pointers onto the meta-routing and routing
+planes.
+
+The network is modelled as a directed weighted graph; arcs represent a degree
+of trust by the source node in the target node, and arc weights are restricted
+to the interval $[0,1]$.
+
+This models the most general type of social network. Many social networking
+websites only recognise mutual friendship; this can be modelled by having all
+weights constant and having all arcs have a reverse-direction counterpart.
+
+The meta-routing and routing planes also form what is essentially a social
+network. However, its pointers carry semantic information (each mapping has a
+source tag) and are intrinsic to our search system; by constrast, the abstract
+social network used for initialisation carries no semantic information and is
+independent of our system. To highlight this difference, we refer to a node on
+the social network as an "identity", and arc weights as "identity scores".
+
+MORE talk about churn, virtual social networks (WoT on Freenet's SSK), etc
+
+An adaptor interface for this lower-level abstraction:
+
+~~~{.java}
+	interface SocialNetworkAdapter {
+
+		Map<Identity, IdScore> getFriends(Identity id);
+
+		PTable getPTable(Identity id);
+
+	}
+~~~
+
 
 # Specifications
 
@@ -163,12 +189,10 @@ Description
 This data structure allows an identity to declare a personal list of preferred
 indexes and tgraphs to use for routing purposes.
 
-This is intended to provide a secure way of "bootstrapping" onto the routing
-and meta-routing planes.
+This is intended to provide an attack-resistant way of "bootstrapping" onto the
+routing and meta-routing planes.
 
 MORE
-
-TODO Define "identity" and "identity score" (in [0,1], own score is 1, etc)
 
 ### Pointer weights
 
@@ -480,13 +504,13 @@ In a network where it's possible to act aggressively towards particular nodes,
 these weights could provide information on who to attack (or equivalently, set
 up defences against), and in what way.
 
-As it stands, our routing system is a "dumb" network of data; the only way of
+As it stands, our search system is a "dumb" network of data; the only way of
 interacting with other nodes is by publishing data objects for other nodes to
 read. We are unable to see other nodes' read requests, so it's impossible to
 attack a particular node. Hence, negative-weight pointers are not useful here.
 
 There are several other complications with negative-weight pointers in general.
-These would be relevant if our routing system is adapted into a form where one
+These would be relevant if our search system is adapted into a form where one
 *can* perform targeted acts of aggression.
 
 - If positive-weight pointers are taken to be probabilities, it's not obvious
