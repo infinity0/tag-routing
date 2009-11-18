@@ -95,27 +95,6 @@ be using at the time, and should be fairly straightforward.
 
 ## Data structures
 
-### `index`
-
-DIAG
-
-Structure
-:	$h \subseteq (T \times D \cup H) \to W$
-Description
-:	Maps tags to documents and other indexes, each mapping having a weight.
-
-This data structure contains information on how to satisfy a search request. It
-contains mappings from tags to target documents, or to another index to forward
-the request onto.
-
-A mapping indicates some semantic relevance between the tag and the document,
-and a subjective judgement that a person searching for the tag did intend to
-retrieve information provided by the document.
-
-The network formed by the links between indexes is conceptually analogous to
-the network of routing tables existent in most typical navigable networks, and
-so we'll call it the "routing plane".
-
 ### `tgraph`
 
 DIAG
@@ -148,6 +127,27 @@ still need to start at the root servers.
 
 The network formed by the links between tgraphs can be used to generate schemes
 for traversing the routing data, and so we'll call it the "meta-routing plane".
+
+### `index`
+
+DIAG
+
+Structure
+:	$h \subseteq (T \times D \cup H) \to W$
+Description
+:	Maps tags to documents and other indexes, each mapping having a weight.
+
+This data structure contains information on how to satisfy a search request. It
+contains mappings from tags to target documents, or to another index to forward
+the request onto.
+
+A mapping indicates some semantic relevance between the tag and the document,
+and a subjective judgement that a person searching for the tag did intend to
+retrieve information provided by the document.
+
+The network formed by the links between indexes is conceptually analogous to
+the network of routing tables existent in most typical navigable networks, and
+so we'll call it the "routing plane".
 
 ### `ptable`
 
