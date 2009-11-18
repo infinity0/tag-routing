@@ -50,7 +50,7 @@ other.
 
 # Assumptions
 
-## Underlying storage network
+## Abstract storage network
 
 System is independent of implementation of storage network.
 
@@ -63,6 +63,10 @@ This allows us to avoid dealing with the issue of churn.
 This also forces us to consider a iterative routing algorithm rather than a
 recursive one. The requestor pulls in data, then pulls in further data, etc,
 instead of passing on requests and waiting for replies.
+
+## Underlying social network
+
+MORE
 
 ## Network operations
 
@@ -98,7 +102,7 @@ DIAG
 Structure
 :	$h \subseteq (T \times D \cup H) \to W$
 Description
-:	Maps tags to documents and other indexes.
+:	Maps tags to documents and other indexes, each mapping having a weight.
 
 This data structure contains information on how to satisfy a search request. It
 contains mappings from tags to target documents, or to another index to forward
@@ -119,7 +123,7 @@ DIAG
 Structure
 :	$g \subseteq (T \times T \cup G) \to W$
 Description
-:	Maps tags to other tags and other tgraphs.
+:	Maps tags to other tags and other tgraphs, each mapping having a weight.
 
 This data structure contains information on how to traverse the routing
 network. It contains mappings from tags to other tags, or to another tgraph
@@ -152,9 +156,9 @@ DIAG
 Structure
 :	$p_z \subseteq G \cup H \to W$
 Description
-:	A set of pointers^[Each pointer can also be thought of as a mapping whose
-	source is implicitly $z$] to `tgraph` and `index` objects, associated with
-	a given identity $z$.
+:	For some given identity $z$, points to `tgraph` and `index` objects, each
+	pointer having a weight.^[Each pointer can also be thought of as a mapping
+	whose source is implicitly $z$]
 
 This data structure allows an identity to declare a personal list of preferred
 indexes and tgraphs to use for routing purposes.
