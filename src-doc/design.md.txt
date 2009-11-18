@@ -356,7 +356,7 @@ Given
 :	- a working set of `tgraph`s $G_w = \{(g_i, w_i)\}$
 	- a tag $t$
 Return
-:	- $\{(g, w)\}$, a set of mapping targets (which can be a tag or tgraph) and
+:	- a set of mapping targets $\{(g, w)\}$ (which can be a tag or tgraph) and
 	  their weights; the source of each mapping being $t$.
 
 ### Determining `tgraph` traversal order
@@ -415,6 +415,12 @@ entries for $t$ and terms related to it. In this case, we add such queries to
 our queue, by adding $h'$ to the working set of $t$, and that of all its
 ancestors and descendents too.
 
+This algorithm has no natural logical termination condition; the queries can
+theoretically proceed indefinitely until the entire network has been searched.
+In practice, we would automatically pause the search after a given number of
+results have been returned, and probably give the user the option to resume
+from the paused state, resources permitting.
+
 ### Determining `index` query order
 
 Given
@@ -426,8 +432,8 @@ Return
 	  Q(T_w, H_c)$ to perform
 
 Tags further away from the root are less "related" to the original query, but
-searches for them are more likely to succeed, so the algorithm should proceed
-by searching near the root, then further up the tree.
+searches for them are more likely to succeed (for rare searches), so the
+algorithm should proceed by searching near the root, then further up the tree.
 
 MORE same principle about concurrency as mentioned before about tag/tgraphs.
 
