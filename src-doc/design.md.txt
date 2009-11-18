@@ -152,6 +152,8 @@ and meta-routing planes.
 
 MORE
 
+TODO Define "identity" and "identity score" (in [0,1], own score is 1, etc)
+
 # Pointer weights
 
 Each pointer is assigned a weight. These weights can be used to decide:
@@ -314,7 +316,7 @@ with a weight associated with each identity.
 Given
 :	- our own identity
 Return
-:	- a set of seed identities, with corresponding weights
+:	- a set of seed identities, with corresponding scores
 
 A basic implementation of this would be to return all nodes up to 2 hops away
 from our own node. This would grab a decent number of nodes whilst offering
@@ -329,12 +331,13 @@ scheme, including future ones not yet invented.
 ## Combining multiple `ptable` objects
 
 Given
-:	- a set of `ptable`s $P_s = \{(p_i, w_i)\}$ each mapped to their weights
+:	- a map $P_s = \{(p_i, w_i)\}$ of `ptable`s to their identity scores
 Return
-:	- $p$ that "combines" all the information, with $dom(p) = \bigcup dom(p_i)$.
-	  In other words, combine weight ratings for each object.
+:	- a `ptable` $p$ that "combines" this information, with $dom(p) = \bigcup
+	  dom(p_i)$.
 
-Now define $G_s \subseteq G$ and $H_s \subseteq H$ such that $G_s + H_s = dom(p)$
+Define $G_s = dom(p) \cap G$ and $H_s = dom(p) \cap H$. (Note that $G + H =
+dom(p)$).
 
 ## Meta-routing
 
@@ -353,19 +356,20 @@ MORE
 ### Combining `tgraph` objects
 
 Given
-:	- a working set of `tgraph`s $G_w = \{(g_i, w_i)\}$
+:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
 	- a tag $t$
 Return
-:	- a set of mapping targets $\{(g, w)\}$ (which can be a tag or tgraph) and
-	  their weights; the source of each mapping being $t$.
+:	- a map $\{(x_i, w_i)\}$ of `tgraph` mapping targets (ie. a tag or tgraph)
+	  and their weights; the source of each mapping is implicitly $t$.
 
 ### Determining `tgraph` traversal order
 
 Given
-:	- a working set of `tgraph`s $G_w = \{(g_i, w_i)\}$
-	- a partial spanning tree $T_w$ rooted at $t_0$
+:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
+	- a working tree $T_w$ of tags
 Return
-:	- an ordered list of tags $\{t_i\}$ to add to the tree
+:	- an ordered list $[(t_i \in T_w, x_i, w_i)]$ of `tgraph` mappings to add
+	  to the tree
 
 If the first element can be added to the tree immediately, we do so, and call
 the method recursively, ignoring the other elements returned. In the other case
@@ -376,8 +380,8 @@ the same principle to $t_1$, etc...
 ### Weight of a `tgraph` not in the working set
 
 Given
-:	- a working set of `tgraph`s $G_w = \{(g_i, w_i)\}$
-	- a new `tgraph` $g_n$ not in the working set
+:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
+	- a new `tgraph` $g_n \notin dom(G_w)$
 Return
 :	- a weight $w_n$ to assign to $g_n$
 
@@ -394,7 +398,7 @@ working `index` set, $H_w[t]$, and its queried `index` set, $H_c[t] \subseteq
 H_w[t]$. For each index $h \in H_c[t]$, we also keep track of the results that
 the query $(h, t)$ returned, as $R_c[t][h]$.
 
-Define $Q(T_w, H_w) = \{(h,t): t \in T_w, h \in H_w[t]\}$, the set of all
+Define $Q_p(T_w, H_w) = \{(h,t): t \in T_w, h \in H_w[t]\}$, the set of all
 possible queries to be made.
 
 Initially, $T_w$ contains only our original search term $t_0$, and we let
@@ -404,7 +408,7 @@ In the background, $T_w$ will be continually having new tags added to it, by
 the [meta-routing]() algorithms. When a new tag is added, we need to detect
 this, and initialise its working index set with a copy of its parent's.
 
-Meanwhile, we perform the queries in $Q(T_w, H_w)$, in some appropriate order.
+Meanwhile, we perform the queries in $Q_p(T_w, H_w)$ in some appropriate order.
 Multiple queries can be performed in parallel; this should not affect the final
 output (including ranking of results, etc), for a given final tracking state
 $(T_w, H_w, H_c, R_c)$.
@@ -424,12 +428,12 @@ from the paused state, resources permitting.
 ### Determining `index` query order
 
 Given
-:	- a working tree of tags $T_w$
-	- a map of each $t \in T_w$ to its $H_w[t]$
-	- a map of each $t \in T_w$ to its $H_c[t]$
+:	- a working tree $T_w$ of tags
+	- a map $H_w$ of each $t \in T_w$ to its "working `index`" set
+	- a map $H_c$ of each $t \in T_w$ to its "queried `index`" set
 Return
-:	- an ordered list of queries $[(h_i, t_i)] \subseteq Q(T_w, H_w) \setminus
-	  Q(T_w, H_c)$ to perform
+:	- an ordered list $[(h_i, t_i)] \subseteq Q_p(T_w, H_w) \setminus Q_p(T_w,
+	  H_c)$ of queries to perform
 
 Tags further away from the root are less "related" to the original query, but
 searches for them are more likely to succeed (for rare searches), so the
@@ -443,11 +447,10 @@ MORE same principle about concurrency as mentioned before about tag/tgraphs.
 ### Combining results from different queries
 
 Given
-:	- a working tree of tags $T_w$
-	- a map of each $t \in T_w$ to its $H_w[t]$
-	- a map of each $t \in T_w$ to its $H_c[t]$
-	- a map of each "queried `index`" $h \in H_c[t]$ to its results set
-	  $R_c[t][h]$
+:	- a working tree $T_w$ of tags
+	- a map $H_w$ of each $t \in T_w$ to its "working `index`" set
+	- a map $H_c$ of each $t \in T_w$ to its "queried `index`" set
+	- a map $R_c$ of each $t \in T_w$ to (a map of each "queried `index`" $h \in H_c[t]$ to its results set)
 Return
 :	- a results map $R = \{(d_i, w_i)\}$ from documents to their weights
 
