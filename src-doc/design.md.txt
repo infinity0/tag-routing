@@ -48,7 +48,7 @@ other.
 - social plane - see the `ptable` section
 
 
-# Design assumptions
+# Assumptions
 
 ## Underlying storage network
 
@@ -87,10 +87,11 @@ our abstract higher-level functions into lower-level ones.
 The implementation of these will depend on which storage network we happen to
 be using at the time, and should be fairly straightforward.
 
+# Specifications
 
-# Data structures
+## Data structures
 
-## `index`
+### `index`
 
 DIAG
 
@@ -111,7 +112,7 @@ The network formed by the links between indexes is conceptually analogous to
 the network of routing tables existent in most typical navigable networks, and
 so we'll call it the "routing plane".
 
-## `tgraph`
+### `tgraph`
 
 DIAG
 
@@ -144,12 +145,12 @@ still need to start at the root servers.
 The network formed by the links between tgraphs can be used to generate schemes
 for traversing the routing data, and so we'll call it the "meta-routing plane".
 
-## `ptable`
+### `ptable`
 
 DIAG
 
 Structure
-:	$p_z \subseteq G \cup H$
+:	$p_z \subseteq G \cup H \to W$
 Description
 :	A set of pointers^[Each pointer can also be thought of as a mapping whose
 	source is implicitly $z$] to `tgraph` and `index` objects, associated with
@@ -165,7 +166,7 @@ MORE
 
 TODO Define "identity" and "identity score" (in [0,1], own score is 1, etc)
 
-## Pointer weights
+### Pointer weights
 
 Structure
 :	$w \in W = [0,1]$
@@ -210,7 +211,204 @@ weights to pointers. This would reduce the problem of human inaccuracy, as well
 as laziness: it's tedious to manually estimate a weight for every pointer we
 add to our collections. [OPEN]
 
-### Zero-weight pointers
+## Algorithms
+
+Since network latency is far greater than processing latency, we will design
+these algorithms to be inherently concurrent. Operations involving retrieval
+of remote objects will be non-blocking and allow other work to be done whilst
+waiting for its results.
+
+### Obtaining initial ptables
+
+Assume a given identity is already connected to the social network. MORE
+
+Bootstrapping is an independent issue that applies to all systems whose core
+functionality depends on a social network. Luckily such systems are already
+widely deployed on the www; new networks can bootstrap themselves by extracting
+social data from existing networks in the form of invites, etc. [EXTN]
+
+For our purposes, we need an algorithm which takes our own identity as input,
+and outputs a set of identities to seed our routing algorithm with, possibly
+with a weight associated with each identity.
+
+Given
+:	- our own identity
+Return
+:	- a set of seed identities, with corresponding scores
+
+A basic implementation of this would be to return all nodes up to 2 hops away
+from our own node. This would grab a decent number of nodes whilst offering
+a basic level of protection against the most common and simple attacks.
+
+Inferring attackers based on the link-structure of a social network is a whole
+topic in itself; more advanced algorithms exist that can detect and avoid more
+sophisticated attacks. The important thing here is that this component of our
+system is indepedent of the rest, and can always be upgraded to a more advanced
+scheme, including future ones not yet invented.
+
+### Combining multiple `ptable` objects
+
+Given
+:	- a map $P_s = \{(p_i, w_i)\}$ of `ptable`s to their identity scores
+Return
+:	- a `ptable` $p$ that "combines" this information, with $dom(p) = \bigcup
+	  dom(p_i)$.
+
+Define $G_s = dom(p) \cap G$ and $H_s = dom(p) \cap H$. (Note that $G + H =
+dom(p)$).
+
+### Meta-routing
+
+We want to construct a routing scheme from the `tgraph` plane, which will be
+relative to some given root tag $t_0$. Since `tgraph` data is distributed
+across many objects, we need various methods of combining these into a single
+tree of tags.
+
+We start from our seed `tgraph` set $G_s$. If $t_0$ does not appear in $G_s$,
+we are screwed, and need to ask the user to supply a bunch of related tags.
+This should not be a significant problem; people usually "have an idea" of what
+they are looking for.
+
+MORE
+
+#### Combining `tgraph` objects
+
+Given
+:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
+	- a tag $t$
+Return
+:	- a map $\{(x_i, w_i)\}$ of `tgraph` mapping targets (ie. a tag or tgraph)
+	  and their weights; the source of each mapping is implicitly $t$.
+
+#### Determining `tgraph` traversal order
+
+Given
+:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
+	- a working tree $T_w$ of tags
+Return
+:	- an ordered list $[(t_i \in T_w, x_i, w_i)]$ of `tgraph` mappings to add
+	  to the tree
+
+If the first element can be added to the tree immediately, we do so, and call
+the method recursively, ignoring the other elements returned. In the other case
+(`tgraph`) we need to wait for the object to be retrieved from the network; in
+the meantime we can go through the list and add the other elements, applying
+the same principle to $t_1$, etc...
+
+#### Weight of a `tgraph` not in the working set
+
+Given
+:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
+	- a new `tgraph` $g_n \notin dom(G_w)$
+Return
+:	- a weight $w_n$ to assign to $g_n$
+
+MORE note the two different semantic meanings for pointer weights being used
+here (relevancy vs reliability) TODO explore this and its potential pitfalls
+
+### Routing
+
+DIAG
+
+The data structure we use to keep track of routing progress is a working
+(mutable) tree of tags, $T_w$. For each tag $t \in T_w$, we keep track of its
+working `index` set, $H_w[t]$, and its queried `index` set, $H_c[t] \subseteq
+H_w[t]$. For each index $h \in H_c[t]$, we also keep track of the results that
+the query $(h, t)$ returned, as $R_c[t][h]$.
+
+Define $Q_p(T_w, H_w) = \{(h,t): t \in T_w, h \in H_w[t]\}$, the set of all
+possible queries to be made.
+
+Initially, $T_w$ contains only our original search term $t_0$, and we let
+$H_w[t_0] = H_s$, our [seed set](#combining-multiple-ptable-objects)).
+
+In the background, $T_w$ will be continually having new tags added to it, by
+the [meta-routing]() algorithms. When a new tag is added, we need to detect
+this, and initialise its working index set with a copy of its parent's.
+
+Meanwhile, we perform the queries in $Q_p(T_w, H_w)$ in some appropriate order.
+Multiple queries can be performed in parallel; this should not affect the final
+output (including ranking of results, etc), for a given final tracking state
+$(T_w, H_w, H_c, R_c)$.
+
+When a query $(h, t)$ completes, we update $H_c[t]$ and $R_c[t][h]$ accordingly.
+If the result set contains any new index pointers, these may contain additional
+entries for $t$ and terms related to it. In this case, we add such queries to
+our queue, by adding $h'$ to the working set of $t$, and that of all its
+ancestors and descendents too.
+
+This algorithm has no natural logical termination condition; the queries can
+theoretically proceed indefinitely until the entire network has been searched.
+In practice, we would automatically pause the search after a given number of
+results have been returned, and probably give the user the option to resume
+from the paused state, resources permitting.
+
+#### Determining `index` query order
+
+Given
+:	- a working tree $T_w$ of tags
+	- a map $H_w$ of each $t \in T_w$ to its "working `index`" set
+	- a map $H_c$ of each $t \in T_w$ to its "queried `index`" set
+Return
+:	- an ordered list $[(h_i, t_i)] \subseteq Q_p(T_w, H_w) \setminus Q_p(T_w,
+	  H_c)$ of queries to perform
+
+Tags further away from the root are less "related" to the original query, but
+searches for them are more likely to succeed (for rare searches), so the
+algorithm should proceed by searching near the root, then further up the tree.
+
+MORE same principle about concurrency as mentioned before about tag/tgraphs.
+
+
+### Ranking
+
+#### Combining results from different queries
+
+Given
+:	- a working tree $T_w$ of tags
+	- a map $H_w$ of each $t \in T_w$ to its "working `index`" set
+	- a map $H_c$ of each $t \in T_w$ to its "queried `index`" set
+	- a map $R_c$ of each $t \in T_w$ to (a map of each "queried `index`" $h \in H_c[t]$ to its results set)
+Return
+:	- a results map $R = \{(d_i, w_i)\}$ from documents to their weights
+
+
+
+
+
+## Optimisations
+
+### Querying an `index` or `tgraph` for presence of a source tag
+
+Bloom filters
+
+### Querying an `index` or `tgraph` for weight of an external target
+
+...
+
+
+## UI
+
+### Components
+
+### Behaviour
+
+
+# Rationale and issues
+
+## Initial requirements
+
+## Identity-object pointers
+
+vs. all-data-in-identity and identity-identity pointers
+
+## Object-object pointers vs identity-object pointers
+
+to decrease the number of identity-object pointers
+
+## Mutable-object pointers vs immutable-object pointers
+
+## Zero-weight pointers
 
 The current design can only represent the presence of a semantic relationship,
 and not its absence. This is a problem: any distributed system has to be able
@@ -270,7 +468,7 @@ won't provide significantly enough benefit to justify the additional complexity
 - the social network should mitigate most serious attempts to abuse the system.
 MORE
 
-### Negative-weight pointers
+## Negative-weight pointers
 
 A related issue is negative-weight pointers, which would represent a judgement
 that the target is malicious (in some sense), rather than neutral or "useless".
@@ -296,203 +494,6 @@ These would be relevant if our routing system is adapted into a form where one
   the introduction of negative weights makes no difference.)
 - MORE
 
-
-# Algorithms
-
-Since network latency is far greater than processing latency, we will design
-these algorithms to be inherently concurrent. Operations involving retrieval
-of remote objects will be non-blocking and allow other work to be done whilst
-waiting for its results.
-
-## Obtaining initial ptables
-
-Assume a given identity is already connected to the social network. MORE
-
-Bootstrapping is an independent issue that applies to all systems whose core
-functionality depends on a social network. Luckily such systems are already
-widely deployed on the www; new networks can bootstrap themselves by extracting
-social data from existing networks in the form of invites, etc. [EXTN]
-
-For our purposes, we need an algorithm which takes our own identity as input,
-and outputs a set of identities to seed our routing algorithm with, possibly
-with a weight associated with each identity.
-
-Given
-:	- our own identity
-Return
-:	- a set of seed identities, with corresponding scores
-
-A basic implementation of this would be to return all nodes up to 2 hops away
-from our own node. This would grab a decent number of nodes whilst offering
-a basic level of protection against the most common and simple attacks.
-
-Inferring attackers based on the link-structure of a social network is a whole
-topic in itself; more advanced algorithms exist that can detect and avoid more
-sophisticated attacks. The important thing here is that this component of our
-system is indepedent of the rest, and can always be upgraded to a more advanced
-scheme, including future ones not yet invented.
-
-## Combining multiple `ptable` objects
-
-Given
-:	- a map $P_s = \{(p_i, w_i)\}$ of `ptable`s to their identity scores
-Return
-:	- a `ptable` $p$ that "combines" this information, with $dom(p) = \bigcup
-	  dom(p_i)$.
-
-Define $G_s = dom(p) \cap G$ and $H_s = dom(p) \cap H$. (Note that $G + H =
-dom(p)$).
-
-## Meta-routing
-
-We want to construct a routing scheme from the `tgraph` plane, which will be
-relative to some given root tag $t_0$. Since `tgraph` data is distributed
-across many objects, we need various methods of combining these into a single
-tree of tags.
-
-We start from our seed `tgraph` set $G_s$. If $t_0$ does not appear in $G_s$,
-we are screwed, and need to ask the user to supply a bunch of related tags.
-This should not be a significant problem; people usually "have an idea" of what
-they are looking for.
-
-MORE
-
-### Combining `tgraph` objects
-
-Given
-:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
-	- a tag $t$
-Return
-:	- a map $\{(x_i, w_i)\}$ of `tgraph` mapping targets (ie. a tag or tgraph)
-	  and their weights; the source of each mapping is implicitly $t$.
-
-### Determining `tgraph` traversal order
-
-Given
-:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
-	- a working tree $T_w$ of tags
-Return
-:	- an ordered list $[(t_i \in T_w, x_i, w_i)]$ of `tgraph` mappings to add
-	  to the tree
-
-If the first element can be added to the tree immediately, we do so, and call
-the method recursively, ignoring the other elements returned. In the other case
-(`tgraph`) we need to wait for the object to be retrieved from the network; in
-the meantime we can go through the list and add the other elements, applying
-the same principle to $t_1$, etc...
-
-### Weight of a `tgraph` not in the working set
-
-Given
-:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
-	- a new `tgraph` $g_n \notin dom(G_w)$
-Return
-:	- a weight $w_n$ to assign to $g_n$
-
-MORE note the two different semantic meanings for pointer weights being used
-here (relevancy vs reliability) TODO explore this and its potential pitfalls
-
-## Routing
-
-DIAG
-
-The data structure we use to keep track of routing progress is a working
-(mutable) tree of tags, $T_w$. For each tag $t \in T_w$, we keep track of its
-working `index` set, $H_w[t]$, and its queried `index` set, $H_c[t] \subseteq
-H_w[t]$. For each index $h \in H_c[t]$, we also keep track of the results that
-the query $(h, t)$ returned, as $R_c[t][h]$.
-
-Define $Q_p(T_w, H_w) = \{(h,t): t \in T_w, h \in H_w[t]\}$, the set of all
-possible queries to be made.
-
-Initially, $T_w$ contains only our original search term $t_0$, and we let
-$H_w[t_0] = H_s$, our [seed set](#combining-multiple-ptable-objects)).
-
-In the background, $T_w$ will be continually having new tags added to it, by
-the [meta-routing]() algorithms. When a new tag is added, we need to detect
-this, and initialise its working index set with a copy of its parent's.
-
-Meanwhile, we perform the queries in $Q_p(T_w, H_w)$ in some appropriate order.
-Multiple queries can be performed in parallel; this should not affect the final
-output (including ranking of results, etc), for a given final tracking state
-$(T_w, H_w, H_c, R_c)$.
-
-When a query $(h, t)$ completes, we update $H_c[t]$ and $R_c[t][h]$ accordingly.
-If the result set contains any new index pointers, these may contain additional
-entries for $t$ and terms related to it. In this case, we add such queries to
-our queue, by adding $h'$ to the working set of $t$, and that of all its
-ancestors and descendents too.
-
-This algorithm has no natural logical termination condition; the queries can
-theoretically proceed indefinitely until the entire network has been searched.
-In practice, we would automatically pause the search after a given number of
-results have been returned, and probably give the user the option to resume
-from the paused state, resources permitting.
-
-### Determining `index` query order
-
-Given
-:	- a working tree $T_w$ of tags
-	- a map $H_w$ of each $t \in T_w$ to its "working `index`" set
-	- a map $H_c$ of each $t \in T_w$ to its "queried `index`" set
-Return
-:	- an ordered list $[(h_i, t_i)] \subseteq Q_p(T_w, H_w) \setminus Q_p(T_w,
-	  H_c)$ of queries to perform
-
-Tags further away from the root are less "related" to the original query, but
-searches for them are more likely to succeed (for rare searches), so the
-algorithm should proceed by searching near the root, then further up the tree.
-
-MORE same principle about concurrency as mentioned before about tag/tgraphs.
-
-
-## Ranking
-
-### Combining results from different queries
-
-Given
-:	- a working tree $T_w$ of tags
-	- a map $H_w$ of each $t \in T_w$ to its "working `index`" set
-	- a map $H_c$ of each $t \in T_w$ to its "queried `index`" set
-	- a map $R_c$ of each $t \in T_w$ to (a map of each "queried `index`" $h \in H_c[t]$ to its results set)
-Return
-:	- a results map $R = \{(d_i, w_i)\}$ from documents to their weights
-
-
-
-
-
-# Optimisations
-
-## Querying an `index` or `tgraph` for presence of a source tag
-
-Bloom filters
-
-## Querying an `index` or `tgraph` for weight of an external target
-
-...
-
-
-# UI
-
-## Components
-
-## Behaviour
-
-
-# Design rationale and issues
-
-## Initial requirements
-
-## Identity-object pointers
-
-vs. all-data-in-identity and identity-identity pointers
-
-## Object-object pointers vs identity-object pointers
-
-to decrease the number of identity-object pointers
-
-## Mutable-object pointers vs immutable-object pointers
 
 
 
