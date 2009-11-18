@@ -19,6 +19,8 @@ types; capitalised symbols refer to the set of all objects of the given type.
 - $p$ - `ptable`
 - $d$ - document
 - $t$ - tag
+- $z$ - identity
+- $w$ - weight or identity score
 
 ## TODO and related tags
 
@@ -92,7 +94,10 @@ be using at the time, and should be fairly straightforward.
 
 DIAG
 
-Maps tags to documents and other indexes.
+Structure
+:	$h \subseteq (T \times D \cup H) \to W$
+Description
+:	Maps tags to documents and other indexes.
 
 This data structure contains information on how to satisfy a search request. It
 contains mappings from tags to target documents, or to another index to forward
@@ -110,7 +115,10 @@ so we'll call it the "routing plane".
 
 DIAG
 
-Maps tags to other tags and other tgraphs.
+Structure
+:	$g \subseteq (T \times T \cup G) \to W$
+Description
+:	Maps tags to other tags and other tgraphs.
 
 This data structure contains information on how to traverse the routing
 network. It contains mappings from tags to other tags, or to another tgraph
@@ -140,9 +148,12 @@ for traversing the routing data, and so we'll call it the "meta-routing plane".
 
 DIAG
 
-A collection of pointers to tgraphs and indexes, linked to an identity. (Can
-also be thought of as a mapping whose source is implicitly the identity who
-defines the pointer.)
+Structure
+:	$p_z \subseteq G \cup H$
+Description
+:	A set of pointers^[Each pointer can also be thought of as a mapping whose
+	source is implicitly $z$] to `tgraph` and `index` objects, associated with
+	a given identity $z$.
 
 This data structure allows an identity to declare a personal list of preferred
 indexes and tgraphs to use for routing purposes.
@@ -154,33 +165,26 @@ MORE
 
 TODO Define "identity" and "identity score" (in [0,1], own score is 1, etc)
 
-# Pointer weights
+## Pointer weights
 
-Each pointer is assigned a weight. These weights can be used to decide:
+Structure
+:	$w \in W = [0,1]$
+Description
+:	Aids comparison and composition of multiple pointers or mappings.
+
+The precise meaning of a pointer's weight is intrinsically linked with what the
+routing and the ranking algorithms do. Specific uses include:
 
 - priority of traversal of the routing and meta-routing networks
 - ranking of query results
 
-A natural way to compose two weights is multiplication, which gives rise to
-the restriction that all weights must be in the interval [0,1].
+Probability-based semantics seem quite robust and reliable, since these are
+objective properties and can (in theory) be estimated algorithmically. It also
+gives rise to a simple way of combining weights (multiplication), as well as a
+simple interval of values [0,1].
 
-There are several types of pointers:
-
-- tag:routing (index) mappings
-- tag:meta-routing (tgraph) mappings
-- id:object (ptable) mappings
-
-The precise meaning of a pointer's weight is intrinsically interdepedent with
-the routing algorithm. Probability-based semantics are likely to be more robust
-and reliable, since these are objective properties and can (in theory) be
-estimated algorithmically. (It also fits well with multiplication and the [0,1]
-interval restriction).
-
-Note that, regardless of their absolute semantic meaning, weights of pointers
-from the same object can be used to calculate the relative preferences of the
-targets, from the point of view of that object.
-
-Some possible candidates are: TODO
+There are several types of pointers; some possible candidates to what they
+should represent are: TODO
 
 - tag:routing mapping
 	- probability that a given mapping will satisfy a user's request
@@ -206,7 +210,7 @@ weights to pointers. This would reduce the problem of human inaccuracy, as well
 as laziness: it's tedious to manually estimate a weight for every pointer we
 add to our collections. [OPEN]
 
-## Zero-weight pointers
+### Zero-weight pointers
 
 The current design can only represent the presence of a semantic relationship,
 and not its absence. This is a problem: any distributed system has to be able
@@ -266,7 +270,7 @@ won't provide significantly enough benefit to justify the additional complexity
 - the social network should mitigate most serious attempts to abuse the system.
 MORE
 
-## Negative-weight pointers
+### Negative-weight pointers
 
 A related issue is negative-weight pointers, which would represent a judgement
 that the target is malicious (in some sense), rather than neutral or "useless".
