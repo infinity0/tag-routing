@@ -271,7 +271,7 @@ sophisticated attacks. The important thing here is that this component of our
 system is indepedent of the rest, and can always be upgraded to a more advanced
 scheme, including future ones not yet invented.
 
-### Combining multiple `ptable` objects
+### Combining `ptable` objects
 
 Given
 :	- a map $P_s = \{(p_i, u_i)\}$ of `ptable`s to their identity scores
@@ -328,10 +328,37 @@ MORE
 
 Given
 :	- a working map $G_w = \{(g_i, u_i)\}$ of `tgraph`s to their weights
-	- a tag $t$
+	- a source tag $t$
 Return
-:	- a map $\{(x_i, w_i)\}$ of `tgraph` mapping targets (ie. a tag or tgraph)
+:	- a map $\{(x_j, w_j)\}$ of `tgraph` mapping targets (ie. a tag or tgraph)
 	  and their weights; the source of each mapping is implicitly $t$.
+
+A basic implementation is just to calculate the `tgraph`-weighted average of
+the weight of the mapping $(t, x_j)$, ie:
+
+$w_j = \bar{\omega} = \frac{\sum_i u_i \omega_i}{\sum_i u_i}$
+
+where $\omega_i$ is the adjusted weight of the mapping $(t, o)$ in $g_i$,
+inferring between a zero-weight pointer and "missing information" (see
+[Zero-weight pointers](zero-weight-pointers)):
+
+$$
+\omega_i = \left\{
+\begin{array}{lll}
+ g_i[t, x_j]         & : \quad & (t, x_j) \in g_i \\
+ \alpha.\bar{\omega} & : \quad & x_j \in dom(g_i) \cup img(g_i) \\
+ \beta.\bar{\omega}  & : \quad & x_j \notin dom(g_i) \cup img(g_i) \\
+\end{array}
+\right.
+$$
+
+where $\alpha$ and $\beta$ is the probability of $(t, x_j) \notin g_i$ being
+due to "missing information", given whether $g_i$ "knows about" $x_j$.
+
+TODO derive the non-recursive form of this.
+
+Obviously, this requires determining realistic values for $\alpha$ and $\beta$.
+TODO
 
 #### Determining `tgraph` traversal order
 
@@ -425,7 +452,8 @@ Given
 :	- a working tree $T_w$ of tags
 	- a map $H_w$ of each $t \in T_w$ to its "working `index`" set
 	- a map $H_c$ of each $t \in T_w$ to its "queried `index`" set
-	- a map $R_c$ of each $t \in T_w$ to (a map of each "queried `index`" $h \in H_c[t]$ to its results set)
+	- a map $R_c$ of each $t \in T_w$ to (a map of each "queried `index`" $h
+	  \in H_c[t]$ to its results set)
 Return
 :	- a results map $R = \{(d_i, w_i)\}$ from documents to their weights
 
@@ -482,17 +510,18 @@ quadratic data growth, which is not scalable.
 
 Instead, we will look at heuristics that attempt to resolve this ambiguity.
 
-For an object consisting of mappings, such as `index` and `tgraph`, we observe
-that tha presence of a mapping (S,T) indicates that the maintainer knows of the
-existence of both S and T, and has enough information to make judgements about
-them ("knows about" S and T). Further, the maintainer has enough information to
-decide whether to include a mapping between *any* source and *any* target that
-it "knows about".
+For an object $O$ consisting of mappings, such as `index` and `tgraph`, we
+observe that the presence of a mapping $(s, t)$ indicates that the maintainer
+knows of the existence of $s$ and $t$, and has enough information to make
+judgements about them.
 
-Conversely, for any given mapping (X,Y) *not* present in the object, if the
-object nevertheless "knows about" both X and Y, then it seems reasonable to
-conclude that the absence of the mapping more likely represents a zero-weight
-pointer (ie. non-relationship), rather than "missing information".
+Define $O$ "knows about" $s$ to mean $s \in dom(O) \cup img(O)$. Since the
+meaning of $(s, t)$ depends only on $s$ and $t$, the maintainer also has enough
+information to decide whether to include mapping between *any* source and *any*
+target that it "knows about". Conversely, for any given mapping $(x, y)$ *not*
+present in $O$, if it "knows about" both $x$ and $y$, then it seems reasonable
+to conclude that the absence of the mapping "probably" represents a zero-weight
+pointer (non-relationship), rather than "missing information".
 
 - For a `tgraph` $g$, we guess that any $(t_1,t_2) \notin g$, with $t_1, t_2
   \in dom(g) \cup img(g)$, is "probably" a zero-weight pointer and not "missing
