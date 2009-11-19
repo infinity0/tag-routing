@@ -217,14 +217,11 @@ should represent are: TODO
 
 - tag:routing mapping
 	- probability that a given mapping will satisfy a user's request
-	- TODO
 - tag:meta-routing mapping
 	- probability that a search for the target tag will return results for the
 	  source tag
-	- TODO
 - id:object mapping
 	- probability that a ***
-	- TODO
 
 These weights allow algorithms to achieve a finer level of preference-choosing
 than would otherwise be possible. However, care must be taken not to depend on
@@ -277,13 +274,41 @@ scheme, including future ones not yet invented.
 ### Combining multiple `ptable` objects
 
 Given
-:	- a map $P_s = \{(p_i, w_i)\}$ of `ptable`s to their identity scores
+:	- a map $P_s = \{(p_i, u_i)\}$ of `ptable`s to their identity scores
 Return
 :	- a `ptable` $p$ that "combines" this information, with $dom(p) = \bigcup
 	  dom(p_i)$.
 
 Define $G_s = dom(p) \cap G$ and $H_s = dom(p) \cap H$. (Note that $G + H =
 dom(p)$).
+
+A basic implementation is just to calculate the score-weighted average of the
+weight of each pointer target, ie:
+
+$p[o] = \bar{\omega} = \frac{\sum_i u_i \omega_i}{\sum_i u_i}$
+
+where $\omega_i$ is the adjusted weight of a pointer to $o$ in $p_i$, inferring
+between a zero-weight pointer and "missing information" (see [Zero-weight
+pointers](zero-weight-pointers)):
+
+$$
+\omega_i = \left\{
+\begin{array}{lll}
+ w_i = p_i[o]        & : \quad & o \in p_i \\
+ \alpha.\bar{\omega} & : \quad & o \notin p_i \\
+\end{array}
+\right.
+$$
+
+where $\alpha$ is the probability of $o \notin p_i$ being due to "missing
+information".
+
+TODO derive the non-recursive form of this.
+
+Obviously, this requires determining realistic values for $\alpha$. TODO. For
+now, I will take $\alpha = 0.5$, for basically no reason.^[Intuitively, for any
+given target, $P(like)$ and $P(know)$ are low but slightly correlated, so
+$P(\neg like \wedge \neg know)$ is high, but not that high.]
 
 ### Meta-routing
 
@@ -302,7 +327,7 @@ MORE
 #### Combining `tgraph` objects
 
 Given
-:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
+:	- a working map $G_w = \{(g_i, u_i)\}$ of `tgraph`s to their weights
 	- a tag $t$
 Return
 :	- a map $\{(x_i, w_i)\}$ of `tgraph` mapping targets (ie. a tag or tgraph)
@@ -316,6 +341,10 @@ Given
 Return
 :	- an ordered list $[(t_i \in T_w, x_i, w_i)]$ of `tgraph` mappings to add
 	  to the tree
+
+A basic implementation can simply return the "nearest" node to the root not
+already in the tree, where "distance" of a path is defined as the negative log
+of the product of its arc weights. MORE
 
 If the first element can be added to the tree immediately, we do so, and call
 the method recursively, ignoring the other elements returned. In the other case
