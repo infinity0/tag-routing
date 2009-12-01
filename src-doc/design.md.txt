@@ -3,9 +3,10 @@
 ## Terminology
 
 - identity - a user / node on the social network
-- tag - a semantic phrase used for describing objects
-- object - depending on context this will either mean generic storage object,
-  or "indexes and tgraphs"
+- document - a storage object that can be the target of a query. (This could
+  include multimedia or software; we'll refer to all of these as "document" for
+  simplicity.)
+- tag - a phrase that can be semantically attached to a storage object
 - pointer - an indirection to some external resource
 - mapping - a pointer that also has a "source" as well as a target
 
@@ -22,13 +23,17 @@ types; capitalised symbols refer to the set of all objects of the given type.
 - $z$ - identity
 - $w$ - weight or identity score
 
+## Notation
+
+- $f \subseteq X \to Y$ - $f$ is a partial function from set $X$ to set $Y$
+
 ## TODO and related tags
 
-- `DIAG`: draw diagrams for the given concept being discussion
+- `DIAG`: draw appropriate diagram here
 - `TODO`: open issue; resolve or explain why we leave it open
 - `MORE`: expand
-- `OPEN`: point intentionally left open for future research.
-- `EXTN`: external issue for which research / infrastructure already exists
+- `EXTN`: a pointer to an external research topic, either potential or existing
+- `REF`: add references for
 
 
 # Overview
@@ -39,6 +44,9 @@ parties.
 Most of the routing power of the system is delegated to the underlying social
 network and the innate information-retrieval heuristics we have as humans,
 rather than being inherently built into the system.
+
+How the properties of the system (performance, scalability, robustness) change
+with the structure of the network forms the basis of the [analysis](#analysis).
 
 The system has three main networks / planes of information that link to each
 other.
@@ -91,9 +99,10 @@ The network is modelled as a directed weighted graph; arcs represent a degree
 of trust by the source node in the target node, and arc weights are restricted
 to the interval $[0,1]$.
 
-This models the most general type of social network. Many social networking
-websites only recognise mutual friendship; this can be modelled by having all
-weights constant and having all arcs have a reverse-direction counterpart.
+This model is sufficiently general for our purposes. Many social networking
+websites only recognise mutual friendship; this is a degenerate form of the
+model, where all weights are constant and all arcs have a reverse-direction
+counterpart.
 
 The meta-routing and routing planes also form what is essentially a social
 network. However, its pointers carry semantic information (each mapping has a
@@ -103,6 +112,8 @@ independent of our system. To highlight this difference, we refer to a node on
 the social network as an "identity", and arc weights as "identity scores".
 
 MORE talk about churn, virtual social networks (WoT on Freenet's SSK), etc
+
+MORE proxy services
 
 An adaptor interface for this lower-level abstraction:
 
@@ -147,9 +158,7 @@ an extra plane to provide it.
 
 Conceptually, a tag can be thought of as a pure name (ie. the name conveys no
 information about the location of the target), and IP addresses as the exact
-opposite. DNS names are somewhere in between - a name like "www.example.com"
-provides some information on its location (ie. the subdomain hierarchy), but we
-still need to start at the root servers.
+opposite. [REF]
 
 The network formed by the links between tgraphs can be used to generate schemes
 for traversing the routing data, and so we'll call it the "meta-routing plane".
@@ -234,7 +243,7 @@ objects, since each publisher can only calculate weights from their subjective
 The best practical solution would be to install an automatic way of assigning
 weights to pointers. This would reduce the problem of human inaccuracy, as well
 as laziness: it's tedious to manually estimate a weight for every pointer we
-add to our collections. [OPEN]
+add to our collections. [EXTN]
 
 ## Algorithms
 
@@ -242,6 +251,10 @@ Since network latency is far greater than processing latency, we will design
 these algorithms to be inherently concurrent. Operations involving retrieval
 of remote objects will be non-blocking and allow other work to be done whilst
 waiting for its results.
+
+The entire system is constructed from various components, detailed below. Most
+of them are interesting problems in themselves from a wide range of topics; as
+research advances, each component can be upgraded independently.
 
 ### Obtaining initial ptables
 
@@ -263,13 +276,14 @@ Return
 
 A basic implementation of this would be to return all nodes up to 2 hops away
 from our own node. This would grab a decent number of nodes whilst offering
-a basic level of protection against the most common and simple attacks.
+a basic level of protection against the most common and simple attacks. A
+variation would be to filter out the 2-hop nodes that share very few mutual
+1-hop friends with us (by some standard); this would be slightly harder to
+attack.
 
-Inferring attackers based on the link-structure of a social network is a whole
-topic in itself; more advanced algorithms exist that can detect and avoid more
-sophisticated attacks. The important thing here is that this component of our
-system is indepedent of the rest, and can always be upgraded to a more advanced
-scheme, including future ones not yet invented.
+Inferring attacks from the link structure of a social network is outside the
+scope of this project. More advanced algorithms exist; a real implementation of
+this system would be able to use the latest available techniques. [REF][EXTN]
 
 ### Combining `ptable` objects
 
@@ -282,8 +296,9 @@ Return
 Define $G_s = dom(p) \cap G$ and $H_s = dom(p) \cap H$. (Note that $G + H =
 dom(p)$).
 
-A basic implementation is just to calculate the score-weighted average of the
-weight of each pointer target, ie:
+A basic implementation is just to calculate the score-weighted average^[These
+weights are [limited in range](#pointer-weights), and so should be resistant to
+average-manipulation attacks] of the weight of each pointer target, ie:
 
 $p[o] = \bar{\omega} = \frac{\sum_i u_i \omega_i}{\sum_i u_i}$
 
@@ -305,10 +320,16 @@ information".
 
 TODO derive the non-recursive form of this.
 
-Obviously, this requires determining realistic values for $\alpha$. TODO. For
-now, I will take $\alpha = 0.5$, for basically no reason.^[Intuitively, for any
+Here we need to determine realistic values for $\alpha$. There are various
+possible ways of doing this, typically by using training data collected from a
+real network. More advanced techniques include collecting data directly from
+the active network to adjust the values dynamically; this has the advantage
+that the training data is more relevant to the trainee. [EXTN]
+
+Such methods are likely to be quite complex, so to keep things simple for this
+project, we use a constant estimate of $\alpha = 0.5$.^[Intuitively, for any
 given target, $P(like)$ and $P(know)$ are low but slightly correlated, so
-$P(\neg like \wedge \neg know)$ is high, but not that high.]
+$P(\neg like \wedge \neg know)$ is high, but not very high.]
 
 ### Meta-routing
 
@@ -318,9 +339,13 @@ across many objects, we need various methods of combining these into a single
 tree of tags.
 
 We start from our seed `tgraph` set $G_s$. If $t_0$ does not appear in $G_s$,
-we are screwed, and need to ask the user to supply a bunch of related tags.
-This should not be a significant problem; people usually "have an idea" of what
-they are looking for.
+we have a few backup options:
+
+- ask the user to supply some related tags. This should not be a significant
+  problem; people usually "have an idea" of what they are looking for.
+- ask more nodes in the social graph for their `ptable`s. This can be done
+  automatically, which makes things more convenient for a user. However, it
+  increases the risk of an attack through the social network.
 
 MORE
 
@@ -346,8 +371,8 @@ $$
 \omega_i = \left\{
 \begin{array}{lll}
  g_i[t, x_j]         & : \quad & (t, x_j) \in g_i \\
- \alpha.\bar{\omega} & : \quad & x_j \in dom(g_i) \cup img(g_i) \\
- \beta.\bar{\omega}  & : \quad & x_j \notin dom(g_i) \cup img(g_i) \\
+ \alpha.\bar{\omega} & : \quad & (t, x_j) \notin g_i \wedge x_j \in dom(g_i) \cup img(g_i) \\
+ \beta.\bar{\omega}  & : \quad & (t, x_j) \notin g_i \wedge x_j \notin dom(g_i) \cup img(g_i) \\
 \end{array}
 \right.
 $$
@@ -357,8 +382,13 @@ due to "missing information", given whether $g_i$ "knows about" $x_j$.
 
 TODO derive the non-recursive form of this.
 
-Obviously, this requires determining realistic values for $\alpha$ and $\beta$.
-TODO
+This is essentially the same algorithm that we use to [combine
+`ptable`s](#combining-ptable-objects), with additional tweaks to take advantage
+of the additional tag information present here.
+
+Like the other algorithm, we need to determine realistic values for $\alpha$
+and $\beta$. The same points apply here, and again for temporary simplicity we
+will pick $\alpha = $ and $\beta = $. TODO
 
 #### Determining `tgraph` traversal order
 
@@ -479,6 +509,19 @@ Bloom filters
 ### Behaviour
 
 
+# Analysis
+
+## Data extraction
+
+## Data generation
+
+### Link structure
+
+### Semantic properties
+
+## Test criteria
+
+
 # Rationale and issues
 
 ## Initial requirements
@@ -579,7 +622,6 @@ These would be relevant if our search system is adapted into a form where one
   vector. (Otherwise, this was already possible with positive-only weights and
   the introduction of negative weights makes no difference.)
 - MORE
-
 
 
 

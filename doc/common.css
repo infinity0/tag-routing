@@ -5,3 +5,7 @@ dt {
 dd ul {
 	padding-left: 0px;
 }
+
+.footnoteRef {
+	font-size: 85%;
+}
