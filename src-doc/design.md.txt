@@ -445,7 +445,7 @@ Bloom filters
 
 # Design
 
-## Initial requirements
+## Objectives
 
 ## Assumptions
 
@@ -594,16 +594,44 @@ These would be relevant if our search system is adapted into a form where one
 
 # Analysis
 
-## Data extraction
+## Data extraction and processing
 
-## Data generation
+last.fm, flickr
 
-### Link structure
+social network - relatively easy
 
-### Semantic properties
+### Transforming a simple graph into a `tgraph`
 
-## Test criteria
+tgraphs arcs have weight and direction
 
+## Generation of test networks
+
+### Inter-object properties
+
+- neighbour count (ie. degree) distribution
+- neighbour type distribution
+
+### Intra-object properties
+
+- semantic unity (how "related" its tags are)
+- semantic specialty (how "general" its tags are)
+
+### Generation algorithms:
+
+- scale-free/small-world network with preferential attachment (Barabási-Albert model)
+- other structures?
+
+
+## Simulation
+
+### Request models
+
+### Network conditions
+
+- perfect conditions
+- random failure
+- malicious attacks
+  - attacks vs most well-connected nodes
 
 
 # Java class definitions
