@@ -56,79 +56,7 @@ other.
 - social plane - see the `ptable` section
 
 
-# Assumptions
-
-## Abstract storage network
-
-Our search system assumes that its data objects are located on some abstract
-lower-level storage network. Data objects can always be retrieved, instead of
-being stored locally with its maintainer, who may be offline. This simplifies
-our design, since it allows us to avoid dealing with the issue of churn by
-delegating it to an independent component. [EXTN]
-
-This also forces us to consider a iterative routing algorithm rather than a
-recursive one, since data objects are "dumb" and cannot respond to dynamic
-queries. Instead, a requestor must retrieve the data, process it themselves,
-then pull in further data, etc.
-
-Any distributed storage network that has a global address scheme (such as a
-binary-key address space) would be suitable, since pointers to objects can be
-represented simply as its address. This includes all Distributed Hash Tables
-(DHTs), as well as more complex cryptokey-based addresses such as Freenet's
-Signed Subspace Keys network.
-
-An adaptor interface for this lower-level abstraction:
-
-~~~{.java}
-	interface NetworkStorageAdapter {
-
-		Index getIndex(ObjectID id);
-
-		TGraph getTGraph(ObjectID id);
-
-	}
-~~~
-
-## Underlying social network
-
-The bootstrap algorithm assumes a abstract lower-level social network where it
-can look for friends to query for pointers onto the meta-routing and routing
-planes.
-
-The network is modelled as a directed weighted graph; arcs represent a degree
-of trust by the source node in the target node, and arc weights are restricted
-to the interval $[0,1]$.
-
-This model is sufficiently general for our purposes. Many social networking
-websites only recognise mutual friendship; this is a degenerate form of the
-model, where all weights are constant and all arcs have a reverse-direction
-counterpart.
-
-The meta-routing and routing planes also form what is essentially a social
-network. However, its pointers carry semantic information (each mapping has a
-source tag) and are intrinsic to our search system; by constrast, the abstract
-social network used for initialisation carries no semantic information and is
-independent of our system. To highlight this difference, we refer to a node on
-the social network as an "identity", and arc weights as "identity scores".
-
-MORE talk about churn, virtual social networks (WoT on Freenet's SSK), etc
-
-MORE proxy services
-
-An adaptor interface for this lower-level abstraction:
-
-~~~{.java}
-	interface SocialNetworkAdapter {
-
-		Map<Identity, IdScore> getFriends(Identity id);
-
-		PTable getPTable(Identity id);
-
-	}
-~~~
-
-
-# Specifications
+# Specification
 
 ## Data structures
 
@@ -509,22 +437,56 @@ Bloom filters
 ### Behaviour
 
 
-# Analysis
-
-## Data extraction
-
-## Data generation
-
-### Link structure
-
-### Semantic properties
-
-## Test criteria
-
-
-# Rationale and issues
+# Design
 
 ## Initial requirements
+
+## Assumptions
+
+### Abstract storage network
+
+Our search system assumes that its data objects are located on some abstract
+lower-level storage network. Data objects can always be retrieved, instead of
+being stored locally with its maintainer, who may be offline. This simplifies
+our design, since it allows us to avoid dealing with the issue of churn by
+delegating it to an independent component. [EXTN]
+
+This also forces us to consider a iterative routing algorithm rather than a
+recursive one, since data objects are "dumb" and cannot respond to dynamic
+queries. Instead, a requestor must retrieve the data, process it themselves,
+then pull in further data, etc.
+
+Any distributed storage network that has a global address scheme (such as a
+binary-key address space) would be suitable, since pointers to objects can be
+represented simply as its address. This includes all Distributed Hash Tables
+(DHTs), as well as more complex cryptokey-based addresses such as Freenet's
+Signed Subspace Keys network.
+
+### Underlying social network
+
+The bootstrap algorithm assumes a abstract lower-level social network where it
+can look for friends to query for pointers onto the meta-routing and routing
+planes.
+
+The network is modelled as a directed weighted graph; arcs represent a degree
+of trust by the source node in the target node, and arc weights are restricted
+to the interval $[0,1]$.
+
+This model is sufficiently general for our purposes. Many social networking
+websites only recognise mutual friendship; this is a degenerate form of the
+model, where all weights are constant and all arcs have a reverse-direction
+counterpart.
+
+The meta-routing and routing planes also form what is essentially a social
+network. However, its pointers carry semantic information (each mapping has a
+source tag) and are intrinsic to our search system; by constrast, the abstract
+social network used for initialisation carries no semantic information and is
+independent of our system. To highlight this difference, we refer to a node on
+the social network as an "identity", and arc weights as "identity scores".
+
+MORE talk about churn, virtual social networks (WoT on Freenet's SSK), etc
+
+MORE proxy services
 
 ## Identity-object pointers
 
@@ -624,11 +586,47 @@ These would be relevant if our search system is adapted into a form where one
 - MORE
 
 
+# Analysis
+
+## Data extraction
+
+## Data generation
+
+### Link structure
+
+### Semantic properties
+
+## Test criteria
+
+
 
 # Java class definitions
 
 Note: I started doing these, then thought I'd leave it for the coding stage;
 Here's what I have so far.
+
+
+~~~{.java}
+	interface NetworkStorageAdapter {
+
+		Index getIndex(ObjectID id);
+
+		TGraph getTGraph(ObjectID id);
+
+	}
+~~~
+
+
+~~~{.java}
+	interface SocialNetworkAdapter {
+
+		Map<Identity, IdScore> getFriends(Identity id);
+
+		PTable getPTable(Identity id);
+
+	}
+~~~
+
 
 ~~~{.java}
 	interface SeedSetGetter {
