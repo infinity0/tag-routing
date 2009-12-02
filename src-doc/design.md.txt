@@ -126,7 +126,7 @@ Description
 This data structure allows an identity to declare a personal list of preferred
 indexes and tgraphs to use for routing purposes.
 
-This is intended to provide an attack-resistant way of "bootstrapping" onto the
+This is intended to provide an attack-resistant "bootstrapping" path onto the
 routing and meta-routing planes.
 
 MORE
@@ -184,14 +184,20 @@ The entire system is constructed from various components, detailed below. Most
 of them are interesting problems in themselves from a wide range of topics; as
 research advances, each component can be upgraded independently.
 
-### Obtaining initial ptables
+### Initialisation
+
+MORE blah blah, why etc
+
+MORE only need to do this one, and then keep track of minor updates etc.
+
+#### Obtaining initial ptables
 
 Assume a given identity is already connected to the social network. MORE
 
-Bootstrapping is an independent issue that applies to all systems whose core
-functionality depends on a social network. Luckily such systems are already
-widely deployed on the www; new networks can bootstrap themselves by extracting
-social data from existing networks in the form of invites, etc. [EXTN]
+Any system whose core functionality depends on a social network needs a method
+of constructing a base network which is large enough. Luckily such systems are
+already widely deployed on the www; new networks can bootstrap themselves by
+extracting social data from existing networks, through invites, etc. [EXTN]
 
 For our purposes, we need an algorithm which takes our own identity as input,
 and outputs a set of identities to seed our routing algorithm with, possibly
@@ -213,7 +219,7 @@ Inferring attacks from the link structure of a social network is outside the
 scope of this project. More advanced algorithms exist; a real implementation of
 this system would be able to use the latest available techniques. [REF][EXTN]
 
-### Combining `ptable` objects
+#### Combining `ptable` objects
 
 Given
 :	- a map $P_s = \{(p_i, u_i)\}$ of `ptable`s to their identity scores
@@ -464,9 +470,9 @@ Signed Subspace Keys network.
 
 ### Underlying social network
 
-The bootstrap algorithm assumes a abstract lower-level social network where it
-can look for friends to query for pointers onto the meta-routing and routing
-planes.
+The initialisation algorithm assumes a abstract lower-level social network
+where it can look for friends to query for pointers onto the meta-routing and
+routing planes.
 
 The network is modelled as a directed weighted graph; arcs represent a degree
 of trust by the source node in the target node, and arc weights are restricted
