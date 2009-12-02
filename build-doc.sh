@@ -18,7 +18,7 @@ done
 
 for i in *.md.txt; do
 	# markdown -x toc -x footnotes "$i" > "../$DOC/${i%.md.txt}.html"
-	pandoc -s --toc --latexmathml -c common.css "$i" > "../$DOC/${i%.md.txt}.html"
+	pandoc -s --toc --latexmathml --smart -c common.css "$i" > "../$DOC/${i%.md.txt}.html"
 done
 
 cd ..

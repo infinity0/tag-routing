@@ -2,30 +2,35 @@
 
 ## Terminology
 
-- identity - a user / node on the social network
-- document - a storage object that can be the target of a query. (This could
+- document -- a storage object that can be the target of a query. (This could
   include multimedia or software; we'll refer to all of these as "document" for
   simplicity.)
-- tag - a phrase that can be semantically attached to a storage object
-- pointer - an indirection to some external resource
-- mapping - a pointer that also has a "source" as well as a target
+- identity -- a user / node on the social network
+- mapping -- a pointer that also has a "source" as well as a target
+- pointer -- an indirection to some external resource
+- semantics -- this term is used in two different senses; hopefully the context
+  should give enough disambiguation
+	- the meaning of tags, wrt. the end-user
+	- the meaning of some concept, wrt. the theory of this system
+- tag -- a phrase that can be semantically attached to a storage object
 
 ## Symbols
 
 With no other context, the following symbols refer to the following object
 types; capitalised symbols refer to the set of all objects of the given type.
 
-- $g$ - `tgraph`
-- $h$ - `index`
-- $p$ - `ptable`
-- $d$ - document
-- $t$ - tag
-- $z$ - identity
-- $w$ - weight or identity score
+- $g$ -- `tgraph`
+- $h$ -- `index`
+- $p$ -- `ptable`
+- $d$ -- document
+- $t$ -- tag
+- $z$ -- identity
+- $w$ -- weight or identity score
 
 ## Notation
 
-- $f \subseteq X \to Y$ - $f$ is a partial function from set $X$ to set $Y$
+- $f \subseteq X \to Y$ -- $f$ is a partial function from set $X$ to set $Y$.
+	- This is non-standard but $f : X \to Y$ is confusing.
 
 ## TODO and related tags
 
