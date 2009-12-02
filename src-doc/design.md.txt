@@ -106,7 +106,7 @@ Description
 :	Maps tags to other tags and other tgraphs, each mapping having a weight.
 Possible semantics TODO
 :	- probability that a search for the target tag will return results for the
-	  source tag
+	  source tag (see [`tgraph` semantics](#tgraph-semantics))
 
 This data structure contains information on how to traverse the routing
 network. It contains mappings from tags to other tags, or to another tgraph
@@ -338,6 +338,9 @@ A basic implementation can simply return the "nearest" node to the root not
 already in the tree, where "distance" of a path is defined as the negative log
 of the product of its arc weights. MORE
 
+TODO this has the potential to be very shit. needs more work. see [`tgraph`
+semantics](#tgraph-semantics)
+
 If the first element can be added to the tree immediately, we do so, and call
 the method recursively, ignoring the other elements returned. In the other case
 (`tgraph`) we need to wait for the object to be retrieved from the network; in
@@ -494,6 +497,24 @@ the social network as an "identity", and arc weights as "identity scores".
 MORE talk about churn, virtual social networks (WoT on Freenet's SSK), etc
 
 MORE proxy services
+
+## `tgraph` semantics
+
+The routing algorithm needs some way of inferring which tags are more "general"
+vs "specific".
+
+A first thought is to have directed arcs represent a relationship from a more
+specific tag to a more general tag. However, this is inadequate since we need
+ways to traverse from general to specific, as well as vice versa; and pointers
+are the only mechanism of doing this *between `tgraph`s*.^[Within a `tgraph`,
+reverse pointers could be calculated quickly depending on the data structure
+used to store the information.]
+
+So, could allow pointers to mean something else, then have some algorithm of
+inferring more/less "general"... TODO (We need to do this anyway on extracted
+tag data from flickr etc since they have no concept of "general")
+
+PageRank?
 
 ## Identity-object pointers
 
