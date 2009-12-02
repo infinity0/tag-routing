@@ -60,6 +60,37 @@ other.
 
 ## Data structures
 
+### Pointer weights
+
+Structure
+:	$w \in W = [0,1]$
+Description
+:	Aids comparison and composition of multiple pointers or mappings.
+
+The precise meaning of a pointer's weight is intrinsically linked with what the
+routing and the ranking algorithms do. Specific uses include:
+
+- priority of traversal of the routing and meta-routing networks
+- ranking of query results
+
+Probability-based semantics seem quite robust and reliable, since these are
+objective properties and can (in theory) be estimated algorithmically. It also
+gives rise to a simple way of combining weights (multiplication), as well as a
+simple interval of values [0,1].
+
+These weights allow algorithms to achieve a finer level of preference-choosing
+than would otherwise be possible. However, care must be taken not to depend on
+the precise values too much, or to treat the data as authoritative: even if
+malicious data can be excluded, and the weights are defined on some objective
+property, there will still be some degree of inconsistency between different
+objects, since each publisher can only calculate weights from their subjective
+(and limited) view of the entire network.
+
+The best practical solution would be to install an automatic way of assigning
+weights to pointers. This would reduce the problem of human inaccuracy, as well
+as laziness: it's tedious to manually estimate a weight for every pointer we
+add to our collections. [EXTN]
+
 ### `tgraph`
 
 DIAG
@@ -68,6 +99,9 @@ Structure
 :	$g \subseteq (T \times T \cup G) \to W$
 Description
 :	Maps tags to other tags and other tgraphs, each mapping having a weight.
+Possible semantics TODO
+:	- probability that a search for the target tag will return results for the
+	  source tag
 
 This data structure contains information on how to traverse the routing
 network. It contains mappings from tags to other tags, or to another tgraph
@@ -99,6 +133,8 @@ Structure
 :	$h \subseteq (T \times D \cup H) \to W$
 Description
 :	Maps tags to documents and other indexes, each mapping having a weight.
+Possible semantics TODO
+:	- probability that a given mapping will satisfy a user's request
 
 This data structure contains information on how to satisfy a search request. It
 contains mappings from tags to target documents, or to another index to forward
@@ -122,6 +158,8 @@ Description
 :	For some given identity $z$, points to `tgraph` and `index` objects, each
 	pointer having a weight.^[Each pointer can also be thought of as a mapping
 	whose source is implicitly $z$]
+Possible semantics TODO
+:	- probability that a ***
 
 This data structure allows an identity to declare a personal list of preferred
 indexes and tgraphs to use for routing purposes.
@@ -130,48 +168,6 @@ This is intended to provide an attack-resistant "bootstrapping" path onto the
 routing and meta-routing planes.
 
 MORE
-
-### Pointer weights
-
-Structure
-:	$w \in W = [0,1]$
-Description
-:	Aids comparison and composition of multiple pointers or mappings.
-
-The precise meaning of a pointer's weight is intrinsically linked with what the
-routing and the ranking algorithms do. Specific uses include:
-
-- priority of traversal of the routing and meta-routing networks
-- ranking of query results
-
-Probability-based semantics seem quite robust and reliable, since these are
-objective properties and can (in theory) be estimated algorithmically. It also
-gives rise to a simple way of combining weights (multiplication), as well as a
-simple interval of values [0,1].
-
-There are several types of pointers; some possible candidates to what they
-should represent are: TODO
-
-- tag:routing mapping
-	- probability that a given mapping will satisfy a user's request
-- tag:meta-routing mapping
-	- probability that a search for the target tag will return results for the
-	  source tag
-- id:object mapping
-	- probability that a ***
-
-These weights allow algorithms to achieve a finer level of preference-choosing
-than would otherwise be possible. However, care must be taken not to depend on
-the precise values too much, or to treat the data as authoritative: even if
-malicious data can be excluded, and the weights are defined on some objective
-property, there will still be some degree of inconsistency between different
-objects, since each publisher can only calculate weights from their subjective
-(and limited) view of the entire network.
-
-The best practical solution would be to install an automatic way of assigning
-weights to pointers. This would reduce the problem of human inaccuracy, as well
-as laziness: it's tedious to manually estimate a weight for every pointer we
-add to our collections. [EXTN]
 
 ## Algorithms
 
