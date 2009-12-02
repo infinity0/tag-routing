@@ -604,23 +604,33 @@ social network - relatively easy
 
 tgraphs arcs have weight and direction
 
-## Generation of test networks
+## Test networks
 
-### Inter-object properties
+### Inter-node properties
 
 - neighbour count (ie. degree) distribution
-- neighbour type distribution
+- neighbour semantic relation distribution
 
-### Intra-object properties
+### Intra-node properties
 
 - semantic unity (how "related" its tags are)
 - semantic specialty (how "general" its tags are)
 
-### Generation algorithms:
+### Generation algorithms
 
-- scale-free/small-world network with preferential attachment (Barabási-Albert model)
+- Use network formed by extracted data ("real world")
+- Barabási-Albert model (preferential attachment)
+  - scale-free
+  - not small-world; according to wikipedia:
+    - clustering coefficient is power-law, similar to hierarchical networks
+    - small-world networks have constant clustering coefficient
+- TODO etc. read up on network theory.
+- hierarchies
 - other structures?
 
+Ideally we want a single algorithm which takes as input, various parameters for
+the properties listed in the previous two sections, and outputs a random graph
+with those properties.
 
 ## Simulation
 
