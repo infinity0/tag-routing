@@ -81,7 +81,10 @@ routing and the ranking algorithms do. Specific uses include:
 Probability-based semantics seem quite robust and reliable, since these are
 objective properties and can (in theory) be estimated algorithmically. It also
 gives rise to a simple way of combining weights (multiplication), as well as a
-simple interval of values [0,1].
+simple interval of values [0,1].^[Theoretically, this allows low-probability
+weights to be defined for any possible mapping. However, the system algorithms
+favour heavy weights over light ones, so the latter should just be omitted,
+since they will never be used.]
 
 These weights allow algorithms to achieve a finer level of preference-choosing
 than would otherwise be possible. However, care must be taken not to depend on
@@ -101,7 +104,7 @@ add to our collections. [EXTN]
 DIAG
 
 Structure
-:	$g \subseteq (T \times T \cup G) \to W$
+:	$g = (V_g \subseteq T \to W, E_g \subseteq T \times T \cup G \to W)$
 Description
 :	Maps tags to other tags and other tgraphs, each mapping having a weight.
 Possible semantics TODO
@@ -500,39 +503,44 @@ MORE proxy services
 
 ## `tgraph` semantics
 
-The routing algorithm needs some way of inferring which tags are more "general"
-vs "specific".
+The routing algorithm needs some way of inferring which tags (out of a related
+set) are more "general" or "specific".
 
 Our first thought was to have arcs represent a relationship from a more
 "specific" tag to a more "general" tag. However, this is problematic since:
 
-- It is not clear how to to quantify the concept of generality.
-- The concept is transitive, but our graph can potentially contain cycles,
-  especially when pulling in data from several sources. We don't want to be
-  tied up devising a complex algorithm to resolve these issues.
+- The relationship is supposed to be transitive, but our graph can potentially
+  contain cycles, especially when pulling in data from several sources. We
+  don't want to be tied up devising a complex algorithm to resolve this.
 - We potentially would like to traverse from general to specific tags, as well
   as vice versa; and pointers are the only mechanism of doing this *between
   `tgraph`s*.^[Within a `tgraph`, reverse pointers could be calculated quickly
   depending on the data structure used to store the information.]
 
-The semantic "probability that a search for X will satisfy a search for Y"
-addresses the above issues. Intuitively, this relationship is usually
-bidirectional but asymmetrical. This fits in with our model of a (potentially
-cyclic) weighted directed graph, and also allows us to traverse between related
-tags in both directions.
+The metric "probability that a query for $t_1$ will satisfy a query for $t_2$"
+addresses the above issues. It is clearly quantifiable; also intuitively, for
+real data it would usually be bidirectional but asymmetrical. This fits in with
+our model of a (potentially cyclic) weighted directed graph, and also allows us
+to traverse between related tags in both directions.
 
-Then, we need some algorithm (PageRank?) of inferring more/less "general"...
-TODO (We need to do this anyway on extracted tag data from flickr etc since
-they have no concept of "general")
+We still need a way of knowing which tags are more/less "general". We can do
+this by designing an algorithm to infer this from the arc weights, or by
+explicitly assigning a weight to each tag (node). The latter is simpler, but
+may have reliability problems since it adds much data to process, and to depend
+upon the correctness of.
 
-Alternatively, have weights for tags (nodes) themselves, which could have the
-semantics of eg:
+The algorithmic approach is much more complex; at the moment I actually have no
+solid ideas on how to proceed; intuitively a PageRank-like approach would work
+best. This topic could be explored elsewhere [EXTN]; for now we will choose the
+simple approach and require that `tgraph` nodes be assigned weights too.
+
+These could semantics of eg: TODO
 
 - fraction of indexes that have definitions for this tag
 - fraction of mappings (in all indexes) with this tag as source?
 - probability a search will return >0 results for the given tag
 
-(Obviously all these values would be estimated.)
+(Obviously, all these values would be estimated.)
 
 ## Identity-object pointers
 
