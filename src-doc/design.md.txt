@@ -106,7 +106,8 @@ DIAG
 Structure
 :	$g = (V_g \subseteq T \to W, E_g \subseteq T \times T \cup G \to W)$
 Description
-:	Maps tags to other tags and other tgraphs, each mapping having a weight.
+:	Maps tags to other tags and other tgraphs, each mapping having a weight,
+	and each tag having a weight.
 Possible semantics TODO
 :	- probability that a search for the target tag will return results for the
 	  source tag (see [`tgraph` semantics](#tgraph-semantics))
@@ -179,9 +180,9 @@ MORE
 
 ## Algorithms
 
-Since network latency is far greater than processing latency, we will design
-these algorithms to be inherently concurrent. Operations involving retrieval
-of remote objects will be non-blocking and allow other work to be done whilst
+Since network latency is far greater than processing latency, we design these
+algorithms to be inherently concurrent. Operations involving retrieval of
+remote objects will be non-blocking and allow other work to be done whilst
 waiting for its results.
 
 The entire system is constructed from various components, detailed below. Most
@@ -326,7 +327,7 @@ of the additional tag information present here.
 
 Like the other algorithm, we need to determine realistic values for $\alpha$
 and $\beta$. The same points apply here, and again for temporary simplicity we
-will pick $\alpha = $ and $\beta = $. TODO
+pick $\alpha = $ and $\beta = $. TODO
 
 #### Determining `tgraph` traversal order
 
@@ -517,7 +518,7 @@ Our first thought was to have arcs represent a relationship from a more
   `tgraph`s*.^[Within a `tgraph`, reverse pointers could be calculated quickly
   depending on the data structure used to store the information.]
 
-The metric "probability that a query for $t_1$ will satisfy a query for $t_2$"
+The metric "probability of a query for $t_trg$ satisfying a query for $t_src$"
 addresses the above issues. It is clearly quantifiable; also intuitively, for
 real data it would usually be bidirectional but asymmetrical. This fits in with
 our model of a (potentially cyclic) weighted directed graph, and also allows us
@@ -527,20 +528,22 @@ We still need a way of knowing which tags are more/less "general". We can do
 this by designing an algorithm to infer this from the arc weights, or by
 explicitly assigning a weight to each tag (node). The latter is simpler, but
 may have reliability problems since it adds much data to process, and to depend
-upon the correctness of.
+on the correctness of.
 
-The algorithmic approach is much more complex; at the moment I actually have no
-solid ideas on how to proceed; intuitively a PageRank-like approach would work
-best. This topic could be explored elsewhere [EXTN]; for now we will choose the
-simple approach and require that `tgraph` nodes be assigned weights too.
+The algorithmic approach is much more complex; at the moment I have no solid
+ideas on how to proceed; intuitively, a PageRank-like approach could work. This
+topic can be explored elsewhere [EXTN]; for now we choose the simple approach
+and require that `tgraph` nodes be assigned weights too.
 
-These could semantics of eg: TODO
+Possible semantics for tag weights could include:
 
 - fraction of indexes that have definitions for this tag
-- fraction of mappings (in all indexes) with this tag as source?
-- probability a search will return >0 results for the given tag
+- fraction of mappings (in all indexes) with this tag as its source
+- probability a search will return a decent (by some standard) amount of
+  results for this tag
 
-(Obviously, all these values would be estimated.)
+The last one is probably the best choice, since the first two are unlikely to
+give values close to 1 for any tag. (TODO revisit?)
 
 ## Identity-object pointers
 
@@ -567,7 +570,7 @@ since this equates to defining *something* (either a relationship or its
 absence) between *all* possible pairs of objects encountered; this results in
 quadratic data growth, which is not scalable.
 
-Instead, we will look at heuristics that attempt to resolve this ambiguity.
+Instead, we look at heuristics that attempt to resolve this ambiguity.
 
 For an object $O$ consisting of mappings, such as `index` and `tgraph`, we
 observe that the presence of a mapping $(s, t)$ indicates that the maintainer
@@ -590,7 +593,7 @@ pointer (non-relationship), rather than "missing information".
   information".
 
 Specific examples of this general principle, as well as applications of it,
-will be explored further in relevant sections of the [Algorithms](#algorithms)
+is explored further in relevant sections of the [Algorithms](#algorithms)
 chapter.
 
 For an object consisting only of source-less pointers, such as `ptable`, there
