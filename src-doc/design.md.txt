@@ -503,18 +503,36 @@ MORE proxy services
 The routing algorithm needs some way of inferring which tags are more "general"
 vs "specific".
 
-A first thought is to have directed arcs represent a relationship from a more
-specific tag to a more general tag. However, this is inadequate since we need
-ways to traverse from general to specific, as well as vice versa; and pointers
-are the only mechanism of doing this *between `tgraph`s*.^[Within a `tgraph`,
-reverse pointers could be calculated quickly depending on the data structure
-used to store the information.]
+Our first thought was to have arcs represent a relationship from a more
+"specific" tag to a more "general" tag. However, this is problematic since:
 
-So, could allow pointers to mean something else, then have some algorithm of
-inferring more/less "general"... TODO (We need to do this anyway on extracted
-tag data from flickr etc since they have no concept of "general")
+- It is not clear how to to quantify the concept of generality.
+- The concept is transitive, but our graph can potentially contain cycles,
+  especially when pulling in data from several sources. We don't want to be
+  tied up devising a complex algorithm to resolve these issues.
+- We potentially would like to traverse from general to specific tags, as well
+  as vice versa; and pointers are the only mechanism of doing this *between
+  `tgraph`s*.^[Within a `tgraph`, reverse pointers could be calculated quickly
+  depending on the data structure used to store the information.]
 
-PageRank?
+The semantic "probability that a search for X will satisfy a search for Y"
+addresses the above issues. Intuitively, this relationship is usually
+bidirectional but asymmetrical. This fits in with our model of a (potentially
+cyclic) weighted directed graph, and also allows us to traverse between related
+tags in both directions.
+
+Then, we need some algorithm (PageRank?) of inferring more/less "general"...
+TODO (We need to do this anyway on extracted tag data from flickr etc since
+they have no concept of "general")
+
+Alternatively, have weights for tags (nodes) themselves, which could have the
+semantics of eg:
+
+- fraction of indexes that have definitions for this tag
+- fraction of mappings (in all indexes) with this tag as source?
+- probability a search will return >0 results for the given tag
+
+(Obviously all these values would be estimated.)
 
 ## Identity-object pointers
 
