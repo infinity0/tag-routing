@@ -288,6 +288,9 @@ we have a few backup options:
 
 MORE
 
+TODO TODO TODO need to update pretty much all of the algorithms here now that
+nodes have weights too... pah...
+
 #### Combining `tgraph` objects
 
 Given
@@ -542,8 +545,9 @@ Possible semantics for tag weights could include:
 - probability a search will return a decent (by some standard) amount of
   results for this tag
 
-The last one is probably the best choice, since the first two are unlikely to
-give values close to 1 for any tag. (TODO revisit?)
+The first two are unlikely to give values close to 1 for any tag; on the other
+hand the third option is likely to give values close to 1 for pretty much
+anything that is slightly popular... TODO
 
 ## Identity-object pointers
 
@@ -691,8 +695,11 @@ with those properties.
 
 - perfect conditions
 - random failure
-- malicious attacks
-  - attacks vs most well-connected nodes
+- malicious attacks - under the assumptions of "abstract storage network", only
+  attacks vs the entire network can occur on the meta-routing / routing planes.
+  attacks vs individuals on the social plane is a separate topic, ignore here
+	- attacks vs most well-connected nodes
+	- MORE
 
 
 # Java class definitions
