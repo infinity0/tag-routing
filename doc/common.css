@@ -2,7 +2,7 @@ dt {
 	font-weight: bold;
 }
 
-dd ul {
+dd ul, dd ol {
 	padding-left: 0px;
 }
 

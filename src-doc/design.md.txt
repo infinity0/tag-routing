@@ -2,34 +2,46 @@
 
 ## Terminology
 
-- document -- a storage object that can be the target of a query. (This could
-  include multimedia or software; we'll refer to all of these as "document" for
-  simplicity.)
+- arc -- a directed relation $e = (v_s, v_t)$ from node $v_s$ to node $v_t$.
+- document -- a storage object that can be the target of some query. This could
+  include (eg.) multimedia or software; for simplicity, we'll refer to these
+  all as "document"
 - identity -- a user / node on the social network
-- mapping -- a pointer that also has a "source" as well as a target
-- pointer -- an indirection to some external resource
+- node -- in the context of networks, an object that can be connected to
+  another node by an arc.
 - semantics -- this term is used in two different senses; hopefully the context
   should give enough disambiguation
 	- the meaning of tags, wrt. the end-user
 	- the meaning of some concept, wrt. the theory of this system
-- tag -- a phrase that can be semantically attached to a storage object
+- tag -- a phrase that can be semantically related to a storage object
 
 ## Symbols
 
 With no other context, the following symbols refer to the following object
 types; capitalised symbols refer to the set of all objects of the given type.
 
+- $d$ -- document
+- $t$ -- tag
 - $g$ -- `tgraph`
 - $h$ -- `index`
 - $p$ -- `ptable`
-- $d$ -- document
-- $t$ -- tag
 - $z$ -- identity
-- $w$ -- weight or identity score
+- $w$ -- weight, identity score
 
 ## Notation
 
-- $f \subseteq X \to Y$ -- $f$ is a partial function from set $X$ to set $Y$.
+- For any set $E = V_s \times V_t$ of arcs, define:
+	- $src(E) = \{ v_s \in V_s : \exists v_t . (v_s, v_t) \in E \}$ ie. the set
+	  of nodes that the arcs point from.
+	- $dst(E) = \{ v_t \in V_t : \exists v_s . (v_s, v_t) \in E \}$ ie. the set
+	  of nodes that the arcs point to.
+- We deal with two types of data structures:
+	- A map $V_A : V \to A$ of nodes to their attributes.
+	- A map $E_A : E \to A$ of arcs to their attributes. For convenience, define:
+		- $src(E_A) = src(E)$
+		- $dst(E_A) = dst(E)$
+- $f \subseteq X \to Y$ -- $f$ is a partial function ("[finite] map") from set
+  $X$ to set $Y$.
 	- This is non-standard but $f : X \to Y$ is confusing.
 
 ## TODO and related tags
@@ -65,14 +77,14 @@ other.
 
 ## Data structures
 
-### Pointer weights
+### Weight attributes
 
 Structure
 :	$w \in W = [0,1]$
 Description
-:	Aids comparison and composition of multiple pointers or mappings.
+:	Aids comparison and composition of multiple nodes or arcs.
 
-The precise meaning of a pointer's weight is intrinsically linked with what the
+The precise meaning of a weight attribute is intrinsically linked with what the
 routing and the ranking algorithms do. Specific uses include:
 
 - priority of traversal of the routing and meta-routing networks
@@ -82,7 +94,7 @@ Probability-based semantics seem quite robust and reliable, since these are
 objective properties and can (in theory) be estimated algorithmically. It also
 gives rise to a simple way of combining weights (multiplication), as well as a
 simple interval of values [0,1].^[Theoretically, this allows low-probability
-weights to be defined for any possible mapping. However, the system algorithms
+weights to be defined for any possible arc. However, the system algorithms
 favour heavy weights over light ones, so the latter should just be omitted,
 since they will never be used.]
 
@@ -94,56 +106,26 @@ property, there will still be some degree of inconsistency between different
 objects, since each publisher can only calculate weights from their subjective
 (and limited) view of the entire network.
 
-The best practical solution would be to install an automatic way of assigning
-weights to pointers. This would reduce the problem of human inaccuracy, as well
-as laziness: it's tedious to manually estimate a weight for every pointer we
+The best practical solution would be to have an automatic way of calculating
+weight attributes. This would reduce the problem of human inaccuracy, as well
+as laziness: it's tedious to manually estimate a weight for every object we
 add to our collections. [EXTN]
-
-### `tgraph`
-
-DIAG
-
-Structure
-:	$g = (V_g \subseteq T \to W, E_g \subseteq T \times T \cup G \to W)$
-Description
-:	Maps tags to other tags and other tgraphs, each mapping having a weight,
-	and each tag having a weight.
-Possible semantics TODO
-:	- probability that a search for the target tag will return results for the
-	  source tag (see [`tgraph` semantics](#tgraph-semantics))
-
-This data structure contains information on how to traverse the routing
-network. It contains mappings from tags to other tags, or to another tgraph
-containing more data.
-
-A mapping indicates a semantic relationship between the tags, and a subjective
-judgement that an index specialising in the target tag is likely to contain
-entries for the source tag.
-
-The purpose of defining such a semantic relationship is to provide a framework
-for traversing through index data. On most typical networks this framework is
-encoded into the addressing scheme. For example, numerical addresses (such as
-IP addresses) are naturally hierarchical, and can be prefix-matched on routing
-tables. Tags however do not intrinsically encode such information, so we need
-an extra plane to provide it.
-
-Conceptually, a tag can be thought of as a pure name (ie. the name conveys no
-information about the location of the target), and IP addresses as the exact
-opposite. [REF]
-
-The network formed by the links between tgraphs can be used to generate schemes
-for traversing the routing data, and so we'll call it the "meta-routing plane".
 
 ### `index`
 
 DIAG
 
 Structure
-:	$h \subseteq (T \times D \cup H) \to W$
+:	$$
+	h = \left[ \begin{array}{lrr} \\
+	  E_h \subseteq & T \times D \cup H & \to W \\
+	\end{array} \right]
+	$$
 Description
-:	Maps tags to documents and other indexes, each mapping having a weight.
-Possible semantics TODO
-:	- probability that a given mapping will satisfy a user's request
+:	A map of arcs to their weights, where each arc is a relation from a tag to
+	a document or another `index`.
+Semantics
+:	Probability that the arc target will satisfy a query for the source tag.
 
 This data structure contains information on how to satisfy a search request. It
 contains mappings from tags to target documents, or to another index to forward
@@ -153,22 +135,74 @@ A mapping indicates some semantic relevance between the tag and the document,
 and a subjective judgement that a person searching for the tag did intend to
 retrieve information provided by the document.
 
-The network formed by the links between indexes is conceptually analogous to
-the network of routing tables existent in most typical navigable networks, and
-so we'll call it the "routing plane".
+The analogy to typical navigable networks is that each tag is like an address;
+and each `index` is like a routing table, mapping addresses to target entities.
+^[Most "addresses" in this network will have multiple targets, but this is an
+unimportant detail; eg. the internet has multicast addresses too.] So, we'll
+call the network of `index` objects the "routing" plane.
+
+Navigable networks have a well-defined addressing scheme, which enables routing
+through a series of addresses to reach the target. For example, numerical
+addresses (eg. IP) are naturally hierarchical, and can be prefix-matched upon
+in a routing table. Tags however, do not intrinsically encode such information,
+so we need an additional layer to provide it.
+
+### `tgraph`
+
+DIAG
+
+Structure
+:	$$
+	g = \left[ \begin{array}{lrr} \\
+	  V_g \subseteq & T & \to W \\
+	  E_g \subseteq & T \times T \cup G & \to W \\
+	\end{array} \right]
+	$$
+Description
+:	1. A map of nodes to their weights, where each node is a tag; and
+	2. A map of arcs to their weights, where each arc is a relation from a tag
+	to another tag or `tgraph`.
+Semantics
+:	1. TODO
+	2. Probability that a query for the target tag will return results for the
+	   source tag (see [`tgraph` semantics](#tgraph-semantics))
+
+This data structure provides information on tags and the relationships between
+tags. The presence of a tag indicates an understanding of its meaning; an arc
+from a tag to a tag or `tgraph` indicates a semantic relationship between them,
+and a judgement that the target can be used in some appropriate way to satisfy
+a query for the source tag.
+
+From a given root tag, we can reach other tags and `tgraph`s by following the
+arcs between them. Weights on the arcs and nodes help us to adapt the traversal
+order to our purposes.
+
+The analogy to typical navigable networks is that the graph of tags provides
+the same service as an addressing scheme or a name resolution system: a method
+for navigating between related addresses. This works beyond the routing level,
+so we'll call the network of `tgraph` objects the "meta-routing" plane.
+
+Conceptually, a tag can be thought of as a "pure" name - ie. the name carries
+no information about its referent, such as its location). IP addresses are the
+opposite, and DNS names are somewhere in between the two. DNS names need to be
+resolved; likewise, we have an additional system here for tags.
 
 ### `ptable`
 
 DIAG
 
 Structure
-:	$p_z \subseteq G \cup H \to W$
+:	$$
+	p = \left[ \begin{array}{lrr} \\
+	  V_p \subseteq & G \cup H & \to W \\
+	\end{array} \right]
+	$$
 Description
-:	For some given identity $z$, points to `tgraph` and `index` objects, each
-	pointer having a weight.^[Each pointer can also be thought of as a mapping
-	whose source is implicitly $z$]
-Possible semantics TODO
-:	- probability that a ***
+:	A map of nodes to their weights, where each node is a `tgraph` or an
+	`index`. Implicitly, each `ptable` "belongs" to some identity on the
+	[underlying social network](#underlying-social-network).
+Semantics
+:	Probability that a ... TODO
 
 This data structure allows an identity to declare a personal list of preferred
 indexes and tgraphs to use for routing purposes.
@@ -236,22 +270,19 @@ Define $G_s = dom(p) \cap G$ and $H_s = dom(p) \cap H$. (Note that $G + H =
 dom(p)$).
 
 A basic implementation is just to calculate the score-weighted average^[These
-weights are [limited in range](#pointer-weights), and so should be resistant to
-average-manipulation attacks] of the weight of each pointer target, ie:
+weights are [limited in range](#weight-attributes), and so should be resistant to
+average-manipulation attacks] of the weight of each node, ie:
 
 $p[o] = \bar{\omega} = \frac{\sum_i u_i \omega_i}{\sum_i u_i}$
 
-where $\omega_i$ is the adjusted weight of a pointer to $o$ in $p_i$, inferring
-between a zero-weight pointer and "missing information" (see [Zero-weight
-pointers](zero-weight-pointers)):
+where $\omega_i$ is the adjusted weight of $o$ in $p_i$, inferring between a
+[zero weight](#zero-weight-attributes) and "missing information".
 
 $$
-\omega_i = \left\{
-\begin{array}{lll}
+\omega_i = \left\{ \begin{array}{lll} \\
  w_i = p_i[o]        & : \quad & o \in p_i \\
  \alpha.\bar{\omega} & : \quad & o \notin p_i \\
-\end{array}
-\right.
+\end{array} \right
 $$
 
 where $\alpha$ is the probability of $o \notin p_i$ being due to "missing
@@ -266,9 +297,9 @@ the active network to adjust the values dynamically; this has the advantage
 that the training data is more relevant to the trainee. [EXTN]
 
 Such methods are likely to be quite complex, so to keep things simple for this
-project, we use a constant estimate of $\alpha = 0.5$.^[Intuitively, for any
-given target, $P(like)$ and $P(know)$ are low but slightly correlated, so
-$P(\neg like \wedge \neg know)$ is high, but not very high.]
+project, we use a constant estimate of $\alpha = \frac{1}{2}$.^[Intuitively,
+for any given target, $P(like)$ and $P(know)$ are low but slightly correlated,
+so $P(\neg like \wedge \neg know)$ is high, but not very high.]
 
 ### Meta-routing
 
@@ -297,26 +328,23 @@ Given
 :	- a working map $G_w = \{(g_i, u_i)\}$ of `tgraph`s to their weights
 	- a source tag $t$
 Return
-:	- a map $\{(x_j, w_j)\}$ of `tgraph` mapping targets (ie. a tag or tgraph)
-	  and their weights; the source of each mapping is implicitly $t$.
+:	- a map $\{(x_j, w_j)\}$ from `tgraph` arc targets (ie. a tag or tgraph) to
+	  their weights; the source of each arc is implicitly $t$.
 
 A basic implementation is just to calculate the `tgraph`-weighted average of
-the weight of the mapping $(t, x_j)$, ie:
+the weight of the arc $(t, x_j)$, ie:
 
 $w_j = \bar{\omega} = \frac{\sum_i u_i \omega_i}{\sum_i u_i}$
 
-where $\omega_i$ is the adjusted weight of the mapping $(t, o)$ in $g_i$,
-inferring between a zero-weight pointer and "missing information" (see
-[Zero-weight pointers](zero-weight-pointers)):
+where $\omega_i$ is the adjusted weight of the arc $(t, o)$ in $g_i$, inferring
+between a [zero weight](#zero-weight-attributes) and "missing information".
 
 $$
-\omega_i = \left\{
-\begin{array}{lll}
+\omega_i = \left\{ \begin{array}{lll} \\
  g_i[t, x_j]         & : \quad & (t, x_j) \in g_i \\
  \alpha.\bar{\omega} & : \quad & (t, x_j) \notin g_i \wedge x_j \in dom(g_i) \cup img(g_i) \\
  \beta.\bar{\omega}  & : \quad & (t, x_j) \notin g_i \wedge x_j \notin dom(g_i) \cup img(g_i) \\
-\end{array}
-\right.
+\end{array} \right
 $$
 
 where $\alpha$ and $\beta$ is the probability of $(t, x_j) \notin g_i$ being
@@ -338,8 +366,8 @@ Given
 :	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
 	- a working tree $T_w$ of tags
 Return
-:	- an ordered list $[(t_i \in T_w, x_i, w_i)]$ of `tgraph` mappings to add
-	  to the tree
+:	- an ordered list $[(t_i \in T_w, x_i, w_i)]$ of `tgraph` arcs to add to
+	  the tree
 
 A basic implementation can simply return the "nearest" node to the root not
 already in the tree, where "distance" of a path is defined as the negative log
@@ -362,7 +390,7 @@ Given
 Return
 :	- a weight $w_n$ to assign to $g_n$
 
-MORE note the two different semantic meanings for pointer weights being used
+MORE note the two different semantic meanings for weight attributes being used
 here (relevancy vs reliability) TODO explore this and its potential pitfalls
 
 ### Routing
@@ -435,8 +463,9 @@ Return
 
 
 
+## Optimising performance
 
-## Optimisations
+### Data structure implementation
 
 ### Querying an `index` or `tgraph` for presence of a source tag
 
@@ -481,7 +510,7 @@ Signed Subspace Keys network.
 
 ### Underlying social network
 
-The initialisation algorithm assumes a abstract lower-level social network
+The initialisation algorithm assumes an abstract lower-level social network
 where it can look for friends to query for pointers onto the meta-routing and
 routing planes.
 
@@ -495,8 +524,9 @@ model, where all weights are constant and all arcs have a reverse-direction
 counterpart.
 
 The meta-routing and routing planes also form what is essentially a social
-network. However, its pointers carry semantic information (each mapping has a
-source tag) and are intrinsic to our search system; by constrast, the abstract
+network - `tgraph`s and `index`es effectively contain pointers to each other,
+through their arc targets. However, these also carry semantic information (each
+arc has a source tag) and are intrinsic to our search system; by constrast, the
 social network used for initialisation carries no semantic information and is
 independent of our system. To highlight this difference, we refer to a node on
 the social network as an "identity", and arc weights as "identity scores".
@@ -517,9 +547,9 @@ Our first thought was to have arcs represent a relationship from a more
   contain cycles, especially when pulling in data from several sources. We
   don't want to be tied up devising a complex algorithm to resolve this.
 - We potentially would like to traverse from general to specific tags, as well
-  as vice versa; and pointers are the only mechanism of doing this *between
-  `tgraph`s*.^[Within a `tgraph`, reverse pointers could be calculated quickly
-  depending on the data structure used to store the information.]
+  as vice versa; and arc targets are the only mechanism of doing this *between
+  `tgraph`s*.^[Within a `tgraph`, arc sources ("reverse" pointers) could in
+  theory be calculated quickly, depending on the implementation.]
 
 The metric "probability of a query for $t_trg$ satisfying a query for $t_src$"
 addresses the above issues. It is clearly quantifiable; also intuitively, for
@@ -541,7 +571,7 @@ and require that `tgraph` nodes be assigned weights too.
 Possible semantics for tag weights could include:
 
 - fraction of indexes that have definitions for this tag
-- fraction of mappings (in all indexes) with this tag as its source
+- fraction of arcs (in all indexes) with this tag as its source
 - probability a search will return a decent (by some standard) amount of
   results for this tag
 
@@ -549,62 +579,70 @@ The first two are unlikely to give values close to 1 for any tag; on the other
 hand the third option is likely to give values close to 1 for pretty much
 anything that is slightly popular... TODO
 
-## Identity-object pointers
+## Pointers between data structures
+
+### Identity-object pointers
 
 vs. all-data-in-identity and identity-identity pointers
 
-## Object-object pointers vs identity-object pointers
+### Object-object pointers vs identity-object pointers
 
 to decrease the number of identity-object pointers
 
-## Mutable-object pointers vs immutable-object pointers
+### Mutable-object pointers vs immutable-object pointers
 
-## Zero-weight pointers
+## Weights
+
+### Zero weight-attributes
 
 The current design can only represent the presence of a semantic relationship,
 and not its absence. This is a problem: any distributed system has to be able
 to deal with incomplete information, but here there is no way to tell if the
-absence of a pointer is due to incomplete information, or explicit rejection
-of the semantic relationship that the pointer represents. This is important for
-when (eg.) we want to combine weights from multiple sources - we need to know
-whether others disagree with a given mapping, or merely don't know about it.
+absence of an object from a collection is due to incomplete information, or an
+explicit rejection of the semantic relationship that the object represents.
+This is important when (eg.) we combine weights from multiple sources - we
+need to know whether others disagree with an attribute definition, or merely
+don't know about its subject.
 
-Requiring explicit "zero-weight" pointers is not acceptable for our purposes,
-since this equates to defining *something* (either a relationship or its
-absence) between *all* possible pairs of objects encountered; this results in
-quadratic data growth, which is not scalable.
+Requiring explicit "zero" weight-attributes is not acceptable for our purposes.
+For a set of nodes, this requires defining *something* for the entire network;
+for a set of arcs, we can safely (TODO - explain why) restrict our domain to
+the nodes we encounter, but this still equates to defining *something* (either
+a relationship or its absence) between *all* pairs of nodes, which results in
+quadratic data growth wrt objects encountered, which is not scalable. [TODO
+rewrite properly.]
 
 Instead, we look at heuristics that attempt to resolve this ambiguity.
 
-For an object $O$ consisting of mappings, such as `index` and `tgraph`, we
-observe that the presence of a mapping $(s, t)$ indicates that the maintainer
-knows of the existence of $s$ and $t$, and has enough information to make
-judgements about them.
+For an object $O$ containing arcs, such as `index` and `tgraph`, we observe
+that the presence of an arc $(s, t)$ indicates that the maintainer knows of the
+existence of $s$ and $t$, and has enough information to make judgements about
+them.
 
 Define $O$ "knows about" $s$ to mean $s \in dom(O) \cup img(O)$. Since the
 meaning of $(s, t)$ depends only on $s$ and $t$, the maintainer also has enough
-information to decide whether to include mapping between *any* source and *any*
-target that it "knows about". Conversely, for any given mapping $(x, y)$ *not*
+information to decide whether to include an arc between *any* source and *any*
+target that it "knows about". Conversely, for any given arc $(x, y)$ *not*
 present in $O$, if it "knows about" both $x$ and $y$, then it seems reasonable
-to conclude that the absence of the mapping "probably" represents a zero-weight
-pointer (non-relationship), rather than "missing information".
+to conclude that the absence of the arc "probably" represents a zero weight
+(non-relationship), rather than "missing information".
 
 - For a `tgraph` $g$, we guess that any $(t_1,t_2) \notin g$, with $t_1, t_2
-  \in dom(g) \cup img(g)$, is "probably" a zero-weight pointer and not "missing
+  \in dom(g) \cup img(g)$, is "probably" a zero weight and not "missing
   information".
 - For an `index` $h$, we guess that any $(t,d) \notin h$, with $t \in dom(g)$
-  and $d \in img(g)$, is "probably" a zero-weight pointer and not "missing
+  and $d \in img(g)$, is "probably" a zero weight and not "missing
   information".
 
 Specific examples of this general principle, as well as applications of it,
 is explored further in relevant sections of the [Algorithms](#algorithms)
 chapter.
 
-For an object consisting only of source-less pointers, such as `ptable`, there
-is no information within a single object that could be used for any heuristic
-to distinguish the two cases.^[Using the heuristic described above for mappings
-by treating the pointers as mappings from a single source doesn't help: a pair
-(X,Y) cannot exist with the required properties since we only have one source.]
+For an object consisting only of nodes, such as `ptable`, there is not enough
+information within a single object that could be used for any heuristic to
+distinguish the two cases.^[Using the heuristic described above for arcs, by
+treating the nodes as arcs from a single source node doesn't help: an arc $(x,
+y)$ cannot exist with the required properties since $x$ is fixed.]
 
 However, in the specific case of `ptable`, we could use the links present in
 the social network to infer more information: eg. identities who are friends
@@ -620,10 +658,10 @@ won't provide significantly enough benefit to justify the additional complexity
 - the social network should mitigate most serious attempts to abuse the system.
 MORE
 
-## Negative-weight pointers
+### Negative weight-attributes
 
-A related issue is negative-weight pointers, which would represent a judgement
-that the target is malicious (in some sense), rather than neutral or "useless".
+A related idea is negative weight-attributes, which would represent a judgement
+that the subject is malicious (in some sense), rather than neutral or "useless".
 In a network where it's possible to act aggressively towards particular nodes,
 these weights could provide information on who to attack (or equivalently, set
 up defences against), and in what way.
@@ -631,20 +669,28 @@ up defences against), and in what way.
 As it stands, our search system is a "dumb" network of data; the only way of
 interacting with other nodes is by publishing data objects for other nodes to
 read. We are unable to see other nodes' read requests, so it's impossible to
-attack a particular node. Hence, negative-weight pointers are not useful here.
+attack a particular node. In this case then, negative weights are not useful.
 
-There are several other complications with negative-weight pointers in general.
-These would be relevant if our search system is adapted into a form where one
-*can* perform targeted acts of aggression.
+There are other complications with negative weights in general. These would be
+relevant if our search system is adapted into a form where one *can* perform
+targeted acts of aggression.
 
-- If positive-weight pointers are taken to be probabilities, it's not obvious
-  what negative-weight pointers should mean. If the semantics of the data
-  structure are not well-defined, the algorithms that use it cannot be, either.
+- If positive weights are taken to be probabilities, it's not obvious what
+  negative weights should mean. If the semantics of the data structure are not
+  well-defined, the algorithms that use it cannot be, either.
 - Depending on the algorithm used to combine weights from multiple sources,
   negative weights may allow the weight system itself to be used as an attack
   vector. (Otherwise, this was already possible with positive-only weights and
   the introduction of negative weights makes no difference.)
 - MORE
+
+### Corruption of weights
+
+Scoring systems are susceptible to manipulation... the usual path to corruption
+is that original semantics of the system are no longer reflected in algorithms
+for calculating and evaluating it. When this happens the system breaks...
+
+(eg. google's "trusted ads" are 2x likely to be corrupt)
 
 
 # Analysis
