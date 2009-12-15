@@ -126,7 +126,7 @@ var CONST = 0, UNARY = 1, BINARY = 2, INFIX = 3, LEFTBRACKET = 4,
     TEXT = 9, BIG = 10, LONG = 11, STRETCHY = 12, MATRIX = 13; // token types
 
 var AMsqrt = {input:"\\sqrt",	tag:"msqrt", output:"sqrt",	ttype:UNARY},
-  AMsqrt = {input:"\\not",	tag:"mnot", output:"not",	ttype:UNARY},
+  AMnot = {input:"\\not",	tag:"mnot", output:"not",	ttype:UNARY},
   AMroot = {input:"\\root",	tag:"mroot", output:"root",	ttype:BINARY},
   AMfrac = {input:"\\frac",	tag:"mfrac", output:"/",	ttype:BINARY},
   AMover = {input:"\\stackrel", tag:"mover", output:"stackrel", ttype:BINARY},
@@ -476,7 +476,7 @@ var AMsymbols = [
 							// disaster if LONG
 
 //commands with argument
-AMsqrt, AMroot, AMfrac, AMover, AMsub, AMsup, AMtext, AMmbox, AMatop, AMchoose,
+AMsqrt, AMnot, AMroot, AMfrac, AMover, AMsub, AMsup, AMtext, AMmbox, AMatop, AMchoose,
 //AMdiv, AMquote,
 
 //diacritical marks
