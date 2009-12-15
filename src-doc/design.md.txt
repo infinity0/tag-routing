@@ -35,11 +35,13 @@ types; capitalised symbols refer to the set of all objects of the given type.
 	  of nodes that the arcs point from.
 	- $dst(E) = \{ v_t \in V_t : \exists v_s . (v_s, v_t) \in E \}$ ie. the set
 	  of nodes that the arcs point to.
+	- $rft(E) = src(E) \cup dst(E)$ ie. the set of nodes that E refers to.
 - We deal with two types of data structures:
 	- A map $V_A : V \to A$ of nodes to their attributes.
 	- A map $E_A : E \to A$ of arcs to their attributes. For convenience, define:
 		- $src(E_A) = src(E)$
 		- $dst(E_A) = dst(E)$
+		- $rft(E_A) = rft(E)$
 - $f \subseteq X \to Y$ -- $f$ is a partial function from set $X$ to set $Y$.
 	- This is non-standard but $f : X \to Y$ is confusing.
 
@@ -110,7 +112,7 @@ routing and the ranking algorithms do. Specific uses include:
 Probability-based semantics seem quite robust and reliable, since these are
 objective properties and can (in theory) be estimated algorithmically. It also
 gives rise to a simple way of combining weights (multiplication), as well as a
-simple interval of values [0,1].^[Theoretically, this allows low-probability
+simple interval of values $[0, 1]$.^[Theoretically, this allows low-probability
 weights to be defined for any possible arc. However, the system algorithms
 favour heavy weights over light ones, so the latter should just be omitted,
 since they will never be used.]
@@ -242,6 +244,29 @@ research advances, each component can be upgraded independently.
 
 ### Combining data from multiple sources
 
+Below, we describe algorithms for combining data from multiple sources. Our
+model is relatively simple: we have a list of sources with a weight judgement
+on how "good" each source is; in turn, each source specifies their own weight
+judgement for each object that it refers to. Given a target object, we want to
+derive a "combined" weight for that object, based on the supplied information.
+
+Here, we start with the most basic approach - to generate the source-weighted
+average (mean) weight of the object. Normally, mean-based algorithms are very
+susceptible to attacks and distortions; however, the weights here are all
+[limited](#weight-attributes) to the range $[0, 1]$, which should offer good
+resistance against isolated attackers.
+
+The algorithms below make use of several $\alpha_i$ functions, which fine-tune
+the output based knowledge of on the context of the inputs. There are various
+ways of producing such functions; one method is to extract realistic values
+for some constant, by collecting training data from a prototype network. More
+advanced techniques include collecting data directly from the active network,
+to adjust the values dynamically. [EXTN]
+
+However, such methods are likely to be quite complex, and so this project will
+not go into them. For our prototype system, we will only implement heuristics
+that give a rough approximation, based on our intuitions.
+
 #### Mean weight of a node
 
 Given
@@ -263,27 +288,27 @@ $$
 \quad ; \quad
 \tilde{w}_{mv} = \left\{ \begin{array}{llr} \\
   w_{mv} & : v \in dom(m) & (0) \\
-  \alpha(m,v).\bar{w}_v + (1 - \alpha(m,v)).0 & : v \notin dom(m) & (1) \\
+  \alpha_1(m,v).0 + (1 - \alpha_1(m,v)).\bar{w}_v & : v \notin dom(m) & (1) \\
 \end{array} \right
 $$
 
-where
+where $\alpha_i(m, v)$ is the probability that the author of $m$ _does_ know
+about $v$ (and intentionally excluded it), given $(i)$.
 
-- $\alpha(m, v)$ is the probability of $v \notin dom(m)$ being due to "missing
-  information", rather than an explicit "zero weight".
-
-The above definition has $\bar{w}_v$ on the RHS, so after some rearranging, we
-get:
+The above definition has $\bar{w}_v$ on the RHS; after rearranging, we get:
 
 $$
 % should be \dfrac but LaTeXMathML doesn't support amsmath commands...
-\bar{w}_v = \frac{\sum_{m:(0)} u_m w_{mv}}{\sum_m u_m \beta(m,v)}
+\bar{w}_v = \frac{\sum_{m:(0)} u_m w_{mv}}{\sum_m u_m \alpha(m,v)}
 \quad ; \quad
-\beta(m,v) = \left\{ \begin{array}{ll} \\
+\alpha(m,v) = \left\{ \begin{array}{ll} \\
   1 & : (0) \\
-  1 - \alpha(m,v) & : (1) \\
+  \alpha_1(m,v) & : (1) \\
 \end{array} \right
 $$
+
+Generally, the behaviour of $\alpha_i$ are likely to depend highly on the use
+context, so this should be an additional parameter to the algorithm.
 
 #### Mean weight of an arc
 
@@ -294,7 +319,7 @@ Given
 Return
 :	- the map-weighted mean arc-weight $\bar{w}_e$ of $e$
 
-The formulat is similar to the one from the previous section, but here we are
+The formula is similar to the one from the previous section, but here we are
 dealing with arcs, so we can refine our estimate somewhat further; see the
 section on [zero weights](#zero-weight-attributes) for more details. Following
 on from that, we reach:
@@ -304,33 +329,31 @@ $$
 \quad ; \quad
 \tilde{w}_{me} = \left\{ \begin{array}{llr} \\
   w_{me} & : e \in dom(m) & (0) \\
-  \alpha_1(m,e).\bar{w}_e & : e \notin dom(m) \;\wedge\; \{ v_s, v_t \}
-    \not\subseteq src(m) \cup dst(m) & (1) \\
-  \alpha_2(m,e).\bar{w}_e & : e \notin dom(m) \;\wedge\; \{ v_s, v_t \}
-    \subseteq src(m) \cup dst(m) & (2) \\
+  (1 - \alpha_1(m,e)).\bar{w}_e & : e \notin dom(m) \;\wedge\; \{ v_s, v_t \}
+    \not\subseteq rft(m) & (1) \\
+  (1 - \alpha_2(m,e)).\bar{w}_e & : e \notin dom(m) \;\wedge\; \{ v_s, v_t \}
+    \subseteq rft(m) & (2) \\
 \end{array} \right
 $$
 
-where
+where $\alpha_i(m, e)$ is the probability that the author of $m$ _does_ know
+about $e$ (and intentionally excluded it), given $(i)$.
 
-- $\alpha_1(m, e)$ is the probability that $e \notin dom(m)$ is due to "missing
-  information", given that $m$ does not "know about" both $v_s, v_t$.
-- $\alpha_2(m, e)$ is the probability that $e \notin dom(m)$ is due to "missing
-  information", given that $m$ does "know about" both $v_s, v_t$.
-
-The above definition has $\bar{w}_v$ on the RHS, so after some rearranging, we
-get:
+The above definition has $\bar{w}_e$ on the RHS; after rearranging, we get:
 
 $$
 % should be \dfrac but LaTeXMathML doesn't support amsmath commands...
-\bar{w}_e = \frac{\sum_{m:(0)} u_m w_{me}}{\sum_m u_m \beta(m,e)}
+\bar{w}_e = \frac{\sum_{m:(0)} u_m w_{me}}{\sum_m u_m \alpha(m,e)}
 \quad ; \quad
-\beta(m,e) = \left\{ \begin{array}{ll} \\
+\alpha(m,e) = \left\{ \begin{array}{ll} \\
   1 & : (0) \\
-  1 - \alpha_1(m,e) & : (1) \\
-  1 - \alpha_2(m,e) & : (2) \\
+  \alpha_1(m,e) & : (1) \\
+  \alpha_2(m,e) & : (2) \\
 \end{array} \right
 $$
+
+Generally, the behaviour of $\alpha_i$ are likely to depend highly on the use
+context, so this should be an additional parameter to the algorithm.
 
 ### Initialisation
 
@@ -370,42 +393,43 @@ this system would be able to use the latest available techniques. [REF][EXTN]
 #### Combining `ptable` objects
 
 Given
-:	- a map $P_s = \{(p_i, u_i)\}$ of `ptable`s to their identity scores
+:	- a map $P_s = \{p \mapsto u_p\}$ of `ptable`s to their identity scores
 Return
-:	- a `ptable` $p$ that "combines" this information, with $dom(p) = \bigcup
-	  dom(p_i)$.
+:	- a `ptable` $p_s$ that "combines" this information, with $dom(p_s) =
+	  \bigcup dom(p)$.
 
-Define $G_s = dom(p) \cap G$ and $H_s = dom(p) \cap H$. (Note that $G + H =
-dom(p)$).
+Define $G_s = dom(p_s) \cap G$ and $H_s = dom(p_s) \cap H$. (Note that $G_s +
+H_s = dom(p_s)$).
 
-A basic implementation is just to calculate the score-weighted average^[These
-weights are [limited in range](#weight-attributes), and so should be resistant to
-average-manipulation attacks] of the weight of each node, ie:
+A basic implementation is just to calculate the score-weighted average of the
+weight of each node. Then, to generate $p_s[v]$ for any $v \in \bigcup dom(p)$,
+we just pass $P_s$, $v$ and some appropriate $\alpha_1 : P \times V \to [0, 1]$
+through the [general algorithm](#mean-weight-of-a-node).
 
-$p[o] = \bar{\omega} = \frac{\sum_i u_i \omega_i}{\sum_i u_i}$
+To recap, $\alpha_1(p, v)$ is the probability of $v \notin dom(p)$ being due to
+"zero-weight". In other words, $p$ does indeed know about $v$, but has chosen
+not to inform others of it. We want to make a rough estimate for $\alpha_1$.
 
-where $\omega_i$ is the adjusted weight of $o$ in $p_i$, inferring between a
-[zero weight](#zero-weight-attributes) and "missing information".
+Intuitively, the more of our friends that know about a particular item, the
+more likely it is that we also know about it. Moreover, this probability is
+proportionally greater at lower degrees of saturation, since it only takes one
+friend to tell us about an item. Hand-waving furiously, we get:
 
-$$
-\omega_i = \left\{ \begin{array}{lll} \\
- w_i = p_i[o]        & : \quad & o \in p_i \\
- \alpha.\bar{\omega} & : \quad & o \notin p_i \\
-\end{array} \right
-$$
+$$\alpha_1(p, v) = \left(\frac{|F_v(p)|+1}{|F(p)|+2}\right)^\frac{1}{2}$$
 
-where $\alpha$ is the probability of $o \notin p_i$ being due to "missing
-information".
+where $F(p)$ and $F_v(p)$ have their intuitive meanings, and the additional
+constants serve to add some uncertainty in the cases where none or all of $p$'s
+friends know about a particular item, and also to avoid division by zero.
 
-TODO derive the non-recursive form of this.
+For a given $p$, this requires retrieving of all of its friends' `ptable`s,
+which may not be in $P_s$ depending on our seeding algorithm. To retrieve these
+additional `ptable`s for every $p$ we need to resolve could be costly; an even
+more rough estimate that involves much less work is just to set $\alpha_1$ to
+some constant.
 
-Here we need to determine realistic values for $\alpha$. There are various
-possible ways of doing this, typically by using training data collected from a
-real network. More advanced techniques include collecting data directly from
-the active network to adjust the values dynamically; this has the advantage
-that the training data is more relevant to the trainee. [EXTN]
+TODO, what constant? and merge/rewrite below paragraph
 
-Such methods are likely to be quite complex, so to keep things simple for this
+so to keep things simple for this
 project, we use a constant estimate of $\alpha = \frac{1}{2}$.^[Intuitively,
 for any given target, $P(like)$ and $P(know)$ are low but slightly correlated,
 so $P(\neg like \wedge \neg know)$ is high, but not very high.]
@@ -443,27 +467,7 @@ Return
 A basic implementation is just to calculate the `tgraph`-weighted average of
 the weight of the arc $(t, x_j)$, ie:
 
-$w_j = \bar{\omega} = \frac{\sum_i u_i \omega_i}{\sum_i u_i}$
-
-where $\omega_i$ is the adjusted weight of the arc $(t, o)$ in $g_i$, inferring
-between a [zero weight](#zero-weight-attributes) and "missing information".
-
-$$
-\omega_i = \left\{ \begin{array}{lll} \\
- g_i[t, x_j]         & : \quad & (t, x_j) \in g_i \\
- \alpha.\bar{\omega} & : \quad & (t, x_j) \notin g_i \wedge x_j \in dom(g_i) \cup img(g_i) \\
- \beta.\bar{\omega}  & : \quad & (t, x_j) \notin g_i \wedge x_j \notin dom(g_i) \cup img(g_i) \\
-\end{array} \right
-$$
-
-where $\alpha$ and $\beta$ is the probability of $(t, x_j) \notin g_i$ being
-due to "missing information", given whether $g_i$ "knows about" $x_j$.
-
-TODO derive the non-recursive form of this.
-
-This is essentially the same algorithm that we use to [combine
-`ptable`s](#combining-ptable-objects), with additional tweaks to take advantage
-of the additional tag information present here.
+TODO adapt from general algorithms
 
 Like the other algorithm, we need to determine realistic values for $\alpha$
 and $\beta$. The same points apply here, and again for temporary simplicity we
@@ -727,6 +731,8 @@ For an object $O$ containing arcs, such as `index` and `tgraph`, we observe
 that the presence of an arc $(s, t)$ indicates that the maintainer knows of the
 existence of $s$ and $t$, and has enough information to make judgements about
 them.
+
+TODO rewrite this to use src() and dst()
 
 Define $O$ "knows about" $s$ to mean $s \in dom(O) \cup img(O)$. Since the
 meaning of $(s, t)$ depends only on $s$ and $t$, the maintainer also has enough
