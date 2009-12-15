@@ -2,6 +2,10 @@ dt {
 	font-weight: bold;
 }
 
+dt .LaTeX {
+	font-weight: normal;
+}
+
 dd ul, dd ol {
 	padding-left: 0px;
 }
