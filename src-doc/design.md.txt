@@ -31,17 +31,17 @@ types; capitalised symbols refer to the set of all objects of the given type.
 ## Notation
 
 - For any set $E = V_s \times V_t$ of arcs, define:
-	- $src(E) = \{ v_s \in V_s : \exists v_t . (v_s, v_t) \in E \}$ ie. the set
+	- $\src E = \{ v_s \in V_s : \exists v_t . (v_s, v_t) \in E \}$ ie. the set
 	  of nodes that the arcs point from.
-	- $dst(E) = \{ v_t \in V_t : \exists v_s . (v_s, v_t) \in E \}$ ie. the set
+	- $\dst E = \{ v_t \in V_t : \exists v_s . (v_s, v_t) \in E \}$ ie. the set
 	  of nodes that the arcs point to.
-	- $rft(E) = src(E) \cup dst(E)$ ie. the set of nodes that E refers to.
+	- $\rft E = \src E \cup \dst E$ ie. the set of nodes that E refers to.
 - We deal with two types of data structures:
 	- A map $V_A : V \to A$ of nodes to their attributes.
 	- A map $E_A : E \to A$ of arcs to their attributes. For convenience, define:
-		- $src(E_A) = src(E)$
-		- $dst(E_A) = dst(E)$
-		- $rft(E_A) = rft(E)$
+		- $\src E_A = \src E$
+		- $\dst E_A = \dst E$
+		- $\rft E_A = \rft E$
 - $f \subseteq X \to Y$ -- $f$ is a partial function from set $X$ to set $Y$.
 	- This is non-standard but $f : X \to Y$ is confusing.
 
@@ -272,7 +272,7 @@ that give a rough approximation, based on our intuitions.
 Given
 :	- a map $M = \{ m \mapsto u_m \in W \}$ of node-maps to their weights,
 	  where each $m = \{ v \in V \mapsto w_{mv} \in W \}$.
-	- a given node $v \in \bigcup dom(m)$
+	- a given node $v \in \bigcup \dom m$
 Return
 :	- the map-weighted mean node-weight $\bar{w}_v$ of $v$
 
@@ -287,8 +287,8 @@ $$
 \bar{w}_v = \frac{\sum_{m} u_m \tilde{w}_{mv}}{\sum_m u_m}
 \quad ; \quad
 \tilde{w}_{mv} = \left\{ \begin{array}{llr} \\
-  w_{mv} & : v \in dom(m) & (0) \\
-  \alpha_1(m,v).0 + (1 - \alpha_1(m,v)).\bar{w}_v & : v \notin dom(m) & (1) \\
+  w_{mv} & : v \in \dom m & (0) \\
+  \alpha_1(m,v).0 + (1 - \alpha_1(m,v)).\bar{w}_v & : v \notin \dom m & (1) \\
 \end{array} \right
 $$
 
@@ -315,7 +315,7 @@ context, so this should be an additional parameter to the algorithm.
 Given
 :	- a map $M = \{ m \mapsto u_m \in W \}$ of arc-maps to their weights,
 	  where each $m = \{ e \in E \mapsto w_{me} \in W \}$.
-	- a given arc $e = (v_s, v_t) \in \bigcup dom(m)$
+	- a given arc $e = (v_s, v_t) \in \bigcup \dom m$
 Return
 :	- the map-weighted mean arc-weight $\bar{w}_e$ of $e$
 
@@ -328,11 +328,11 @@ $$
 \bar{w}_e = \frac{\sum_{m} u_m \tilde{w}_{me}}{\sum_m u_m}
 \quad ; \quad
 \tilde{w}_{me} = \left\{ \begin{array}{llr} \\
-  w_{me} & : e \in dom(m) & (0) \\
-  (1 - \alpha_1(m,e)).\bar{w}_e & : e \notin dom(m) \;\wedge\; \{ v_s, v_t \}
-    \not\subseteq rft(m) & (1) \\
-  (1 - \alpha_2(m,e)).\bar{w}_e & : e \notin dom(m) \;\wedge\; \{ v_s, v_t \}
-    \subseteq rft(m) & (2) \\
+  w_{me} & : e \in \dom m & (0) \\
+  (1 - \alpha_1(m,e)).\bar{w}_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
+    \not\subseteq \rft m & (1) \\
+  (1 - \alpha_2(m,e)).\bar{w}_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
+    \subseteq \rft m & (2) \\
 \end{array} \right
 $$
 
@@ -395,18 +395,18 @@ this system would be able to use the latest available techniques. [REF][EXTN]
 Given
 :	- a map $P_s = \{p \mapsto u_p\}$ of `ptable`s to their identity scores
 Return
-:	- a `ptable` $p_s$ that "combines" this information, with $dom(p_s) =
-	  \bigcup dom(p)$.
+:	- a `ptable` $p_s$ that "combines" this information, with $\dom p_s =
+	  \bigcup \dom p$.
 
-Define $G_s = dom(p_s) \cap G$ and $H_s = dom(p_s) \cap H$. (Note that $G_s +
-H_s = dom(p_s)$).
+Define $G_s = \dom p_s \cap G$ and $H_s = \dom p_s \cap H$. (Note that $G_s +
+H_s = \dom p_s$).
 
 A basic implementation is just to calculate the score-weighted average of the
-weight of each node. Then, to generate $p_s[v]$ for any $v \in \bigcup dom(p)$,
+weight of each node. Then, to generate $p_s[v]$ for any $v \in \bigcup \dom p$,
 we just pass $P_s$, $v$ and some appropriate $\alpha_1 : P \times V \to [0, 1]$
 through the [general algorithm](#mean-weight-of-a-node).
 
-To recap, $\alpha_1(p, v)$ is the probability of $v \notin dom(p)$ being due to
+To recap, $\alpha_1(p, v)$ is the probability of $v \notin \dom p$ being due to
 "zero-weight". In other words, $p$ does indeed know about $v$, but has chosen
 not to inform others of it. We want to make a rough estimate for $\alpha_1$.
 
@@ -499,7 +499,7 @@ the same principle to $t_1$, etc...
 
 Given
 :	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
-	- a new `tgraph` $g_n \notin dom(G_w)$
+	- a new `tgraph` $g_n \notin \dom G_w$
 Return
 :	- a weight $w_n$ to assign to $g_n$
 
@@ -734,7 +734,7 @@ them.
 
 TODO rewrite this to use src() and dst()
 
-Define $O$ "knows about" $s$ to mean $s \in dom(O) \cup img(O)$. Since the
+Define $O$ "knows about" $s$ to mean $s \in \dom O \cup \img O$. Since the
 meaning of $(s, t)$ depends only on $s$ and $t$, the maintainer also has enough
 information to decide whether to include an arc between *any* source and *any*
 target that it "knows about". Conversely, for any given arc $(x, y)$ *not*
@@ -743,10 +743,10 @@ to conclude that the absence of the arc "probably" represents a zero weight
 (non-relationship), rather than "missing information".
 
 - For a `tgraph` $g$, we guess that any $(t_1,t_2) \notin g$, with $t_1, t_2
-  \in dom(g) \cup img(g)$, is "probably" a zero weight and not "missing
+  \in \dom g \cup \img g$, is "probably" a zero weight and not "missing
   information".
-- For an `index` $h$, we guess that any $(t,d) \notin h$, with $t \in dom(g)$
-  and $d \in img(g)$, is "probably" a zero weight and not "missing
+- For an `index` $h$, we guess that any $(t,d) \notin h$, with $t \in \dom g$
+  and $d \in \img g$, is "probably" a zero weight and not "missing
   information".
 
 Specific examples of this general principle, as well as applications of it,
@@ -931,7 +931,7 @@ Here's what I have so far.
 		**  	A set of ptables, each being mapped to its identity's score.
 		** @return
 		**  	A ptable that combines all of the input information, with
-		**  	$dom(p) = \bigcup dom(p_i)$.
+		**  	$\dom p = \bigcup \dom p_i$.
 		*/
 		PTable composite(Map<PTable, IdScore> tables);
 

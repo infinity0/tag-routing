@@ -11,14 +11,24 @@ mkdir -p "$BLD"
 cd "$SRC"
 
 for i in *.tex; do
-	if [ "$i" -ot "../$DOC/${i%.tex}.pdf" ]; then continue; fi
+	OUT="../$DOC/${i%.tex}.pdf"
+	if [ "$i" -ot "$OUT" ]; then continue; fi
+
 	sed -e 's/\(\s\)"/\1``/g' "$i" > "../$BLD/$i" && pdflatex -output-directory "../$BLD" "$i"
-	cp "../$BLD/${i%.tex}.pdf" "../$DOC/${i%.tex}.pdf"
+	cp "../$BLD/${i%.tex}.pdf" "$OUT"
 done
 
 for i in *.md.txt; do
-	# markdown -x toc -x footnotes "$i" > "../$DOC/${i%.md.txt}.html"
-	pandoc -s --toc --latexmathml=LaTeXMathML.js --smart -c common.css "$i" > "../$DOC/${i%.md.txt}.html"
+	OUT="../$DOC/${i%.md.txt}.html"
+	if [ "$i" -ot "$OUT" ]; then continue; fi
+
+	cat "$i" | \
+	sed 's/\\dom/\\mathtt{\\mathrm{dom}}\\,/g' | \
+	sed 's/\\img/\\mathtt{\\mathrm{img}}\\,/g' | \
+	sed 's/\\src/\\mathtt{\\mathrm{src}}\\,/g' | \
+	sed 's/\\dst/\\mathtt{\\mathrm{dst}}\\,/g' | \
+	sed 's/\\rft/\\mathtt{\\mathrm{rft}}\\,/g' | \
+	pandoc -s --toc --latexmathml=LaTeXMathML.js --smart -c common.css > "$OUT"
 done
 
 cd ..
