@@ -40,9 +40,26 @@ types; capitalised symbols refer to the set of all objects of the given type.
 	- A map $E_A : E \to A$ of arcs to their attributes. For convenience, define:
 		- $src(E_A) = src(E)$
 		- $dst(E_A) = dst(E)$
-- $f \subseteq X \to Y$ -- $f$ is a partial function ("[finite] map") from set
-  $X$ to set $Y$.
+- $f \subseteq X \to Y$ -- $f$ is a partial function from set $X$ to set $Y$.
 	- This is non-standard but $f : X \to Y$ is confusing.
+
+### Data structures
+
+In the below notation, $\cdots$ denotes some additional predicate after a
+subject, that serves as a specifier or definition for it.
+
+Map $M = \{ x \cdots \mapsto y_x \cdots \} \quad | \quad M = \{ x_i \cdots \mapsto y_i \cdots \}_{i\cdots}$
+:	A data structure that maps^[This is equivalent to a partial function: $M =
+	\{ x_i \in X : y_i \in Y \}_i$ means the same thing as $M \subseteq X \to
+	Y$; however (in my opinion) the former is easier for an implementor to
+	read.] $x$ to $y_x$, or $x_i$ to $y_i$. In the second style, $i$ is a dummy
+	variable used only to specify $x$, $y$ from the same pair; the actual value
+	is unimportant and both $x_i$, $y_i$ are independent from it.
+List $L = [ x_i \cdots ]_{i\cdots}$
+:	A data structure that imposes an ordering $i$ on a collection of items
+	$x_i$.
+
+All data structures discussed from here onwards are implicitly finite in size.
 
 ## TODO and related tags
 
@@ -222,6 +239,98 @@ waiting for its results.
 The entire system is constructed from various components, detailed below. Most
 of them are interesting problems in themselves from a wide range of topics; as
 research advances, each component can be upgraded independently.
+
+### Combining data from multiple sources
+
+#### Mean weight of a node
+
+Given
+:	- a map $M = \{ m \mapsto u_m \in W \}$ of node-maps to their weights,
+	  where each $m = \{ v \in V \mapsto w_{mv} \in W \}$.
+	- a given node $v \in \bigcup dom(m)$
+Return
+:	- the map-weighted mean node-weight $\bar{w}_v$ of $v$
+
+The mean weight for node $v$, over all maps, is $\frac{\sum_{m} w_{mv}}{|M|}$.
+If we take into account the weights of each map, we have $\frac{\sum_{m} u_m
+w_{mv}}{\sum_m u_m}$. However, not every map will necessarily contain $v$, so
+some $w_{mv}$ may be undefined. In such cases, we estimate a weight instead;
+see the section on [zero weights](#zero-weight-attributes) for more details.
+Following on from that, we reach:
+
+$$
+\bar{w}_v = \frac{\sum_{m} u_m \tilde{w}_{mv}}{\sum_m u_m}
+\quad ; \quad
+\tilde{w}_{mv} = \left\{ \begin{array}{llr} \\
+  w_{mv} & : v \in dom(m) & (0) \\
+  \alpha(m,v).\bar{w}_v + (1 - \alpha(m,v)).0 & : v \notin dom(m) & (1) \\
+\end{array} \right
+$$
+
+where
+
+- $\alpha(m, v)$ is the probability of $v \notin dom(m)$ being due to "missing
+  information", rather than an explicit "zero weight".
+
+The above definition has $\bar{w}_v$ on the RHS, so after some rearranging, we
+get:
+
+$$
+% should be \dfrac but LaTeXMathML doesn't support amsmath commands...
+\bar{w}_v = \frac{\sum_{m:(0)} u_m w_{mv}}{\sum_m u_m \beta(m,v)}
+\quad ; \quad
+\beta(m,v) = \left\{ \begin{array}{ll} \\
+  1 & : (0) \\
+  1 - \alpha(m,v) & : (1) \\
+\end{array} \right
+$$
+
+#### Mean weight of an arc
+
+Given
+:	- a map $M = \{ m \mapsto u_m \in W \}$ of arc-maps to their weights,
+	  where each $m = \{ e \in E \mapsto w_{me} \in W \}$.
+	- a given arc $e = (v_s, v_t) \in \bigcup dom(m)$
+Return
+:	- the map-weighted mean arc-weight $\bar{w}_e$ of $e$
+
+The formulat is similar to the one from the previous section, but here we are
+dealing with arcs, so we can refine our estimate somewhat further; see the
+section on [zero weights](#zero-weight-attributes) for more details. Following
+on from that, we reach:
+
+$$
+\bar{w}_e = \frac{\sum_{m} u_m \tilde{w}_{me}}{\sum_m u_m}
+\quad ; \quad
+\tilde{w}_{me} = \left\{ \begin{array}{llr} \\
+  w_{me} & : e \in dom(m) & (0) \\
+  \alpha_1(m,e).\bar{w}_e & : e \notin dom(m) \;\wedge\; \{ v_s, v_t \}
+    \not\subseteq src(m) \cup dst(m) & (1) \\
+  \alpha_2(m,e).\bar{w}_e & : e \notin dom(m) \;\wedge\; \{ v_s, v_t \}
+    \subseteq src(m) \cup dst(m) & (2) \\
+\end{array} \right
+$$
+
+where
+
+- $\alpha_1(m, e)$ is the probability that $e \notin dom(m)$ is due to "missing
+  information", given that $m$ does not "know about" both $v_s, v_t$.
+- $\alpha_2(m, e)$ is the probability that $e \notin dom(m)$ is due to "missing
+  information", given that $m$ does "know about" both $v_s, v_t$.
+
+The above definition has $\bar{w}_v$ on the RHS, so after some rearranging, we
+get:
+
+$$
+% should be \dfrac but LaTeXMathML doesn't support amsmath commands...
+\bar{w}_e = \frac{\sum_{m:(0)} u_m w_{me}}{\sum_m u_m \beta(m,e)}
+\quad ; \quad
+\beta(m,e) = \left\{ \begin{array}{ll} \\
+  1 & : (0) \\
+  1 - \alpha_1(m,e) & : (1) \\
+  1 - \alpha_2(m,e) & : (2) \\
+\end{array} \right
+$$
 
 ### Initialisation
 
