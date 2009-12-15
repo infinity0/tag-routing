@@ -420,6 +420,8 @@ $$\alpha_1(p, v) = \left(\frac{|F_v(p)|+1}{|F(p)|+2}\right)^\frac{1}{2}$$
 where $F(p)$ and $F_v(p)$ have their intuitive meanings, and the additional
 constants serve to add some uncertainty in the cases where none or all of $p$'s
 friends know about a particular item, and also to avoid division by zero.
+TODO revise this formula; for 0/0 friends it gives us 0.7 knowledge which is 
+ridiculous.
 
 For a given $p$, this requires retrieving of all of its friends' `ptable`s,
 which may not be in $P_s$ depending on our seeding algorithm. To retrieve these
@@ -433,6 +435,17 @@ so to keep things simple for this
 project, we use a constant estimate of $\alpha = \frac{1}{2}$.^[Intuitively,
 for any given target, $P(like)$ and $P(know)$ are low but slightly correlated,
 so $P(\neg like \wedge \neg know)$ is high, but not very high.]
+
+TODO this used to be in "zero weight-attributes"; merge with above stuff
+In practice, such methods are hard to get accurate^[A basic heuristic would be to assume that some
+fraction of an identity's friends "know about" each object that its `ptable`
+points to; however the real fraction is unlikely to be near-constant over all
+objects, so the scheme would greatly disadvantage rare objects. We could take
+this into account and estimate the "knows about" fraction based on the fraction
+of identities that explicitly reference the target, but this is becoming more
+and more complicated with increasingly hand-waving arguments.], and probably
+won't provide significantly enough benefit to justify the additional complexity
+- the social network should mitigate most serious attempts to abuse the system.
 
 ### Meta-routing
 
@@ -708,70 +721,49 @@ to decrease the number of identity-object pointers
 
 ### Zero weight-attributes
 
-The current design can only represent the presence of a semantic relationship,
+The current data structures can only represent the presence of an attribute,
 and not its absence. This is a problem: any distributed system has to be able
 to deal with incomplete information, but here there is no way to tell if the
 absence of an object from a collection is due to incomplete information, or an
-explicit rejection of the semantic relationship that the object represents.
-This is important when (eg.) we combine weights from multiple sources - we
-need to know whether others disagree with an attribute definition, or merely
-don't know about its subject.
+explicit rejection based on the semantics of the object attributes. This is
+important when (eg.) we combine weights from multiple sources - we need to know
+whether others disagree with a recommendation, or merely don't know about it.
 
-Requiring explicit "zero" weight-attributes is not acceptable for our purposes.
-For a set of nodes, this requires defining *something* for the entire network;
-for a set of arcs, we can safely (TODO - explain why) restrict our domain to
-the nodes we encounter, but this still equates to defining *something* (either
-a relationship or its absence) between *all* pairs of nodes, which results in
-quadratic data growth wrt objects encountered, which is not scalable. [TODO
-rewrite properly.]
+We can either require that explicit "zero" weight-attributes are defined for
+every item encountered, no matter how insignificant; or we can try to generate
+heuristics for resolving this ambiguity, based on other implicit information.
 
-Instead, we look at heuristics that attempt to resolve this ambiguity.
+For a node-map, the former approach results in linear data growth in the number
+of items (nodes) encountered. This is not too bad, but can become very wasteful
+if the vast majority of items encountered are assigned to zero weights, and the
+algorithm that processes the data is designed to ignore them. With regards to
+our system, this will probably affect `ptable`s more than `tgraph`s, where the
+algorithmic usefulness of a tag is largely unrelated to its weight.
 
-For an object $O$ containing arcs, such as `index` and `tgraph`, we observe
-that the presence of an arc $(s, t)$ indicates that the maintainer knows of the
-existence of $s$ and $t$, and has enough information to make judgements about
-them.
+Within a single node-map, there is no information that could be used to perform
+any heuristic: a node not included in the map has no information relating to it
+in the map. However, it may be possible to extract information from other
+sources, such as the friends for a `ptable`. These are context-specific and
+will be explored in the appropriate sections. [TODO add link]
 
-TODO rewrite this to use src() and dst()
+For an arc-map, the former approach results in quadratic data growth in the
+number of items (nodes) encountered, since we need to define _something_
+(either a relationship or its absence) between all _pairs_ of nodes. This is
+not scalable; fortunately an arc-map holds more information than a node-map,
+which allows better heuristics in the latter approach.
 
-Define $O$ "knows about" $s$ to mean $s \in \dom O \cup \img O$. Since the
-meaning of $(s, t)$ depends only on $s$ and $t$, the maintainer also has enough
-information to decide whether to include an arc between *any* source and *any*
-target that it "knows about". Conversely, for any given arc $(x, y)$ *not*
-present in $O$, if it "knows about" both $x$ and $y$, then it seems reasonable
-to conclude that the absence of the arc "probably" represents a zero weight
-(non-relationship), rather than "missing information".
-
-- For a `tgraph` $g$, we guess that any $(t_1,t_2) \notin g$, with $t_1, t_2
-  \in \dom g \cup \img g$, is "probably" a zero weight and not "missing
-  information".
-- For an `index` $h$, we guess that any $(t,d) \notin h$, with $t \in \dom g$
-  and $d \in \img g$, is "probably" a zero weight and not "missing
-  information".
+Since the meaning of $e = (v_s, v_t)$ is fully determined by $\{v_s$, $v_t\}$,
+the maintainer has enough information to decide whether to include $e$ in $E$
+if it "knows about" both $v_s, v_t$. Roughly, we can represent this notion as
+$v \in \rft E$. In other words, if $e \notin \dom E$ but $v_s, v_t \in \rft E$,
+then either the maintainer has overlooked the relation between $(v_s, v_t)$, or
+there is no such relation (ie. a "zero weight"). The latter is more likely,
+since people generally review things before publishing, and the mistakes that
+do slip through are fixed over time.
 
 Specific examples of this general principle, as well as applications of it,
-is explored further in relevant sections of the [Algorithms](#algorithms)
+are explored further in relevant sections of the [Algorithms](#algorithms)
 chapter.
-
-For an object consisting only of nodes, such as `ptable`, there is not enough
-information within a single object that could be used for any heuristic to
-distinguish the two cases.^[Using the heuristic described above for arcs, by
-treating the nodes as arcs from a single source node doesn't help: an arc $(x,
-y)$ cannot exist with the required properties since $x$ is fixed.]
-
-However, in the specific case of `ptable`, we could use the links present in
-the social network to infer more information: eg. identities who are friends
-are likely to "know about" similar sets of objects. In practice, such methods
-are hard to get accurate^[A basic heuristic would be to assume that some
-fraction of an identity's friends "know about" each object that its `ptable`
-points to; however the real fraction is unlikely to be near-constant over all
-objects, so the scheme would greatly disadvantage rare objects. We could take
-this into account and estimate the "knows about" fraction based on the fraction
-of identities that explicitly reference the target, but this is becoming more
-and more complicated with increasingly hand-waving arguments.], and probably
-won't provide significantly enough benefit to justify the additional complexity
-- the social network should mitigate most serious attempts to abuse the system.
-MORE
 
 ### Negative weight-attributes
 
