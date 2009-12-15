@@ -126,6 +126,7 @@ var CONST = 0, UNARY = 1, BINARY = 2, INFIX = 3, LEFTBRACKET = 4,
     TEXT = 9, BIG = 10, LONG = 11, STRETCHY = 12, MATRIX = 13; // token types
 
 var AMsqrt = {input:"\\sqrt",	tag:"msqrt", output:"sqrt",	ttype:UNARY},
+  AMsqrt = {input:"\\not",	tag:"mnot", output:"not",	ttype:UNARY},
   AMroot = {input:"\\root",	tag:"mroot", output:"root",	ttype:BINARY},
   AMfrac = {input:"\\frac",	tag:"mfrac", output:"/",	ttype:BINARY},
   AMover = {input:"\\stackrel", tag:"mover", output:"stackrel", ttype:BINARY},
@@ -140,6 +141,16 @@ var AMsqrt = {input:"\\sqrt",	tag:"msqrt", output:"sqrt",	ttype:UNARY},
 // AMdiv   = {input:"/",	 tag:"mfrac", output:"/",    ttype:INFIX},
 // Commented out by DRW so that " prints literally in equations
 // AMquote = {input:"\"",	 tag:"mtext", output:"mbox", ttype:TEXT};
+
+// List of negations obtained from http://frodo.elon.edu/tutorial/tutorial.pdf
+var AMRelationNegations = {
+"\u003C":"\u226E", "\u003E":"\u226F", "\u2264":"\u2270", "\u2265":"\u2271",
+"\u003D":"\u2260", "\u2261":"\u2262", "\u227A":"\u2280", "\u227B":"\u2281",
+"\u227C":"\u22E0", "\u227D":"\u22E1", "\u223C":"\u2241", "\u2243":"\u2244",
+"\u2282":"\u2284", "\u2283":"\u2285", "\u2286":"\u2288", "\u2287":"\u2289",
+"\u2248":"\u2249", "\u2245":"\u2247", "\u2291":"\u22E2", "\u2292":"\u22E3",
+"\u224D":"\u226D"
+}
 
 var AMsymbols = [
 //Greek letters
@@ -283,6 +294,8 @@ var AMsymbols = [
 {input:"\\supset",	tag:"mo", output:"\u2283", ttype:CONST},
 {input:"\\subseteq",	tag:"mo", output:"\u2286", ttype:CONST},
 {input:"\\supseteq",	tag:"mo", output:"\u2287", ttype:CONST},
+{input:"\\subsetneq",	tag:"mo", output:"\u228A", ttype:CONST},
+{input:"\\supsetneq",	tag:"mo", output:"\u228B", ttype:CONST},
 {input:"\\sqsubset",	tag:"mo", output:"\u228F", ttype:CONST},
 {input:"\\sqsupset",	tag:"mo", output:"\u2290", ttype:CONST},
 {input:"\\sqsubseteq",  tag:"mo", output:"\u2291", ttype:CONST},
@@ -877,6 +890,14 @@ function AMparseSexpr(str) { //parses str and returns [node,tailstr,(node)tag]
 		if (symbol.input == "\\overbrace" || symbol.input == "\\underbrace")
 		  node.ttype = UNDEROVER;
 		return [node,result[1],symbol.tag];
+      } else if (symbol.input == "\\not") {		// not
+        // added by infinity0 on 2009-12-15 to implement \not command
+        text = result[0].childNodes[0].nodeValue;
+        if (typeof text == "string" && text.length == 1 && text in AMRelationNegations) {
+          result[0].childNodes[0].nodeValue = AMRelationNegations[text];
+          return [AMcreateMmlNode(symbol.tag,result[0]),result[1],symbol.tag];
+        }
+        return [AMcreateMmlNode("mo",document.createTextNode("\\")),"not " + str,symbol.tag];
       } else {			      // font change or displaystyle command
         if (!isIE && typeof symbol.codes != "undefined") {
           for (i=0; i<result[0].childNodes.length; i++)
