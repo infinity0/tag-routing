@@ -673,8 +673,8 @@ Our first thought was to have arcs represent a relationship from a more
   contain cycles, especially when pulling in data from several sources. We
   don't want to be tied up devising a complex algorithm to resolve this.
 - We potentially would like to traverse from general to specific tags, as well
-  as vice versa; and arc targets are the only mechanism of doing this *between
-  `tgraph`s*.^[Within a `tgraph`, arc sources ("reverse" pointers) could in
+  as vice versa; and arc targets are the only mechanism of doing this between
+  `tgraph`s.^[Within a `tgraph`, arc sources ("reverse" pointers) could in
   theory be calculated quickly, depending on the implementation.]
 
 The metric "probability of a query for $t_trg$ satisfying a query for $t_src$"
@@ -733,10 +733,10 @@ We can either require that explicit "zero" weight-attributes are defined for
 every item encountered, no matter how insignificant; or we can try to generate
 heuristics for resolving this ambiguity, based on other implicit information.
 
-For a node-map, the former approach results in linear data growth in the number
-of items (nodes) encountered. This is not too bad, but can become very wasteful
+**For a node-map**, the former results in linear data growth in the number
+of items (nodes) encountered. This is not too bad, but can become inefficient
 if the vast majority of items encountered are assigned to zero weights, and the
-algorithm that processes the data is designed to ignore them. With regards to
+algorithms that process the data are designed to ignore them. With regards to
 our system, this will probably affect `ptable`s more than `tgraph`s, where the
 algorithmic usefulness of a tag is largely unrelated to its weight.
 
@@ -746,11 +746,11 @@ in the map. However, it may be possible to extract information from other
 sources, such as the friends for a `ptable`. These are context-specific and
 will be explored in the appropriate sections. [TODO add link]
 
-For an arc-map, the former approach results in quadratic data growth in the
+**For an arc-map**, the former approach results in quadratic data growth in the
 number of items (nodes) encountered, since we need to define _something_
 (either a relationship or its absence) between all _pairs_ of nodes. This is
 not scalable; fortunately an arc-map holds more information than a node-map,
-which allows better heuristics in the latter approach.
+which allows for better ambiguity-resolution heuristics.
 
 Since the meaning of $e = (v_s, v_t)$ is fully determined by $\{v_s$, $v_t\}$,
 the maintainer has enough information to decide whether to include $e$ in $E$
