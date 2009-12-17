@@ -182,9 +182,8 @@ Description
 	2. A map of arcs to their weights, where each arc is a relation from a tag
 	to another tag or `tgraph`.
 Semantics
-:	1. TODO
-	2. Probability that a query for the target tag will return results for the
-	   source tag (see [`tgraph` semantics](#tgraph-semantics))
+:	1. Saturation of the tag. (see [`tgraph` semantics](#tgraph-semantics))
+	2. Relevance of the target tag to the source tag.
 
 This data structure provides information on tags and the relationships between
 tags. The presence of a tag indicates an understanding of its meaning; an arc
@@ -247,14 +246,28 @@ research advances, each component can be upgraded independently.
 Below, we describe algorithms for combining data from multiple sources. Our
 model is relatively simple: we have a list of sources with a weight judgement
 on how "good" each source is; in turn, each source specifies their own weight
-judgement for each object that it refers to. Given a target object, we want to
-derive a "combined" weight for that object, based on the supplied information.
+judgement for each object that it refers to. To avoid confusion, we will call
+source-weights "scores" and object-weights "values". Given a target object, we
+want to derive a "combined" value for that object, using the given information.
 
-Here, we start with the most basic approach - to generate the source-weighted
-average (mean) weight of the object. Normally, mean-based algorithms are very
-susceptible to attacks and distortions; however, the weights here are all
-[limited](#weight-attributes) to the range $[0, 1]$, which should offer good
-resistance against isolated attackers.
+For our prototype, we will use a very basic algorithm - the score-weighted
+mean value of the object. Generally, the arithmetic mean is susceptible to
+distortions and attacks. Let $k$ be the proportion of the total score that the
+attacker controls. Weights are [limited](#weight-attributes) to $[0, 1]$, so
+this will roughly be the same as the proportion of compromised nodes.
+
+If the value is evenly distributed, the effect of an attack will be limited in
+direct proportion to $k$ - the worst thing they can do is give a single value
+with $k$ influence in the final result. However, if the value is far from being
+evenly distributed, it would be possible for an attacker to introduce a value
+that has an extremely small probability $\epsilon$ of occuring, yet which will
+still have a $k$ share of influence in the final combined value.
+
+TODO - explain this better. possibly move into the "Design" section.
+
+So the types of weights that are input to this algorithm must be roughly evenly
+distributed in order to be secure. Most distributions probably will not cause
+too many problems; however, negative-log distributions will.
 
 The algorithms below make use of several $\alpha_i$ functions, which fine-tune
 the output based knowledge of on the context of the inputs. There are various
@@ -420,8 +433,10 @@ $$\alpha_1(p, v) = \left(\frac{|F_v(p)|+1}{|F(p)|+2}\right)^\frac{1}{2}$$
 where $F(p)$ and $F_v(p)$ have their intuitive meanings, and the additional
 constants serve to add some uncertainty in the cases where none or all of $p$'s
 friends know about a particular item, and also to avoid division by zero.
-TODO revise this formula; for 0/0 friends it gives us 0.7 knowledge which is 
-ridiculous.
+
+TODO revise this formula; for 0/0 friends it gives us 0.7 knowledge which is
+ridiculous. TODO note that people might explicitly not point to something their
+friends already point to, since that would be redundant.
 
 For a given $p$, this requires retrieving of all of its friends' `ptable`s,
 which may not be in $P_s$ depending on our seeding algorithm. To retrieve these
@@ -470,21 +485,54 @@ nodes have weights too... pah...
 
 #### Combining `tgraph` objects
 
+CURRENTWORK
+
 Given
 :	- a working map $G_w = \{(g_i, u_i)\}$ of `tgraph`s to their weights
 	- a source tag $t$
 Return
 :	- a map $\{(x_j, w_j)\}$ from `tgraph` arc targets (ie. a tag or tgraph) to
 	  their weights; the source of each arc is implicitly $t$.
+	  TODO fix format of this, make it more useful
 
 A basic implementation is just to calculate the `tgraph`-weighted average of
 the weight of the arc $(t, x_j)$, ie:
 
+TODO semantics of tag-tgraph arcs
+
 TODO adapt from general algorithms
 
-Like the other algorithm, we need to determine realistic values for $\alpha$
-and $\beta$. The same points apply here, and again for temporary simplicity we
-pick $\alpha = $ and $\beta = $. TODO
+- combine node-maps: with `tgraph`s, authors are supposed to include low-weight
+  tags; we assume that absence of a tag always means "missing information", so
+  let $\alpha_1 = 0$
+- combine arc-maps: standard; need to work out $\alpha_1, \alpha_2$ - former
+  is low, latter is high - see [analysis](#zero-weight-attributes)
+
+then construct the correct output format, as defined in the spec above
+
+For node-weights, the "important" thing is not the value itself, but rather
+where the most significant bit occurs. In other words, the outcome-entropy of
+(D tagged by v), equal to -log(P(D tagged by v)).
+
+When we combine saturations from various sources, then I think it's more
+"correct" to take the mean of the entropy, and not the saturation. I'm not sure
+how to justify this rigorously, but intuitively:
+
+- if we have 3 sources giving saturations of (1, epsilon, epsilon), the mean
+saturation is 1/3, whereas the actual value is likely to be nearer epsilon.
+
+Is there a more formal way of saying this?
+
+Also, "mean entropy" is theoretically open to manipulation, since entropy can
+go all the way to infinity. But I don't think this is too much of a problem,
+because:
+
+- there is no incentive to manipulate these node-weights, since a tag must be
+well-related to other tags for the search algorithm to be affected; and
+arc-weights are not susceptible to this kind of manipulation
+- CPUs practically have finite-size representations of numbers, which limits
+the entropy to be proportional to the width (in bits) of the representation.
+Also, we could do this manually.
 
 #### Determining `tgraph` traversal order
 
@@ -495,12 +543,18 @@ Return
 :	- an ordered list $[(t_i \in T_w, x_i, w_i)]$ of `tgraph` arcs to add to
 	  the tree
 
+see [`tgraph` semantics](#tgraph-semantics)
+- want to maximise $u_e.w_t$
+- etc. TODO
+
 A basic implementation can simply return the "nearest" node to the root not
 already in the tree, where "distance" of a path is defined as the negative log
 of the product of its arc weights. MORE
 
-TODO this has the potential to be very shit. needs more work. see [`tgraph`
-semantics](#tgraph-semantics)
+However, note also that tags with higher $w_t$ are more likely to have their
+search queries succeed, independent of $u_e.w_t$.
+
+TODO
 
 If the first element can be added to the tree immediately, we do so, and call
 the method recursively, ignoring the other elements returned. In the other case
@@ -677,33 +731,51 @@ Our first thought was to have arcs represent a relationship from a more
   `tgraph`s.^[Within a `tgraph`, arc sources ("reverse" pointers) could in
   theory be calculated quickly, depending on the implementation.]
 
-The metric "probability of a query for $t_trg$ satisfying a query for $t_src$"
-addresses the above issues. It is clearly quantifiable; also intuitively, for
-real data it would usually be bidirectional but asymmetrical. This fits in with
-our model of a (potentially cyclic) weighted directed graph, and also allows us
-to traverse between related tags in both directions.
+MORE
 
-We still need a way of knowing which tags are more/less "general". We can do
-this by designing an algorithm to infer this from the arc weights, or by
-explicitly assigning a weight to each tag (node). The latter is simpler, but
-may have reliability problems since it adds much data to process, and to depend
-on the correctness of.
+The following model addresses these shortcomings.
 
-The algorithmic approach is much more complex; at the moment I have no solid
-ideas on how to proceed; intuitively, a PageRank-like approach could work. This
-topic can be explored elsewhere [EXTN]; for now we choose the simple approach
-and require that `tgraph` nodes be assigned weights too.
+For a given tag $t$, let $D(t) = \{ d \in D : d \textrm{ tagged with } t \}$.
+Define the "saturation" of $t$ to be $\frac{|D(t)|}{|D|}$, and the "relevance"
+of $t$ to $t_0$ to be $\frac{|D(t) \cap D(t_0)|}{|D(t)|}$. An equivalent model
+is to treat $D$ as a random variable, evenly distributed over all documents in
+the network. For a given tag $t$, the saturation of $t$ is equivalent to $P(D
+\textrm{ tagged with } t)$, which we will shorten to $P(t)$ for convenience.
+Likewise, the relevance of $t$ to $t_0$ is equivalent to $P(t_0|t)$. We then
+use these to define:
 
-Possible semantics for tag weights could include:
+- the weight $u_t$ of a node $t$ to be $P(t)$, its saturation
+- the weight $w_e$ of an arc $e = (t_0, t)$ to be $P(t_0|t)$, the relevance of
+  the target tag to the source tag.
 
-- fraction of indexes that have definitions for this tag
-- fraction of arcs (in all indexes) with this tag as its source
-- probability a search will return a decent (by some standard) amount of
-  results for this tag
+Furthermore, these values are simple (in theory) to calculate, so this process
+can easily be automated. Note also that given $u_{t_0}$, $u_t$ and $w_e$, the
+weight of $e\prime = (t, t_0)$ can be derived using Bayes' theorem, as
+$w_e.u_t/u_{t_0}$. If the `tgraph` implementation allows quick lookups of an
+arc both by its source node and its target node, then it might be sensible to
+not explicitly define the weight of the reverse arc.
 
-The first two are unlikely to give values close to 1 for any tag; on the other
-hand the third option is likely to give values close to 1 for pretty much
-anything that is slightly popular... TODO
+TODO more here maybe...
+
+In routing terms, if our target is $t_0$, then we want to pick a $t$ such that
+$P(t_0 \cap t)$ is maximised - for the above model, this is $u_t.w_e$.
+
+This raises the question of why we don't just define $w_e$ as $P(t_0 \cap t)$,
+which would also remove the need to define $u_t$. However, this would destroy
+our ability to quickly look up $P(t)$ and $P(t_0|t)$. On a distributed network,
+we need to be able to combine data from multiple sources; algorithms to do this
+may well need knowledge of the separate values.
+
+Now for the analogy to typical navigable networks: a tag $t$ can be thought of
+as defining a subnetwork - the set of documents tagged with $t$. $P(t)$ tells
+us the size of this subnetwork, and $P(t_0|t)$ tells us the proximity between
+two subnetworks.
+
+For example, $P(t)$ roughly corresponds to the CIDR routing prefix used by the
+current internet. In ring-topology networks, such as some DHTs, neighbours are
+matched by the numerical value of the network address; by contrast, internet
+routers update each other with their nearest neighbours; and here, we provide
+this information in the form of $P(t_0|t)$.
 
 ## Pointers between data structures
 
