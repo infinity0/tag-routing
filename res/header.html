@@ -1,24 +1,65 @@
 <link rel="stylesheet" href="screen.css" type="text/css" media="screen" />
 <script type="text/javascript">
+/*<![CDATA[*/
 
 inc='\u25b9'; dec='\u25bf';
 ina='\u25b8'; dea='\u25be';
 
+function toggleSect(sect, ctl) {
+	if (sect.style.display == 'none') {
+		sect.style.display = 'block';
+		ctl.firstChild.nodeValue = dea;
+		return true;
+	} else {
+		sect.style.display = 'none';
+		ctl.firstChild.nodeValue = ina;
+		return false;
+	}
+}
+
+function incSect(sect, ctl) {
+	sect.style.display = 'block';
+	ctl.firstChild.nodeValue = dec;
+}
+
+function decSect(sect, ctl) {
+	sect.style.display = 'none';
+	ctl.firstChild.nodeValue = inc;
+}
+
+function disableSelection(target){
+	if ('MozUserSelect' in target.style) {
+		target.style.MozUserSelect = "none"
+	} else if ('onselectstart' in target) {
+		target.onselectstart = function() { return false; }
+	} else {
+		target.onmousedown = function(){ return false; }
+	}
+	target.style.cursor = "default";
+}
+
+
 window.onload = function() {
+	disableSelection(document.getElementById("TOC"));
 	sect = document.getElementById("TOC").firstChild.getElementsByTagName('ul');
 	for (i=0; i<sect.length; ++i) {
 		li = sect[i].parentNode;
 		obj = document.createElement('span');
 		obj.appendChild(document.createTextNode(inc));
 		obj.className = 'toggle';
-		obj.onclick = function() {
-			s = this.parentNode.lastChild;
-			if (s.style.display == 'none') {
-				s.style.display = 'block';
-				this.firstChild.nodeValue = dea;
+		obj.onclick = function(event) {
+			stat = toggleSect(this.parentNode.lastChild, this);
+			if (!event.shiftKey) { return; }
+
+			subs = this.parentNode.lastChild.getElementsByTagName('ul');
+			if (stat) {
+				for (j=0; j<subs.length; ++j) {
+					incSect(subs[j], subs[j].parentNode.firstChild);
+				}
 			} else {
-				s.style.display = 'none';
-				this.firstChild.nodeValue = ina;
+				for (j=0; j<subs.length; ++j) {
+					decSect(subs[j], subs[j].parentNode.firstChild);
+				}
 			}
 		}
 		obj.onmouseover = function() {
@@ -32,4 +73,5 @@ window.onload = function() {
 	}
 }
 
+/*]]>*/
 </script>
