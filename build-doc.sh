@@ -4,6 +4,7 @@
 SRC="src-doc"
 BLD="build-doc"
 DOC="doc"
+RES="res"
 
 mkdir -p "$DOC"
 mkdir -p "$BLD"
@@ -28,7 +29,7 @@ for i in *.md.txt; do
 	sed 's/\\src/\\mathtt{\\mathrm{src}}\\,/g' | \
 	sed 's/\\dst/\\mathtt{\\mathrm{dst}}\\,/g' | \
 	sed 's/\\rft/\\mathtt{\\mathrm{rft}}\\,/g' | \
-	pandoc -s --toc --latexmathml=LaTeXMathML.js --smart -c common.css > "$OUT"
+	pandoc -s --toc --smart -c common.css -H "../$RES/header.html" --latexmathml=LaTeXMathML.js > "$OUT"
 done
 
 cd ..

@@ -543,9 +543,9 @@ Return
 :	- an ordered list $[(t_i \in T_w, x_i, w_i)]$ of `tgraph` arcs to add to
 	  the tree
 
-see [`tgraph` semantics](#tgraph-semantics)
-- want to maximise $u_t.w_e$
-- etc. TODO
+see [`tgraph` semantics](#tgraph-semantics) - want to maximise $u_t.w_e$, etc
+
+Transform the graph. For each arc $e = (t_0, t)$, let $w_e\prime = -\log(w_e.u_t)$
 
 A basic implementation can simply return the "nearest" node to the root not
 already in the tree, where "distance" of a path is defined as the negative log
@@ -757,10 +757,10 @@ We then use these to define:
 
 These values are straightforward to calculate, so this process can (in theory)
 be automated. Note also that given $u_{t_0}$, $u_t$ and $w_e$, the weight of
-$e\prime = (t, t_0)$ can be derived using Bayes' theorem, as $w_e.u_t/u_{t_0}$.
-If the `tgraph` implementation allows quick lookups of an arc both by its
-source node and its target node, then it might be sensible to not explicitly
-define the weight of the reverse arc.
+$e^- = (t, t_0)$ can be derived using Bayes' theorem, as $w_e.u_t/u_{t_0}$. If
+the `tgraph` implementation allows quick lookups of an arc both by its source
+node and its target node, then it might be sensible to not explicitly define
+the weight of the reverse arc.
 
 We can think of `tgraph` $g$ (containing tags $t_i$), as a single tag over all
 documents tagged by any $t_i$, and define saturation and relevance accordingly.
@@ -770,7 +770,7 @@ meta-routing network. However, a `tgraph` consists of highly compressed data
 on a large section of the storage network, so in practice the vast majority of
 our meta-routing needs should be satisfied by a small neighbourhood around our
 seed set. Choosing between `tgraph`s probably won't be very important, so for
-now we will ignore this deficiency.
+now we will ignore this deficiency.[EXTN]
 
 Now for the analogy to typical navigable networks: a tag $t$ can be thought of
 as defining a subnetwork - the set of documents tagged with $t$. $P(t)$ tells

@@ -1,0 +1,35 @@
+<link rel="stylesheet" href="screen.css" type="text/css" media="screen" />
+<script type="text/javascript">
+
+inc='\u25b9'; dec='\u25bf';
+ina='\u25b8'; dea='\u25be';
+
+window.onload = function() {
+	sect = document.getElementById("TOC").firstChild.getElementsByTagName('ul');
+	for (i=0; i<sect.length; ++i) {
+		li = sect[i].parentNode;
+		obj = document.createElement('span');
+		obj.appendChild(document.createTextNode(inc));
+		obj.className = 'toggle';
+		obj.onclick = function() {
+			s = this.parentNode.lastChild;
+			if (s.style.display == 'none') {
+				s.style.display = 'block';
+				this.firstChild.nodeValue = dea;
+			} else {
+				s.style.display = 'none';
+				this.firstChild.nodeValue = ina;
+			}
+		}
+		obj.onmouseover = function() {
+			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? ina: dea;
+		}
+		obj.onmouseout = function() {
+			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? inc: dec;
+		}
+		sect[i].style.display = 'none';
+		li.insertBefore(obj, li.firstChild);
+	}
+}
+
+</script>
