@@ -544,15 +544,21 @@ Return
 	  the tree
 
 see [`tgraph` semantics](#tgraph-semantics)
-- want to maximise $u_e.w_t$
+- want to maximise $u_t.w_e$
 - etc. TODO
 
 A basic implementation can simply return the "nearest" node to the root not
 already in the tree, where "distance" of a path is defined as the negative log
-of the product of its arc weights. MORE
+of the product of its arc weights.
 
-However, note also that tags with higher $w_t$ are more likely to have their
-search queries succeed, independent of $u_e.w_t$.
+A alternative implementation, which judges a tag by all the paths leading to
+it, could be to transform the graph to use a flow-based model, and rank tags by
+the flow going through them. This doesn't seem too complicated an idea, but we
+will leave this to one side for now, and concentrate on the "bigger picture".
+
+
+However, note also that tags with higher $u_t$ are more likely to have their
+search queries succeed, independent of $w_e.u_t$.
 
 TODO
 
@@ -741,30 +747,30 @@ of $t$ to $t_0$ to be $\frac{|D(t) \cap D(t_0)|}{|D(t)|}$. An equivalent model
 is to treat $D$ as a random variable, evenly distributed over all documents in
 the network. For a given tag $t$, the saturation of $t$ is equivalent to $P(D
 \textrm{ tagged with } t)$, which we will shorten to $P(t)$ for convenience.
-Likewise, the relevance of $t$ to $t_0$ is equivalent to $P(t_0|t)$. We then
-use these to define:
+Likewise, the relevance of $t$ to $t_0$ is equivalent to $P(t_0|t)$.
 
-- the weight $u_t$ of a node $t$ to be $P(t)$, its saturation
+We then use these to define:
+
+- the weight $u_t$ of a node $t$ to be $P(t)$, its saturation.
 - the weight $w_e$ of an arc $e = (t_0, t)$ to be $P(t_0|t)$, the relevance of
   the target tag to the source tag.
 
-Furthermore, these values are simple (in theory) to calculate, so this process
-can easily be automated. Note also that given $u_{t_0}$, $u_t$ and $w_e$, the
-weight of $e\prime = (t, t_0)$ can be derived using Bayes' theorem, as
-$w_e.u_t/u_{t_0}$. If the `tgraph` implementation allows quick lookups of an
-arc both by its source node and its target node, then it might be sensible to
-not explicitly define the weight of the reverse arc.
+These values are straightforward to calculate, so this process can (in theory)
+be automated. Note also that given $u_{t_0}$, $u_t$ and $w_e$, the weight of
+$e\prime = (t, t_0)$ can be derived using Bayes' theorem, as $w_e.u_t/u_{t_0}$.
+If the `tgraph` implementation allows quick lookups of an arc both by its
+source node and its target node, then it might be sensible to not explicitly
+define the weight of the reverse arc.
 
-TODO more here maybe...
-
-In routing terms, if our target is $t_0$, then we want to pick a $t$ such that
-$P(t_0 \cap t)$ is maximised - for the above model, this is $u_t.w_e$.
-
-This raises the question of why we don't just define $w_e$ as $P(t_0 \cap t)$,
-which would also remove the need to define $u_t$. However, this would destroy
-our ability to quickly look up $P(t)$ and $P(t_0|t)$. On a distributed network,
-we need to be able to combine data from multiple sources; algorithms to do this
-may well need knowledge of the separate values.
+We can think of `tgraph` $g$ (containing tags $t_i$), as a single tag over all
+documents tagged by any $t_i$, and define saturation and relevance accordingly.
+That is, $P(g) = P(\bigcup t_i)$ and $P(t_0|g) = P(t_0|\bigcup t_i)$. Note that
+these values give no information on how well-connected a `tgraph` is within the
+meta-routing network. However, a `tgraph` consists of highly compressed data
+on a large section of the storage network, so in practice the vast majority of
+our meta-routing needs should be satisfied by a small neighbourhood around our
+seed set. Choosing between `tgraph`s probably won't be very important, so for
+now we will ignore this deficiency.
 
 Now for the analogy to typical navigable networks: a tag $t$ can be thought of
 as defining a subnetwork - the set of documents tagged with $t$. $P(t)$ tells
@@ -776,6 +782,15 @@ current internet. In ring-topology networks, such as some DHTs, neighbours are
 matched by the numerical value of the network address; by contrast, internet
 routers update each other with their nearest neighbours; and here, we provide
 this information in the form of $P(t_0|t)$.
+
+In routing terms, if our end target is $t_0$, then we want to pick a $t$ such
+that $P(t_0 \cap t)$ is maximised - for the above model, this is $u_t.w_e$.
+
+This raises the question of why we don't just define $w_e$ as $P(t_0 \cap t)$,
+which would also remove the need to define $u_t$. However, this would destroy
+our ability to quickly look up $P(t)$ and $P(t_0|t)$. On a distributed network,
+we need to be able to combine data from multiple sources; algorithms to do this
+may well need knowledge of the separate values.
 
 ## Pointers between data structures
 
