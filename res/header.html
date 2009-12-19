@@ -5,26 +5,26 @@
 inc='\u25b9'; dec='\u25bf';
 ina='\u25b8'; dea='\u25be';
 
-function toggleSect(sect, ctl) {
+function toggleSect(sect) {
 	if (sect.style.display == 'none') {
 		sect.style.display = 'block';
-		ctl.firstChild.nodeValue = dea;
+		sect.parentNode.firstChild.firstChild.nodeValue = dea;
 		return true;
 	} else {
 		sect.style.display = 'none';
-		ctl.firstChild.nodeValue = ina;
+		sect.parentNode.firstChild.firstChild.nodeValue = ina;
 		return false;
 	}
 }
 
-function incSect(sect, ctl) {
+function incSect(sect) {
 	sect.style.display = 'block';
-	ctl.firstChild.nodeValue = dec;
+	sect.parentNode.firstChild.firstChild.nodeValue = dec;
 }
 
-function decSect(sect, ctl) {
+function decSect(sect) {
 	sect.style.display = 'none';
-	ctl.firstChild.nodeValue = inc;
+	sect.parentNode.firstChild.firstChild.nodeValue = inc;
 }
 
 function disableSelection(target){
@@ -38,27 +38,46 @@ function disableSelection(target){
 	target.style.cursor = "default";
 }
 
+function getSectDeep(node, lev, list) {
+	if (lev <= 0) { return; }
+	switch (node.nodeName.toLowerCase()) {
+	case 'ul':
+		for (var i=0; i<node.childNodes.length; i++) {
+			getSectDeep(node.childNodes.item(i), lev, list);
+		}
+		break;
+	case 'li':
+		var obj = node.lastChild;
+		if (obj.nodeName.toLowerCase() == 'ul') {
+			list[list.length] = obj;
+			getSectDeep(obj, lev-1, list);
+		}
+		break;
+	}
+}
 
 window.onload = function() {
-	disableSelection(document.getElementById("TOC"));
-	sect = document.getElementById("TOC").firstChild.getElementsByTagName('ul');
-	for (i=0; i<sect.length; ++i) {
-		li = sect[i].parentNode;
-		obj = document.createElement('span');
+	var toc = document.getElementById("TOC");
+	disableSelection(toc);
+	var sect = toc.firstChild.getElementsByTagName('ul');
+
+	for (var i=0; i<sect.length; ++i) {
+		var li = sect[i].parentNode;
+		var obj = document.createElement('span');
 		obj.appendChild(document.createTextNode(inc));
 		obj.className = 'toggle';
 		obj.onclick = function(event) {
-			stat = toggleSect(this.parentNode.lastChild, this);
+			var stat = toggleSect(this.parentNode.lastChild);
 			if (!event.shiftKey) { return; }
 
-			subs = this.parentNode.lastChild.getElementsByTagName('ul');
+			var subs = this.parentNode.lastChild.getElementsByTagName('ul');
 			if (stat) {
-				for (j=0; j<subs.length; ++j) {
-					incSect(subs[j], subs[j].parentNode.firstChild);
+				for (var j=0; j<subs.length; ++j) {
+					incSect(subs[j]);
 				}
 			} else {
-				for (j=0; j<subs.length; ++j) {
-					decSect(subs[j], subs[j].parentNode.firstChild);
+				for (var j=0; j<subs.length; ++j) {
+					decSect(subs[j]);
 				}
 			}
 		}
@@ -70,6 +89,12 @@ window.onload = function() {
 		}
 		sect[i].style.display = 'none';
 		li.insertBefore(obj, li.firstChild);
+	}
+
+	var list = [];
+	getSectDeep(toc.firstChild, 2, list);
+	for (var i=0; i<list.length; ++i) {
+		incSect(list[i]);
 	}
 }
 
