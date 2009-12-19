@@ -6,8 +6,12 @@ dt .LaTeX {
 	font-weight: normal;
 }
 
-dd ul, dd ol {
-	padding-left: 0px;
+ul, ol {
+	padding-left: 1.6em;
+}
+
+dd {
+	margin-left: 2em;
 }
 
 .footnoteRef {

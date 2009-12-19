@@ -287,7 +287,7 @@ Given
 	  where each $m = \{ v \in V \mapsto w_{mv} \in W \}$.
 	- a given node $v \in \bigcup \dom m$
 Return
-:	- the map-weighted mean node-weight $\bar{w}_v$ of $v$
+:	- the map-weighted mean node-weight $\bar w_v$ of $v$
 
 The mean weight for node $v$, over all maps, is $\frac{\sum_{m} w_{mv}}{|M|}$.
 If we take into account the weights of each map, we have $\frac{\sum_{m} u_m
@@ -297,22 +297,22 @@ see the section on [zero weights](#zero-weight-attributes) for more details.
 Following on from that, we reach:
 
 $$
-\bar{w}_v = \frac{\sum_{m} u_m \tilde{w}_{mv}}{\sum_m u_m}
+\bar w_v = \frac{\sum_{m} u_m \hat w_{mv}}{\sum_m u_m}
 \quad ; \quad
-\tilde{w}_{mv} = \left\{ \begin{array}{llr} \\
+\hat w_{mv} = \left\{ \begin{array}{llr} \\
   w_{mv} & : v \in \dom m & (0) \\
-  \alpha_1(m,v).0 + (1 - \alpha_1(m,v)).\bar{w}_v & : v \notin \dom m & (1) \\
+  \alpha_1(m,v).0 + (1 - \alpha_1(m,v)).\bar w_v & : v \notin \dom m & (1) \\
 \end{array} \right
 $$
 
 where $\alpha_i(m, v)$ is the probability that the author of $m$ _does_ know
 about $v$ (and intentionally excluded it), given $(i)$.
 
-The above definition has $\bar{w}_v$ on the RHS; after rearranging, we get:
+The above definition has $\bar w_v$ on the RHS; after rearranging, we get:
 
 $$
 % should be \dfrac but LaTeXMathML doesn't support amsmath commands...
-\bar{w}_v = \frac{\sum_{m:(0)} u_m w_{mv}}{\sum_m u_m \alpha(m,v)}
+\bar w_v = \frac{\sum_{m:(0)} u_m w_{mv}}{\sum_m u_m \alpha(m,v)}
 \quad ; \quad
 \alpha(m,v) = \left\{ \begin{array}{ll} \\
   1 & : (0) \\
@@ -330,7 +330,7 @@ Given
 	  where each $m = \{ e \in E \mapsto w_{me} \in W \}$.
 	- a given arc $e = (v_s, v_t) \in \bigcup \dom m$
 Return
-:	- the map-weighted mean arc-weight $\bar{w}_e$ of $e$
+:	- the map-weighted mean arc-weight $\bar w_e$ of $e$
 
 The formula is similar to the one from the previous section, but here we are
 dealing with arcs, so we can refine our estimate somewhat further; see the
@@ -338,13 +338,13 @@ section on [zero weights](#zero-weight-attributes) for more details. Following
 on from that, we reach:
 
 $$
-\bar{w}_e = \frac{\sum_{m} u_m \tilde{w}_{me}}{\sum_m u_m}
+\bar w_e = \frac{\sum_{m} u_m \hat w_{me}}{\sum_m u_m}
 \quad ; \quad
-\tilde{w}_{me} = \left\{ \begin{array}{llr} \\
+\hat w_{me} = \left\{ \begin{array}{llr} \\
   w_{me} & : e \in \dom m & (0) \\
-  (1 - \alpha_1(m,e)).\bar{w}_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
+  (1 - \alpha_1(m,e)).\bar w_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
     \not\subseteq \rft m & (1) \\
-  (1 - \alpha_2(m,e)).\bar{w}_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
+  (1 - \alpha_2(m,e)).\bar w_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
     \subseteq \rft m & (2) \\
 \end{array} \right
 $$
@@ -352,11 +352,11 @@ $$
 where $\alpha_i(m, e)$ is the probability that the author of $m$ _does_ know
 about $e$ (and intentionally excluded it), given $(i)$.
 
-The above definition has $\bar{w}_e$ on the RHS; after rearranging, we get:
+The above definition has $\bar w_e$ on the RHS; after rearranging, we get:
 
 $$
 % should be \dfrac but LaTeXMathML doesn't support amsmath commands...
-\bar{w}_e = \frac{\sum_{m:(0)} u_m w_{me}}{\sum_m u_m \alpha(m,e)}
+\bar w_e = \frac{\sum_{m:(0)} u_m w_{me}}{\sum_m u_m \alpha(m,e)}
 \quad ; \quad
 \alpha(m,e) = \left\{ \begin{array}{ll} \\
   1 & : (0) \\
@@ -478,10 +478,37 @@ we have a few backup options:
   automatically, which makes things more convenient for a user. However, it
   increases the risk of an attack through the social network.
 
-MORE
+If $t_0$ appears in $G_s$, we can continue with meta-routing. We start with
+these mutable objects:
 
-TODO TODO TODO need to update pretty much all of the algorithms here now that
-nodes have weights too... pah...
+- $G^*$ -- a map of `tgraph`s to their scores, initialised with $G_s$.
+- $g^*$ -- a partial `tgraph` that contain no references to other `tgraph`s,
+  initially empty.
+- $T^*$ -- a list of tags ranking them in order of their "distance" to $t_0$,
+  initially empty.
+
+Over the execution of the query, data from $G^*$ "trickles through" to
+the other objects, which are used by the [routing algorithm](#routing).
+
+Whenever we update one of these objects, we also have to update the others so
+as to maintain consistency between them:
+
+Add a new `tgraph` $g$ to $G_w$
+:	1. [Work out](#weight-of-new-tgraph) a weight for $g$.
+	2. Retrieve $g$'s versions of the weights of all nodes and arcs currently
+	   in $g^*$. This will require at least partially loading $g$ from the
+	   network, so should be done in the background.
+	3. Update $g^*$ with the information from $g$, which will involve running
+	   the [combine](#combining-tgraph-objects) algorithm.
+	4. Update $t^*$ by running the [shortest-path](#tgraph-shortest-paths) on
+	   the new $g_0^*$. If the algorithm reaches a tag that isn't "fully
+	   loaded", pause it, and fully-load the tag first. TODO several issues
+	   here, need to be dealt with..
+Fully-loading a new tag $t$
+:	1. For each $g$ in $G^*$, retrieve $g$'s versions of the weights of all
+	   outgoing arcs and neighbouring nodes of $t$.
+	2. Run the [combine](#combining-tgraph-objects) algorithm on each node and
+	   arc, and add them to $g^*$.
 
 #### Combining `tgraph` objects
 
@@ -534,7 +561,7 @@ arc-weights are not susceptible to this kind of manipulation
 the entropy to be proportional to the width (in bits) of the representation.
 Also, we could do this manually.
 
-#### Determining `tgraph` traversal order
+#### `tgraph` shortest paths
 
 Given
 :	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
@@ -568,7 +595,7 @@ the method recursively, ignoring the other elements returned. In the other case
 the meantime we can go through the list and add the other elements, applying
 the same principle to $t_1$, etc...
 
-#### Weight of a `tgraph` not in the working set
+#### Weight of new `tgraph`
 
 Given
 :	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
@@ -649,9 +676,9 @@ Return
 
 
 
-## Optimising performance
+## Optimisation
 
-### Data structure implementation
+### Data structures
 
 ### Querying an `index` or `tgraph` for presence of a source tag
 
