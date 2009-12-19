@@ -464,10 +464,9 @@ won't provide significantly enough benefit to justify the additional complexity
 
 ### Meta-routing
 
-We want to construct a routing scheme from the `tgraph` plane, which will be
-relative to some given root tag $t_0$. Since `tgraph` data is distributed
-across many objects, we need various methods of combining these into a single
-tree of tags.
+The purpose of the meta-routing layer is to provide a routing scheme to the
+routing layer. This routing scheme is dynamic, and updates are requesting by
+the routing layer when it needs more information.
 
 We start from our seed `tgraph` set $G_s$. If $t_0$ does not appear in $G_s$,
 we have a few backup options:
@@ -478,37 +477,57 @@ we have a few backup options:
   automatically, which makes things more convenient for a user. However, it
   increases the risk of an attack through the social network.
 
-If $t_0$ appears in $G_s$, we can continue with meta-routing. We start with
-these mutable objects:
+If $t_0$ appears in $G_s$, we proceed with meta-routing. Our query state
+consists of these mutable objects, each depending on the previous object:
 
-- $G^*$ -- a map of `tgraph`s to their scores, initialised with $G_s$.
-- $g^*$ -- a partial `tgraph` that contain no references to other `tgraph`s,
-  initially empty.
-- $T^*$ -- a list of tags ranking them in order of their "distance" to $t_0$,
-  initially empty.
+1. $\breveG$ -- a map of `tgraph`s to their scores, initialised with $G_s$.
+2. $\breveg$ -- a partial `tgraph` that holds all nodes and arcs whose weights have
+   been [combined](#combining-tgraph-objects) from data retrieved from all $g
+   \in G_s$, initially empty.
+	- Define $t$ is "complete" in $\breveg$ if there is enough information in $\breveg$
+	  to calculate the [distance](#distance-between-tags) between $t$ and any
+	  of its outgoing neighbours. This will at most be: its weight, the weights
+	  of its outgoing arcs, and the weights of its outgoing neighbours.
+	- Since `tgraph` nodes inside a `tgraph` do not have any outgoing arcs,
+	  these are always "complete".
+	- `tgraph` nodes which are in $\dom \breveG$ are excluded from $\breveg$.
+3. $\breveT$ -- a list of tags ranking them in order of their "distance" to $t_0$,
+   initially empty. This contains the maximal subset of $\breveg$ for which the
+   shortest path can be calculated.
 
-Over the execution of the query, data from $G^*$ "trickles through" to
-the other objects, which are used by the [routing algorithm](#routing).
+$(\breveg, \breveT)$ represent the routing scheme. We want to add as much information
+to $\breveT$ as possible - for our system, we will use Dijkstra's algorithm, where
+each step adds an element to $\breveT$. At any given step $n$, the algorithm needs
+to know the distances to all the neighbours of the shortest-path tree so far.
+Here, this means that $t_i$ must be complete in $\breveg$ for all $i < n$.
 
-Whenever we update one of these objects, we also have to update the others so
-as to maintain consistency between them:
+There are two ways for the routing layer to request more information from the
+meta-routing layer:
 
-Add a new `tgraph` $g$ to $G_w$
-:	1. [Work out](#weight-of-new-tgraph) a weight for $g$.
-	2. Retrieve $g$'s versions of the weights of all nodes and arcs currently
-	   in $g^*$. This will require at least partially loading $g$ from the
-	   network, so should be done in the background.
-	3. Update $g^*$ with the information from $g$, which will involve running
-	   the [combine](#combining-tgraph-objects) algorithm.
-	4. Update $t^*$ by running the [shortest-path](#tgraph-shortest-paths) on
-	   the new $g_0^*$. If the algorithm reaches a tag that isn't "fully
-	   loaded", pause it, and fully-load the tag first. TODO several issues
-	   here, need to be dealt with..
-Fully-loading a new tag $t$
-:	1. For each $g$ in $G^*$, retrieve $g$'s versions of the weights of all
-	   outgoing arcs and neighbouring nodes of $t$.
-	2. Run the [combine](#combining-tgraph-objects) algorithm on each node and
-	   arc, and add them to $g^*$.
+Completing a tag $t$ in $\breveg$
+
+:	If, in calculating shortest paths, we reach a $t$ for which we don't have
+	the data to continue, we can pause the algorithm, and return a closure for
+	retrieving the data. The routing layer can resume the algorithm when the
+	data has been retrieved.
+
+Adding a `tgraph` $g$ to $\breveG$
+
+:	There may be `tgraph`s present in $\breveT$. The routing layer cannot use this
+	data directly, but can request that $g$ to be added to $\breveG$ (which may
+	bring in new tags). When the meta-routing layer receives such a request, it
+	needs to maintain consistency between the state objects.
+
+	1. Remove all references to $g$ from $\breveg$.
+	2. [Work out](#weight-of-new-tgraph) a weight for $g$, before adding it to
+	   $\breveG$.
+	3. Retrieve $g$'s weight judgements for all nodes and arcs currently in
+	   $\breveg$.
+		- This will require at least partially loading $g$ from the network, so
+		  it should be done in the background to avoid blocking other parts of
+		  the system.
+	4. Update $\breveg$ with the information from $g$.
+	5. Update $\breveT$ from the new $\breveg$.
 
 #### Combining `tgraph` objects
 
@@ -561,7 +580,7 @@ arc-weights are not susceptible to this kind of manipulation
 the entropy to be proportional to the width (in bits) of the representation.
 Also, we could do this manually.
 
-#### `tgraph` shortest paths
+#### `tgraph` traversal order
 
 Given
 :	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
