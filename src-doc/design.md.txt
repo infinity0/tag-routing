@@ -113,9 +113,9 @@ Probability-based semantics seem quite robust and reliable, since these are
 objective properties and can (in theory) be estimated algorithmically. It also
 gives rise to a simple way of combining weights (multiplication), as well as a
 simple interval of values $[0, 1]$.^[Theoretically, this allows low-probability
-weights to be defined for any possible arc. However, the system algorithms
+weights to be defined for any possible arc. However, the system's algorithms
 favour heavy weights over light ones, so the latter should just be omitted,
-since they will never be used.]
+since they will never be used. TODO rewrite this appropriately]
 
 These weights allow algorithms to achieve a finer level of preference-choosing
 than would otherwise be possible. However, care must be taken not to depend on
@@ -234,8 +234,8 @@ MORE
 
 Since network latency is far greater than processing latency, we design these
 algorithms to be inherently concurrent. Operations involving retrieval of
-remote objects will be non-blocking and allow other work to be done whilst
-waiting for its results.
+remote objects are non-blocking and allow other work to be done whilst waiting
+for its results.
 
 The system is partitioned into several layers, each dependent on the one below
 it. The lower layers (initialisation, meta-routing, routing) correspond to the
@@ -253,10 +253,10 @@ their reliability and usefulness.
 The lower layers retrieve and process data from the appropriate plane. The
 underlying algorithms have no "natural" termination condition; data retrieval
 can theoretically proceed until the entire network has been searched. In
-practice, each layer will not do this spontaneously; instead, they respond to
-requests for data from the layer above. Normally, we will discontinue sending
-new requests in all layers after a given number of results have been returned,
-and allow the user to resume from the paused state, resources permitting.
+practice, each layer does not do this spontaneously; instead, they respond to
+requests for data from the layer above. By default, we discontinue sending new
+requests in all layers after a given number of results have been returned, and
+allow the user to resume from the paused state, resources permitting.
 
 ### Combining data from multiple sources
 
@@ -267,11 +267,11 @@ judgement for each object that it refers to. To avoid confusion, we will call
 source-weights "scores" and object-weights "values". Given a target object, we
 want to derive a "combined" value for that object, using the given information.
 
-For our prototype, we will use a very basic algorithm - the score-weighted
-mean value of the object. Generally, the arithmetic mean is susceptible to
-distortions and attacks. Let $k$ be the proportion of the total score that the
-attacker controls. Weights are [limited](#weight-attributes) to $[0, 1]$, so
-this will roughly be the same as the proportion of compromised nodes.
+For our prototype, we use a very basic algorithm - the score-weighted mean
+value of the object. Generally, the arithmetic mean is susceptible to attacks
+and distortions. Let $k$ be the proportion of the total score that the attacker
+controls. Weights are [limited](#weight-attributes) to $[0, 1]$, so this will
+roughly be the same as the proportion of compromised nodes.
 
 If the value is evenly distributed, the effect of an attack will be limited in
 direct proportion to $k$ - the worst thing they can do is give a single value
@@ -293,9 +293,9 @@ for some constant, by collecting training data from a prototype network. More
 advanced techniques include collecting data directly from the active network,
 to adjust the values dynamically. [EXTN]
 
-However, such methods are likely to be quite complex, and so this project will
-not go into them. For our prototype system, we will only implement heuristics
-that give a rough approximation, based on our intuitions.
+However, such methods are likely to be quite complex, and so this project does
+not go into them. Instead, we only explore heuristics that give a rough
+approximation, based on our intuitions.
 
 #### Mean weight of a node
 
@@ -498,25 +498,25 @@ If $t_0$ appears in $G_s$, we proceed with meta-routing. Our query state
 consists of these mutable objects, each depending on the previous object:
 
 1. $\breveG$ -- a map of `tgraph`s to their scores, initialised with $G_s$.
-2. $\breveg$ -- a partial `tgraph` that holds all nodes and arcs whose weights have
-   been [combined](#combining-tgraph-objects) from data retrieved from all $g
-   \in G_s$, initially empty.
-	- Define $t$ is "complete" in $\breveg$ if there is enough information in $\breveg$
-	  to calculate the [distance](#distance-between-tags) between $t$ and any
-	  of its outgoing neighbours. This will at most be: its weight, the weights
-	  of its outgoing arcs, and the weights of its outgoing neighbours.
+2. $\breveg$ -- a partial `tgraph` that holds all nodes and arcs whose weights
+   have been [combined](#combining-tgraph-objects) from data retrieved from all
+   $g \in G_s$, initially empty.
+	- Define $t$ is "complete" in $\breveg$ if there is enough information in
+	  $\breveg$ to calculate the [distance](#distance-between-tags) between $t$
+	  and any of its outgoing neighbours. This will at most be: its weight, the
+	  weights of its outgoing arcs, and the weights of its outgoing neighbours.
 	- Since `tgraph` nodes inside a `tgraph` do not have any outgoing arcs,
 	  these are always "complete".
 	- `tgraph` nodes which are in $\dom \breveG$ are excluded from $\breveg$.
-3. $\breveT$ -- a list of tags ranking them in order of their "distance" to $t_0$,
-   initially empty. This contains the maximal subset of $\breveg$ for which the
-   shortest path can be calculated.
+3. $\breveT$ -- a list of tags ranking them in order of their "distance" to
+   $t_0$, initially empty. This contains the maximal subset of $\breveg$ for
+   which the shortest path can be calculated.
 
-$(\breveg, \breveT)$ represent the routing scheme. We want to add as much information
-to $\breveT$ as possible - for our system, we will use Dijkstra's algorithm, where
-each step adds an element to $\breveT$. At any given step $n$, the algorithm needs
-to know the distances to all the neighbours of the shortest-path tree so far.
-Here, this means that $t_i$ must be complete in $\breveg$ for all $i < n$.
+$(\breveg, \breveT)$ represent the routing scheme. We want to add as much
+information to $\breveT$ as possible - for our prototype, we use Dijkstra's
+algorithm. Each step $n$ adds an element to $\breveT$; for this we need to know
+the distances to all the neighbours of the shortest-path tree so far. This
+means that $t_i$ must be complete in $\breveg$ for all $i < n$.
 
 There are two ways for the routing layer to request more information from the
 meta-routing layer:
@@ -540,9 +540,9 @@ Adding a `tgraph` $g$ to $\breveG$
 	   $\breveG$.
 	3. Retrieve $g$'s weight judgements for all nodes and arcs currently in
 	   $\breveg$.
-		- This will require at least partially loading $g$ from the network, so
-		  it should be done in the background to avoid blocking other parts of
-		  the system.
+		- This requires at least partially loading $g$ from the network, so it
+		  should be done in the background to avoid blocking other parts of the
+		  system.
 	4. Update $\breveg$ with the information from $g$.
 	5. Update $\breveT$ from the new $\breveg$.
 
@@ -808,7 +808,7 @@ Define the "saturation" of $t$ to be $\frac{|D(t)|}{|D|}$, and the "relevance"
 of $t$ to $t_0$ to be $\frac{|D(t) \cap D(t_0)|}{|D(t)|}$. An equivalent model
 is to treat $D$ as a random variable, evenly distributed over all documents in
 the network. For a given tag $t$, the saturation of $t$ is equivalent to $P(D
-\textrm{ tagged with } t)$, which we will shorten to $P(t)$ for convenience.
+\textrm{ tagged with } t)$, which we shorten to $P(t)$ for convenience.
 Likewise, the relevance of $t$ to $t_0$ is equivalent to $P(t_0|t)$.
 
 We then use these to define:
@@ -832,7 +832,7 @@ meta-routing network. However, a `tgraph` consists of highly compressed data
 on a large section of the storage network, so in practice the vast majority of
 our meta-routing needs should be satisfied by a small neighbourhood around our
 seed set. Choosing between `tgraph`s probably won't be very important, so for
-now we will ignore this deficiency.[EXTN]
+now we ignore this deficiency.[EXTN]
 
 Now for the analogy to typical navigable networks: a tag $t$ can be thought of
 as defining a subnetwork - the set of documents tagged with $t$. $P(t)$ tells
@@ -886,14 +886,14 @@ heuristics for resolving this ambiguity, based on other implicit information.
 of items (nodes) encountered. This is not too bad, but can become inefficient
 if the vast majority of items encountered are assigned to zero weights, and the
 algorithms that process the data are designed to ignore them. With regards to
-our system, this will probably affect `ptable`s more than `tgraph`s, where the
+our system, this probably affects `ptable`s more than `tgraph`s, where the
 algorithmic usefulness of a tag is largely unrelated to its weight.
 
 Within a single node-map, there is no information that could be used to perform
 any heuristic: a node not included in the map has no information relating to it
 in the map. However, it may be possible to extract information from other
 sources, such as the friends for a `ptable`. These are context-specific and
-will be explored in the appropriate sections. [TODO add link]
+are explored in the appropriate sections. [TODO add link]
 
 **For an arc-map**, the former approach results in quadratic data growth in the
 number of items (nodes) encountered, since we need to define _something_
