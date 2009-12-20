@@ -237,9 +237,26 @@ algorithms to be inherently concurrent. Operations involving retrieval of
 remote objects will be non-blocking and allow other work to be done whilst
 waiting for its results.
 
-The entire system is constructed from various components, detailed below. Most
-of them are interesting problems in themselves from a wide range of topics; as
-research advances, each component can be upgraded independently.
+The system is partitioned into several layers, each dependent on the one below
+it. The lower layers (initialisation, meta-routing, routing) correspond to the
+data planes introduced previously; the top layer provides the results to the
+user's original query, and interacts directly with the user.
+
+Each layer has an interface for interacting with the layer above it, and an
+operational framework that directly relates to the substance of this project.
+Into this framework fits various independent components that are interesting
+problems in themselves, and are too complex to explore in detail. These are
+can be implemented and upgraded separately from the other parts of the system.
+For now, we only suggest some basic implementations and briefly comment on
+their reliability and usefulness.
+
+The lower layers retrieve and process data from the appropriate plane. The
+underlying algorithms have no "natural" termination condition; data retrieval
+can theoretically proceed until the entire network has been searched. In
+practice, each layer will not do this spontaneously; instead, they respond to
+requests for data from the layer above. Normally, we will discontinue sending
+new requests in all layers after a given number of results have been returned,
+and allow the user to resume from the paused state, resources permitting.
 
 ### Combining data from multiple sources
 
@@ -580,7 +597,7 @@ arc-weights are not susceptible to this kind of manipulation
 the entropy to be proportional to the width (in bits) of the representation.
 Also, we could do this manually.
 
-#### `tgraph` traversal order
+#### Distance between tags
 
 Given
 :	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
@@ -627,6 +644,10 @@ here (relevancy vs reliability) TODO explore this and its potential pitfalls
 
 ### Routing
 
+The purpose of the routing layer is to retrieve results and provide these to
+the ranking layer. The results set is dynamic, and updates are requested by the
+ranking layer when it needs more information.
+
 DIAG
 
 The data structure we use to keep track of routing progress is a working
@@ -656,11 +677,6 @@ entries for $t$ and terms related to it. In this case, we add such queries to
 our queue, by adding $h'$ to the working set of $t$, and that of all its
 ancestors and descendents too.
 
-This algorithm has no natural logical termination condition; the queries can
-theoretically proceed indefinitely until the entire network has been searched.
-In practice, we would automatically pause the search after a given number of
-results have been returned, and probably give the user the option to resume
-from the paused state, resources permitting.
 
 #### Determining `index` query order
 
