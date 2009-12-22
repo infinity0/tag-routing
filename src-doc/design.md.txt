@@ -1,3 +1,6 @@
+% Tag-driven routing in a distributed storage network
+% Ximin Luo
+
 # Meta
 
 ## Terminology
@@ -395,14 +398,15 @@ MORE only need to do this one, and then keep track of minor updates etc.
 
 Assume a given identity is already connected to the social network. MORE
 
-Any system whose core functionality depends on a social network needs a method
-of constructing a base network which is large enough. Luckily such systems are
-already widely deployed on the www; new networks can bootstrap themselves by
-extracting social data from existing networks, through invites, etc. [EXTN]
+Any system which has a social network as a major component, needs a method
+of constructing such a network and sustaining its growth. Fortunately, such
+systems are already widely deployed on the www; new networks can bootstrap
+themselves by extracting social data from existing networks, through invites,
+etc. [EXTN] TODO move this probably to "design assumptions".
 
 For our purposes, we need an algorithm which takes our own identity as input,
-and outputs a set of identities to seed our routing algorithm with, possibly
-with a weight associated with each identity.
+and outputs a set of seed identities for our routing algorithm, with a score
+associated with each identity.
 
 Given
 :	- our own identity
@@ -498,9 +502,10 @@ If $t_0$ appears in $G_s$, we proceed with meta-routing. Our query state
 consists of these mutable objects, each depending on the previous object:
 
 1. $\breveG$ -- a map of `tgraph`s to their scores, initialised with $G_s$.
-2. $\breveg$ -- a partial `tgraph` that holds all nodes and arcs whose weights
-   have been [combined](#combining-tgraph-objects) from data retrieved from all
-   $g \in G_s$, initially empty.
+2. $\breveg$ -- a partial `tgraph` that [combined](#combining-tgraph-objects)
+   data from $\breveG$, initially empty.
+	- Only nodes and arcs that have been retrieved from all $g \in \breveG$ are
+	  included.
 	- Define $t$ is "complete" in $\breveg$ if there is enough information in
 	  $\breveg$ to calculate the [distance](#distance-between-tags) between $t$
 	  and any of its outgoing neighbours. This will at most be: its weight, the
@@ -508,15 +513,17 @@ consists of these mutable objects, each depending on the previous object:
 	- Since `tgraph` nodes inside a `tgraph` do not have any outgoing arcs,
 	  these are always "complete".
 	- `tgraph` nodes which are in $\dom \breveG$ are excluded from $\breveg$.
-3. $\breveT$ -- a list of tags ranking them in order of their "distance" to
-   $t_0$, initially empty. This contains the maximal subset of $\breveg$ for
-   which the shortest path can be calculated.
+3. $\breveT$ -- a directed acyclic subgraph of $\breveg$, initially empty.
+	- Nodes are ranked in order of its shortest distance to $t_0$, and each
+	  node only has incoming arcs from nodes nearer to $t_0$ than itself.
+	- This provides a quick way to obtain the set of short (ie. greedy) paths
+	  from $t$ back to $t_0$. MORE explain better
 
-$(\breveg, \breveT)$ represent the routing scheme. We want to add as much
-information to $\breveT$ as possible - for our prototype, we use Dijkstra's
-algorithm. Each step $n$ adds an element to $\breveT$; for this we need to know
-the distances to all the neighbours of the shortest-path tree so far. This
-means that $t_i$ must be complete in $\breveg$ for all $i < n$.
+$(\breveg, \breveT)$ represent the routing scheme. To populate $\breveT$ from
+$\breveg$, our prototype uses Dijkstra's algorithm. Each step $n$ adds a node
+to $\breveT$; for this, we need to know the distances to all the neighbours of
+the shortest-path tree so far, ie. $t_i$ must be complete in $\breveg$ for all
+$i < n$.
 
 There are two ways for the routing layer to request more information from the
 meta-routing layer:
@@ -530,8 +537,8 @@ Completing a tag $t$ in $\breveg$
 
 Adding a `tgraph` $g$ to $\breveG$
 
-:	There may be `tgraph`s present in $\breveT$. The routing layer cannot use this
-	data directly, but can request that $g$ to be added to $\breveG$ (which may
+:	There may be `tgraph`s present in $\breveT$. The routing layer cannot use
+	this directly, but can request that $g$ to be added to $\breveG$ (which may
 	bring in new tags). When the meta-routing layer receives such a request, it
 	needs to maintain consistency between the state objects.
 
@@ -653,7 +660,7 @@ the ranking layer. The results set is dynamic, and updates are requested by the
 ranking layer when it needs more information.
 
 We have read access to $H_s$ from the [initialisation](#initialisation) layer,
-and $\breveg, \breveT$ from the [meta-routing](#meta-routing) layer.
+and $\breveT$ from the [meta-routing](#meta-routing) layer.
 
 Additionally, we need to keep track of the indexes we search through. Our state
 consists of these mutable objects:
@@ -671,11 +678,10 @@ consists of these mutable objects:
 	  which this system tries to satisfy, and the simpler operation "lookup",
 	  which simply returns the results for a tag in a single `index`.
 	- An "active" tag is a tag we intend to lookup the index with. This is
-	  calculated from $\breveg$, $\breveT$.
+	  obtained from $\breveT$.
 		- if $h$ is from $H_s$, select all tags in $\breveT$.
-		- otherwise, for each index $h'$ that pointed to $h$ through $t$ (see
-		  $\breveS$), select all tags that are on a "short path" from $t$ to
-		  $t_0$. TODO clarify this
+		- otherwise, use $\breveT$ to select all "short" paths from $t$ to
+		  $t_0$. TODO clarify this, description already in meta-routing
 	- An implementation may choose to merge this with $\breveR$; it's easier
 	  for our abstract specification to keep these separate.
 4. $\breveR = \{ h \mapsto \{ t \mapsto R_{ht} \} \}$
@@ -699,8 +705,8 @@ Adding an index $h$ to $\breveH$
 
 Request data from the meta-routing layer
 
-:	We can pass the request onto the meta-routing layer, if there are `tgraph`s
-	in $\breveg$. We wait for this to trickle down to $\breveg$, $\breveT$.
+:	If there are `tgraph`s in $\breveT$, ask the meta-routing layer to import
+	them, and wait for the new data to trickle down to $\breveT$.
 
 	TODO update $\breveQ$, $\breveR$.
 
