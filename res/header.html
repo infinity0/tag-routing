@@ -65,7 +65,7 @@ window.onload = function() {
 		var li = sect[i].parentNode;
 		var obj = document.createElement('span');
 		obj.appendChild(document.createTextNode(inc));
-		obj.className = 'toggle';
+		obj.className = 'toggle screenonly-inline';
 		obj.onclick = function(event) {
 			var stat = toggleSect(this.parentNode.lastChild);
 			if (!event.shiftKey) { return; }

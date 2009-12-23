@@ -1,19 +1,14 @@
-dt {
-	font-weight: bold;
-}
+/* Display */
 
-dt .LaTeX {
-	font-weight: normal;
-}
+.screenonly-block,
+.screenonly-inline { display: none; }
 
-ul, ol {
-	padding-left: 1.6em;
-}
+/* Presentation */
 
-dd {
-	margin-left: 2em;
-}
+dt { font-weight: bold; }
+dt .LaTeX { font-weight: normal; }
 
-.footnoteRef {
-	font-size: 85%;
-}
+ul, ol { padding-left: 1.6em; }
+dd { margin-left: 2em; }
+
+.footnoteRef { font-size: 85%; }
