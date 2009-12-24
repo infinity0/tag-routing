@@ -245,13 +245,12 @@ it. The lower layers (initialisation, meta-routing, routing) correspond to the
 data planes introduced previously; the top layer provides the results to the
 user's original query, and interacts directly with the user.
 
-Each layer has an interface for interacting with the layer above it, and an
-operational framework that directly relates to the substance of this project.
-Into this framework fits various independent components that are interesting
-problems in themselves, and are too complex to explore in detail. These are
-can be implemented and upgraded separately from the other parts of the system.
-For now, we only suggest some basic implementations and briefly comment on
-their reliability and usefulness.
+Each layer has an interface for interacting with the layer above it, and a
+framework that co-ordinates between the various tasks that make up the layer.
+Some are quite general and complex, and have a wide range of applications - so
+these are specified as upgradable modules. For our prototype, we only suggest
+some basic heuristics for these, and briefly comment on their reliability and
+usefulness; better solutions can be explored by future projects.[EXTN]
 
 The lower layers retrieve and process data from the appropriate plane. The
 underlying algorithms have no "natural" termination condition; data retrieval
@@ -260,6 +259,39 @@ practice, each layer does not do this spontaneously; instead, they respond to
 requests for data from the layer above. By default, we discontinue sending new
 requests in all layers after a given number of results have been returned, and
 allow the user to resume from the paused state, resources permitting.
+
+DIAG dataflow diagram
+
+(Dot-arrow)
+:	Synchronous flow of information. When data is updated in the source node,
+	the target node is updated automatically.
+(Cirle-arrow)
+:	Event-triggered flow of information. When data is updated in the source
+	node, the target node is updated only when explicitly requested, or when
+	certain conditions are met.
+(Square-arrow)
+:	Asynchronous flow of information. When data is updated in the source node,
+	the target node is updated automatically, but the operation completes only
+	when all required data from the network has been downloaded.
+
+---------------------------------------------------
+                requires    stores      provides
+--------------- ----------- ----------- -----------
+ranking         $\breveg$,  -           $\breveD$
+                $\breveR$,
+                $\breveH$
+
+routing         $H_s$,      $\breveQ$,  $\breveR$,
+                $\breveT$   $\breveH_*$ $\breveH$
+
+meta-routing    $G_s$       $\breveG$,  $\breveg$,
+                            $\breveG_*$ $\breveT$
+
+initialisation  $t_0$,      $P_s$       $G_s$,
+                $z$                     $H_s$
+---------------------------------------------------
+
+Table: Data dependency between layers
 
 ### Combining data from multiple sources
 
@@ -494,26 +526,35 @@ we have a few backup options:
 
 - ask the user to supply some related tags. This should not be a significant
   problem; people usually "have an idea" of what they are looking for.
-- ask more nodes in the social graph for their `ptable`s. This can be done
+- ask more nodes in the social graph for their `ptable`s. This could be done
   automatically, which makes things more convenient for a user. However, it
   increases the risk of an attack through the social network.
 
 If $t_0$ appears in $G_s$, we proceed with meta-routing. Our query state
 consists of these mutable objects, each depending on the previous object:
 
-1. $\breveG$ -- a map of `tgraph`s to their scores, initialised with $G_s$.
-2. $\breveg$ -- a partial `tgraph` that [combined](#combining-tgraph-objects)
-   data from $\breveG$, initially empty.
-	- Only nodes and arcs that have been retrieved from all $g \in \breveG$ are
-	  included.
-	- Define $t$ is "complete" in $\breveg$ if there is enough information in
-	  $\breveg$ to calculate the [distance](#distance-between-tags) between $t$
-	  and any of its outgoing neighbours. This will at most be: its weight, the
-	  weights of its outgoing arcs, and the weights of its outgoing neighbours.
+$\breveG_* = \{ g \mapsto S_g \}$
+:	- a map of `tgraph`s to their tracking data, initialised with $G_s$.
+	- This is controlled by the [scoring module](#weight-of-new-tgraph), which
+	  determines the precise format of $S_g$. This will at most involve ...
+	  MORE something like $S_g = \{ (g, t) \mapsto w \}$.
+$\breveG = \{ g \mapsto w_g \}$
+:	- a map of `tgraph`s to their scores, intially empty.
+	- This is updated by the scoring module.
+$\breveg \in G$
+:	- a partial `tgraph` that [combines](#combining-tgraph-objects) data from
+	  $\breveG$, initially empty.
+	- A node or arc $x \in \breveg$ if and only if $x$ has been loaded from all
+	  $g \in \breveG$; and $w_x$ is the combined weight of $w_g$.
+		- `tgraph` nodes which are in $\dom \breveG$ are excluded from $\breveg$. TODO explain
+	- Define $t$ is _complete_ in $\breveg$ to mean that $\breveg$ contains
+	  enough information to calculate the [distance](#distance-between-tags)
+	  between $t$ and any of its outgoing neighbours. At most, this includes
+	  the weights of: itself, its outgoing arcs, and its outgoing neighbours.
 	- Since `tgraph` nodes inside a `tgraph` do not have any outgoing arcs,
 	  these are always "complete".
-	- `tgraph` nodes which are in $\dom \breveG$ are excluded from $\breveg$.
-3. $\breveT$ -- a directed acyclic subgraph of $\breveg$, initially empty.
+$\breveT \subseteq \breveg$
+:	- an acyclic subgraph of $\breveg$, initially empty.
 	- Nodes are ranked in order of its shortest distance to $t_0$, and each
 	  node only has incoming arcs from nodes nearer to $t_0$ than itself.
 	- This provides a quick way to obtain the set of short (ie. greedy) paths
@@ -523,7 +564,9 @@ $(\breveg, \breveT)$ represent the routing scheme. To populate $\breveT$ from
 $\breveg$, our prototype uses Dijkstra's algorithm. Each step $n$ adds a node
 to $\breveT$; for this, we need to know the distances to all the neighbours of
 the shortest-path tree so far, ie. $t_i$ must be complete in $\breveg$ for all
-$i < n$.
+$i < n$. TODO could split this into another module
+
+DIAG data flow diagram
 
 There are two ways for the routing layer to request more information from the
 meta-routing layer:
@@ -533,7 +576,10 @@ Completing a tag $t$ in $\breveg$
 :	If, in calculating shortest paths, we reach a $t$ for which we don't have
 	the data to continue, we can pause the algorithm, and return a closure for
 	retrieving the data. The routing layer can resume the algorithm when the
-	data has been retrieved.
+	data has been retrieved. TODO explain this better
+
+	If any outgoing arc points to a `tgraph` node, we send this information to
+	the scoring module so that it can update $\breveG_*$.
 
 Adding a `tgraph` $g$ to $\breveG$
 
@@ -555,30 +601,37 @@ Adding a `tgraph` $g$ to $\breveG$
 
 #### Combining `tgraph` objects
 
-CURRENTWORK
-
 Given
-:	- a working map $G_w = \{(g_i, u_i)\}$ of `tgraph`s to their weights
-	- a source tag $t$
+:	- $\breveG$
+	- a node $v$, or an arc $e$
 Return
-:	- a map $\{(x_j, w_j)\}$ from `tgraph` arc targets (ie. a tag or tgraph) to
-	  their weights; the source of each arc is implicitly $t$.
-	  TODO fix format of this, make it more useful
+:	- the combined weight $w_v$ or $w_e$, to be used in $\breveg$.
 
-A basic implementation is just to calculate the `tgraph`-weighted average of
-the weight of the arc $(t, x_j)$, ie:
+A basic implementation is just to calculate the score-weighted average value of
+$v$ or $t$.
 
 TODO semantics of tag-tgraph arcs
 
-TODO adapt from general algorithms
+There are two cases to consider:
 
-- combine node-maps: with `tgraph`s, authors are supposed to include low-weight
-  tags; we assume that absence of a tag always means "missing information", so
-  let $\alpha_1 = 0$
-- combine arc-maps: standard; need to work out $\alpha_1, \alpha_2$ - former
-  is low, latter is high - see [analysis](#zero-weight-attributes)
+Weight of a node $v$
+:	With `tgraph`s, the absolute weight of a single node does not determine
+	its usefulness to the meta-routing layer, but the "distance" between that
+	node and the given query tag $t_0$. To this end, `tgraph`s are *supposed*
+	to include any tag it knows about, including low-weight ones. Therefore,
+	we assume that the absence of a tag *always* means "missing information",
+	and let $\alpha_1(g, v) = 0$.
 
-then construct the correct output format, as defined in the spec above
+	We need to justify that the distribution of weight estimates is roughly
+	even. TODO (see incorporate notes from below)
+
+Weight of an arc $e$
+:	We use the standard [mean weight](#mean-weight-of-an-arc) algorithm. This
+	requires us to provide an $\alpha_1, \alpha_2$; these take low, high values
+	respectively - see the [analysis](#zero-weight-attributes) for details.
+
+	We need to justify that the distribution of weight estimates is roughly
+	even. TODO
 
 For node-weights, the "important" thing is not the value itself, but rather
 where the most significant bit occurs. In other words, the outcome-entropy of
@@ -606,52 +659,43 @@ Also, we could do this manually.
 
 #### Distance between tags
 
-TODO resync spec with new meta-routing layer architecture
-
 Given
-:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
-	- a working tree $T_w$ of tags
+:	- an arc $e = (v_s, v_t)$, and its weight $w_e$
+	- a node $v_s$, and its weight $u_s$
+	- a node $v_t$, and its weight $u_t$
 Return
-:	- an ordered list $[(t_i \in T_w, x_i, w_i)]$ of `tgraph` arcs to add to
-	  the tree
+:	- a "distance" metric $d(v_s, v_t)$.
+
+The distance metric should give some indication of how much $v_s$, $v_t$ are
+related to each other, with lower values representing a closer relationship.
+Furthermore, this should be additive, meaning that given $e_1 = (v_0, v_1)$,
+$e_2 = (v_1, v_2)$, and no further information (ie. assuming that $(e_2, v_0)$,
+$(e_1, v_2)$ are pairwise independent), then $d(v_0, v_2) = d(e_0) + d(e_1)$.
 
 see [`tgraph` semantics](#tgraph-semantics) - want to maximise $u_t.w_e$, etc
 
-Transform the graph. For each arc $e = (t_0, t)$, let $w_e\prime = -\log(w_e.u_t)$
-
-A basic implementation can simply return the "nearest" node to the root not
-already in the tree, where "distance" of a path is defined as the negative log
-of the product of its arc weights.
-
-A alternative implementation, which judges a tag by all the paths leading to
-it, could be to transform the graph to use a flow-based model, and rank tags by
-the flow going through them. This doesn't seem too complicated an idea, but we
-will leave this to one side for now, and concentrate on the "bigger picture".
-
-
-However, note also that tags with higher $u_t$ are more likely to have their
-search queries succeed, independent of $w_e.u_t$.
-
-TODO
-
-If the first element can be added to the tree immediately, we do so, and call
-the method recursively, ignoring the other elements returned. In the other case
-(`tgraph`) we need to wait for the object to be retrieved from the network; in
-the meantime we can go through the list and add the other elements, applying
-the same principle to $t_1$, etc...
+so for any $e = (t_0, t)$, let $d(e) = -\log(w_e.u_t)$. MORE pad this out
 
 #### Weight of new `tgraph`
 
 TODO resync spec with new routing layer architecture
 
 Given
-:	- a working map $G_w = \{(g_i, w_i)\}$ of `tgraph`s to their weights
-	- a new `tgraph` $g_n \notin \dom G_w$
+:	- $\breveG_*$
+	- $g \in \dom \breveG_* \notin \dom \breveG$
 Return
-:	- a weight $w_n$ to assign to $g_n$
+:	- a weight $w_g$ to assign to $g$ in $\breveG$
 
-MORE note the two different semantic meanings for weight attributes being used
-here (relevancy vs reliability) TODO explore this and its potential pitfalls
+TODO
+
+whethere to use social link structure - flawed because:
+MORE using two different semantic meanings for weight attributes being used
+here (relevancy vs reliability) TODO explore this and its potential pitfalls.
+would need to expand `tgraph` to provide this information more efficiently
+(ie. have a "referents" table)
+
+or just decrease weight by a constant wrt. shortest number of paths to seed
+set. TODO explore adv/dis of this.
 
 ### Routing
 
@@ -665,15 +709,15 @@ and $\breveT$ from the [meta-routing](#meta-routing) layer.
 Additionally, we need to keep track of the indexes we search through. Our state
 consists of these mutable objects:
 
-1. $\breveS$
-	- a map of `index`s to their sources. This keeps track of how we
+$\breveH_* = \{ h \mapsto S_h \}$
+:	- a map of `index`s to their sources. This keeps track of how we
 	  reached a particular index. If the index is in $H_s$, there will be no
 	  source. TODO make this more precise...
 	- TODO maybe meta-routing layer needs a similar thing?
-2. $\breveH = \{ h \mapsto w \}$
-	- a map of `index`s to their scores, initialised with $H_s$.
-3. $\breveQ = \{ h \mapsto \{ t \} \}$
-	- a map of `index`s to "active" tags.
+$\breveH = \{ h \mapsto w \}$
+:	- a map of `index`s to their scores, initialised with $H_s$.
+$\breveQ = \{ h \mapsto \{ t \} \}$
+:	- a map of `index`s to "active" tags.
 	- Here, we will distinguish between the "query" for the original tag $t_0$,
 	  which this system tries to satisfy, and the simpler operation "lookup",
 	  which simply returns the results for a tag in a single `index`.
@@ -684,8 +728,8 @@ consists of these mutable objects:
 		  $t_0$. TODO clarify this, description already in meta-routing
 	- An implementation may choose to merge this with $\breveR$; it's easier
 	  for our abstract specification to keep these separate.
-4. $\breveR = \{ h \mapsto \{ t \mapsto R_{ht} \} \}$
-	- a map of `index`s to tags whose lookups have completed, to the results
+$\breveR = \{ h \mapsto \{ t \mapsto R_{ht} \} \}$
+:	- a map of `index`s to tags whose lookups have completed, to the results
 	  map $R_{ht} = \{ d \mapsto w \}$ for the lookup $q = (h, t)$.
 	- this depends on $\breveQ$.
 
@@ -710,25 +754,34 @@ Request data from the meta-routing layer
 
 	TODO update $\breveQ$, $\breveR$.
 
+Update $\breveQ$
+
+:	When we add a results set to $\breveR$... MORE
+
 #### Deciding lookup order
 
-TODO resync spec with new routing layer architecture
-
 Given
-:	- a working tree $T_w$ of tags
-	- a map $H_w$ of each $t \in T_w$ to its "working `index`" set
-	- a map $H_c$ of each $t \in T_w$ to its "queried `index`" set
+:	- $\breveQ$
 Return
-:	- an ordered list $[(h_i, t_i)] \subseteq Q_p(T_w, H_w) \setminus Q_p(T_w,
-	  H_c)$ of queries to perform
+:	- an ordered list $\breveP = [(h_i, t_i)]$, where $(h, t) \in \breveP \iff
+	  h \in \dom \breveQ \wedge t \in \breveQ[h]$.
 
 Tags further away from the root are less "related" to the original query, but
 searches for them are more likely to succeed (for rare searches), so the
 algorithm should proceed by searching near the root, then further up the tree.
 
-MORE same principle about concurrency as mentioned before about tag/tgraphs.
+However, note also that tags with higher $u_t$ are more likely to have their
+search queries succeed, independent of $w_e.u_t$.
+
+TODO rewrite this...
 
 #### Weight of new `index`
+
+Given
+:	- $\breveH_*$
+	- $h \in \dom \breveH_* \notin \dom \breveH$
+Return
+:	- a weight $w_h$ to assign to $h$ in $\breveH$
 
 TODO
 
@@ -739,16 +792,15 @@ TODO
 TODO resync spec with new routing layer architecture
 
 Given
-:	- a working tree $T_w$ of tags
-	- a map $H_w$ of each $t \in T_w$ to its "working `index`" set
-	- a map $H_c$ of each $t \in T_w$ to its "queried `index`" set
-	- a map $R_c$ of each $t \in T_w$ to (a map of each "queried `index`" $h
-	  \in H_c[t]$ to its results set)
+:	- $\breveg = \{ t \mapsto w \}$
+	- $\breveH = \{ h \mapsto w \}$
+	- $\breveR = \{ h \mapsto \{ t \mapsto \{ d \mapsto w \} \} \}$
 Return
-:	- a results map $R = \{(d_i, w_i)\}$ from documents to their weights
+:	- $R = \{(d, w_d)\}$, a results map of documents to their weights.
 
+TODO
 
-
+possibly could just merge this into routing.
 
 ## Optimisation
 
@@ -758,9 +810,9 @@ Return
 
 Bloom filters
 
-### Querying an `index` or `tgraph` for weight of an external target
+### Caching storage objects
 
-...
+### Incremental updates to state objects
 
 
 ## UI
