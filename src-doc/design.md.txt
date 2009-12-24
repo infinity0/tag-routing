@@ -281,14 +281,14 @@ ranking         $\breveg$,  -           $\breveD$
                 $\breveR$,
                 $\breveH$
 
-routing         $H_s$,      $\breveQ$,  $\breveR$,
-                $\breveT$   $\breveH_*$ $\breveH$
+routing         $H_s$,      $\breveQ$,  $\breveH$,
+                $\breveT$   $\breveH_*$ $\breveR$
 
-meta-routing    $G_s$       $\breveG$,  $\breveg$,
-                            $\breveG_*$ $\breveT$
+meta-routing    $t_0$,      $\breveG$,  $\breveT$,
+                $G_s$       $\breveG_*$ $\breveg$
 
-initialisation  $t_0$,      $P_s$       $G_s$,
-                $z$                     $H_s$
+initialisation  $z$         $P_s$       $G_s$,
+                                        $H_s$
 ---------------------------------------------------
 
 Table: Data dependency between layers
@@ -422,6 +422,12 @@ context, so this should be an additional parameter to the algorithm.
 
 ### Initialisation
 
+Requires
+:	- $z$ from the user
+Provides
+:	- $G_s$ to [meta-routing](#meta-routing)
+	- $H_s$ to [routing](#routing)
+
 MORE blah blah, why etc
 
 MORE only need to do this one, and then keep track of minor updates etc.
@@ -516,6 +522,13 @@ won't provide significantly enough benefit to justify the additional complexity
 - the social network should mitigate most serious attempts to abuse the system.
 
 ### Meta-routing
+
+Requires
+:	- $t_0$ from the user
+	- $G_s$ from [initialisation](#initialisation)
+Provides
+:	- $\breveT$ to [routing](#routing)
+	- $\breveg$ to [ranking](#ranking)
 
 The purpose of the meta-routing layer is to provide a routing scheme to the
 routing layer. This routing scheme is dynamic, and updates are requesting by
@@ -699,6 +712,13 @@ set. TODO explore adv/dis of this.
 
 ### Routing
 
+Requires
+:	- $H_s$ from [initialisation](#initialisation)
+	- $\breveT$ from [meta-routing](#meta-routing)
+Provides
+:	- $\breveH$ to [ranking](#ranking)
+	- $\breveR$ to [ranking](#ranking)
+
 The purpose of the routing layer is to retrieve results and provide these to
 the ranking layer. The results set is dynamic, and updates are requested by the
 ranking layer when it needs more information.
@@ -787,6 +807,13 @@ TODO
 
 ### Ranking
 
+Requires
+:	- $\breveg$ from [meta-routing](#meta-routing)
+	- $\breveH$ from [ranking](#ranking)
+	- $\breveR$ from [ranking](#ranking)
+Provides
+:	- $\breveD$ to the user
+
 #### Combining results from different queries
 
 TODO resync spec with new routing layer architecture
@@ -796,7 +823,7 @@ Given
 	- $\breveH = \{ h \mapsto w \}$
 	- $\breveR = \{ h \mapsto \{ t \mapsto \{ d \mapsto w \} \} \}$
 Return
-:	- $R = \{(d, w_d)\}$, a results map of documents to their weights.
+:	- $\breveD = \{(d, w_d)\}$, a results map of documents to their weights.
 
 TODO
 
