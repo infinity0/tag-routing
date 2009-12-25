@@ -547,104 +547,46 @@ routing layer. This routing scheme is dynamic, and updates are requesting by
 the routing layer when it needs more information. The query state consists of
 these objects:
 
-$\breveG_* = \{ g \mapsto S_g \}$
-:	- a map of `tgraph`s to their tracking data, initialised with $G_s$.
-	- This is controlled by the [scoring module](#weight-of-new-tgraph), which
-	  determines the precise format of $S_g$. This will at most involve ...
-	  MORE something like $S_g = \{ (g, t) \mapsto w \}$.
+$\breveG_* = \{ g \mapsto \ddotg \}$
+:	- a map of **data sources**, to the local view of each source, ie. the
+	  parts of $g$ that have been retrieved from the network.^[This includes
+	  items found not to exist in $g$.] The keys are initialised with $G_s$,
+	  each mapped to an empty graph (no data loaded).
+	- For any $g$, let $t$ is _complete_ in $\ddotg$ mean that enough data has
+	  been retrieved to calculate any [distance](#distance-between-tags) metric
+	  between $t$ and any of its outgoing neighbours. That is, the weights of
+	  (itself, its outgoing arcs, and its outgoing neighbours). (`tgraph` nodes
+	  have no outgoing arcs, so this will just be its own weight.)
+	- Let $t$ is _complete_ in $\breveG_*$ mean that $t$ is complete in all
+	  $\ddotg \in \img \breveG_*$.
+	- Let $\com \breveG_*$ refer to the largest set of nodes for which every
+	  node is complete in $\breveG_*$. This contains enough information to
+	  generate the largest theoretical $\breveT$ for the given $\breveG_*$,
+	  without waiting for more data from the network, or designing some extra
+	  workaround for the missing data.
 $\breveG = \{ g \mapsto w_g \}$
-:	- a map of `tgraph`s to their scores, intially empty.
-	- This is updated by the scoring module.
+:	- a map of **data sources** to their [scores](#weight-of-new-tgraph),
+	  initially empty.
 $\breveg \in G$
-:	- a partial `tgraph` that [combines](#combining-tgraph-objects) data from
-	  $\breveG$, initialised with $t_0$ having weight 1.^[the correct weight is
-	  set automatically as soon as enough data is retrieved.]
-	- A node or arc $x \in \breveg$ if and only if $x$ has been loaded from all
-	  $g \in \breveG$; and $w_x$ is the combined weight of $w_g$.
-		- `tgraph` nodes which are in $\dom \breveG$ are excluded from $\breveg$. TODO explain
-	- Define $t$ is _complete_ in $\breveg$ to mean that $\breveg$ contains
-	  enough information to calculate the [distance](#distance-between-tags)
-	  between $t$ and any of its outgoing neighbours. At most, this includes
-	  the weights of: itself, its outgoing arcs, and its outgoing neighbours.
-	- Since `tgraph` nodes inside a `tgraph` do not have any outgoing arcs,
-	  these are always "complete".
+:	- an **combined `tgraph`**, [constructed](#combining-tgraph-objects) from
+	  $\breveG_*$, initialised with $t_0$ having weight 1.^[This is just a
+	  dummy value for when no data is available, and is overridden afterwards.]
+	- References to all $g \in \dom \breveG_*$ are excluded (explained below).
 $\breveT \subseteq \breveg$
-:	- an acyclic subgraph of $\breveg$, initially empty.
+:	- a **routing scheme** represented as an acyclic subgraph of $\breveg$,
+	  initially empty.
 	- Nodes are ranked in order of its shortest distance to $t_0$, and each
 	  node only has incoming arcs from nodes nearer to $t_0$ than itself.
 	- This provides a quick way to obtain the set of short (ie. greedy) paths
 	  from $t$ back to $t_0$. MORE explain better
 
-Implementations may merge $(\breveG_*, \breveG)$ and $(\breveg, \breveT)$.
-$(\breveg, \breveT)$ represent the routing scheme. TODO rewrite this part
+Implementations may merge $(\breveG_*, \breveG)$ and $(\breveg, \breveT)$ into
+the same objects. However, they should ensure that only the parts specified
+here are exported to other layers.
 
 DIAG data flow diagram
 
-
-Evt: $\breveG_* \to \breveG$
-
-:	The events that can trigger this are:
-
-	- A request from [routing](#routing) to add a `tgraph` $g$ to $\breveG$
-	  (which may bring in more tags).
-	- After receiving $G_s$ from [initialisation](#initialisation), in which
-	  case $G_s$ is just copied to $\breveG$.
-
-	When we add $g$ to $\breveG$, we also need to maintain consistency between
-	the other objects:
-
-	1. Mark $g$ as obsolete in $\breveg$, so future calculations of $\breveT$
-	   will ignore it.
-	2. [Work out](#weight-of-new-tgraph) a weight for $g$, before adding it to
-	   $\breveG$.
-	3. Retrieve $g$'s weight judgements for all nodes and arcs currently in
-	   $\breveg$.
-		- This requires at least partially loading $g$ from the network, so it
-		  should be done in the background to avoid blocking other parts of the
-		  system.
-	4. Update $\breveg$ with the information from $g$.
-	5. Update $\breveT$ from the new $\breveg$.
-		- This may cause some information from $\breveg$ to become obsolete,
-		  since they may no longer be part of the "shortest-path tree". This
-		  may cause future instances of step (3) to perform inefficiently.
-		  However, this behaviour should be rare so we'll ignore it for now.
-
-	Since this layer can accept two types of requests, implementations will
-	either need to ensure only one request can be ongoing, or ensure that the
-	parallelisation keeps exported data (ie. $\breveg, \breveT$) consistent.
-	TODO talk more about this; ie. "the table (tags * tgraphs) needs to be
-	full"; explain this properly.
-
-Evt+Async: $\breveG \to \breveg$
-
-:	The events that can trigger this are:
-
-	- A request from [routing](#routing) to *complete* a tag $t$ (see above).
-
-	When the operation completes, it needs to trigger the synchronous updates
-	mentioned below. Updating $\breveT$ needs to be done every time; updating
-	$\breveG_*$ only needs to be done if we encounter a `tgraph` node.
-
-	See also above section about keeping things consistent.
-
-Sync: $\breveg \to \breveG_*$
-
-:	If any outgoing arc points to a `tgraph` node, we send this information to
-	the scoring module so that it can update $\breveG_*$.
-
-Sync: $\breveg \to \breveT$
-
-:	Our prototype uses Dijkstra's algorithm. Each step $n$ adds a node to
-	$\breveT$; for this, we need to know the distances to all the neighbours of
-	the shortest-path tree so far, ie. $t_i$ must be complete in $\breveg$ for
-	all $i < n$. TODO could split this into another module, allowing other
-	methods of ranking to be used.
-
-	If we reach a $t$ for which we don't have the data to continue, we pause
-	the algorithm, and give the routing layer the option to request that we
-	*complete* $t$ and continue with the calculation.
-
-Request data from lower layers
+Receiving data from lower layers
 
 :	We start from our seed `tgraph` set $G_s$. If $t_0$ does not appear in $G_s$,
 	we have a few backup options:
@@ -656,6 +598,55 @@ Request data from lower layers
 	  increases the risk of an attack through the social network.
 
 	TODO rewrite this so it's more relevant to the new layer-based architecture.
+
+Evt+Async: $\breveG_* \to \breveG$
+
+:	The events that can trigger this are:
+
+	0. After receiving $G_s$ from [initialisation](#initialisation), in which
+	   case $G_s$ is just copied to $\breveG$.
+	1. A request from [routing](#routing) to add a tag to $\breveT$, in which
+	   case we complete the last element of $\breveT$ in $\breveG_*$, and
+	   continue our calculation of $\breveT$ (see below).
+	2. A request from [routing](#routing) to add `tgraph` $g \in \breveT$ as
+	   a data source, in which case we add $g$ to $\dom \breveG_*$, and
+	   retrieve enough data to maintain $\com \breveG_*$.
+
+	In each case, additional data may be need to be retrieved from the network.
+	When this is complete, the updates can be pushed atomically (from the other
+	layers' perspective) to $\breveG$, $\breveg$, $\breveT$.
+
+	**(3 only)** This may require first completing $g$ in $\breveG_*$, if the
+	weighting algorithm needs such data. Since this is costly and our prototype
+	does not need it, we omit this step.
+
+	**(3 only)** This may cause some $t \in \com \breveG_*$ to no longer be
+	part of the shortest-path tree, and hence $\breveT$, which will cause
+	future additions to retrieve unnecessary data from the network. In theory,
+	we could check this and prune them; however this would be quite complex and
+	should be rarely needed, so we ignore it in our prototype.
+
+Sync: $\breveG \to^{\breveG_*} \breveg$
+
+:	Here, we simply call the combine algorithm on $\breveG$. (We ignore all
+	references to `tgraph` nodes already in $\dom \breveG$, so that they are
+	not added to $\breveT$ and be made available for addition again.)
+
+Sync: $\breveg \to \breveT$
+
+:	Our prototype uses Dijkstra's algorithm. Each step $n$ adds a node to
+	$\breveT$; for this, we need to know the distances to all the neighbours of
+	the shortest-path tree so far, ie. $t_i$ must be complete in $\breveg$ for
+	all $i < n$. TODO could split this into another module, allowing other
+	methods of ranking to be used.
+
+	1. If we reach a $t$ for which we don't have the data to continue, we pause
+	   the algorithm, and give the routing layer the option to request that we
+	   add another tag to $\breveT$ (by completing $t$ and continuing).
+	2. For each `tgraph` node $g$ in $\breveT$, we give the routing layer the
+	   option to request $g$ be added as a data source.
+
+	(The numberings correspond to the "event trigger" specs above.)
 
 #### Combining `tgraph` objects
 

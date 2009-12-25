@@ -29,6 +29,9 @@ for i in *.md.txt; do
 	sed 's/\\src/\\mathtt{\\mathrm{src}}\\,/g' | \
 	sed 's/\\dst/\\mathtt{\\mathrm{dst}}\\,/g' | \
 	sed 's/\\rft/\\mathtt{\\mathrm{rft}}\\,/g' | \
+	sed 's/\\row/\\mathtt{\\mathrm{row}}\\,/g' | \
+	sed 's/\\col/\\mathtt{\\mathrm{col}}\\,/g' | \
+	sed 's/\\com/\\mathtt{\\mathrm{com}}\\,/g' | \
 	pandoc -s --toc --smart -c common.css -H "../$RES/header.html" --latexmathml=LaTeXMathML.js > "$OUT"
 done
 
