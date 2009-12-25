@@ -260,7 +260,7 @@ requests for data from the layer above. By default, we discontinue sending new
 requests in all layers after a given number of results have been returned, and
 allow the user to resume from the paused state, resources permitting.
 
-DIAG dataflow diagram
+DIAG information flow diagram
 
 (Dot-arrow)
 :	Synchronous flow of information. When data is updated in the source node,
@@ -273,6 +273,10 @@ DIAG dataflow diagram
 :	Asynchronous flow of information. When data is updated in the source node,
 	the target node is updated automatically, but the operation completes only
 	when all required data from the network has been downloaded.
+
+The integrity of the system can be observed in the diagram: information only
+move from lower layers to higher ones; within each layer, there are no cycles
+that consist solely of synchronous data flows (ie. no infinite loops).
 
 ---------------------------------------------------
                 requires    stores      provides
@@ -292,6 +296,8 @@ initialisation  $z$         $P_s$       $G_s$,
 ---------------------------------------------------
 
 Table: Data dependency between layers
+
+TODO maybe talk about sending/receiving requests, making this parallel, etc
 
 ### Combining data from multiple sources
 
@@ -430,7 +436,11 @@ Provides
 
 MORE blah blah, why etc
 
-MORE only need to do this one, and then keep track of minor updates etc.
+Note that this layer is independent of any query, so this can be done in the
+background at any time. We can cache data for the layers above, which will
+help to increase performance for future queries. etc...
+
+MORE on incremental updates etc.
 
 #### Obtaining initial ptables
 
@@ -523,6 +533,8 @@ won't provide significantly enough benefit to justify the additional complexity
 
 ### Meta-routing
 
+DIAG
+
 Requires
 :	- $t_0$ from the user
 	- $G_s$ from [initialisation](#initialisation)
@@ -532,19 +544,8 @@ Provides
 
 The purpose of the meta-routing layer is to provide a routing scheme to the
 routing layer. This routing scheme is dynamic, and updates are requesting by
-the routing layer when it needs more information.
-
-We start from our seed `tgraph` set $G_s$. If $t_0$ does not appear in $G_s$,
-we have a few backup options:
-
-- ask the user to supply some related tags. This should not be a significant
-  problem; people usually "have an idea" of what they are looking for.
-- ask more nodes in the social graph for their `ptable`s. This could be done
-  automatically, which makes things more convenient for a user. However, it
-  increases the risk of an attack through the social network.
-
-If $t_0$ appears in $G_s$, we proceed with meta-routing. Our query state
-consists of these mutable objects, each depending on the previous object:
+the routing layer when it needs more information. The query state consists of
+these objects:
 
 $\breveG_* = \{ g \mapsto S_g \}$
 :	- a map of `tgraph`s to their tracking data, initialised with $G_s$.
@@ -556,7 +557,8 @@ $\breveG = \{ g \mapsto w_g \}$
 	- This is updated by the scoring module.
 $\breveg \in G$
 :	- a partial `tgraph` that [combines](#combining-tgraph-objects) data from
-	  $\breveG$, initially empty.
+	  $\breveG$, initialised with $t_0$ having weight 1.^[the correct weight is
+	  set automatically as soon as enough data is retrieved.]
 	- A node or arc $x \in \breveg$ if and only if $x$ has been loaded from all
 	  $g \in \breveG$; and $w_x$ is the combined weight of $w_g$.
 		- `tgraph` nodes which are in $\dom \breveG$ are excluded from $\breveg$. TODO explain
@@ -573,35 +575,26 @@ $\breveT \subseteq \breveg$
 	- This provides a quick way to obtain the set of short (ie. greedy) paths
 	  from $t$ back to $t_0$. MORE explain better
 
-$(\breveg, \breveT)$ represent the routing scheme. To populate $\breveT$ from
-$\breveg$, our prototype uses Dijkstra's algorithm. Each step $n$ adds a node
-to $\breveT$; for this, we need to know the distances to all the neighbours of
-the shortest-path tree so far, ie. $t_i$ must be complete in $\breveg$ for all
-$i < n$. TODO could split this into another module
+Implementations may merge $(\breveG_*, \breveG)$ and $(\breveg, \breveT)$.
+$(\breveg, \breveT)$ represent the routing scheme. TODO rewrite this part
 
 DIAG data flow diagram
 
-There are two ways for the routing layer to request more information from the
-meta-routing layer:
 
-Completing a tag $t$ in $\breveg$
+Evt: $\breveG_* \to \breveG$
 
-:	If, in calculating shortest paths, we reach a $t$ for which we don't have
-	the data to continue, we can pause the algorithm, and return a closure for
-	retrieving the data. The routing layer can resume the algorithm when the
-	data has been retrieved. TODO explain this better
+:	The events that can trigger this are:
 
-	If any outgoing arc points to a `tgraph` node, we send this information to
-	the scoring module so that it can update $\breveG_*$.
+	- A request from [routing](#routing) to add a `tgraph` $g$ to $\breveG$
+	  (which may bring in more tags).
+	- After receiving $G_s$ from [initialisation](#initialisation), in which
+	  case $G_s$ is just copied to $\breveG$.
 
-Adding a `tgraph` $g$ to $\breveG$
+	When we add $g$ to $\breveG$, we also need to maintain consistency between
+	the other objects:
 
-:	There may be `tgraph`s present in $\breveT$. The routing layer cannot use
-	this directly, but can request that $g$ to be added to $\breveG$ (which may
-	bring in new tags). When the meta-routing layer receives such a request, it
-	needs to maintain consistency between the state objects.
-
-	1. Remove all references to $g$ from $\breveg$.
+	1. Mark $g$ as obsolete in $\breveg$, so future calculations of $\breveT$
+	   will ignore it.
 	2. [Work out](#weight-of-new-tgraph) a weight for $g$, before adding it to
 	   $\breveG$.
 	3. Retrieve $g$'s weight judgements for all nodes and arcs currently in
@@ -611,6 +604,58 @@ Adding a `tgraph` $g$ to $\breveG$
 		  system.
 	4. Update $\breveg$ with the information from $g$.
 	5. Update $\breveT$ from the new $\breveg$.
+		- This may cause some information from $\breveg$ to become obsolete,
+		  since they may no longer be part of the "shortest-path tree". This
+		  may cause future instances of step (3) to perform inefficiently.
+		  However, this behaviour should be rare so we'll ignore it for now.
+
+	Since this layer can accept two types of requests, implementations will
+	either need to ensure only one request can be ongoing, or ensure that the
+	parallelisation keeps exported data (ie. $\breveg, \breveT$) consistent.
+	TODO talk more about this; ie. "the table (tags * tgraphs) needs to be
+	full"; explain this properly.
+
+Evt+Async: $\breveG \to \breveg$
+
+:	The events that can trigger this are:
+
+	- A request from [routing](#routing) to *complete* a tag $t$ (see above).
+
+	When the operation completes, it needs to trigger the synchronous updates
+	mentioned below. Updating $\breveT$ needs to be done every time; updating
+	$\breveG_*$ only needs to be done if we encounter a `tgraph` node.
+
+	See also above section about keeping things consistent.
+
+Sync: $\breveg \to \breveG_*$
+
+:	If any outgoing arc points to a `tgraph` node, we send this information to
+	the scoring module so that it can update $\breveG_*$.
+
+Sync: $\breveg \to \breveT$
+
+:	Our prototype uses Dijkstra's algorithm. Each step $n$ adds a node to
+	$\breveT$; for this, we need to know the distances to all the neighbours of
+	the shortest-path tree so far, ie. $t_i$ must be complete in $\breveg$ for
+	all $i < n$. TODO could split this into another module, allowing other
+	methods of ranking to be used.
+
+	If we reach a $t$ for which we don't have the data to continue, we pause
+	the algorithm, and give the routing layer the option to request that we
+	*complete* $t$ and continue with the calculation.
+
+Request data from lower layers
+
+:	We start from our seed `tgraph` set $G_s$. If $t_0$ does not appear in $G_s$,
+	we have a few backup options:
+
+	- ask the user to supply some related tags. This should not be a significant
+	  problem; people usually "have an idea" of what they are looking for.
+	- ask more nodes in the social graph for their `ptable`s. This could be done
+	  automatically, which makes things more convenient for a user. However, it
+	  increases the risk of an attack through the social network.
+
+	TODO rewrite this so it's more relevant to the new layer-based architecture.
 
 #### Combining `tgraph` objects
 
@@ -815,8 +860,6 @@ Provides
 :	- $\breveD$ to the user
 
 #### Combining results from different queries
-
-TODO resync spec with new routing layer architecture
 
 Given
 :	- $\breveg = \{ t \mapsto w \}$
