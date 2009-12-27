@@ -354,8 +354,9 @@ approximation, based on our intuitions.
 #### Mean weight of a node
 
 Given
-:	- a map $M = \{ m \mapsto u_m \in W \}$ of node-maps to their weights,
-	  where each $m = \{ v \in V \mapsto w_{mv} \in W \}$.
+:	- a map $M = \{ m \mapsto u_m \in W \}$ of data sources to their scores,
+	  where each data source $m = \{ v \in V \mapsto w_{mv} \in W \}$ is a map
+	  from nodes to their values.
 	- a given node $v \in \bigcup \dom m$
 Return
 :	- the map-weighted mean node-weight $\bar w_v$ of $v$
@@ -397,8 +398,9 @@ context, so this should be an additional parameter to the algorithm.
 #### Mean weight of an arc
 
 Given
-:	- a map $M = \{ m \mapsto u_m \in W \}$ of arc-maps to their weights,
-	  where each $m = \{ e \in E \mapsto w_{me} \in W \}$.
+:	- a map $M = \{ m \mapsto u_m \in W \}$ of data sources to their scores,
+	  where each data source $m = \{ e \in E \mapsto w_{me} \in W \}$ is a map
+	  from arcs to their values.
 	- a given arc $e = (v_s, v_t) \in \bigcup \dom m$
 Return
 :	- the map-weighted mean arc-weight $\bar w_e$ of $e$
