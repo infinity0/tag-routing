@@ -294,7 +294,7 @@ that consist solely of synchronous data flows (ie. no infinite loops).
 ---------------------------------------------------
                 requires    stores      provides
 --------------- ----------- ----------- -----------
-ranking         $\breveg$,  -           $\breveD$
+ranking         $\breveg$,  -           $\breveh$
                 $\breveR$,
                 $\breveH$
 
@@ -620,7 +620,7 @@ Evt+Async: $\breveG_* \to \breveG$
 
 :	The events that can trigger this are:
 
-	0. After receiving $G_s$ from [initialisation](#initialisation), in which
+	0. After receivingoeoeoe $G_s$ from [initialisation](#initialisation), in which
 	   case $G_s$ is just copied to $\breveG$.
 	1. A request from [routing](#routing) to add a tag to $\breveT$, in which
 	   case we complete the last element of $\breveT$ in $\breveG_*$, and
@@ -796,45 +796,65 @@ $\breveQ = \{ h \mapsto T_h \}$
 	- Here, we distinguish between the _query_ for tag $t_0$, which is the
 	  objective of this entire process , and the simpler operation _lookup_,
 	  which simply returns the results for a tag in a single `index`.
-	- This is obtained from $\breveT$.
-		- if $h$ is from $H_s$, select all tags in $\breveT$.
-		- otherwise, use $\breveT$ to select all "short" paths from $t$ to
-		  $t_0$. TODO clarify this, description already in meta-routing
 $\breveR = \{ h \mapsto \ddoth_D \}$
 :	- a map of **data sources** to a partial local view of each source,
 	  representing the **results** of lookup operations.
 	- Initially empty.
 	- This holds the entire local view, except for arcs to `index`s already
 	  used as a data source (ie. all $h \in \dom \breveH$).
+	- Let $\breveD = \dst \bigcup \ddoth_D$ be the set of all results (from
+	  every data source).
 
 Implementations may choose to merge any of these objects together; however,
 they should ensure that only the parts specified here are exported to other
 layers.
 
-$\breveH, \breveR$ consists of the full results data provided to the ranking
-layer. We want to provide as much information to $\breveR$ as possible. We run
-the lookups of $\breveQ$, in some particular [order](#deciding-lookup-order).
-We can execute lookups in parallel, and update $\breveR$ with the results.
+DIAG data flow diagram
 
-When all lookups have completed, the ranking layer can request more data. We
-can respond to this in two different ways.
+Evt: $\breveH_* \to \breveH$
 
-Adding an index $h$ to $\breveH$
+:	The events that can trigger this are:
 
-:	If new indexes were found, we can add these to $\breveH$, $\breveS$.
+	0. After receiving $H_s$ from [initialisation](#initialisation), in which
+	   case $H_s$ is just copied to $\breveH$.
+	1. A request from [ranking](#ranking) to add a `index` $h \in \breveD$ as
+	   a data source, in which case we add $h$ to $\dom \breveH_*$, and update
+	   $\breveH$.
 
-	TODO update $\breveQ$, $\breveR$. weight for the new index, etc
+	**(1 only)** The option to allow such a request is only made active when
+	all data about $h$ (as defined by $\breveQ) has been receieved from
+	$\breveR$. TODO expand...
 
-Request data from the meta-routing layer
+Evt: $\breveH_* \to^\breveT \breveQ$
 
-:	If there are `tgraph`s in $\breveT$, ask the meta-routing layer to import
-	them, and wait for the new data to trickle down to $\breveT$.
+:	The events that can trigger this are:
 
-	TODO update $\breveQ$, $\breveR$.
+	1. (as above)
+	2. Receive an update to $\breveT$ from [meta-routing](#meta-routing), in
+	   which case we update $\breveQ$ etc.
 
-Update $\breveQ$
+	For each `index` $h \in \breveH$, we want to select the tags to lookup.
 
-:	When we add a results set to $\breveR$... MORE
+	- if $h$ is from $H_s$, select all tags in $\breveT$.
+	- otherwise, use $\breveH_*$ to find all tags $t$ than we reached $h$ by,
+	  and then use $\breveT$ to select all "short" paths from $t$ to $t_0$.
+	  TODO clarify this, description already in meta-routing
+
+	Do this when $\breveT$ is updated from [meta-routing](#meta-routing).
+
+Async: $\breveQ \to^\breveP \breveR$
+
+:	We run the lookups of $\breveQ$ in some [order](#deciding-lookup-order),
+	and update $\breveR$ with the results. We can execute these in parallel.
+
+Sync: $\breveR \to \breveH_*$
+
+:	When a lookup $(h, t)$ completes, we scan the results returned, and add
+	any arcs to `index`s to the relevant $\ddoth \in \breveH_*$. We also remove
+	arcs to any `index` nodes that have already been added to $\dom \breveH$
+	(so that they are no longer available for addition again).
+
+	TODO explain this better
 
 #### Deciding lookup order
 
@@ -870,7 +890,7 @@ Requires
 	- $\breveH$ from [ranking](#ranking)
 	- $\breveR$ from [ranking](#ranking)
 Provides
-:	- $\breveD$ to the user
+:	- $\breveh$ to the user
 
 #### Combining results from different queries
 
@@ -879,7 +899,7 @@ Given
 	- $\breveH = \{ h \mapsto w \}$
 	- $\breveR = \{ h \mapsto \{ t \mapsto \{ d \mapsto w \} \} \}$
 Return
-:	- $\breveD = \{(d, w_d)\}$, a results map of documents to their weights.
+:	- $\breveh = \{(d, w_d)\}$, a results map of documents to their weights.
 
 TODO
 
