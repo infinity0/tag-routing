@@ -371,46 +371,35 @@ through the [general algorithm](#mean-weight-of-a-node).
 
 To recap, $\alpha_1(p, v)$ is the probability of $v \notin \dom p$ being due to
 "zero-weight". In other words, $p$ does know about $v$ and has judged it to be
-worthless. We want to make a rough estimate for $\alpha_1$.
+worthless. We need to make a rough estimate for $\alpha_1$.
 
-Intuitively, the more of our friends that know about a particular item, the
-more likely it is that we also know about it. Moreover, this probability is
-proportionally greater at lower degrees of saturation, since it only takes one
-friend to tell us about an item. Hand-waving furiously, we get:
+Various factors that could affect $\alpha_1$ include:
 
-$$\alpha_1(p, v) = \left(\frac{|F_v(p)|+1}{|F(p)|+2}\right)^\frac{1}{2}$$
+A.  Maintainers of larger `ptable`s are likely to have come across more objects
+    than those of smaller `ptable`s, and so $\alpha_1$ will be larger.
+B.  The more of our friends that know about a particular item, the more likely
+    it is that we also know about it. The probability is proportionally greater
+    at lower saturations, since it only takes one friend to pass on knowledge.
+C.  On the other hand, we might choose _not_ point to an item that our friends
+    already point to, even if we like it. To do so would be somewhat redundant;
+    we could just get the information from our friends instead.
 
-where $F(p)$ and $F_v(p)$ have their intuitive meanings, and the additional
-constants serve to add some uncertainty in the cases where none or all of $p$'s
-friends know about a particular item, and also to avoid division by zero.
+It is not immediately obvious how these factors interact with each other, and
+how they affect the final $\alpha_1$. Even if we can produce a global estimate,
+it is uncertain whether it would actually be accurate or useful when applied to
+an individual's local situation.
 
-TODO revise this formula; for 0/0 friends it gives us 0.7 knowledge which is
-ridiculous. TODO note that people might explicitly not point to something their
-friends already point to, since that would be redundant.
+Also, any estimate depending on social factors (eg. (B), (C)) would require
+retrieving the `ptable`s of all the friends of $p$, which is more costly than
+estimates based on an individual `ptable`.
 
-For a given $p$, this requires retrieving of all of its friends' `ptable`s,
-which may not be in $P_s$ depending on our seeding algorithm. To retrieve these
-additional `ptable`s for every $p$ we need to resolve could be costly; an even
-more rough estimate that involves much less work is just to set $\alpha_1$ to
-some constant.
+Selecting trustworthy nodes from a social network is a deeper and more general
+problem which would provide resistance to attacks in this layer. With a good
+algorithm, $\alpha_1$ could then be reduced to near-zero.
 
-TODO, what constant? and merge/rewrite below paragraph
-
-so to keep things simple for this
-project, we use a constant estimate of $\alpha = \frac{1}{2}$.^[Intuitively,
-for any given target, $P(like)$ and $P(know)$ are low but slightly correlated,
-so $P(\neg like \wedge \neg know)$ is high, but not very high.]
-
-TODO this used to be in "zero weight-attributes"; merge with above stuff
-In practice, such methods are hard to get accurate^[A basic heuristic would be to assume that some
-fraction of an identity's friends "know about" each object that its `ptable`
-points to; however the real fraction is unlikely to be near-constant over all
-objects, so the scheme would greatly disadvantage rare objects. We could take
-this into account and estimate the "knows about" fraction based on the fraction
-of identities that explicitly reference the target, but this is becoming more
-and more complicated with increasingly hand-waving arguments.], and probably
-won't provide significantly enough benefit to justify the additional complexity
-- the social network should mitigate most serious attempts to abuse the system.
+Due to these reasons, for our prototype we simply use a low constant, $2^{-4}$.
+This is **not** theoretically sound, but should work adequately in the majority
+of cases, where there are few disagreements or malicious attacks.
 
 ### Meta-routing
 
@@ -1029,6 +1018,10 @@ judgement for each object that it refers to. To avoid confusion, we will call
 source-weights "scores" and object-weights "values". Given a target object, we
 want to derive a "combined" value for that object, using the given information.
 
+TODO discuss more complex schemes that return "variance" for values. This would
+allow further refinement, eg. the more data sources that give a value judgement
+for some object $x$, the smaller the variance would be. [EXTN].
+
 For our prototype, we use a very basic algorithm - the score-weighted mean
 value of the object. Generally, the arithmetic mean is susceptible to attacks
 and distortions. Let $k$ be the proportion of the total score that the attacker
@@ -1057,7 +1050,7 @@ to adjust the values dynamically. [EXTN]
 
 However, such methods are likely to be quite complex, and so this project does
 not go into them. Instead, we only explore heuristics that give a rough
-approximation, based on our intuitions.
+approximation, based on our intuitions. TODO rewrite...
 
 ### Mean weight of a node
 
