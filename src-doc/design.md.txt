@@ -785,8 +785,11 @@ $\breveH_* = \{ h \mapsto \ddoth_H \}$
 	- Initialised with the keys of $H_s$, each mapped to an empty local view.
 	- This only holds arcs to other `index`s; arcs to documents are stored in
 	  $\breveR$ (see below).^[Contrast this with $\breveG_*$ from meta-routing,
-	  which holds all retrieved data, due to the different structure of a `tgraph`.]
-$\breveH = \{ h \mapsto w \}$
+	  which holds all retrieved data, due to the different structure of a
+	  `tgraph`.]
+	- TODO explore and explain the reasons why we have a $\com \breveG_*$ but
+	  not a $\com \breveH_*$.
+$\breveH = \{ h \mapsto w_h \}$
 :	- a map of **data sources** to their [scores](#weight-of-new-index).
 	- Initially empty.
 $\breveQ = \{ h \mapsto T_h \}$
@@ -817,19 +820,20 @@ Evt: $\breveH_* \to \breveH$
 
 	0. After receiving $H_s$ from [initialisation](#initialisation), in which
 	   case $H_s$ is just copied to $\breveH$.
-	1. A request from [ranking](#ranking) to add a `index` $h \in \breveD$ as
-	   a data source, in which case we add $h$ to $\dom \breveH_*$, and update
-	   $\breveH$.
+	1. After adding $h \to \dom \breveH_*$ (see below), and its lookups have
+	   all completed, in which case we update $\breveH$ by calling the scoring
+	   algorithm.
 
-	**(1 only)** The option to allow such a request is only made active when
-	all data about $h$ (as defined by $\breveQ) has been receieved from
-	$\breveR$. TODO expand...
+	TODO explain this much much better... maybe waiting is not necessary and we
+	can just update $\breveH$ every time we receive data from $\breveR$...
 
 Evt: $\breveH_* \to^\breveT \breveQ$
 
 :	The events that can trigger this are:
 
-	1. (as above)
+	1. A request from [ranking](#ranking) to add a `index` $h \in \breveD$ as
+	   a data source, in which case we add $h$ to $\dom \breveH_*$, and update
+	   $\breveQ$, etc... TODO explain this much better....
 	2. Receive an update to $\breveT$ from [meta-routing](#meta-routing), in
 	   which case we update $\breveQ$ etc.
 
@@ -860,6 +864,8 @@ Sync: $\breveR \to \breveH_*$
 
 Given
 :	- $\breveQ$
+	- $\breveT$
+	- $\breveH_*$
 Return
 :	- an ordered list $\breveP = [(h_i, t_i)]$, where $(h, t) \in \breveP \iff
 	  h \in \dom \breveQ \wedge t \in \breveQ[h]$.
