@@ -126,10 +126,11 @@ routing and the ranking algorithms do. Specific uses include:
 Probability-based semantics seem quite robust and reliable, since these are
 objective properties and can (in theory) be estimated algorithmically. It also
 gives rise to a simple way of combining weights (multiplication), as well as a
-simple interval of values $[0, 1]$.^[Theoretically, this allows low-probability
-weights to be defined for any possible arc. However, the system's algorithms
-favour heavy weights over light ones, so the latter should just be omitted,
-since they will never be used. TODO rewrite this appropriately]
+simple interval of values $[0, 1]$.^[Depending on the precise meaning of the
+weight, this could allow arcs with near-zero weights to be defined between
+nearly all pairs of nodes. However, there would be no point to this, since it
+would provide very little information (entropy). For a more in-depth discussion
+of this, see [zero-weight attributes](#zero-weight-attributes).]
 
 These weights allow algorithms to achieve a finer level of preference-choosing
 than would otherwise be possible. However, care must be taken not to depend on
@@ -312,135 +313,6 @@ Table: Data dependency between layers
 
 TODO maybe talk about sending/receiving requests, making this parallel, etc
 
-### Combining data from multiple sources
-
-Below, we describe algorithms for combining data from multiple sources. Our
-model is relatively simple: we have a list of sources with a weight judgement
-on how "good" each source is; in turn, each source specifies their own weight
-judgement for each object that it refers to. To avoid confusion, we will call
-source-weights "scores" and object-weights "values". Given a target object, we
-want to derive a "combined" value for that object, using the given information.
-
-For our prototype, we use a very basic algorithm - the score-weighted mean
-value of the object. Generally, the arithmetic mean is susceptible to attacks
-and distortions. Let $k$ be the proportion of the total score that the attacker
-controls. Weights are [limited](#weight-attributes) to $[0, 1]$, so this will
-roughly be the same as the proportion of compromised nodes.
-
-If the value is evenly distributed, the effect of an attack will be limited in
-direct proportion to $k$ - the worst thing they can do is give a single value
-with $k$ influence in the final result. However, if the value is far from being
-evenly distributed, it would be possible for an attacker to introduce a value
-that has an extremely small probability $\epsilon$ of occuring, yet which will
-still have a $k$ share of influence in the final combined value.
-
-TODO - explain this better. possibly move into the "Design" section.
-
-So the types of weights that are input to this algorithm must be roughly evenly
-distributed in order to be secure. Most distributions probably will not cause
-too many problems; however, negative-log distributions will.
-
-The algorithms below make use of several $\alpha_i$ functions, which fine-tune
-the output based knowledge of on the context of the inputs. There are various
-ways of producing such functions; one method is to extract realistic values
-for some constant, by collecting training data from a prototype network. More
-advanced techniques include collecting data directly from the active network,
-to adjust the values dynamically. [EXTN]
-
-However, such methods are likely to be quite complex, and so this project does
-not go into them. Instead, we only explore heuristics that give a rough
-approximation, based on our intuitions.
-
-#### Mean weight of a node
-
-Given
-:	- a map $M = \{ m \mapsto u_m \in W \}$ of data sources to their scores,
-	  where each data source $m = \{ v \in V \mapsto w_{mv} \in W \}$ is a map
-	  from nodes to their values.
-	- a given node $v \in \bigcup \dom m$
-Return
-:	- the map-weighted mean node-weight $\bar w_v$ of $v$
-
-The mean weight for node $v$, over all maps, is $\frac{\sum_{m} w_{mv}}{|M|}$.
-If we take into account the weights of each map, we have $\frac{\sum_{m} u_m
-w_{mv}}{\sum_m u_m}$. However, not every map will necessarily contain $v$, so
-some $w_{mv}$ may be undefined. In such cases, we estimate a weight instead;
-see the section on [zero weights](#zero-weight-attributes) for more details.
-Following on from that, we reach:
-
-$$
-\bar w_v = \frac{\sum_{m} u_m \hat w_{mv}}{\sum_m u_m}
-\quad ; \quad
-\hat w_{mv} = \left\{ \begin{array}{llr} \\
-  w_{mv} & : v \in \dom m & (0) \\
-  \alpha_1(m,v).0 + (1 - \alpha_1(m,v)).\bar w_v & : v \notin \dom m & (1) \\
-\end{array} \right
-$$
-
-where $\alpha_i(m, v)$ is the probability that the author of $m$ _does_ know
-about $v$ (and intentionally excluded it), given $(i)$.
-
-The above definition has $\bar w_v$ on the RHS; after rearranging, we get:
-
-$$
-% should be \dfrac but LaTeXMathML doesn't support amsmath commands...
-\bar w_v = \frac{\sum_{m:(0)} u_m w_{mv}}{\sum_m u_m \alpha(m,v)}
-\quad ; \quad
-\alpha(m,v) = \left\{ \begin{array}{ll} \\
-  1 & : (0) \\
-  \alpha_1(m,v) & : (1) \\
-\end{array} \right
-$$
-
-Generally, the behaviour of $\alpha_i$ are likely to depend highly on the use
-context, so this should be an additional parameter to the algorithm.
-
-#### Mean weight of an arc
-
-Given
-:	- a map $M = \{ m \mapsto u_m \in W \}$ of data sources to their scores,
-	  where each data source $m = \{ e \in E \mapsto w_{me} \in W \}$ is a map
-	  from arcs to their values.
-	- a given arc $e = (v_s, v_t) \in \bigcup \dom m$
-Return
-:	- the map-weighted mean arc-weight $\bar w_e$ of $e$
-
-The formula is similar to the one from the previous section, but here we are
-dealing with arcs, so we can refine our estimate somewhat further; see the
-section on [zero weights](#zero-weight-attributes) for more details. Following
-on from that, we reach:
-
-$$
-\bar w_e = \frac{\sum_{m} u_m \hat w_{me}}{\sum_m u_m}
-\quad ; \quad
-\hat w_{me} = \left\{ \begin{array}{llr} \\
-  w_{me} & : e \in \dom m & (0) \\
-  (1 - \alpha_1(m,e)).\bar w_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
-    \not\subseteq \rft m & (1) \\
-  (1 - \alpha_2(m,e)).\bar w_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
-    \subseteq \rft m & (2) \\
-\end{array} \right
-$$
-
-where $\alpha_i(m, e)$ is the probability that the author of $m$ _does_ know
-about $e$ (and intentionally excluded it), given $(i)$.
-
-The above definition has $\bar w_e$ on the RHS; after rearranging, we get:
-
-$$
-% should be \dfrac but LaTeXMathML doesn't support amsmath commands...
-\bar w_e = \frac{\sum_{m:(0)} u_m w_{me}}{\sum_m u_m \alpha(m,e)}
-\quad ; \quad
-\alpha(m,e) = \left\{ \begin{array}{ll} \\
-  1 & : (0) \\
-  \alpha_1(m,e) & : (1) \\
-  \alpha_2(m,e) & : (2) \\
-\end{array} \right
-$$
-
-Generally, the behaviour of $\alpha_i$ are likely to depend highly on the use
-context, so this should be an additional parameter to the algorithm.
-
 ### Initialisation
 
 Requires
@@ -460,12 +332,6 @@ MORE on incremental updates etc.
 #### Obtaining initial ptables
 
 Assume a given identity is already connected to the social network. MORE
-
-Any system which has a social network as a major component, needs a method
-of constructing such a network and sustaining its growth. Fortunately, such
-systems are already widely deployed on the www; new networks can bootstrap
-themselves by extracting social data from existing networks, through invites,
-etc. [EXTN] TODO move this probably to "design assumptions".
 
 For our purposes, we need an algorithm which takes our own identity as input,
 and outputs a set of seed identities for our routing algorithm, with a score
@@ -504,8 +370,8 @@ we just pass $P_s$, $v$ and some appropriate $\alpha_1 : P \times V \to [0, 1]$
 through the [general algorithm](#mean-weight-of-a-node).
 
 To recap, $\alpha_1(p, v)$ is the probability of $v \notin \dom p$ being due to
-"zero-weight". In other words, $p$ does indeed know about $v$, but has chosen
-not to inform others of it. We want to make a rough estimate for $\alpha_1$.
+"zero-weight". In other words, $p$ does know about $v$ and has judged it to be
+worthless. We want to make a rough estimate for $\alpha_1$.
 
 Intuitively, the more of our friends that know about a particular item, the
 more likely it is that we also know about it. Moreover, this probability is
@@ -962,6 +828,12 @@ The initialisation algorithm assumes an abstract lower-level social network
 where it can look for friends to query for pointers onto the meta-routing and
 routing planes.
 
+Any system which has a social network as a major component, needs a method
+of constructing such a network and sustaining its growth. Fortunately, such
+systems are already widely deployed on the www; new networks can bootstrap
+themselves by extracting social data from existing networks, through invites,
+etc. [EXTN]
+
 The network is modelled as a directed weighted graph; arcs represent a degree
 of trust by the source node in the target node, and arc weights are restricted
 to the interval $[0,1]$.
@@ -1147,6 +1019,135 @@ is that original semantics of the system are no longer reflected in algorithms
 for calculating and evaluating it. When this happens the system breaks...
 
 (eg. google's "trusted ads" are 2x likely to be corrupt)
+
+## Combining data from multiple sources
+
+Below, we describe algorithms for combining data from multiple sources. Our
+model is relatively simple: we have a list of sources with a weight judgement
+on how "good" each source is; in turn, each source specifies their own weight
+judgement for each object that it refers to. To avoid confusion, we will call
+source-weights "scores" and object-weights "values". Given a target object, we
+want to derive a "combined" value for that object, using the given information.
+
+For our prototype, we use a very basic algorithm - the score-weighted mean
+value of the object. Generally, the arithmetic mean is susceptible to attacks
+and distortions. Let $k$ be the proportion of the total score that the attacker
+controls. Weights are [limited](#weight-attributes) to $[0, 1]$, so this will
+roughly be the same as the proportion of compromised nodes.
+
+If the value is evenly distributed, the effect of an attack will be limited in
+direct proportion to $k$ - the worst thing they can do is give a single value
+with $k$ influence in the final result. However, if the value is far from being
+evenly distributed, it would be possible for an attacker to introduce a value
+that has an extremely small probability $\epsilon$ of occuring, yet which will
+still have a $k$ share of influence in the final combined value.
+
+TODO - explain this better.
+
+So the types of weights that are input to this algorithm must be roughly evenly
+distributed in order to be secure. Most distributions probably will not cause
+too many problems; however, negative-log distributions will.
+
+The algorithms below make use of several $\alpha_i$ functions, which fine-tune
+the output based knowledge of on the context of the inputs. There are various
+ways of producing such functions; one method is to extract realistic values
+for some constant, by collecting training data from a prototype network. More
+advanced techniques include collecting data directly from the active network,
+to adjust the values dynamically. [EXTN]
+
+However, such methods are likely to be quite complex, and so this project does
+not go into them. Instead, we only explore heuristics that give a rough
+approximation, based on our intuitions.
+
+### Mean weight of a node
+
+Given
+:	- a map $M = \{ m \mapsto u_m \in W \}$ of data sources to their scores,
+	  where each data source $m = \{ v \in V \mapsto w_{mv} \in W \}$ is a map
+	  from nodes to their values.
+	- a given node $v \in \bigcup \dom m$
+Return
+:	- the map-weighted mean node-weight $\bar w_v$ of $v$
+
+The mean weight for node $v$, over all maps, is $\frac{\sum_{m} w_{mv}}{|M|}$.
+If we take into account the weights of each map, we have $\frac{\sum_{m} u_m
+w_{mv}}{\sum_m u_m}$. However, not every map will necessarily contain $v$, so
+some $w_{mv}$ may be undefined. In such cases, we estimate a weight instead;
+see the section on [zero weights](#zero-weight-attributes) for more details.
+Following on from that, we reach:
+
+$$
+\bar w_v = \frac{\sum_{m} u_m \hat w_{mv}}{\sum_m u_m}
+\quad ; \quad
+\hat w_{mv} = \left\{ \begin{array}{llr} \\
+  w_{mv} & : v \in \dom m & (0) \\
+  \alpha_1(m,v).0 + (1 - \alpha_1(m,v)).\bar w_v & : v \notin \dom m & (1) \\
+\end{array} \right
+$$
+
+where $\alpha_i(m, v)$ is the probability that the author of $m$ has judged $v$
+to be worthless, given $(i)$.
+
+The above definition has $\bar w_v$ on the RHS; after rearranging, we get:
+
+$$
+% should be \dfrac but LaTeXMathML doesn't support amsmath commands...
+\bar w_v = \frac{\sum_{m:(0)} u_m w_{mv}}{\sum_m u_m \alpha(m,v)}
+\quad ; \quad
+\alpha(m,v) = \left\{ \begin{array}{ll} \\
+  1 & : (0) \\
+  \alpha_1(m,v) & : (1) \\
+\end{array} \right
+$$
+
+Generally, the behaviour of $\alpha_i$ are likely to depend highly on the use
+context, so this should be an additional parameter to the algorithm.
+
+### Mean weight of an arc
+
+Given
+:	- a map $M = \{ m \mapsto u_m \in W \}$ of data sources to their scores,
+	  where each data source $m = \{ e \in E \mapsto w_{me} \in W \}$ is a map
+	  from arcs to their values.
+	- a given arc $e = (v_s, v_t) \in \bigcup \dom m$
+Return
+:	- the map-weighted mean arc-weight $\bar w_e$ of $e$
+
+The formula is similar to the one from the previous section, but here we are
+dealing with arcs, so we can refine our estimate somewhat further; see the
+section on [zero weights](#zero-weight-attributes) for more details. Following
+on from that, we reach:
+
+$$
+\bar w_e = \frac{\sum_{m} u_m \hat w_{me}}{\sum_m u_m}
+\quad ; \quad
+\hat w_{me} = \left\{ \begin{array}{llr} \\
+  w_{me} & : e \in \dom m & (0) \\
+  (1 - \alpha_1(m,e)).\bar w_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
+    \not\subseteq \rft m & (1) \\
+  (1 - \alpha_2(m,e)).\bar w_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
+    \subseteq \rft m & (2) \\
+\end{array} \right
+$$
+
+where $\alpha_i(m, e)$ is the probability that the author of $m$ has judged $e$
+to be worthless, given $(i)$.
+
+The above definition has $\bar w_e$ on the RHS; after rearranging, we get:
+
+$$
+% should be \dfrac but LaTeXMathML doesn't support amsmath commands...
+\bar w_e = \frac{\sum_{m:(0)} u_m w_{me}}{\sum_m u_m \alpha(m,e)}
+\quad ; \quad
+\alpha(m,e) = \left\{ \begin{array}{ll} \\
+  1 & : (0) \\
+  \alpha_1(m,e) & : (1) \\
+  \alpha_2(m,e) & : (2) \\
+\end{array} \right
+$$
+
+Generally, the behaviour of $\alpha_i$ are likely to depend highly on the use
+context, so this should be an additional parameter to the algorithm.
 
 
 # Analysis
