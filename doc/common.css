@@ -12,3 +12,18 @@ ul, ol { padding-left: 1.6em; }
 dd { margin-left: 2em; }
 
 .footnoteRef { font-size: 85%; }
+
+/* workaround pandoc bad generation of footnote html */
+a.footnoteRef { text-decoration: none; }
+a.footnoteRef > sup { text-decoration: underline; }
+
+/* fixes mathml/sup/sub screwing with line heights */
+sup,
+sub,
+span.inlinemath > math * {
+	vertical-align: baseline;
+	margin: -2em 0;
+	position: relative;
+}
+sup { bottom: 0.8em; }
+sub { top: 0.8em; }
