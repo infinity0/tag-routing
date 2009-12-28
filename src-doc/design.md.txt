@@ -449,6 +449,7 @@ $\breveT \subseteq \breveg$
 	- Initially empty.
 	- Nodes are ranked in order of its shortest distance to $t_0$, and each
 	  node only has incoming arcs from nodes nearer to $t_0$ than itself.
+	  (TODO could rank these arcs too..)
 	- This provides a quick way to obtain the set of short (ie. greedy) paths
 	  from $t$ back to $t_0$. MORE explain better
 
@@ -770,13 +771,59 @@ possibly could just merge this into routing.
 
 ### Data structures
 
-### Querying an `index` or `tgraph` for presence of a source tag
+- `ptable`
+	- quick partition of `index` vs `tgraph` nodes [$G_s$, $H_s$]
+	- optionally order these by their score [possible future use]
 
-Bloom filters
+- `tgraph`, `index`
+	- where applicable:
+	- quick lookup of node (and weight)
+	- quick lookup of node's outgoing arcs (and weight) [routing, meta-routing]
+
+- `index`
+	- quick partition of tag's to-`index` vs to-document arcs
+	- optionally order these by their score [ranking]
+
+- $\breveg$
+	- same as `tgraph`
+
+- $p_s$, $\breveg$, $\breveG$, $\breveH$
+	- might want to make these point to CombinedWeight objects instead of
+	  a float, which in the future could be expanded to include a variance...
+
+- $\breveT$
+	- quick lookup of node (and weight)
+	- quick iteration through all nodes (iteration) [$\breveQ$]
+	- quick comparison of nodes by their distance ordering [$\breveP$]
+	- quick lookup of node's incoming arcs (and weight) [$\breveQ$]
+
+- $\ddotg \in \img \breveG_*$, $\ddoth \in \img \breveH_*$
+	- quick lookup of node (and weight)
+	- quick lookup of node`s incoming arcs (and weight) [routing, meta-routing]
+	- quick one-time verification that all of a node's outgoing arcs (and weight)
+	  have been retrieved from the network [routing, meta-routing]
+
+- $\breveQ$, $\breveR$
+	- quick iteration of all lookups/results [$\breveP$, $\breveh$]
+	- an advanced implementation would allow items to be added and dynamically
+	  ordered in priority, bypassing the need to have $\breveP$, $\breveh$.
+
+
+### Retrieval of remote objects
+
+Usually we only need to retrieval part of a `tgraph` or `index`, eg. the weight
+of a single node, or its outgoing arcs.
+
+- eg. for quick "no" answer on lookups of storage objects - bloom filters
 
 ### Caching storage objects
 
-### Incremental updates to state objects
+- eg. cache commonly-retrieved objects like `ptable`s
+
+### Incremental state updates
+
+- eg. when updating $\breveG$ from $\breveG_*$, we should only need to
+  recalculate the parts that are affected by the updated....
 
 
 ## UI
@@ -784,6 +831,7 @@ Bloom filters
 ### Components
 
 ### Behaviour
+
 
 
 # Design
