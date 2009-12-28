@@ -476,7 +476,7 @@ Evt+Async: $\breveG_* \to \breveG$
 
 :	The events that can trigger this are:
 
-	0. After receivingoeoeoe $G_s$ from [initialisation](#initialisation), in which
+	0. After receiving $G_s$ from [initialisation](#initialisation), in which
 	   case $G_s$ is just copied to $\breveG$.
 	1. A request from [routing](#routing) to add a tag to $\breveT$, in which
 	   case we complete the last element of $\breveT$ in $\breveG_*$, and
@@ -611,14 +611,7 @@ Return
 
 TODO
 
-whethere to use social link structure - flawed because:
-MORE using two different semantic meanings for weight attributes being used
-here (relevancy vs reliability) TODO explore this and its potential pitfalls.
-would need to expand `tgraph` to provide this information more efficiently
-(ie. have a "referents" table)
-
-or just decrease weight by a constant wrt. shortest number of paths to seed
-set. TODO explore adv/dis of this.
+see [object-object links](#object-object-links)
 
 ### Routing
 
@@ -745,6 +738,8 @@ Return
 
 TODO
 
+see [object-object links](#object-object-links)
+
 ### Ranking
 
 Requires
@@ -788,20 +783,23 @@ possibly could just merge this into routing.
 	- same as `tgraph`
 
 - $p_s$, $\breveg$, $\breveG$, $\breveH$
-	- might want to make these point to CombinedWeight objects instead of
-	  a float, which in the future could be expanded to include a variance...
+	- might want to make these use CombinedWeight objects instead of a float
+	  "weight", which in the future could be expanded to include a variance...
 
 - $\breveT$
 	- quick lookup of node (and weight)
-	- quick iteration through all nodes (iteration) [$\breveQ$]
+	- quick iteration through all nodes [$\breveQ$]
 	- quick comparison of nodes by their distance ordering [$\breveP$]
 	- quick lookup of node's incoming arcs (and weight) [$\breveQ$]
 
 - $\ddotg \in \img \breveG_*$, $\ddoth \in \img \breveH_*$
 	- quick lookup of node (and weight)
+	- quick iteration through all nodes, arcs [$\breveg$]
 	- quick lookup of node`s incoming arcs (and weight) [routing, meta-routing]
-	- quick one-time verification that all of a node's outgoing arcs (and weight)
-	  have been retrieved from the network [routing, meta-routing]
+	- quick lookup of node's outgoing arcs (and weight) [maybe needed by some
+	  scoring modules]
+	- quick one-time check that all of a node's outgoing arcs (and weight) have
+	  been retrieved from the network [routing, meta-routing]
 
 - $\breveQ$, $\breveR$
 	- quick iteration of all lookups/results [$\breveP$, $\breveh$]
@@ -963,17 +961,37 @@ our ability to quickly look up $P(t)$ and $P(t_0|t)$. On a distributed network,
 we need to be able to combine data from multiple sources; algorithms to do this
 may well need knowledge of the separate values.
 
-## Pointers between data structures
+## Links between objects
 
-### Identity-object pointers
+### Identity-object links
 
 vs. all-data-in-identity and identity-identity pointers
 
-### Object-object pointers vs identity-object pointers
+### Object-object links
 
-to decrease the number of identity-object pointers
+vs. identity-object links
 
-### Mutable-object pointers vs immutable-object pointers
+Scalability - decreases the number of identity-object pointers
+
+- requires less effort than forming a social link
+- has less implications than a social link - only endorse information contained
+  there, and possibly a finite number of steps away
+
+MORE
+
+whethere to use social link structure - flawed because:
+MORE using two different semantic meanings for weight attributes being used
+here (relevancy vs reliability) TODO explore this and its potential pitfalls.
+would need to expand `tgraph` to provide this information more efficiently
+(ie. have a "referents" table)
+
+or just decrease weight by a constant wrt. shortest number of paths to seed
+set. TODO explore adv/dis of this.
+
+
+### Mutable vs immutable objects
+
+security / trust issues
 
 ## Weights
 
