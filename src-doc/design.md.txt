@@ -13,15 +13,23 @@ document
 	"document".
 identity
 :	a user / node on the social network
+in-arc, in-degree, in-node
+:	Respectively: (an incoming arc, the total number of incoming arcs, a
+	neighbour on the other side of an incoming arc) of the subject node.
 local view
 :	for a remote storage object $x$, the local view $\ddotx$ holds the parts of
 	$x$ that have been retrieved from the network, ie. data that is immediately
 	available to the local system. If $x$ is a container object, then $\ddotx$
 	can distinguish between items found not to exist in $x$, and items not yet
 	loaded.
+neighbour
+:	this refers to a node separated from the subject node by a single arc
 node
 :	in the context of a graph or a network, an object that can be connected to
 	another node by an arc.
+out-arc, out-degree, out-node
+:	Respectively: (an outgoing arc, the total number of outgoing arcs, a
+	neighbour on the other side of an outgoing arc) of the subject node.
 semantics
 :	this term is used in two different senses; hopefully the context should
 	give enough disambiguation: the meaning of tags, wrt. the end-user; or the
@@ -422,9 +430,9 @@ $\breveG_* = \{ g \mapsto \ddotg \}$
 	- Initialised with the keys of $G_s$, each mapped to an empty local view.
 	- For any $g$, let $t$ is _complete_ in $\ddotg$ mean that enough data has
 	  been retrieved to calculate any [distance](#distance-between-tags) metric
-	  between $t$ and any of its outgoing neighbours. That is, the weights of
-	  (itself, its outgoing arcs, and its outgoing neighbours). `tgraph` nodes
-	  have no outgoing arcs, so this will just be its own weight.
+	  between $t$ and any of its out-nodes - ie. the weights of (itself, its
+	  out-arcs, and its out-nodes). `tgraph` nodes have no out-arcs, so this
+	  will just be its own weight.
 	- Let $t$ is _complete_ in $\breveG_*$ mean that $t$ is complete in all
 	  $\ddotg \in \img \breveG_*$.
 	- Let $\com \breveG_*$ refer to the largest set of nodes for which every
@@ -448,7 +456,7 @@ $\breveT \subseteq \breveg$
 :	- an **acyclic subgraph** of $\breveg$, representing a **routing scheme**.
 	- Initially empty.
 	- Nodes are ranked in order of its shortest distance to $t_0$, and each
-	  node only has incoming arcs from nodes nearer to $t_0$ than itself.
+	  node only has in-arcs from nodes nearer to $t_0$ than itself.
 	  (TODO could rank these arcs too..)
 	- This provides a quick way to obtain the set of short (ie. greedy) paths
 	  from $t$ back to $t_0$. MORE explain better
@@ -502,14 +510,14 @@ Evt+Async: $\breveG_* \to \breveG$
 Sync: $\breveG \to^{\breveG_*} \breveg$
 
 :	For each tag $t$ in $\com \breveG_*$, we calculate the combined weights for
-	all its outgoing arcs and neighbours (from every data source), ignoring the
+	all of its out-arcs and out-nodes (from every data source), ignoring the
 	`tgraph` nodes that have already been added to $\dom \breveG$ (so that they
 	are not added to $\breveT$ and be made available for addition again).
 
 Sync: $\breveg \to \breveT$
 
 :	Our prototype uses Dijkstra's algorithm. Each step $n$ adds a node to
-	$\breveT$; for this, we need to know the distances to all the neighbours of
+	$\breveT$; for this, we need to know the distances to all the out-nodes of
 	the shortest-path tree so far, ie. $t_i$ must be complete in $\breveg$ for
 	all $i < n$. TODO could split this into another module, allowing other
 	methods of ranking to be used.
@@ -773,7 +781,7 @@ possibly could just merge this into routing.
 - `tgraph`, `index`
 	- where applicable:
 	- quick lookup of node (and weight)
-	- quick lookup of node's outgoing arcs (and weight) [routing, meta-routing]
+	- quick lookup of node's out-arcs (and weight) [routing, meta-routing]
 
 - `index`
 	- quick partition of tag's to-`index` vs to-document arcs
@@ -790,15 +798,15 @@ possibly could just merge this into routing.
 	- quick lookup of node (and weight)
 	- quick iteration through all nodes [$\breveQ$]
 	- quick comparison of nodes by their distance ordering [$\breveP$]
-	- quick lookup of node's incoming arcs (and weight) [$\breveQ$]
+	- quick lookup of node's in-arcs (and weight) [$\breveQ$]
 
 - $\ddotg \in \img \breveG_*$, $\ddoth \in \img \breveH_*$
 	- quick lookup of node (and weight)
 	- quick iteration through all nodes, arcs [$\breveg$]
-	- quick lookup of node`s incoming arcs (and weight) [routing, meta-routing]
-	- quick lookup of node's outgoing arcs (and weight) [maybe needed by some
+	- quick lookup of node`s in-arcs (and weight) [routing, meta-routing]
+	- quick lookup of node's out-arcs (and weight) [maybe needed by some
 	  scoring modules]
-	- quick one-time check that all of a node's outgoing arcs (and weight) have
+	- quick one-time check that all of a node's out-arcs (and weight) have
 	  been retrieved from the network [routing, meta-routing]
 
 - $\breveQ$, $\breveR$
@@ -810,7 +818,7 @@ possibly could just merge this into routing.
 ### Retrieval of remote objects
 
 Usually we only need to retrieval part of a `tgraph` or `index`, eg. the weight
-of a single node, or its outgoing arcs.
+of a single node, or its out-arcs.
 
 - eg. for quick "no" answer on lookups of storage objects - bloom filters
 
@@ -986,6 +994,9 @@ whether to use social link structure - flawed because:
 - would need to expand `tgraph` to provide this information more efficiently
   (ie. have a "referents" table)
 
+TODO talk about endorser of a node vs maintainer of a node - two different
+things
+
 MORE
 
 Let $x$ be the node we want to infer a weight for. For each seed node $s$, let
@@ -1012,9 +1023,9 @@ This leaves us to derive a model for $w_{p(s)}$. For our prototype, we use:
 
 $k^i$ represents the probability that the people who endorse $x$, also endorse
 an object $i$ steps away from it. Suppose that the endorser follows a node's
-outgoing arcs with probability $k$ (ie. that his endorsement also covers the
-neighbour). Traversing $i$ steps involves following each arc in the path, and
-therefore has probability $k^i$.
+out-arcs with probability $k$ (ie. the endorsement also covers the out-node).
+Traversing $i$ steps involves following each arc in the path, and therefore has
+probability $k^i$.
 
 This ignores several important factors. For example:
 
@@ -1028,9 +1039,9 @@ This ignores several important factors. For example:
 
 Some of these suggest potential vectors of attack upon the $k^i$ scheme. For
 example, the assumption that the proportion of out-arcs followed is constant,
-could encourage a malicious seed node to define huge numbers of outgoing arcs,
-whose referents will then enjoy a larger path weight than appropriate. This
-specific attack is easy to detect, but there may be more effective ones.
+could encourage a malicious seed node to define huge numbers of out-arcs, whose
+referents will then enjoy a larger path weight than appropriate. This specific
+attack is easy to detect, but there may be more effective ones.
 
 This problem can be stated more generally as: _Given an endorsement of a node
 in a (social) network, what other nodes can I infer that the endorsement also
