@@ -387,7 +387,7 @@ C.  On the other hand, we might choose _not_ point to an item that our friends
 It is not immediately obvious how these factors interact with each other, and
 how they affect the final $\alpha_1$. Even if we can produce a global estimate,
 it is uncertain whether it would actually be accurate or useful when applied to
-an individual's local situation.
+an individual's local situation. [EXTN]
 
 Also, any estimate depending on social factors (eg. (B), (C)) would require
 retrieving the `ptable`s of all the friends of $p$, which is more costly than
@@ -979,31 +979,61 @@ Scalability - decreases the number of identity-object pointers
 
 MORE
 
-whethere to use social link structure - flawed because:
-MORE using two different semantic meanings for weight attributes being used
-here (relevancy vs reliability) TODO explore this and its potential pitfalls.
-would need to expand `tgraph` to provide this information more efficiently
-(ie. have a "referents" table)
+whether to use social link structure - flawed because:
+
+- MORE using two different semantic meanings for weight attributes being used
+  here (relevancy vs reliability) TODO explore this and its potential pitfalls.
+- would need to expand `tgraph` to provide this information more efficiently
+  (ie. have a "referents" table)
+
+MORE
 
 To infer the weight of an object $x$ reached through our seed objects, use:
 
-- for each seed object $s$, let $p(s)$ be the shortest path to $x$
-	- let the path weight $w_{p(s)} = w_s.k^i$, where $k$ is some constant (eg
-	  $2^{-4}$), and $i$ is the number of steps in the path.
-	- $k$ represents the probability that the people who endorse some $x$ also
-	  endorse its outgoing links. This is highly likely to not be constant, but
-	  for simplicity, we will use a constant.
-	- a path weight then, is the probability that $x$ will satisfy a query,
-	  using only information from $s$.
-- weight of $x$ we then calculate as $1 - \prod_s (1 - w_{p(s)})$.
-	- this is just the union probability of the path weights, assuming paths
-	  are independent. a rough justification for this is that it only takes one
-	  path to satisfy a query.
-	- yes this is a fuzzy argument, but the same can be said of many other
-	  algorithms from Information Retrieval! :p
-	- can be attacked when multiple colluding objects point to another (which
-	  breaks the assumption of independence), but in such a situation, worse
-	  attacks are possible.
+For each seed object $s$:
+
+- let $p(s)$ represent the shortest path to $x$.
+- define the path weight $w_{p(s)} = w_s.k^i$, where $k$ is some constant (eg
+  $2^{-4}$), and $i$ is the number of steps in the path.
+
+$k^i$ represents the probability that the people who endorse $x$, also endorse
+an object $i$ steps away from it. Representing this as a simple exponential in
+$i$ is justified as follows: suppose that the maintainer checks an object's
+outgoing references with probability $k$ (ie. that his endorsement also covers
+the referent). Traversing $i$ steps involves checking each object in turn, and
+therefore has probability $k^i$.
+
+This is over-simplified - generally, there are multiple paths to the same node;
+on the other hand, the probability of traversing another step decreases with
+the total number of steps taken. It's unclear that more complex schemes will
+offer enough benefit to justify devising them, so we use $k^i$ for now. [EXTN]
+
+It's safer to give an underestimate of $k$, since it only affects the priority
+of objects far from the seed set compared to those in the seed set, and not
+objects from similar distances. The "worst" outcome is that near objects are
+ranked much more favourably; but these should be more trustworthy anyway. On
+the other hand, an overestimate of $k$ might allow far objects (of which there
+are a much greater number of) to override near ones.
+
+TODO make an actual estimate
+
+A path weight roughly models the probability that $x$ will satisfy a query,
+using only information from $s$. The weight of $x$ we then calculate as:
+
+$$
+1 - \prod_s (1 - w_{p(s)})
+$$
+
+This is just the union probability of all path weights, assuming that paths are
+independent. A rough justification for this is that we only need to traverse
+one path to satisfy a query; we can pick any one we wish.
+
+(yes this is a fuzzy argument, but the same can be said of many other
+algorithms from Information Retrieval! :p)
+
+can be attacked when multiple colluding objects point to another (which
+breaks the assumption of independence), but in such a situation, worse
+attacks are possible.
 
 
 ### Mutable vs immutable objects
