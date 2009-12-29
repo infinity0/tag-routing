@@ -975,7 +975,7 @@ Scalability - decreases the number of identity-object pointers
 
 - requires less effort than forming a social link
 - has less implications than a social link - only endorse information contained
-  there, and possibly a finite number of steps away
+  there, and possibly a small number of steps away
 
 MORE
 
@@ -985,8 +985,25 @@ here (relevancy vs reliability) TODO explore this and its potential pitfalls.
 would need to expand `tgraph` to provide this information more efficiently
 (ie. have a "referents" table)
 
-or just decrease weight by a constant wrt. shortest number of paths to seed
-set. TODO explore adv/dis of this.
+To infer the weight of an object $x$ reached through our seed objects, use:
+
+- for each seed object $s$, let $p(s)$ be the shortest path to $x$
+	- let the path weight $w_{p(s)} = w_s.k^i$, where $k$ is some constant (eg
+	  $2^{-4}$), and $i$ is the number of steps in the path.
+	- $k$ represents the probability that the people who endorse some $x$ also
+	  endorse its outgoing links. This is highly likely to not be constant, but
+	  for simplicity, we will use a constant.
+	- a path weight then, is the probability that $x$ will satisfy a query,
+	  using only information from $s$.
+- weight of $x$ we then calculate as $1 - \prod_s (1 - w_{p(s)})$.
+	- this is just the union probability of the path weights, assuming paths
+	  are independent. a rough justification for this is that it only takes one
+	  path to satisfy a query.
+	- yes this is a fuzzy argument, but the same can be said of many other
+	  algorithms from Information Retrieval! :p
+	- can be attacked when multiple colluding objects point to another (which
+	  breaks the assumption of independence), but in such a situation, worse
+	  attacks are possible.
 
 
 ### Mutable vs immutable objects
