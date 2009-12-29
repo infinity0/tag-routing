@@ -988,53 +988,61 @@ whether to use social link structure - flawed because:
 
 MORE
 
-To infer the weight of an object $x$ reached through our seed objects, use:
-
-For each seed object $s$:
-
-- let $p(s)$ represent the shortest path to $x$.
-- define the path weight $w_{p(s)} = w_s.k^i$, where $k$ is some constant (eg
-  $2^{-4}$), and $i$ is the number of steps in the path.
-
-$k^i$ represents the probability that the people who endorse $x$, also endorse
-an object $i$ steps away from it. Representing this as a simple exponential in
-$i$ is justified as follows: suppose that the maintainer checks an object's
-outgoing references with probability $k$ (ie. that his endorsement also covers
-the referent). Traversing $i$ steps involves checking each object in turn, and
-therefore has probability $k^i$.
-
-This is over-simplified - generally, there are multiple paths to the same node;
-on the other hand, the probability of traversing another step decreases with
-the total number of steps taken. It's unclear that more complex schemes will
-offer enough benefit to justify devising them, so we use $k^i$ for now. [EXTN]
-
-It's safer to give an underestimate of $k$, since it only affects the priority
-of objects far from the seed set compared to those in the seed set, and not
-objects from similar distances. The "worst" outcome is that near objects are
-ranked much more favourably; but these should be more trustworthy anyway. On
-the other hand, an overestimate of $k$ might allow far objects (of which there
-are a much greater number of) to override near ones.
-
-TODO make an actual estimate
-
-A path weight roughly models the probability that $x$ will satisfy a query,
-using only information from $s$. The weight of $x$ we then calculate as:
+Let $x$ be the node we want to infer a weight for. For each seed node $s$, let
+$w_{p(s)}$ be the probability that $x$ will satisfy a query, by traversing some
+path from $s$ to $x$.^[If there is no path, the probability is obviously 0).]
+The weight of $x$ we might then calculate as:
 
 $$
 1 - \prod_s (1 - w_{p(s)})
 $$
 
-This is just the union probability of all path weights, assuming that paths are
+This is just the union (over $s$) of all path weights, assuming that paths are
 independent. A rough justification for this is that we only need to traverse
 one path to satisfy a query; we can pick any one we wish.
 
-(yes this is a fuzzy argument, but the same can be said of many other
-algorithms from Information Retrieval! :p)
+This can theoretically be attacked when multiple colluding seed nodes point to
+a single remote node (which breaks the assumption of independence), but in such
+a situation, worse attacks are possible. TODO explore more...
 
-can be attacked when multiple colluding objects point to another (which
-breaks the assumption of independence), but in such a situation, worse
-attacks are possible.
+This leaves us to derive a model for $w_{p(s)}$. For our prototype, we use:
 
+- $w_{p(s)} = w_s.k^i$, where $k$ is some constant, and $i$ is the number of
+  steps in the shortest path from $s$ to $x$.
+
+$k^i$ represents the probability that the people who endorse $x$, also endorse
+an object $i$ steps away from it. Suppose that the endorser follows a node's
+outgoing arcs with probability $k$ (ie. that his endorsement also covers the
+neighbour). Traversing $i$ steps involves following each arc in the path, and
+therefore has probability $k^i$.
+
+This ignores several important factors. For example:
+
+- for nodes with larger out-degree, an typical endorser will follow a smaller
+  proportion of its out-arcs.
+- an endorser is more likely to visit a node that can be reached in more ways
+  from $s$ (ie. has more distinct paths to $s$). This is essentially the same
+  point as our "union" method above for all $s$.
+- an endorser is less likely to traverse another step, the more steps they
+  already are from $s$.
+
+Some of these suggest potential vectors of attack upon the $k^i$ scheme. For
+example, the assumption that the proportion of out-arcs followed is constant,
+could encourage a malicious seed node to define huge numbers of outgoing arcs,
+whose referents will then enjoy a larger path weight than appropriate. This
+specific attack is easy to detect, but there may be more effective ones.
+
+This problem can be stated more generally as: _Given an endorsement of a node
+in a (social) network, what other nodes can I infer that the endorsement also
+covers, and to what degree?_ [EXTN]
+
+For our prototype, we stick to $k^i$. Due to the security concerns, we try to
+give an underestimate for $k$. This way, near^[from our seed set] nodes have a
+much greater priority than far nodes. Attacks from far nodes should mostly only
+affect other far nodes; we also have the option of construct local overrides
+against the attacks that are detected.
+
+TODO make an actual estimate... $2^{-4}$. [EXTN]
 
 ### Mutable vs immutable objects
 
