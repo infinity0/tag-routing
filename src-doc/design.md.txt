@@ -1001,7 +1001,7 @@ MORE
 
 Let $x$ be the node we want to infer a weight for. For each seed node $s$, let
 $w_{p(s)}$ be the probability that $x$ will satisfy a query, by traversing some
-path from $s$ to $x$.^[If there is no path, the probability is obviously 0).]
+path from $s$ to $x$. (If there is no path, the probability is obviously 0).
 The weight of $x$ we might then calculate as:
 
 $$
@@ -1048,7 +1048,7 @@ in a (social) network, what other nodes can I infer that the endorsement also
 covers, and to what degree?_ [EXTN]
 
 For our prototype, we stick to $k^i$. Due to the security concerns, we try to
-give an underestimate for $k$. This way, near^[from our seed set] nodes have a
+give an underestimate for $k$. This way, near (from our seed set) nodes have a
 much greater priority than far nodes. Attacks from far nodes should mostly only
 affect other far nodes; we also have the option of construct local overrides
 against the attacks that are detected.

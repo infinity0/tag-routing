@@ -1,0 +1,117 @@
+<?xml version="1.0"?>
+
+<project name="tag-routing" default="dist" basedir=".">
+	<property name="build" location="build/"/>
+	<property name="build-test" location="build-test/"/>
+	<property name="run-test" location="run-test/"/>
+	<property name="tmp" location="tmp/"/>
+	<property name="dist" location="dist/"/>
+	<property name="javadoc" location="javadoc/"/>
+	<property name="junit.location" value="/usr/share/java/junit.jar"/>
+	<property name="packagebase" value="tags" />
+
+	<path id="lib.path">
+		<fileset dir="lib/">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+	<target name="mkdir">
+		<mkdir dir="${build}"/>
+		<mkdir dir="${build-test}"/>
+		<mkdir dir="${run-test}"/>
+		<mkdir dir="${dist}"/>
+	</target>
+
+	<target name="build-dep">
+		<mkdir dir="lib/"/>
+		<mkdir dir="${tmp}"/>
+		<delete dir="${tmp}"/>
+	</target>
+
+	<target name="build" depends="mkdir,build-dep">
+		<tstamp/>
+		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on">
+			<!--<compilerarg value="-Xlint"/>-->
+			<sourcepath>
+				<pathelement path="${build}"/>
+			</sourcepath>
+			<classpath>
+				<path refid="lib.path"/>
+			</classpath>
+			<include name="**/*.java"/>
+			<exclude name="**/package-info.java"/>
+		</javac>
+	</target>
+
+	<target name="build-test" depends="build" unless="skip_tests">
+		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on">
+			<classpath>
+				<path refid="lib.path"/>
+				<pathelement path="${build}"/>
+				<pathelement location="${junit.location}"/>
+			</classpath>
+			<compilerarg value="-Xlint"/>
+			<include name="**/*.java"/>
+		</javac>
+	</target>
+
+	<target name="test" depends="build-test" unless="skip_tests">
+		<delete dir="${run-test}"/>
+		<mkdir dir="${run-test}"/>
+		<junit printsummary="yes" fork="yes" haltonfailure="yes" dir="${run-test}" showoutput="yes">
+			<classpath>
+				<path refid="lib.path"/>
+				<pathelement path="${build}"/>
+				<pathelement path="${build-test}"/>
+				<pathelement location="${junit.location}"/>
+			</classpath>
+			<assertions><enable/></assertions>
+			<formatter type="plain" usefile="false"/>
+			<batchtest fork="yes">
+				<fileset dir="${build-test}">
+					<include name="**/*Test.class"/>
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+
+	<!-- ================================================== -->
+	<target name="jar" depends="build,test">
+		<jar jarfile="${dist}/tags.jar" duplicate="fail">
+			<manifest>
+				<!--<attribute name="Main-Class" value="${packagebase}.proto.Main"/>-->
+			</manifest>
+			<fileset dir="src/" casesensitive="no">
+				<include name="**/*.txt"/>
+				<include name="**/*.properties"/>
+			</fileset>
+			<fileset dir="${build}/">
+				<exclude name="${version.src}"/>
+			</fileset>
+			<zipgroupfileset dir="lib/" includes="**/*.jar"/>
+		</jar>
+	</target>
+
+	<target name="javadoc" depends="build-dep">
+		<delete dir="${javadoc}"/>
+		<javadoc classpathref="lib.path" destdir="${javadoc}" author="true" version="true" use="true" private="true">
+			<doclet name="info.bliki.doclet.standard.Standard" path="doc/bliki-doclet.jar"/>
+			<fileset dir="src/" defaultexcludes="yes">
+				<include name="**/*.java"/>
+			</fileset>
+			<link href="http://java.sun.com/javase/6/docs/api"/>
+		</javadoc>
+	</target>
+
+	<target name="dist" depends="clean,jar">
+	</target>
+
+	<target name="clean">
+		<delete dir="${build}"/>
+		<delete dir="${build-test}"/>
+		<delete dir="${run-test}"/>
+		<delete dir="${dist}"/>
+	</target>
+
+</project>
