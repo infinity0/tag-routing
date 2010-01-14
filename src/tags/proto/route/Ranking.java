@@ -15,7 +15,7 @@ public class Ranking<A, W> {
 
 	public Ranking() {
 		// TODO NOW
-		result = null;
+		this.result = null;
 	}
 
 }

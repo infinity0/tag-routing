@@ -2,6 +2,7 @@
 package tags.proto.init;
 
 import tags.proto.PTable;
+import tags.store.StoreControl;
 
 import java.util.Map;
 
@@ -14,13 +15,15 @@ import java.util.Map;
 */
 public class Init<A, S, R> {
 
-	// TODO NORM maybe have <I> as well
+	final protected StoreControl<?, ?, A, ?, ?, S, R> sctl;
 
+	// TODO NORM maybe have <I> as well
 	final protected Map<PTable<A, S>, R> source;
 
-	public Init() {
+	public Init(StoreControl<?, ?, A, ?, ?, S, R> sctl) {
+		this.sctl = sctl;
 		// TODO NOW
-		source = null;
+		this.source = null;
 	}
 
 }

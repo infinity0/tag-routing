@@ -4,6 +4,7 @@ package tags.proto.name;
 import tags.proto.LocalTGraph;
 import tags.proto.TGraph;
 import tags.proto.AddressScheme;
+import tags.store.StoreControl;
 
 import java.util.Map;
 
@@ -18,20 +19,20 @@ import java.util.Map;
 */
 public class Naming<T, A, U, W, S> {
 
+	final protected StoreControl<?, T, A, U, W, S, ?> sctl;
+
 	final protected Map<A, LocalTGraph<T, U, W>> source;
-
 	final protected Map<A, S> score;
-
 	final protected TGraph<T, U, W> graph;
-
 	final protected AddressScheme<T> scheme;
 
-	public Naming() {
+	public Naming(StoreControl<?, T, A, U, W, S, ?> sctl) {
+		this.sctl = sctl;
 		// TODO NOW
-		source = null;
-		score = null;
-		graph = null;
-		scheme = null;
+		this.source = null;
+		this.score = null;
+		this.graph = null;
+		this.scheme = null;
 	}
 
 }

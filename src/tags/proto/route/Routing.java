@@ -2,6 +2,7 @@
 package tags.proto.route;
 
 import tags.proto.LocalIndex;
+import tags.store.StoreControl;
 
 import java.util.Set;
 import java.util.Map;
@@ -16,20 +17,20 @@ import java.util.Map;
 */
 public class Routing<T, A, W, S> {
 
+	final protected StoreControl<?, T, A, ?, W, S, ?> sctl;
+
 	final protected Map<A, LocalIndex<T, A, W>> source;
-
 	final protected Map<A, S> score;
-
 	final protected Map<A, Set<T>> lookup;
-
 	final protected Map<A, LocalIndex<T, A, W>> result;
 
-	public Routing() {
+	public Routing(StoreControl<?, T, A, ?, W, S, ?> sctl) {
+		this.sctl = sctl;
 		// TODO NOW
-		source = null;
-		score = null;
-		lookup = null;
-		result = null;
+		this.source = null;
+		this.score = null;
+		this.lookup = null;
+		this.result = null;
 	}
 
 }
