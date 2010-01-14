@@ -23,12 +23,12 @@ public interface StoreControl<I, T, A, U, W, S, R> {
 	/**
 	** Retrieves the friends (and their score-ratings) of a given identity.
 	*/
-	public <I, R> Map<I, R> getFriends(I id);
+	public Map<I, R> getFriends(I id);
 
 	/**
 	** Retrieves the {@link PTable} for a given identity.
 	*/
-	public <I> PTable<A, S> getPTable(I id);
+	public PTable<A, S> getPTable(I id);
 
 	/**
 	** Retrieves the out-neighbours (and the weights of the out-arcs) for a
@@ -36,12 +36,12 @@ public interface StoreControl<I, T, A, U, W, S, R> {
 	**
 	** @param addr Address of the {@link TGraph}.
 	*/
-	public <T, A, W> Map<T, W> getTGraphOutgoing(A addr, T src);
+	public Map<T, W> getTGraphOutgoing(A addr, T src);
 
 	/**
 	** Retrieves the weight for a given tag, in the given {@link TGraph}.
 	*/
-	public <T, A, U> U getTGraphTagAttr(A addr, T tag);
+	public U getTGraphTagAttr(A addr, T tag);
 
 	/**
 	** Retrieves the out-neighbours (and the weights of the out-arcs) for a
@@ -49,6 +49,6 @@ public interface StoreControl<I, T, A, U, W, S, R> {
 	**
 	** @param addr Address of the {@link Index}.
 	*/
-	public <T, A, W> Map<A, W> getIndexOutgoing(A addr, T src);
+	public Map<A, W> getIndexOutgoing(A addr, T src);
 
 }
