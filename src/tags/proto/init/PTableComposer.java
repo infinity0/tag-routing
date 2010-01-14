@@ -8,12 +8,11 @@ import java.util.Map;
 /**
 ** DOCUMENT.
 **
-** @param <A> Type of address
 ** @param <S> Type of score
 ** @param <R> Type of identity-score
 */
-public interface PTableComposer<A, S, R> {
+public interface PTableComposer<S, R> {
 
-	public S combineTGraphAddr(Map<PTable<A, S>, R> sources, A item);
+	public <A> S combineTGraphAddr(Map<PTable<A, S>, R> sources, A item);
 
 }

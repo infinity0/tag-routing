@@ -8,13 +8,11 @@ import java.util.Map;
 /**
 ** DOCUMENT.
 **
-** @param <T> Type of tag
-** @param <A> Type of address
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
-public interface IndexScorer<T, A, W, S> {
+public interface IndexScorer<W, S> {
 
-	public S getScoreFor(LocalIndex<T, A, W> view, Map<LocalIndex<T, A, W>, S> sources);
+	public <T, A> S getScoreFor(LocalIndex<T, A, W> view, Map<LocalIndex<T, A, W>, S> sources);
 
 }

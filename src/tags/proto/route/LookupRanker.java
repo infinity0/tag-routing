@@ -12,12 +12,10 @@ import java.util.Map;
 /**
 ** DOCUMENT.
 **
-** @param <T> Type of tag
-** @param <A> Type of address
 ** @param <W> Type of arc-attribute
 */
-public interface LookupRanker<T, A, W> {
+public interface LookupRanker<W> {
 
-	public List<Lookup<T, A>> rankLookups(Map<LocalIndex<T, A, W>, Set<T>> lookups, AddressScheme<Integer> scheme);
+	public <T, A> List<Lookup<T, A>> rankLookups(Map<LocalIndex<T, A, W>, Set<T>> lookups, AddressScheme<T> scheme);
 
 }

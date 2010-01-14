@@ -8,13 +8,12 @@ import java.util.Map;
 /**
 ** DOCUMENT.
 **
-** @param <T> Type of tag
 ** @param <U> Type of node-attribute
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
-public interface TGraphScorer<T, U, W, S> {
+public interface TGraphScorer<U, W, S> {
 
-	public S getScoreFor(LocalTGraph<T, U, W> view, Map<LocalTGraph<T, U, W>, S> sources);
+	public <T> S getScoreFor(LocalTGraph<T, U, W> view, Map<LocalTGraph<T, U, W>, S> sources);
 
 }
