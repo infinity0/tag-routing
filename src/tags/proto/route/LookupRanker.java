@@ -2,7 +2,11 @@
 package tags.proto.route;
 
 import tags.proto.LocalIndex;
+import tags.proto.Lookup;
+import tags.proto.AddressScheme;
 
+import java.util.List;
+import java.util.Set;
 import java.util.Map;
 
 /**
@@ -11,10 +15,9 @@ import java.util.Map;
 ** @param <T> Type of tag
 ** @param <A> Type of address
 ** @param <W> Type of arc-attribute
-** @param <S> Type of score
 */
-public interface IndexScorer<T, A, W, S> {
+public interface LookupRanker<T, A, W> {
 
-	public S getScoreFor(LocalIndex<T, A, W> view, Map<LocalIndex<T, A, W>, S> sources);
+	public List<Lookup<T, A>> rankLookups(Map<LocalIndex<T, A, W>, Set<T>> lookups, AddressScheme<Integer> scheme);
 
 }

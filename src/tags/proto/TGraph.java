@@ -2,12 +2,12 @@
 package tags.proto;
 
 /**
-** Local view of an {@link Index}.
+** Tag graph. DOCUMENT.
 **
 ** @param <T> Type of tag
-** @param <A> Type of index address
+** @param <U> Type of node-attribute
 ** @param <W> Type of arc-attribute
 */
-public class LocalIndex<T, A, W> extends Index<T, A, W> {
+public class TGraph<T, U, W> {
 
 }
