@@ -2,6 +2,8 @@
 package tags.store;
 
 import tags.proto.PTable;
+import tags.proto.TGraph;
+import tags.proto.Index;
 
 import java.util.Map;
 
