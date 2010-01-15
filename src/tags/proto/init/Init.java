@@ -16,12 +16,17 @@ import java.util.Map;
 public class Init<A, S, R> {
 
 	final protected StoreControl<?, ?, A, ?, ?, S, R> sctl;
+	final protected PTableComposer<S, R> mod_ptb_cmp;
 
 	// TODO NORM maybe have <I> as well
 	final protected Map<PTable<A, S>, R> source;
 
-	public Init(StoreControl<?, ?, A, ?, ?, S, R> sctl) {
+	public Init(
+		StoreControl<?, ?, A, ?, ?, S, R> sctl,
+		PTableComposer<S, R> mod_ptb_cmp
+	) {
 		this.sctl = sctl;
+		this.mod_ptb_cmp = mod_ptb_cmp;
 		// TODO NOW
 		this.source = null;
 	}

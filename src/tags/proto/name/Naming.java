@@ -20,14 +20,25 @@ import java.util.Map;
 public class Naming<T, A, U, W, S> {
 
 	final protected StoreControl<?, T, A, U, W, S, ?> sctl;
+	final protected DistanceMetric<?, U, W> mod_dmtr;
+	final protected TGraphComposer<U, W, S> mod_tgr_cmp;
+	final protected TGraphScorer<U, W, S> mod_tgr_scr;
 
 	final protected Map<A, LocalTGraph<T, U, W>> source;
 	final protected Map<A, S> score;
 	final protected TGraph<T, U, W> graph;
 	final protected AddressScheme<T> scheme;
 
-	public Naming(StoreControl<?, T, A, U, W, S, ?> sctl) {
+	public Naming(
+		StoreControl<?, T, A, U, W, S, ?> sctl,
+		DistanceMetric<?, U, W> mod_dmtr,
+		TGraphComposer<U, W, S> mod_tgr_cmp,
+		TGraphScorer<U, W, S> mod_tgr_scr
+	) {
 		this.sctl = sctl;
+		this.mod_dmtr = mod_dmtr;
+		this.mod_tgr_cmp = mod_tgr_cmp;
+		this.mod_tgr_scr = mod_tgr_scr;
 		// TODO NOW
 		this.source = null;
 		this.score = null;

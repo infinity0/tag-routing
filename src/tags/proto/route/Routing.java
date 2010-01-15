@@ -18,14 +18,19 @@ import java.util.Map;
 public class Routing<T, A, W, S> {
 
 	final protected StoreControl<?, T, A, ?, W, S, ?> sctl;
+	final protected IndexScorer<W, S> mod_idx_scr;
 
 	final protected Map<A, LocalIndex<T, A, W>> source;
 	final protected Map<A, S> score;
 	final protected Map<A, Set<T>> lookup;
 	final protected Map<A, LocalIndex<T, A, W>> result;
 
-	public Routing(StoreControl<?, T, A, ?, W, S, ?> sctl) {
+	public Routing(
+		StoreControl<?, T, A, ?, W, S, ?> sctl,
+		IndexScorer<W, S> mod_idx_scr
+	) {
 		this.sctl = sctl;
+		this.mod_idx_scr = mod_idx_scr;
 		// TODO NOW
 		this.source = null;
 		this.score = null;
