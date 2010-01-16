@@ -2,6 +2,9 @@
 package tags.proto.route;
 
 import tags.proto.LocalIndex;
+import tags.proto.LayerInterfaceHi;
+import tags.proto.LayerInterfaceLo;
+import tags.proto.name.Naming;
 import tags.store.StoreControl;
 
 import java.util.Set;
@@ -15,9 +18,15 @@ import java.util.Map;
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
-public class Routing<T, A, W, S> {
+public class Routing<T, A, W, S> implements
+LayerInterfaceHi<Integer, Ranking<A, W>>,
+LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 
 	final protected StoreControl<?, T, A, ?, W, S, ?> sctl;
+
+	protected Ranking<A, W> layer_hi;
+	protected Naming<T, A, ?, W, S> layer_lo;
+
 	final protected IndexScorer<W, S> mod_idx_scr;
 
 	final protected Map<A, LocalIndex<T, A, W>> source;
@@ -36,6 +45,30 @@ public class Routing<T, A, W, S> {
 		this.score = null;
 		this.lookup = null;
 		this.result = null;
+	}
+
+	@Override public void setLayerHi(Ranking<A, W> layer_hi) {
+		this.layer_hi = layer_hi;
+	}
+
+	@Override public Integer request() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	@Override public void setLayerLo(Naming<T, A, ?, W, S> layer_lo) {
+		this.layer_lo = layer_lo;
+	}
+
+	@Override public void receive(Integer tkt) {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	public Map<A, LocalIndex<T, A, W>> getResults() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	public Map<A, S> getIndexScores() {
+		throw new UnsupportedOperationException("not implemented");
 	}
 
 }

@@ -2,6 +2,8 @@
 package tags.proto.init;
 
 import tags.proto.PTable;
+import tags.proto.LayerInterfaceHi;
+import tags.proto.name.Naming;
 import tags.store.StoreControl;
 
 import java.util.Map;
@@ -13,9 +15,13 @@ import java.util.Map;
 ** @param <S> Type of score
 ** @param <R> Type of identity-score
 */
-public class Init<A, S, R> {
+public class Init<A, S, R> implements
+LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 
 	final protected StoreControl<?, ?, A, ?, ?, S, R> sctl;
+
+	protected Naming<?, A, ?, ?, S> layer_hi;
+
 	final protected PTableComposer<S, R> mod_ptb_cmp;
 
 	// TODO NORM maybe have <I> as well
@@ -29,6 +35,22 @@ public class Init<A, S, R> {
 		this.mod_ptb_cmp = mod_ptb_cmp;
 		// TODO NOW
 		this.source = null;
+	}
+
+	@Override public void setLayerHi(Naming<?, A, ?, ?, S> layer_hi) {
+		this.layer_hi = layer_hi;
+	}
+
+	@Override public Integer request() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	public Map<A, S> getSeedTGraphs() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	public Map<A, S> getSeedIndexes() {
+		throw new UnsupportedOperationException("not implemented");
 	}
 
 }
