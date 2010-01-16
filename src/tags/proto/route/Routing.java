@@ -2,10 +2,10 @@
 package tags.proto.route;
 
 import tags.proto.LocalIndex;
-import tags.proto.LayerInterfaceHi;
-import tags.proto.LayerInterfaceLo;
 import tags.proto.name.Naming;
 import tags.store.StoreControl;
+import tags.util.LayerInterfaceHi;
+import tags.util.LayerInterfaceLo;
 
 import java.util.Set;
 import java.util.Map;

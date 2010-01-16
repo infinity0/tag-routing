@@ -2,9 +2,9 @@
 package tags.proto.init;
 
 import tags.proto.PTable;
-import tags.proto.LayerInterfaceHi;
 import tags.proto.name.Naming;
 import tags.store.StoreControl;
+import tags.util.LayerInterfaceHi;
 
 import java.util.Map;
 

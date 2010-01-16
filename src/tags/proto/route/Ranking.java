@@ -1,7 +1,7 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto.route;
 
-import tags.proto.LayerInterfaceLo;
+import tags.util.LayerInterfaceLo;
 
 import java.util.Map;
 

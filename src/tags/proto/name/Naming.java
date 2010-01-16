@@ -4,11 +4,11 @@ package tags.proto.name;
 import tags.proto.LocalTGraph;
 import tags.proto.TGraph;
 import tags.proto.AddressScheme;
-import tags.proto.LayerInterfaceHi;
-import tags.proto.LayerInterfaceLo;
 import tags.proto.route.Routing;
 import tags.proto.init.Init;
 import tags.store.StoreControl;
+import tags.util.LayerInterfaceHi;
+import tags.util.LayerInterfaceLo;
 
 import java.util.Map;
 
