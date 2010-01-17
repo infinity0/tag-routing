@@ -23,17 +23,18 @@ import java.util.Map;
 */
 public class Naming<T, A, U, W, S> implements
 LayerInterfaceHi<Integer, Routing<T, A, W, S>>,
-LayerInterfaceLo<Integer, Init<A, S, ?>> {
+LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 
 	final protected StoreControl<?, T, A, U, W, S, ?> sctl;
 
 	protected Routing<T, A, W, S> layer_hi;
-	protected Init<A, S, ?> layer_lo;
+	protected Init<?, A, S, ?> layer_lo;
 
 	final protected DistanceMetric<?, U, W> mod_dmtr;
 	final protected TGraphComposer<U, W, S> mod_tgr_cmp;
 	final protected TGraphScorer<U, W, S> mod_tgr_scr;
 
+	final protected T seed_tag;
 	final protected Map<A, LocalTGraph<T, U, W>> source;
 	final protected Map<A, S> score;
 	final protected TGraph<T, U, W> graph;
@@ -43,12 +44,14 @@ LayerInterfaceLo<Integer, Init<A, S, ?>> {
 		StoreControl<?, T, A, U, W, S, ?> sctl,
 		DistanceMetric<?, U, W> mod_dmtr,
 		TGraphComposer<U, W, S> mod_tgr_cmp,
-		TGraphScorer<U, W, S> mod_tgr_scr
+		TGraphScorer<U, W, S> mod_tgr_scr,
+		T seed_tag
 	) {
 		this.sctl = sctl;
 		this.mod_dmtr = mod_dmtr;
 		this.mod_tgr_cmp = mod_tgr_cmp;
 		this.mod_tgr_scr = mod_tgr_scr;
+		this.seed_tag = seed_tag;
 		// TODO NOW
 		this.source = null;
 		this.score = null;
@@ -64,7 +67,7 @@ LayerInterfaceLo<Integer, Init<A, S, ?>> {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	@Override public void setLayerLo(Init<A, S, ?> layer_lo) {
+	@Override public void setLayerLo(Init<?, A, S, ?> layer_lo) {
 		this.layer_lo = layer_lo;
 	}
 

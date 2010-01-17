@@ -15,24 +15,26 @@ import java.util.Map;
 ** @param <S> Type of score
 ** @param <R> Type of identity-score
 */
-public class Init<A, S, R> implements
+public class Init<I, A, S, R> implements
 LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 
-	final protected StoreControl<?, ?, A, ?, ?, S, R> sctl;
+	final protected StoreControl<I, ?, A, ?, ?, S, R> sctl;
 
 	protected Naming<?, A, ?, ?, S> layer_hi;
 
 	final protected PTableComposer<S, R> mod_ptb_cmp;
 
-	// TODO NORM maybe have <I> as well
+	final protected I seed_id;
 	final protected Map<PTable<A, S>, R> source;
 
 	public Init(
-		StoreControl<?, ?, A, ?, ?, S, R> sctl,
-		PTableComposer<S, R> mod_ptb_cmp
+		StoreControl<I, ?, A, ?, ?, S, R> sctl,
+		PTableComposer<S, R> mod_ptb_cmp,
+		I seed_id
 	) {
 		this.sctl = sctl;
 		this.mod_ptb_cmp = mod_ptb_cmp;
+		this.seed_id = seed_id;
 		// TODO NOW
 		this.source = null;
 	}
