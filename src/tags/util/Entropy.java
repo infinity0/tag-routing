@@ -2,9 +2,9 @@
 package tags.util;
 
 /**
-** Immutable wrapper around a {@link double}, representing an entropy in bits.
+** Immutable wrapper around a {@code double}, representing an entropy in bits.
 */
-public class Entropy /*extends Number*/ {
+public class Entropy /*extends Number TODO LOW*/ {
 
 	final public double val;
 

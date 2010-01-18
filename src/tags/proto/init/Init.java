@@ -14,6 +14,11 @@ import java.util.Map;
 /**
 ** DOCUMENT.
 **
+** OPTIMISE NORM abstract away from "Query" since this depends only on the
+** identity and not any query tag, and therefore can be run continually in the
+** background.
+**
+** @param <I> Type of identity
 ** @param <A> Type of address
 ** @param <S> Type of score
 ** @param <R> Type of identity-score
@@ -25,8 +30,8 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 
 	final protected PTableComposer<S, R> mod_ptb_cmp;
 
-	final protected Map<PTable<A, S>, R> source;
-	final protected PTable<A, S> ptable;
+	final protected Map<PTable<A, S>, R> sourcescore;
+	final protected PTable<A, S> table;
 
 	public Init(
 		Query<I, ?> query,
@@ -36,8 +41,8 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 		super(query, sctl);
 		this.mod_ptb_cmp = mod_ptb_cmp;
 		// TODO NOW
-		this.source = null;
-		this.ptable = null;
+		this.sourcescore = null;
+		this.table = null;
 	}
 
 	@Override public void setLayerHi(Naming<?, A, ?, ?, S> layer_hi) {
@@ -56,6 +61,10 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 		return ptable.getIndexes();
 	}
 
+	/**
+	** Make a new {@link #table} from {@link #sourcescore}. To be called
+	** whenever the latter changes.
+	*/
 	protected PTable<A, S> composePTable() {
 		throw new UnsupportedOperationException("not implemented");
 	}

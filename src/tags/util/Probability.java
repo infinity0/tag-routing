@@ -2,9 +2,9 @@
 package tags.util;
 
 /**
-** Immutable wrapper around a {@link double}, representing a probability.
+** Immutable wrapper around a {@code double}, representing a probability.
 */
-public class Probability /*extends Number*/ {
+public class Probability /*extends Number TODO LOW*/ {
 
 	final public double val;
 
