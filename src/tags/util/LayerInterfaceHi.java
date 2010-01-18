@@ -4,6 +4,8 @@ package tags.util;
 /**
 ** DOCUMENT.
 **
+** TODO NORM let each request have a <P> param
+**
 ** @param <T> Type of ticket
 ** @param <H> Type of upper layer
 */

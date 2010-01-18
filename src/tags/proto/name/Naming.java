@@ -1,6 +1,7 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto.name;
 
+import tags.proto.Query;
 import tags.proto.LocalTGraph;
 import tags.proto.TGraph;
 import tags.proto.AddressScheme;
@@ -9,8 +10,10 @@ import tags.proto.init.Init;
 import tags.store.StoreControl;
 import tags.util.LayerInterfaceHi;
 import tags.util.LayerInterfaceLo;
+import tags.util.UnitService;
 
 import java.util.Map;
+import java.util.Set;
 
 /**
 ** DOCUMENT.
@@ -21,12 +24,12 @@ import java.util.Map;
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
-public class Naming<T, A, U, W, S> implements
+public class Naming<T, A, U, W, S> extends UnitService implements
 LayerInterfaceHi<Integer, Routing<T, A, W, S>>,
 LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 
+	final protected Query<?, T> query;
 	final protected StoreControl<?, T, A, U, W, S, ?> sctl;
-
 	protected Routing<T, A, W, S> layer_hi;
 	protected Init<?, A, S, ?> layer_lo;
 
@@ -34,24 +37,24 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 	final protected TGraphComposer<U, W, S> mod_tgr_cmp;
 	final protected TGraphScorer<U, W, S> mod_tgr_scr;
 
-	final protected T seed_tag;
 	final protected Map<A, LocalTGraph<T, U, W>> source;
 	final protected Map<A, S> score;
 	final protected TGraph<T, U, W> graph;
 	final protected AddressScheme<T> scheme;
 
 	public Naming(
+		Query<?, T> query,
 		StoreControl<?, T, A, U, W, S, ?> sctl,
 		DistanceMetric<?, U, W> mod_dmtr,
 		TGraphComposer<U, W, S> mod_tgr_cmp,
-		TGraphScorer<U, W, S> mod_tgr_scr,
-		T seed_tag
+		TGraphScorer<U, W, S> mod_tgr_scr
 	) {
+		super(query.exec);
+		this.query = query;
 		this.sctl = sctl;
 		this.mod_dmtr = mod_dmtr;
 		this.mod_tgr_cmp = mod_tgr_cmp;
 		this.mod_tgr_scr = mod_tgr_scr;
-		this.seed_tag = seed_tag;
 		// TODO NOW
 		this.source = null;
 		this.score = null;
@@ -80,6 +83,31 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 	}
 
 	public AddressScheme<T> getAddressScheme() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	/**
+	** Get the set of tags which have been completed in all the tgraphs that we
+	** are using as a data source (ie. source.values()).
+	*/
+	protected Set<T> getCompletedTags() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	/**
+	** Make a new {@link #graph} from {@link #source}, {@link #score}. To be
+	** called whenever the {@linkplain #getCompletedTags() completed set}
+	** changes.
+	*/
+	protected TGraph<T, U, W> composeTGraph() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	/**
+	** Make a new {@link #scheme} from {@link #graph}. To be called whenever
+	** the latter changes, ie. after {@link #composeTGraph()}.
+	*/
+	protected AddressScheme<T> makeAddressScheme() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
