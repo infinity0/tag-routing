@@ -3,7 +3,6 @@ package tags.util;
 
 import java.util.Arrays;
 
-import java.util.Collection;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashSet;
@@ -18,8 +17,8 @@ final public class Maps {
 	/**
 	** @see #domain(Collection)
 	*/
-	public static <K> Set<K> domain(Map<K, ?>... maps) {
-		return domainOf(Arrays.asList(maps));
+	public static <K, V> Set<K> domain(Map<K, V>... maps) {
+		return domain(Arrays.asList(maps));
 	}
 
 	/**
@@ -27,9 +26,9 @@ final public class Maps {
 	** Currently, this does '''not''' return a view of the given maps, and will
 	** '''not''' appear to self-update when the maps change.
 	**
-	** TODO LOW making it a view seems quite complicated so leave for now.
+	** TODO LOW making it a view seems quite complicated, so leave for now.
 	*/
-	public static <K> Set<K> domain(Collection<Map<K, ?>> maps) {
+	public static <K, V> Set<K> domain(Iterable<Map<K, V>> maps) {
 		int s = 0;
 		for (Map m: maps) { s += m.size(); }
 		Set<K> domain = new HashSet<K>(s);

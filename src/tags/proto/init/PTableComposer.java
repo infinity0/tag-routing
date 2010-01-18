@@ -13,6 +13,6 @@ import java.util.Map;
 */
 public interface PTableComposer<S, R> {
 
-	public <A> S combineTGraphAddr(Map<PTable<A, S>, R> sources, A item);
+	public <A> S composePTableNode(Map<PTable<A, S>, R> src_score, A item);
 
 }

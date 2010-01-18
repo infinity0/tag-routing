@@ -7,9 +7,12 @@ import tags.store.StoreControl;
 import tags.util.LayerInterfaceHi;
 import tags.proto.name.Naming;
 
-import tags.proto.PTable;
+import tags.proto.MultiParts;
+import tags.util.Maps;
 
+import tags.proto.PTable;
 import java.util.Map;
+import java.util.HashMap;
 
 /**
 ** DOCUMENT.
@@ -30,8 +33,11 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 
 	final protected PTableComposer<S, R> mod_ptb_cmp;
 
-	final protected Map<PTable<A, S>, R> sourcescore;
+	final protected Map<PTable<A, S>, R> src_score;
 	final protected PTable<A, S> table;
+
+	final protected Iterable<Map<A, S>> src_score_g;
+	final protected Iterable<Map<A, S>> src_score_h;
 
 	public Init(
 		Query<I, ?> query,
@@ -41,8 +47,10 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 		super(query, sctl);
 		this.mod_ptb_cmp = mod_ptb_cmp;
 		// TODO NOW
-		this.sourcescore = null;
+		this.src_score = null;
 		this.table = null;
+		this.src_score_g = MultiParts.iterTGraphs(src_score.keySet());
+		this.src_score_h = MultiParts.iterIndexes(src_score.keySet());
 	}
 
 	@Override public void setLayerHi(Naming<?, A, ?, ?, S> layer_hi) {
@@ -62,11 +70,18 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 	}
 
 	/**
-	** Make a new {@link #table} from {@link #sourcescore}. To be called
+	** Make a new {@link #table} from {@link #src_score}. To be called
 	** whenever the latter changes.
 	*/
 	protected PTable<A, S> composePTable() {
-		throw new UnsupportedOperationException("not implemented");
+		Map<A, S> g = new HashMap<A, S>(), h = new HashMap<A, S>();
+		for (A addr: Maps.domain(src_score_g)) {
+			g.put(addr, mod_ptb_cmp.composePTableNode(src_score, addr));
+		}
+		for (A addr: Maps.domain(src_score_h)) {
+			g.put(addr, mod_ptb_cmp.composePTableNode(src_score, addr));
+		}
+		return new PTable<A, S>(g, h);
 	}
 
 }
