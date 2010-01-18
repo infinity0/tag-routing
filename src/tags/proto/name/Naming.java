@@ -1,16 +1,17 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto.name;
 
+import tags.proto.LayerService;
 import tags.proto.Query;
-import tags.proto.LocalTGraph;
-import tags.proto.TGraph;
-import tags.proto.AddressScheme;
-import tags.proto.route.Routing;
-import tags.proto.init.Init;
 import tags.store.StoreControl;
 import tags.util.LayerInterfaceHi;
 import tags.util.LayerInterfaceLo;
-import tags.util.UnitService;
+import tags.proto.route.Routing;
+import tags.proto.init.Init;
+
+import tags.proto.LocalTGraph;
+import tags.proto.TGraph;
+import tags.proto.AddressScheme;
 
 import java.util.Map;
 import java.util.Set;
@@ -24,12 +25,10 @@ import java.util.Set;
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
-public class Naming<T, A, U, W, S> extends UnitService implements
+public class Naming<T, A, U, W, S> extends LayerService<Query<?, T>, StoreControl<?, T, A, U, W, S, ?>> implements
 LayerInterfaceHi<Integer, Routing<T, A, W, S>>,
 LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 
-	final protected Query<?, T> query;
-	final protected StoreControl<?, T, A, U, W, S, ?> sctl;
 	protected Routing<T, A, W, S> layer_hi;
 	protected Init<?, A, S, ?> layer_lo;
 
@@ -49,9 +48,7 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 		TGraphComposer<U, W, S> mod_tgr_cmp,
 		TGraphScorer<U, W, S> mod_tgr_scr
 	) {
-		super(query.exec);
-		this.query = query;
-		this.sctl = sctl;
+		super(query, sctl);
 		this.mod_dmtr = mod_dmtr;
 		this.mod_tgr_cmp = mod_tgr_cmp;
 		this.mod_tgr_scr = mod_tgr_scr;

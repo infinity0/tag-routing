@@ -1,13 +1,14 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto.route;
 
+import tags.proto.LayerService;
 import tags.proto.Query;
-import tags.proto.LocalIndex;
-import tags.proto.name.Naming;
 import tags.store.StoreControl;
 import tags.util.LayerInterfaceHi;
 import tags.util.LayerInterfaceLo;
-import tags.util.UnitService;
+import tags.proto.name.Naming;
+
+import tags.proto.LocalIndex;
 
 import java.util.Set;
 import java.util.Map;
@@ -20,12 +21,10 @@ import java.util.Map;
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
-public class Routing<T, A, W, S> extends UnitService implements
+public class Routing<T, A, W, S> extends LayerService<Query<?, T>, StoreControl<?, T, A, ?, W, S, ?>> implements
 LayerInterfaceHi<Integer, Ranking<A, W>>,
 LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 
-	final protected Query<?, T> query;
-	final protected StoreControl<?, T, A, ?, W, S, ?> sctl;
 	protected Ranking<A, W> layer_hi;
 	protected Naming<T, A, ?, W, S> layer_lo;
 
@@ -41,9 +40,7 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 		StoreControl<?, T, A, ?, W, S, ?> sctl,
 		IndexScorer<W, S> mod_idx_scr
 	) {
-		super(query.exec);
-		this.query = query;
-		this.sctl = sctl;
+		super(query, sctl);
 		this.mod_idx_scr = mod_idx_scr;
 		// TODO NOW
 		this.source = null;

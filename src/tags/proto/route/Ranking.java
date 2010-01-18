@@ -1,9 +1,10 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto.route;
 
+import tags.proto.LayerService;
 import tags.proto.Query;
+import tags.store.StoreControl;
 import tags.util.LayerInterfaceLo;
-import tags.util.UnitService;
 
 import java.util.Map;
 
@@ -13,17 +14,18 @@ import java.util.Map;
 ** @param <A> Type of address
 ** @param <W> Type of arc-attribute
 */
-public class Ranking<A, W> extends UnitService implements
+public class Ranking<A, W> extends LayerService<Query<?, ?>, StoreControl<?, ?, ?, ?, ?, ?, ?>> implements
 LayerInterfaceLo<Integer, Routing<?, A, W, ?>> {
 
-	final protected Query<?, ?> query;
 	protected Routing<?, A, W, ?> layer_lo;
 
 	final protected Map<A, W> result;
 
-	public Ranking(Query<?, ?> query) {
-		super(query.exec);
-		this.query = query;
+	public Ranking(
+		Query<?, ?> query,
+		StoreControl<?, ?, ?, ?, ?, ?, ?> sctl
+	) {
+		super(query, sctl);
 		// TODO NOW
 		this.result = null;
 	}
