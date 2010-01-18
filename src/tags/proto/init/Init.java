@@ -54,11 +54,11 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 	}
 
 	public Map<A, S> getSeedTGraphs() {
-		return ptable.getTGraphs();
+		return table.getTGraphs();
 	}
 
 	public Map<A, S> getSeedIndexes() {
-		return ptable.getIndexes();
+		return table.getIndexes();
 	}
 
 	/**
