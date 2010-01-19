@@ -17,8 +17,18 @@ public class Entropy /*extends Number TODO LOW*/ {
 
 	final public static double LOG2 = Math.log(2);
 
-	public static Entropy ofProbability(Probability p) {
-		return new Entropy(-Math.log(p.val)/LOG2);
+	public Probability probability() {
+		return new Probability(Math.pow(2, -val));
 	}
 
+	@Override public boolean equals(Object o) {
+		if (o == this) { return true; }
+		if (!(o instanceof Entropy)) { return false; }
+		return val == ((Entropy)o).val;
+	}
+
+	@Override public int hashCode() {
+		long v = Double.doubleToLongBits(val);
+		return 1 - (int)(v^(v>>>32)); // 1 - Double.hashCode()
+	}
 }

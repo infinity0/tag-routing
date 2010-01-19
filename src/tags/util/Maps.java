@@ -23,10 +23,11 @@ final public class Maps {
 
 	/**
 	** Returns the union of all the domains of the given collection of maps.
+	**
 	** Currently, this does '''not''' return a view of the given maps, and will
 	** '''not''' appear to self-update when the maps change.
 	**
-	** TODO LOW making it a view seems quite complicated, so leave for now.
+	** OPTIMISE NORM making it a view seems quite complicated...
 	*/
 	public static <K, V> Set<K> domain(Iterable<Map<K, V>> maps) {
 		int s = 0;
@@ -39,6 +40,11 @@ final public class Maps {
 	/**
 	** Returns the nodes which the given arcmap refers to. DOCUMENT explain
 	** better.
+	**
+	** Currently, this does '''not''' return a view of the given map, and will
+	** '''not''' appear to self-update when the map changes.
+	**
+	** OPTIMISE NORM making it a view seems quite complicated...
 	*/
 	public static <K extends Arc, V> Set<Object> referent(Map<K, V> arcmap) {
 		Set<Object> referent = new HashSet<Object>(arcmap.size()<<1);

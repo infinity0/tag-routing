@@ -15,8 +15,23 @@ public class Probability /*extends Number TODO LOW*/ {
 		val = v;
 	}
 
-	public static Probability ofEntropy(Entropy e) {
-		return new Probability(Math.pow(2, -e.val));
+	public Probability complement() {
+		return new Probability(1 - val);
+	}
+
+	public Entropy entropy() {
+		return new Entropy(-Math.log(val)/Entropy.LOG2);
+	}
+
+	@Override public boolean equals(Object o) {
+		if (o == this) { return true; }
+		if (!(o instanceof Probability)) { return false; }
+		return val == ((Probability)o).val;
+	}
+
+	@Override public int hashCode() {
+		long v = Double.doubleToLongBits(val);
+		return 1 + (int)(v^(v>>>32)); // 1 + Double.hashCode()
 	}
 
 }
