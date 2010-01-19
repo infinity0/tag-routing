@@ -16,9 +16,9 @@ import java.util.Map;
 public class ProtoPTableComposer implements PTableComposer<Probability, Probability> {
 
 	/**
-	** Probability that a (ie. any) data source judges an item to be worthless,
-	** given that the item does not exist in the source (ie. not in the map's
-	** {@link Map#keySet()}).
+	** Probability that a (ie&#x2e; any) data source judges an item to be
+	** worthless, given that the item does not exist in the source (ie&#x2e;
+	** not in the map's {@link Map#keySet()}).
 	*/
 	final public double alpha;
 
@@ -43,30 +43,27 @@ public class ProtoPTableComposer implements PTableComposer<Probability, Probabil
 		this.alpha = alpha.val;
 	}
 
+	/**
+	** The {@link MeanProbabilityComposer#alpha(Map, Object)} method of this
+	** composer just returns {@link #alpha}.
+	*/
 	final public ValueComposer<Probability, Probability> val_cmp = new MeanProbabilityComposer() {
-
-		/**
-		** {@inheritDoc}
-		**
-		** This implementation returns {@link ProtoPTableComposer#alpha}.
-		*/
 		@Override protected <K> double alpha(Map<K, Probability> src, K item) {
 			return alpha;
 		}
-
 	};
 
 	/**
 	** {@inheritDoc}
 	*/
-	public <A> Probability composePTableGNode(Map<PTable<A, Probability>, Probability> src_score, A item) {
+	@Override public <A> Probability composePTableGNode(Map<PTable<A, Probability>, Probability> src_score, A item) {
 		return val_cmp.composeValue(MultiParts.viewTGraphs(src_score), item);
 	}
 
 	/**
 	** {@inheritDoc}
 	*/
-	public <A> Probability composePTableHNode(Map<PTable<A, Probability>, Probability> src_score, A item) {
+	@Override public <A> Probability composePTableHNode(Map<PTable<A, Probability>, Probability> src_score, A item) {
 		return val_cmp.composeValue(MultiParts.viewIndexes(src_score), item);
 	}
 
