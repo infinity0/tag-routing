@@ -13,6 +13,8 @@ import java.util.Map;
 */
 public interface PTableComposer<S, R> {
 
+	// TODO split up into GNode and HNode
+
 	public <A> S composePTableNode(Map<PTable<A, S>, R> src_score, A item);
 
 }

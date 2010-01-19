@@ -31,9 +31,22 @@ final public class Maps {
 	public static <K, V> Set<K> domain(Iterable<Map<K, V>> maps) {
 		int s = 0;
 		for (Map m: maps) { s += m.size(); }
-		Set<K> domain = new HashSet<K>(s);
+		Set<K> domain = new HashSet<K>(s<<1);
 		for (Map m: maps) { domain.addAll(m.keySet()); }
 		return domain;
+	}
+
+	/**
+	** Returns the nodes which the given arcmap refers to. DOCUMENT explain
+	** better.
+	*/
+	public static <K extends Arc, V> Set<Object> referent(Map<K, V> arcmap) {
+		Set<Object> referent = new HashSet<Object>(arcmap.size()<<1);
+		for (K arc: arcmap.keySet()) {
+			referent.add(arc.src);
+			referent.add(arc.dst);
+		}
+		return referent;
 	}
 
 }
