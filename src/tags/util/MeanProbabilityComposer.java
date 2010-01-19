@@ -23,9 +23,8 @@ abstract public class MeanProbabilityComposer implements ValueComposer<Probabili
 			Map<K, Probability> src = en.getKey();
 			Probability score = en.getValue();
 			if (src.containsKey(item)) {
-				double a = score.val * src.get(item).val;
-				top += a;
-				div += a;
+				top += score.val * src.get(item).val;
+				div += score.val;
 			} else {
 				div += score.val * alpha(src, item);
 			}

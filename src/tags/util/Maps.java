@@ -15,7 +15,7 @@ final public class Maps {
 	private Maps() { }
 
 	/**
-	** @see #domain(Collection)
+	** @see #domain(Iterable)
 	*/
 	public static <K, V> Set<K> domain(Map<K, V>... maps) {
 		return domain(Arrays.asList(maps));
