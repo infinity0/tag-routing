@@ -76,10 +76,10 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 	protected PTable<A, S> composePTable() {
 		Map<A, S> g = new HashMap<A, S>(), h = new HashMap<A, S>();
 		for (A addr: Maps.domain(src_score_g)) {
-			g.put(addr, mod_ptb_cmp.composePTableNode(src_score, addr));
+			g.put(addr, mod_ptb_cmp.composePTableGNode(src_score, addr));
 		}
 		for (A addr: Maps.domain(src_score_h)) {
-			g.put(addr, mod_ptb_cmp.composePTableNode(src_score, addr));
+			g.put(addr, mod_ptb_cmp.composePTableHNode(src_score, addr));
 		}
 		return new PTable<A, S>(g, h);
 	}
