@@ -196,7 +196,7 @@ DIAG
 Structure
 :	$$
 	g = \left[ \begin{array}{lrr} \\
-	  V_g \subseteq & T & \to W \\
+	  V_g \subseteq & T \cup G & \to W \\
 	  E_g \subseteq & T \times T \cup G & \to W \\
 	\end{array} \right]
 	$$

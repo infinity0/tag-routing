@@ -14,8 +14,8 @@ import java.util.Map;
 */
 public interface TGraphComposer<U, W, S> {
 
-	public <T> U composeTGraphNode(Map<LocalTGraph<T, U, W>, S> sources, T tag);
+	public <T, A> U composeTGraphNode(Map<LocalTGraph<T, A, U, W>, S> sources, T tag);
 
-	public <T> W composeTGraphArc(Map<LocalTGraph<T, U, W>, S> sources, T src, T dst);
+	public <T, A> W composeTGraphArc(Map<LocalTGraph<T, A, U, W>, S> sources, T src, T dst);
 
 }

@@ -14,6 +14,6 @@ import java.util.Map;
 */
 public interface TGraphScorer<U, W, S> {
 
-	public <T> S getScoreFor(LocalTGraph<T, U, W> view, Map<LocalTGraph<T, U, W>, S> sources);
+	public <T, A> S getScoreFor(LocalTGraph<T, A, U, W> view, Map<LocalTGraph<T, A, U, W>, S> sources);
 
 }

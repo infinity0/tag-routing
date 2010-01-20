@@ -8,10 +8,11 @@ import java.util.Map;
 ** Local view of a {@link TGraph}.
 **
 ** @param <T> Type of tag
+** @param <A> Type of address
 ** @param <U> Type of node-attribute
 ** @param <W> Type of arc-attribute
 */
-public class LocalTGraph<T, U, W> extends TGraph<T, U, W> {
+public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 
 	/**
 	** Returns the set of tags for which itself, its out-arcs and its out-nodes
@@ -21,23 +22,33 @@ public class LocalTGraph<T, U, W> extends TGraph<T, U, W> {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public Set<T> getIncoming(T dst) {
+	/**
+	** Return the incoming neighbours of the given target tag.
+	*/
+	public Neighbour<T, A, U, W> getIncomingT(T dst) {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public Map<T, U> getIncomingTagWeights(T dst) {
+	/**
+	** Return the incoming neighbours of the given target tgraph.
+	*/
+	public Neighbour<T, A, U, W> getIncomingG(A dst) {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public Map<T, W> getIncomingArcWeights(T dst) {
+	public void setTNodeWeight(T tag, U wgt) {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public void setTagWeight(T tag, U wgt) {
+	public void setGNodeWeight(A tag, U wgt) {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public void setArcWeight(T src, T dst, W wgt) {
+	public void setTArcWeight(T src, T dst, W wgt) {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	public void setGArcWeight(T src, A dst, W wgt) {
 		throw new UnsupportedOperationException("not implemented");
 	}
 

@@ -36,9 +36,9 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 	final protected TGraphComposer<U, W, S> mod_tgr_cmp;
 	final protected TGraphScorer<U, W, S> mod_tgr_scr;
 
-	final protected Map<A, LocalTGraph<T, U, W>> source;
+	final protected Map<A, LocalTGraph<T, A, U, W>> source;
 	final protected Map<A, S> score;
-	final protected TGraph<T, U, W> graph;
+	final protected TGraph<T, A, U, W> graph;
 	final protected AddressScheme<T> scheme;
 
 	public Naming(
@@ -75,7 +75,7 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public TGraph<T, U, W> getCompositeTGraph() {
+	public TGraph<T, A, U, W> getCompositeTGraph() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
@@ -96,7 +96,7 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 	** called whenever the {@linkplain #getCompletedTags() completed set}
 	** changes.
 	*/
-	protected TGraph<T, U, W> composeTGraph() {
+	protected TGraph<T, A, U, W> composeTGraph() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
