@@ -31,9 +31,9 @@ final public class Maps {
 	*/
 	public static <K, V> Set<K> domain(Iterable<Map<K, V>> maps) {
 		int s = 0;
-		for (Map m: maps) { s += m.size(); }
+		for (Map<K, V> m: maps) { s += m.size(); }
 		Set<K> domain = new HashSet<K>(s<<1);
-		for (Map m: maps) { domain.addAll(m.keySet()); }
+		for (Map<K, V> m: maps) { domain.addAll(m.keySet()); }
 		return domain;
 	}
 

@@ -32,7 +32,7 @@
 	<target name="build" depends="mkdir,build-dep">
 		<tstamp/>
 		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on">
-			<!--<compilerarg value="-Xlint"/>-->
+			<compilerarg value="-Xlint"/>
 			<sourcepath>
 				<pathelement path="${build}"/>
 			</sourcepath>
