@@ -105,6 +105,14 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 	** the latter changes, ie. after {@link #composeTGraph()}.
 	*/
 	protected AddressScheme<T> makeAddressScheme() {
+		return makeAddressScheme(this.mod_dmtr);
+	}
+
+	/**
+	** Main worker method for {@link #makeAddressScheme()}. This allows us to
+	** avoid having a {@code <D>} type parameter in the class definition.
+	*/
+	protected <D> AddressScheme<T> makeAddressScheme(DistanceMetric<D, U, W> mod_dmtr) {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
