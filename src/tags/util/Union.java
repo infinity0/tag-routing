@@ -8,12 +8,17 @@ import java.util.Map;
 import java.util.HashSet;
 
 /**
-** Implementation of union types.
+** Implementation of union types. These will be type-safe if you use them
+** properly. :p
 */
 final public class Union {
 
 	private Union() { }
 
+	/**
+	** Base class for unions. This is non-instantiable by definition ("0
+	** possible choices in the types of its members").
+	*/
 	public static class U0 {
 
 		final protected Object val;
@@ -47,29 +52,58 @@ final public class Union {
 
 	}
 
+	/**
+	** An immutable 1-union.
+	*/
 	public static class U1<T0> extends U0 {
 		protected U1(Object val, int type) { super(val, type); }
 		@SuppressWarnings("unchecked") final public T0 getT0() { check(0); return (T0)val; }
 	}
 
+	/**
+	** An immutable 2-union.
+	*/
 	public static class U2<T0, T1> extends U1<T0> {
 		protected U2(Object val, int type) { super(val, type); }
 		@SuppressWarnings("unchecked") final public T1 getT1() { check(1); return (T1)val; }
 	}
 
+	/**
+	** An immutable 3-union.
+	*/
 	public static class U3<T0, T1, T2> extends U2<T0, T1> {
 		protected U3(Object val, int type) { super(val, type); }
 		@SuppressWarnings("unchecked") final public T2 getT2() { check(2); return (T2)val; }
 	}
 
-
+	/**
+	** Creates a new {@link U1} with a value of type {@code T0}.
+	*/
 	public static <T0> U1<T0> U1_0(T0 val) { return new U1<T0>(val, 0); }
 
+	/**
+	** Creates a new {@link U2} with a value of type {@code T0}.
+	*/
 	public static <T0, T1> U2<T0, T1> U2_0(T0 val) { return new U2<T0, T1>(val, 0); }
+
+	/**
+	** Creates a new {@link U2} with a value of type {@code T1}.
+	*/
 	public static <T0, T1> U2<T0, T1> U2_1(T1 val) { return new U2<T0, T1>(val, 1); }
 
+	/**
+	** Creates a new {@link U3} with a value of type {@code T0}.
+	*/
 	public static <T0, T1, T2> U3<T0, T1, T2> U3_0(T0 val) { return new U3<T0, T1, T2>(val, 0); }
+
+	/**
+	** Creates a new {@link U3} with a value of type {@code T1}.
+	*/
 	public static <T0, T1, T2> U3<T0, T1, T2> U3_1(T1 val) { return new U3<T0, T1, T2>(val, 1); }
+
+	/**
+	** Creates a new {@link U3} with a value of type {@code T2}.
+	*/
 	public static <T0, T1, T2> U3<T0, T1, T2> U3_2(T2 val) { return new U3<T0, T1, T2>(val, 2); }
 
 }
