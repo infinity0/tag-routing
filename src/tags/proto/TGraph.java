@@ -2,7 +2,7 @@
 package tags.proto;
 
 import tags.util.Maps.U2Map;
-import tags.util.Maps.U2Map$2;
+import tags.util.Maps.U2MapX2;
 
 import java.util.Set;
 import java.util.Map;
@@ -56,7 +56,7 @@ public class TGraph<T, A, U, W> {
 		** Return a view of the subject's neighbours, each mapped to its own
 		** attribute, and the attribute of the arc between it and the subject.
 		*/
-		abstract public U2Map$2<T, A, U, W> attrMap();
+		abstract public U2MapX2<T, A, U, W> attrMap();
 
 		/**
 		** Return a view of the subject's neighbours, each mapped to its own

@@ -4,7 +4,7 @@ package tags.util;
 import java.util.Arrays;
 
 import tags.util.Union.U2;
-import tags.util.Tuple.$2;
+import tags.util.Tuple.X2;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashSet;
@@ -85,7 +85,7 @@ final public class Maps {
 	** @param <V0> Type of value 0
 	** @param <V1> Type of value 1
 	*/
-	public static interface Map$2<K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>> extends Map<K, $2<V0, V1>> {
+	public static interface MapX2<K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>> extends Map<K, X2<V0, V1>> {
 
 		/**
 		** Return a view of the map containing only values of type {@code V0}.
@@ -102,9 +102,9 @@ final public class Maps {
 	/**
 	** DOCUMENT.
 	**
-	** TODO LOW possibly make this also {@code extend U2Map<K0, K1, $2<V0, V1>, Map$2<K0, V0, V1>, Map$2<K1, V0, V1>>}
+	** TODO LOW possibly make this also {@code extend U2Map<K0, K1, X2<V0, V1>, MapX2<K0, V0, V1>, MapX2<K1, V0, V1>>}
 	*/
-	public static interface U2Map$2<K0, K1, V0, V1> extends Map$2<U2<K0, K1>, V0, V1, U2Map<K0, K1, V0>, U2Map<K0, K1, V1>> {
+	public static interface U2MapX2<K0, K1, V0, V1> extends MapX2<U2<K0, K1>, V0, V1, U2Map<K0, K1, V0>, U2Map<K0, K1, V1>> {
 		// for convience, like "typedef"
 	}
 

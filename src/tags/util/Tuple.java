@@ -4,34 +4,7 @@ package tags.util;
 /**
 ** Tuple classes that retain type-safety through generics. These classes can
 ** be used to create throwaway anonymous types that can be referred back to,
-** unlike anonymous classes. They are also useful for when you want to have a
-** {@link Closure} with more than 1 input parameter.
-**
-** Example usage:
-**
-**   import static plugins.Library.func.Tuples.*;
-**   import plugins.Library.func.Closure;
-**
-**   ...
-**
-**   Closure<$2<Integer, String>> my_closure = new
-**   Closure<$2<Integer, String>>() {
-**
-**       public void invoke($2<Integer, String> param) {
-**
-**       ...
-**
-**       }
-**
-**   }
-**
-**   my_closure.invoke($2(3, "test"));
-**
-** Note that (for n > 0) each n-tuple class extends the (n-1)-tuple class,
-** recursively, so that you can give any (k+e)-tuple to a {@code Closure} that
-** takes a k-tuple, assuming the types also match.
-**
-** TODO NORM override equals() and hashCode() for all of these
+** unlike anonymous classes.
 **
 ** @author infinity0
 */
@@ -42,81 +15,81 @@ final public class Tuple {
 	/**
 	** An immutable 0-tuple.
 	*/
-	public static class $0 {
+	public static class X0 {
 		@Override public String toString() { return "()"; }
 	}
 
 	/**
 	** An immutable 1-tuple.
 	*/
-	public static class $1<T0> extends $0 {
+	public static class X1<T0> extends X0 {
 		final public T0 _0;
-		public $1(T0 v0) { super(); _0 = v0; }
+		public X1(T0 v0) { super(); _0 = v0; }
 		@Override public String toString() { return "(" + _0 + ")"; }
 	}
 
 	/**
 	** An immutable 2-tuple.
 	*/
-	public static class $2<T0, T1> extends $1<T0> {
+	public static class X2<T0, T1> extends X1<T0> {
 		final public T1 _1;
-		public $2(T0 v0, T1 v1) { super(v0); _1 = v1; }
+		public X2(T0 v0, T1 v1) { super(v0); _1 = v1; }
 		@Override public String toString() { return "(" + _0 + ", " + _1 + ")"; }
 	}
 
 	/**
 	** An immutable 3-tuple.
 	*/
-	public static class $3<T0, T1, T2> extends $2<T0, T1> {
+	public static class X3<T0, T1, T2> extends X2<T0, T1> {
 		final public T2 _2;
-		public $3(T0 v0, T1 v1, T2 v2) { super(v0, v1); _2 = v2; }
+		public X3(T0 v0, T1 v1, T2 v2) { super(v0, v1); _2 = v2; }
 		@Override public String toString() { return "(" + _0 + ", " + _1 + ", " + _2 + ")"; }
 	}
 
 	/**
 	** An immutable 4-tuple.
 	*/
-	public static class $4<T0, T1, T2, T3> extends $3<T0, T1, T2> {
+	public static class X4<T0, T1, T2, T3> extends X3<T0, T1, T2> {
 		final public T3 _3;
-		public $4(T0 v0, T1 v1, T2 v2, T3 v3) { super(v0, v1, v2); _3 = v3; }
+		public X4(T0 v0, T1 v1, T2 v2, T3 v3) { super(v0, v1, v2); _3 = v3; }
 		@Override public String toString() { return "(" + _0 + ", " + _1 + ", " + _2 + ", " + _3 + ")"; }
 	}
 
-	final public static $0 $0 = new $0();
+	final public static X0 X0 = new X0();
 
 	/**
-	** Returns a {@link $0 0-tuple}.
+	** Returns a {@link X0 0-tuple}.
 	*/
-	public static $0 $0() {
-		return $0;
+	public static X0 X0() {
+		return X0;
 	}
 
 	/**
-	** Creates a new {@link $1 1-tuple} from the given parameters.
+	** Creates a new {@link X1 1-tuple} from the given parameters.
 	*/
-	public static <T0> $1<T0> $1(T0 v0) {
-		return new $1<T0>(v0);
+	public static <T0> X1<T0> X1(T0 v0) {
+		return new X1<T0>(v0);
 	}
 
 	/**
-	** Creates a new {@link $2 2-tuple} from the given parameters.
+	** Creates a new {@link X2 2-tuple} from the given parameters.
 	*/
-	public static <T0, T1> $2<T0, T1> $2(T0 v0, T1 v1) {
-		return new $2<T0, T1>(v0, v1);
+	public static <T0, T1> X2<T0, T1> X2(T0 v0, T1 v1) {
+		return new X2<T0, T1>(v0, v1);
 	}
 
 	/**
-	** Creates a new {@link $3 3-tuple} from the given parameters.
+	** Creates a new {@link X3 3-tuple} from the given parameters.
 	*/
-	public static <T0, T1, T2> $3<T0, T1, T2> $3(T0 v0, T1 v1, T2 v2) {
-		return new $3<T0, T1, T2>(v0, v1, v2);
+	public static <T0, T1, T2> X3<T0, T1, T2> X3(T0 v0, T1 v1, T2 v2) {
+		return new X3<T0, T1, T2>(v0, v1, v2);
 	}
 
 	/**
-	** Creates a new {@link $4 4-tuple} from the given parameters.
+	** Creates a new {@link X4 4-tuple} from the given parameters.
 	*/
-	public static <T0, T1, T2, T3> $4<T0, T1, T2, T3> $4(T0 v0, T1 v1, T2 v2, T3 v3) {
-		return new $4<T0, T1, T2, T3>(v0, v1, v2, v3);
+	public static <T0, T1, T2, T3> X4<T0, T1, T2, T3> X4(T0 v0, T1 v1, T2 v2, T3 v3) {
+		return new X4<T0, T1, T2, T3>(v0, v1, v2, v3);
 	}
 
 }

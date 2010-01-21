@@ -13,7 +13,7 @@ import tags.proto.LocalTGraph;
 import tags.proto.TGraph;
 import tags.proto.AddressScheme;
 import tags.util.Union.U2;
-import tags.util.Tuple.$2;
+import tags.util.Tuple.X2;
 import java.util.Map;
 import java.util.Set;
 import java.util.Queue;
@@ -170,7 +170,7 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 
 			// "relax" all out-neighbours
 			U srcw = graph.nodeMap().K0Map().get(tag);
-			for (Map.Entry<U2<T, A>, $2<U, W>> en: graph.getOutgoingT(tag).attrMap().entrySet()) {
+			for (Map.Entry<U2<T, A>, X2<U, W>> en: graph.getOutgoingT(tag).attrMap().entrySet()) {
 				U2<T, A> nb = en.getKey();
 				U dstw = en.getValue()._0;
 				W arcw = en.getValue()._1;
@@ -178,7 +178,7 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 				DijkstraNode out = dmap.get(nb);
 				if (out == null) { continue; } // already visited
 
-				D dist = mod_dmtr.combine(node.dist, mod_dmtr.getDistance(srcw, dstw, arcw));
+				D dist = mod_dmtr.combine(cur.dist, mod_dmtr.getDistance(srcw, dstw, arcw));
 				if (mod_dmtr.compare(dist, out.dist) < 0) {
 					// PriorityQueue treats its elements as immutable, so need to remove first
 					queue.remove(out);
