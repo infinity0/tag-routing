@@ -159,8 +159,8 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 				scheme_new.pushNode(node, null);
 				continue;
 			}
-
 			T tag = node.getT0();
+
 			// tag is not fully loaded, set as incomplete
 			if (!completed.contains(tag)) {
 				scheme_new.pushNode(node, null);
@@ -168,19 +168,19 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 				break;
 			}
 
+			// "relax" all out-neighbours
 			U srcw = graph.nodeMap().K0Map().get(tag);
-			TGraph.Neighbour<T, A, U, W> nbs = graph.getOutgoingT(tag);
-
-			for (Map.Entry<U2<T, A>, $2<U, W>> en: nbs.attrMap().entrySet()) {
+			for (Map.Entry<U2<T, A>, $2<U, W>> en: graph.getOutgoingT(tag).attrMap().entrySet()) {
 				U2<T, A> nb = en.getKey();
 				U dstw = en.getValue()._0;
 				W arcw = en.getValue()._1;
 
 				DijkstraNode out = dmap.get(nb);
-				if (out == null) { continue; }
+				if (out == null) { continue; } // already visited
 
-				D dist = mod_dmtr.getDistance(srcw, dstw, arcw);
+				D dist = mod_dmtr.combine(node.dist, mod_dmtr.getDistance(srcw, dstw, arcw));
 				if (mod_dmtr.compare(dist, out.dist) < 0) {
+					// PriorityQueue treats its elements as immutable, so need to remove first
 					queue.remove(out);
 					out.dist = dist;
 					queue.add(out);

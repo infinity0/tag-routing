@@ -1,10 +1,8 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto;
 
-import tags.util.Union.U2;
-import tags.util.Tuple.$2;
 import tags.util.Maps.U2Map;
-import tags.util.Maps.Map$2;
+import tags.util.Maps.U2Map$2;
 
 import java.util.Set;
 import java.util.Map;
@@ -58,7 +56,7 @@ public class TGraph<T, A, U, W> {
 		** Return a view of the subject's neighbours, each mapped to its own
 		** attribute, and the attribute of the arc between it and the subject.
 		*/
-		abstract public Map$2<U2<T, A>, U, W, U2Map<T, A, U>, U2Map<T, A, W>> attrMap();
+		abstract public U2Map$2<T, A, U, W> attrMap();
 
 		/**
 		** Return a view of the subject's neighbours, each mapped to its own
