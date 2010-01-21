@@ -10,6 +10,10 @@ import java.util.HashSet;
 /**
 ** Implementation of union types. These will be type-safe if you use them
 ** properly. :p
+**
+** TODO LOW it might make more sense to do U1 extends U2 extends U3 and have
+** the extra methods throw {@link UnsupportedOperationException} or smth... no
+** time to think this through right now...
 */
 final public class Union {
 
@@ -21,13 +25,13 @@ final public class Union {
 	*/
 	public static class U0 {
 
-		final protected Object val;
-		final protected int type;
+		final public Object val;
+		final public int type;
 
 		/**
 		** @throws NullPointerException if {@code val} is {@code null}
 		*/
-		protected U0(Object val, int type) {
+		private U0(Object val, int type) {
 			if (val == null) {
 				throw new NullPointerException();
 			}
@@ -56,7 +60,8 @@ final public class Union {
 	** An immutable 1-union.
 	*/
 	public static class U1<T0> extends U0 {
-		protected U1(Object val, int type) { super(val, type); }
+		private U1(Object val, int type) { super(val, type); }
+		final public boolean isT0() { return type == 0; }
 		@SuppressWarnings("unchecked") final public T0 getT0() { check(0); return (T0)val; }
 	}
 
@@ -64,7 +69,8 @@ final public class Union {
 	** An immutable 2-union.
 	*/
 	public static class U2<T0, T1> extends U1<T0> {
-		protected U2(Object val, int type) { super(val, type); }
+		private U2(Object val, int type) { super(val, type); }
+		final public boolean isT1() { return type == 1; }
 		@SuppressWarnings("unchecked") final public T1 getT1() { check(1); return (T1)val; }
 	}
 
@@ -72,7 +78,8 @@ final public class Union {
 	** An immutable 3-union.
 	*/
 	public static class U3<T0, T1, T2> extends U2<T0, T1> {
-		protected U3(Object val, int type) { super(val, type); }
+		private U3(Object val, int type) { super(val, type); }
+		final public boolean isT2() { return type == 2; }
 		@SuppressWarnings("unchecked") final public T2 getT2() { check(2); return (T2)val; }
 	}
 

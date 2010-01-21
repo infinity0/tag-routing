@@ -1,6 +1,9 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto;
 
+import tags.util.Union.U2;
+import tags.util.Union;
+
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
@@ -13,57 +16,81 @@ import java.util.HashMap;
 **
 ** @param <T> Type of tag
 */
-public class AddressScheme<T> {
+public class AddressScheme<T, A> {
 
-	final protected List<T> node_list = new ArrayList<T>();
-	final protected Map<T, Integer> node = new HashMap<T, Integer>();
+	final protected List<U2<T, A>> node_list = new ArrayList<U2<T, A>>();
+	final protected Map<U2<T, A>, Integer> node_map = new HashMap<U2<T, A>, Integer>();
 
-	final protected Map<T, Set<T>> outgoing = new HashMap<T, Set<T>>();
-	final protected Map<T, Set<T>> incoming = new HashMap<T, Set<T>>();
+	final protected Map<T, Set<U2<T, A>>> outgoing = new HashMap<T, Set<U2<T, A>>>();
+	final protected Map<U2<T, A>, Set<T>> incoming = new HashMap<U2<T, A>, Set<T>>();
+
+	/**
+	** Whether the scheme is complete for the backing graph. If this is {@code
+	** true}, then further information could be extracted by completing a tag
+	** in the backing graph (ie. loading it and all its out-arcs, out-nodes).
+	*/
+	protected boolean incomplete = false;
 
 	/**
 	** Construct a new scheme with the given tag as the zeroth (ie. seed) tag.
 	*/
 	public AddressScheme(T src) {
-		pushNode(src, null);
+		pushTNode(src, null);
 	}
 
 	public T getSeedTag() {
-		return node_list.get(0);
+		U2<T, A> zero = node_list.get(0);
+		return zero.getT0();
+	}
+
+	public boolean isIncomplete() {
+		return incomplete;
+	}
+
+	public void setIncomplete() {
+		incomplete = true;
 	}
 
 	// TODO HIGH code some getter methods for these
 
+	public void pushTNode(T tag, Set<T> inc) {
+		pushNode(Union.<T, A>U2_0(tag), inc);
+	}
+
+	public void pushGNode(A addr, Set<T> inc) {
+		pushNode(Union.<T, A>U2_1(addr), inc);
+	}
+
 	/**
-	** Attaches the given tag to the address scheme, with a set of incoming
-	** neighbours. Only tags already in the scheme (ie. nearer to the seed tag)
+	** Attaches the given node to the address scheme, with a set of incoming
+	** neighbours. Only nodes already in the scheme (ie. nearer to the seed)
 	** will be added as incoming neighbours; the rest will be filtered out.
 	**
-	** @param tag The node to push onto this address scheme
+	** @param node The node to push onto this address scheme
 	** @param inc The incoming neighbours of the node
 	** @throws IllegalArgumentException if the scheme already contains {@code
 	**         tag}, or if {@code inc} contains it
 	*/
-	protected void pushNode(T tag, Set<T> inc) {
-		if (node.containsKey(tag)) {
-			throw new IllegalArgumentException("scheme already contains tag: " + tag);
+	public void pushNode(U2<T, A> node, Set<T> inc) {
+		if (node_map.containsKey(node)) {
+			throw new IllegalArgumentException("scheme already contains node: " + node);
 		}
-		if (inc.contains(tag)) {
+		if (inc.contains(node)) {
 			throw new IllegalArgumentException("cannot accept an incoming set that defines a loop");
 		}
 
 		int i = node_list.size();
 		Set<T> tinc = new HashSet<T>();
 
-		node_list.add(tag);
-		node.put(tag, i);
-		outgoing.put(tag, new HashSet<T>());
-		incoming.put(tag, tinc);
+		node_list.add(node);
+		node_map.put(node, i);
+		if (node.type == 0) { outgoing.put(node.getT0(), new HashSet<U2<T, A>>()); }
+		incoming.put(node, tinc);
 
 		if (inc == null || inc.isEmpty()) { return; }
 		for (T t: inc) {
-			if (node.containsKey(t)) {
-				outgoing.get(t).add(tag);
+			if (outgoing.containsKey(t)) {
+				outgoing.get(t).add(node);
 				tinc.add(t);
 			}
 		}

@@ -1,6 +1,11 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto;
 
+import tags.util.Union.U2;
+import tags.util.Tuple.$2;
+import tags.util.Maps.U2Map;
+import tags.util.Maps.Map$2;
+
 import java.util.Set;
 import java.util.Map;
 import tags.util.Arc;
@@ -15,19 +20,17 @@ import tags.util.Arc;
 */
 public class TGraph<T, A, U, W> {
 
-	public Map<T, U> getTNodes() {
+	/**
+	** Return a view of the nodes of this graph, each mapped to its attribute.
+	*/
+	public U2Map<T, A, U> nodeMap() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public Map<A, U> getGNodes() {
-		throw new UnsupportedOperationException("not implemented");
-	}
-
-	public Map<Arc<T, T>, W> getTArcs() {
-		throw new UnsupportedOperationException("not implemented");
-	}
-
-	public Map<Arc<T, A>, W> getGArcs() {
+	/**
+	** Return a view of the arcs of this graph, each mapped to its attribute.
+	*/
+	public U2Map<Arc<T, T>, Arc<T, A>, W> arcMap() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
@@ -52,28 +55,22 @@ public class TGraph<T, A, U, W> {
 		}
 
 		/**
-		** Return a view of the subject's tag neighbours, each mapped to its
+		** Return a view of the subject's neighbours, each mapped to its own
+		** attribute, and the attribute of the arc between it and the subject.
+		*/
+		abstract public Map$2<U2<T, A>, U, W, U2Map<T, A, U>, U2Map<T, A, W>> attrMap();
+
+		/**
+		** Return a view of the subject's neighbours, each mapped to its own
 		** attribute.
 		*/
-		abstract public Map<T, U> getTNodes();
+		abstract public U2Map<T, A, U> nodeAttrMap();
 
 		/**
-		** Return a view of the subject's tgraph neighbours, each mapped to its
-		** attribute.
+		** Return a view of the subject's neighbours, each mapped to the
+		** attribute of the arc between it and the subject.
 		*/
-		abstract public Map<A, U> getGNodes();
-
-		/**
-		** Return a view of the subject's tag neighbours, each mapped to the
-		** attribute of the arc between it and the subject tag.
-		*/
-		abstract public Map<T, W> getTArcs();
-
-		/**
-		** Return a view of the subject's tgraph neighbours, each mapped to the
-		** attribute of the arc between it and the subject tag.
-		*/
-		abstract public Map<A, W> getGArcs();
+		abstract public U2Map<T, A, W> arcAttrMap();
 
 	}
 

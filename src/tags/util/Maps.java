@@ -3,6 +3,8 @@ package tags.util;
 
 import java.util.Arrays;
 
+import tags.util.Union.U2;
+import tags.util.Tuple.$2;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashSet;
@@ -53,6 +55,39 @@ final public class Maps {
 			referent.add(arc.dst);
 		}
 		return referent;
+	}
+
+	/**
+	** A {@link Map} which can have two different types of key.
+	**
+	** @param <K0> Type of key 0
+	** @param <K1> Type of key 1
+	** @param <V> Type of value
+	*/
+	public static interface U2Map<K0, K1, V> extends Map<U2<K0, K1>, V> {
+
+		/**
+		** Return a view of the map containing only keys of type {@code K0}.
+		*/
+		public Map<K0, V> K0Map();
+
+		/**
+		** Return a view of the map containing only keys of type {@code K1}.
+		*/
+		public Map<K1, V> K1Map();
+
+	}
+
+	/**
+	** A {@link Map} which has two values for each key.
+	**
+	** @param <K> Type of key
+	** @param <V0> Type of value 0
+	** @param <V1> Type of value 1
+	*/
+	public static interface Map$2<K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>> extends Map<K, $2<V0, V1>> {
+		public M0 MapV0();
+		public M1 MapV1();
 	}
 
 }

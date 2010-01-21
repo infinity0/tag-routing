@@ -12,9 +12,14 @@ import tags.proto.init.Init;
 import tags.proto.LocalTGraph;
 import tags.proto.TGraph;
 import tags.proto.AddressScheme;
-
+import tags.util.Union.U2;
+import tags.util.Tuple.$2;
 import java.util.Map;
 import java.util.Set;
+import java.util.Queue;
+import java.util.HashMap;
+import java.util.PriorityQueue;
+import java.util.Comparator;
 
 /**
 ** DOCUMENT.
@@ -38,8 +43,8 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 
 	final protected Map<A, LocalTGraph<T, A, U, W>> source;
 	final protected Map<A, S> score;
-	final protected TGraph<T, A, U, W> graph;
-	final protected AddressScheme<T> scheme;
+	final protected LocalTGraph<T, A, U, W> graph;
+	final protected AddressScheme<T, A> scheme;
 
 	public Naming(
 		Query<?, T> query,
@@ -79,7 +84,7 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public AddressScheme<T> getAddressScheme() {
+	public AddressScheme<T, A> getAddressScheme() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
@@ -104,7 +109,7 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 	** Make a new {@link #scheme} from {@link #graph}. To be called whenever
 	** the latter changes, ie. after {@link #composeTGraph()}.
 	*/
-	protected AddressScheme<T> makeAddressScheme() {
+	protected AddressScheme<T, A> makeAddressScheme() {
 		return makeAddressScheme(this.mod_dmtr);
 	}
 
@@ -112,8 +117,80 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 	** Main worker method for {@link #makeAddressScheme()}. This allows us to
 	** avoid having a {@code <D>} type parameter in the class definition.
 	*/
-	protected <D> AddressScheme<T> makeAddressScheme(DistanceMetric<D, U, W> mod_dmtr) {
-		throw new UnsupportedOperationException("not implemented");
+	protected <D> AddressScheme<T, A> makeAddressScheme(final DistanceMetric<D, U, W> mod_dmtr) {
+		AddressScheme<T, A> scheme_new = new AddressScheme<T, A>(query.seed_tag);
+		Set<T> completed = getCompletedTags();
+
+		// Dijkstra's algorithm
+
+		class DijkstraNode {
+
+			final public U2<T, A> node;
+			protected D dist;
+
+			public DijkstraNode(U2<T, A> node) {
+				this.node = node;
+				this.dist = (query.seed_tag.equals(node.val))? mod_dmtr.getMinElement(): mod_dmtr.getMaxElement();
+			}
+
+		}
+
+		// 1. Init
+		Queue<DijkstraNode> queue = new PriorityQueue<DijkstraNode>(graph.nodeMap().size(), new Comparator<DijkstraNode>() {
+			@Override public int compare(DijkstraNode d1, DijkstraNode d2) {
+				return mod_dmtr.compare(d1.dist, d2.dist);
+			}
+		});
+		Map<U2<T, A>, DijkstraNode> dmap = new HashMap<U2<T, A>, DijkstraNode>();
+		for (U2<T, A> u: graph.nodeMap().keySet()) {
+			DijkstraNode n = new DijkstraNode(u);
+			dmap.put(u, n);
+			queue.add(n);
+		}
+
+		// 2. Loop
+		while (queue.isEmpty()) {
+			DijkstraNode cur = queue.poll();
+			U2<T, A> node = cur.node;
+			assert(dmap.get(node) == cur);
+			dmap.remove(node);
+
+			if (node.isT1()) {
+				scheme_new.pushNode(node, null);
+				continue;
+			}
+
+			T tag = node.getT0();
+			// tag is not fully loaded, set as incomplete
+			if (!completed.contains(tag)) {
+				scheme_new.pushNode(node, null);
+				scheme_new.setIncomplete();
+				break;
+			}
+
+			U srcw = graph.nodeMap().K0Map().get(tag);
+			TGraph.Neighbour<T, A, U, W> nbs = graph.getOutgoingT(tag);
+
+			for (Map.Entry<U2<T, A>, $2<U, W>> en: nbs.attrMap().entrySet()) {
+				U2<T, A> nb = en.getKey();
+				U dstw = en.getValue()._0;
+				W arcw = en.getValue()._1;
+
+				DijkstraNode out = dmap.get(nb);
+				if (out == null) { continue; }
+
+				D dist = mod_dmtr.getDistance(srcw, dstw, arcw);
+				if (mod_dmtr.compare(dist, out.dist) < 0) {
+					queue.remove(out);
+					out.dist = dist;
+					queue.add(out);
+				}
+			}
+
+			scheme_new.pushNode(node, graph.getIncomingT(tag).nodeAttrMap().K0Map().keySet());
+		}
+
+		return scheme_new;
 	}
 
 }

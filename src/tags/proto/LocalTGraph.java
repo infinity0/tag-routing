@@ -36,19 +36,19 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public void setTNodeWeight(T tag, U wgt) {
+	public void setTNodeAttr(T tag, U wgt) {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public void setGNodeWeight(A tag, U wgt) {
+	public void setGNodeAttr(A tag, U wgt) {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public void setTArcWeight(T src, T dst, W wgt) {
+	public void setTArcAttr(T src, T dst, W wgt) {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public void setGArcWeight(T src, A dst, W wgt) {
+	public void setGArcAttr(T src, A dst, W wgt) {
 		throw new UnsupportedOperationException("not implemented");
 	}
 

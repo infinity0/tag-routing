@@ -15,6 +15,14 @@ public class EntropyDistanceMetric implements DistanceMetric<Entropy, Probabilit
 		return dstw.intersect(arcw).entropy();
 	}
 
+	@Override public Entropy getMinElement() {
+		return Entropy.MIN_VALUE;
+	}
+
+	@Override public Entropy getMaxElement() {
+		return Entropy.MAX_VALUE;
+	}
+
 	@Override public Entropy combine(Entropy d1, Entropy d2) {
 		return d1.intersect(d2);
 	}

@@ -17,6 +17,9 @@ public class Query<I, T> {
 	final public T seed_tag;
 
 	public Query(Executor exec, I seed_id, T seed_tag) {
+		if (exec == null || seed_id == null || seed_tag == null) {
+			throw new NullPointerException();
+		}
 		this.exec = exec;
 		this.seed_id = seed_id;
 		this.seed_tag = seed_tag;

@@ -15,6 +15,10 @@ public interface DistanceMetric<D, U, W> extends Comparator<D> {
 
 	public D getDistance(U srcw, U dstw, W arcw);
 
+	public D getMinElement();
+
+	public D getMaxElement();
+
 	public D combine(D d1, D d2);
 
 	/**
