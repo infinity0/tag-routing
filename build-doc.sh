@@ -33,7 +33,7 @@ for i in *.md.txt; do
 	sed 's/\\row/\\mathtt{\\mathrm{row}}\\,/g' | \
 	sed 's/\\col/\\mathtt{\\mathrm{col}}\\,/g' | \
 	sed 's/\\com/\\mathtt{\\mathrm{com}}\\,/g' | \
-	pandoc -s --toc --smart -c common.css -H "../$RES/header.html" --latexmathml=LaTeXMathML.js > "../$OUT"
+	pandoc -s --toc --smart -c "$RES/common.css" -H "../$SRC/header.html" --latexmathml="$RES/LaTeXMathML.js" > "../$OUT"
 	echo "built $OUT"
 done
 
