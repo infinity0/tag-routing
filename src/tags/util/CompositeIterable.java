@@ -28,8 +28,7 @@ abstract public class CompositeIterable<S, T> implements Iterable<T> {
 	** mutable.
 	*/
 	public CompositeIterable(Iterable<S> i) {
-		ib = i;
-		immutable = false;
+		this(i, false);
 	}
 
 	/**

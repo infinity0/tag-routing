@@ -4,6 +4,8 @@ package tags.util;
 import java.util.AbstractMap;
 import java.util.AbstractSet;
 
+import tags.util.Maps;
+
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Map;
@@ -48,12 +50,8 @@ abstract public class SourceMap<T, S, K, V> extends AbstractMap<Map<K, V>, S> im
 			entries = new AbstractSet<Map.Entry<Map<K, V>, S>>() {
 
 				final Iterable<Map.Entry<Map<K, V>, S>> ib = new CompositeIterable<Map.Entry<T, S>, Map.Entry<Map<K, V>, S>>(smap.entrySet()) {
-					@Override public Map.Entry<Map<K, V>, S> nextFor(final Map.Entry<T, S> en) {
-						return new AbstractMap.SimpleEntry<Map<K, V>, S>(mapFor(en.getKey()), en.getValue()) {
-							@Override public S setValue(S score) {
-								return en.setValue(score);
-							}
-						};
+					@Override public Map.Entry<Map<K, V>, S> nextFor(Map.Entry<T, S> en) {
+						return Maps.composeEntry(en, mapFor(en.getKey()));
 					}
 				};
 
