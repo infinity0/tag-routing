@@ -104,6 +104,11 @@
 		</javadoc>
 	</target>
 
+	<target name="doc">
+		<exec executable="./build-doc.sh">
+		</exec>
+	</target>
+
 	<target name="dist" depends="clean,jar">
 	</target>
 

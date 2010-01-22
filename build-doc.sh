@@ -12,16 +12,17 @@ mkdir -p "$BLD"
 cd "$SRC"
 
 for i in *.tex; do
-	OUT="../$DOC/${i%.tex}.pdf"
-	if [ "$i" -ot "$OUT" ]; then continue; fi
+	OUT="$DOC/${i%.tex}.pdf"
+	if [ "$i" -ot "../$OUT" ]; then continue; fi
 
 	sed -e 's/\(\s\)"/\1``/g' "$i" > "../$BLD/$i" && pdflatex -output-directory "../$BLD" "$i"
-	cp "../$BLD/${i%.tex}.pdf" "$OUT"
+	cp "../$BLD/${i%.tex}.pdf" "../$OUT"
+	echo "built $OUT"
 done
 
 for i in *.md.txt; do
-	OUT="../$DOC/${i%.md.txt}.html"
-	if [ "$i" -ot "$OUT" ]; then continue; fi
+	OUT="$DOC/${i%.md.txt}.html"
+	if [ "$i" -ot "../$OUT" ]; then continue; fi
 
 	cat "$i" | \
 	sed 's/\\dom/\\mathtt{\\mathrm{dom}}\\,/g' | \
@@ -32,7 +33,8 @@ for i in *.md.txt; do
 	sed 's/\\row/\\mathtt{\\mathrm{row}}\\,/g' | \
 	sed 's/\\col/\\mathtt{\\mathrm{col}}\\,/g' | \
 	sed 's/\\com/\\mathtt{\\mathrm{com}}\\,/g' | \
-	pandoc -s --toc --smart -c common.css -H "../$RES/header.html" --latexmathml=LaTeXMathML.js > "$OUT"
+	pandoc -s --toc --smart -c common.css -H "../$RES/header.html" --latexmathml=LaTeXMathML.js > "../$OUT"
+	echo "built $OUT"
 done
 
 cd ..
