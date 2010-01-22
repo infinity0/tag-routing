@@ -1,8 +1,11 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto;
 
+import tags.util.Maps;
+import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Union;
+import java.util.Collections;
 
 import java.util.List;
 import java.util.Set;
@@ -19,10 +22,11 @@ import java.util.HashMap;
 public class AddressScheme<T, A> {
 
 	final protected List<U2<T, A>> node_list = new ArrayList<U2<T, A>>();
-	final protected Map<U2<T, A>, Integer> node_map = new HashMap<U2<T, A>, Integer>();
+	final protected U2Map<T, A, Integer> node_map = Maps.unionDisjoint(new HashMap<T, Integer>(), new HashMap<A, Integer>());
 
 	final protected Map<T, Set<U2<T, A>>> outgoing = new HashMap<T, Set<U2<T, A>>>();
-	final protected Map<U2<T, A>, Set<T>> incoming = new HashMap<U2<T, A>, Set<T>>();
+	final protected U2Map<T, A, Set<T>> incoming = Maps.unionDisjoint(new HashMap<T, Set<T>>(), new HashMap<A, Set<T>>());
+	final protected U2Map<T, A, Set<T>> preceding = Maps.unionDisjoint(new HashMap<T, Set<T>>(), new HashMap<A, Set<T>>());
 
 	/**
 	** Whether the scheme is complete for the backing graph. If this is {@code
@@ -35,7 +39,7 @@ public class AddressScheme<T, A> {
 	** Construct a new scheme with the given tag as the zeroth (ie. seed) tag.
 	*/
 	public AddressScheme(T src) {
-		pushTNode(src, null);
+		pushNodeT(src, null);
 	}
 
 	public T getSeedTag() {
@@ -53,11 +57,19 @@ public class AddressScheme<T, A> {
 
 	// TODO HIGH code some getter methods for these
 
-	public void pushTNode(T tag, Set<T> inc) {
+	/**
+	** Returns all tags nearer than the given node, which lie on a greedy path
+	** between it and the seed tag.
+	*/
+	public Set<T> getPreceding(U2<T, A> node) {
+		return Collections.unmodifiableSet(preceding.get(node));
+	}
+
+	public void pushNodeT(T tag, Set<T> inc) {
 		pushNode(Union.<T, A>U2_0(tag), inc);
 	}
 
-	public void pushGNode(A addr, Set<T> inc) {
+	public void pushNodeG(A addr, Set<T> inc) {
 		pushNode(Union.<T, A>U2_1(addr), inc);
 	}
 
@@ -81,17 +93,20 @@ public class AddressScheme<T, A> {
 
 		int i = node_list.size();
 		Set<T> tinc = new HashSet<T>();
+		Set<T> tpre = new HashSet<T>();
 
 		node_list.add(node);
 		node_map.put(node, i);
 		if (node.type == 0) { outgoing.put(node.getT0(), new HashSet<U2<T, A>>()); }
 		incoming.put(node, tinc);
+		preceding.put(node, tpre);
 
 		if (inc == null || inc.isEmpty()) { return; }
 		for (T t: inc) {
 			if (outgoing.containsKey(t)) {
 				outgoing.get(t).add(node);
 				tinc.add(t);
+				tpre.addAll(preceding.K0Map().get(t));
 			}
 		}
 	}

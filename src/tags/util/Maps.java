@@ -141,13 +141,18 @@ final public class Maps {
 	**
 	** It is '''assumed''' that the two maps are disjoint and will always
 	** remain disjoint; it is up to the caller to ensure that this holds.
+	**
+	** @see Maps.BaseU2Map
 	*/
-	public static <K0, K1, V> U2Map<K0, K1, V> disjoint_union(Map<K0, V> m0, Map<K1, V> m1) {
+	public static <K0, K1, V> U2Map<K0, K1, V> unionDisjoint(Map<K0, V> m0, Map<K1, V> m1) {
 		return new BaseU2Map<K0, K1, V>(m0, m1);
 	}
 
 	/**
 	** DOCUMENT.
+	**
+	** TODO LOW atm this class iterates through m1, then m0. Would be nice to
+	** be able to define a custom iteration order through the constructor.
 	*/
 	public static class BaseU2Map<K0, K1, V> extends AbstractMap<U2<K0, K1>, V> implements U2Map<K0, K1, V> {
 
