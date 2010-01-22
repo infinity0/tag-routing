@@ -33,7 +33,7 @@ public class Entropy /*extends Number TODO LOW*/ implements Comparable<Entropy> 
 	}
 
 	/**
-	** Return the intersection of this and the given entropy. It is assumed
+	** Returns the intersection of this and the given entropy. It is assumed
 	** that the two events (for which these are entropies) are independent.
 	*/
 	public Entropy intersect(Entropy e) {

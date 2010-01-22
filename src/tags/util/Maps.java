@@ -20,7 +20,7 @@ final public class Maps {
 	private Maps() { }
 
 	/**
-	** Return an entry backed by the given entry but with a different key.
+	** Returns an entry backed by the given entry but with a different key.
 	** Updates to the value are reflected in both entries.
 	**
 	** @param <J> Type of source key
@@ -95,12 +95,12 @@ final public class Maps {
 	public static interface U2Map<K0, K1, V> extends Map<U2<K0, K1>, V> {
 
 		/**
-		** Return a view of the map containing only keys of type {@code K0}.
+		** Returns a view of the map containing only keys of type {@code K0}.
 		*/
 		public Map<K0, V> K0Map();
 
 		/**
-		** Return a view of the map containing only keys of type {@code K1}.
+		** Returns a view of the map containing only keys of type {@code K1}.
 		*/
 		public Map<K1, V> K1Map();
 
@@ -116,12 +116,12 @@ final public class Maps {
 	public static interface MapX2<K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>> extends Map<K, X2<V0, V1>> {
 
 		/**
-		** Return a view of the map containing only values of type {@code V0}.
+		** Returns a view of the map containing only values of type {@code V0}.
 		*/
 		public M0 MapV0();
 
 		/**
-		** Return a view of the map containing only values of type {@code V1}.
+		** Returns a view of the map containing only values of type {@code V1}.
 		*/
 		public M1 MapV1();
 

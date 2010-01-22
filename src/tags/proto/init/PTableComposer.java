@@ -13,13 +13,13 @@ import java.util.Map;
 public interface PTableComposer<S, R> {
 
 	/**
-	** Return the combined value for the given item (interpreted as a TGraph
+	** Returns the combined value for the given item (interpreted as a TGraph
 	** address), using data from the given sources.
 	*/
 	public <A> S composePTableGNode(Map<PTable<A, S>, R> src_score, A item);
 
 	/**
-	** Return the combined value for the given item (interpreted as an Index
+	** Returns the combined value for the given item (interpreted as an Index
 	** address), using data from the given sources.
 	*/
 	public <A> S composePTableHNode(Map<PTable<A, S>, R> src_score, A item);

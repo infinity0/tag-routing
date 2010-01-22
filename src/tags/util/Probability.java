@@ -35,7 +35,7 @@ public class Probability /*extends Number TODO LOW*/ implements Comparable<Proba
 	}
 
 	/**
-	** Return the intersection of this and the given probability. It is assumed
+	** Returns the intersection of this and the given probability. It is assumed
 	** that the two events (for which these are probabilities) are independent.
 	*/
 	public Probability intersect(Probability p) {

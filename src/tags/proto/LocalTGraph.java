@@ -23,14 +23,14 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	}
 
 	/**
-	** Return the incoming neighbours of the given target tag.
+	** Returns the incoming neighbours of the given target tag.
 	*/
 	public Neighbour<T, A, U, W> getIncomingT(T dst) {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
 	/**
-	** Return the incoming neighbours of the given target tgraph.
+	** Returns the incoming neighbours of the given target tgraph.
 	*/
 	public Neighbour<T, A, U, W> getIncomingG(A dst) {
 		throw new UnsupportedOperationException("not implemented");
