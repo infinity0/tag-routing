@@ -26,7 +26,7 @@ public class ProtoPTableComposer implements PTableComposer<Probability, Probabil
 	** Construct a new composer with an {@link #alpha} of 2^-4.
 	*/
 	public ProtoPTableComposer() {
-		this(1/16);
+		this(0.0625);
 	}
 
 	/**
