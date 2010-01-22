@@ -997,15 +997,15 @@ whether to use social link structure - flawed because:
 TODO talk about endorser of a node vs maintainer of a node - two different
 things (here "node" refers to `tgraph` or `index`)
 
-- '''maintainer''' of a node defines its nodes and its out-arcs, and provides
-  no information about any other nodes beyond its out-neighbours
-- '''endorser''' of a node points to it in its `ptable`, and may ''follow''
-  the out-arcs of this node, to potentially reach ''any'' other nodes in its
-  connected component of the network
+- **maintainer** of a node defines its nodes and its out-arcs, and provides no
+  information about any other nodes beyond its out-neighbours
+- **endorser** of a node points to it in its `ptable`, and may follow out-arcs
+  to potentially reach _any_ other nodes in its connected component of the data
+  network
 
-In other words, when scoring nodes not in our seed set, we must '''not''' use
+In other words, when scoring nodes not in our seed set, we must **not** use
 weight information from nodes themselves (including the seed nodes), since this
-information comes from the ''maintainer'' and not the ''endorser''. It might be
+information comes from the _maintainer_ and not the _endorser_. It might be
 feasible to extend `ptable` to allow endorsers to provide extra information to
 help the scoring process [EXTN].
 
