@@ -999,10 +999,10 @@ things
 
 MORE
 
-Let $x$ be the node we want to infer a weight for. For each seed node $s$, let
-$w_{p(s)}$ be the probability that $x$ will satisfy a query, by traversing some
-path from $s$ to $x$. (If there is no path, the probability is obviously 0).
-The weight of $x$ we might then calculate as:
+Let $x$ be the node (here, a `tgraph` or `index`) we want to infer a score for.
+For each seed node $s$, let $w_{p(s)}$ be the probability that $x$ will satisfy
+a query, by traversing some path from $s$ to $x$. (If there is no path, the
+probability is obviously 0). The weight of $x$ we might then calculate as:
 
 $$
 1 - \prod_s (1 - w_{p(s)})
@@ -1012,11 +1012,11 @@ This is just the union (over $s$) of all path weights, assuming that paths are
 independent. A rough justification for this is that we only need to traverse
 one path to satisfy a query; we can pick any one we wish.
 
-This can theoretically be attacked when multiple colluding seed nodes point to
-a single remote node (which breaks the assumption of independence), but in such
-a situation, worse attacks are possible. TODO explore more...
+This is open to attack by multiple colluding seed nodes (which breaks the
+assumption of independence), but in such cases, worse attacks are possible.
+TODO explore more...
 
-This leaves us to derive a model for $w_{p(s)}$. For our prototype, we use:
+This leaves us to derive a model for $w_{p(s)}$. A simple one is:
 
 - $w_{p(s)} = w_s.k^i$, where $k$ is some constant, and $i$ is the number of
   steps in the shortest path from $s$ to $x$.
@@ -1029,7 +1029,7 @@ probability $k^i$.
 
 This ignores several important factors. For example:
 
-- for nodes with larger out-degree, an typical endorser will follow a smaller
+- for nodes with larger out-degree, a typical endorser will follow a smaller
   proportion of its out-arcs.
 - an endorser is more likely to visit a node that can be reached in more ways
   from $s$ (ie. has more distinct paths to $s$). This is essentially the same
@@ -1040,18 +1040,19 @@ This ignores several important factors. For example:
 Some of these suggest potential vectors of attack upon the $k^i$ scheme. For
 example, the assumption that the proportion of out-arcs followed is constant,
 could encourage a malicious seed node to define huge numbers of out-arcs, whose
-referents will then enjoy a larger path weight than appropriate. This specific
-attack is easy to detect, but there may be more effective ones.
+referents will then enjoy a larger path weight than appropriate. (This attack
+is easy to detect, but there may be more effective ones.)
 
 This problem can be stated more generally as: _Given an endorsement of a node
 in a (social) network, what other nodes can I infer that the endorsement also
 covers, and to what degree?_ [EXTN]
 
 For our prototype, we stick to $k^i$. Due to the security concerns, we try to
-give an underestimate for $k$. This way, near (from our seed set) nodes have a
-much greater priority than far nodes. Attacks from far nodes should mostly only
-affect other far nodes; we also have the option of construct local overrides
-against the attacks that are detected.
+give an underestimate for $k$. This should not affect the reachability of the
+nodes in the network; only that near nodes (to our seed set) will have a much
+greater priority than far nodes. Attacks from far nodes can only affect other
+far nodes; and we also have the option of constructing local overrides against
+the attacks that are detected.
 
 TODO make an actual estimate... $2^{-4}$. [EXTN]
 
