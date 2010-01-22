@@ -12,28 +12,59 @@ public class ChainIterableTest extends TestCase {
 	public void testAll() {
 		for (int x=0; x<n; ++x) {
 			for (int y=0; y<n; ++y) {
-				List<List<Integer>> ls = fillList(x, fullIntegerList(y));
+				List<ArrayList<Integer>> ls = fillList(x, fullIntegerList(y));
 				Iterable<Integer> ib = new ChainIterable<Integer>(false, ls);
+				Iterator<Integer> it;
 				int i = 0;
-				for (Integer ii: ib) { ++i; }
+
+				// Test standard iteration
+				for (it = ib.iterator(), i = 0; it.hasNext();) {
+					it.next(); ++i;
+				}
+				checkNextException(it);
 				assertTrue(i == x*y);
-				for (Iterator<Integer> it = ib.iterator(); it.hasNext();) { it.next(); it.remove(); }
+
+				// Test removal
+				it = ib.iterator();
+				checkRemoveException(it);
+				for (i = 0; it.hasNext();) {
+					it.next(); ++i;
+					it.remove();
+					checkRemoveException(it);
+				}
+				checkRemoveException(it);
+				assertTrue(i == x*y);
+
+				// No elements left
+				it = ib.iterator();
+				assertFalse(it.hasNext());
+				checkNextException(it);
 			}
 		}
 	}
 
-	public List<Integer> fullIntegerList(int n) {
-		List<Integer> list = new ArrayList<Integer>();
+	public void checkNextException(Iterator<?> it) {
+		try { it.next(); fail(); }
+		catch (Throwable t) { assertTrue(t instanceof NoSuchElementException); }
+	}
+
+	public void checkRemoveException(Iterator<?> it) {
+		try { it.remove(); fail(); }
+		catch (Throwable t) { assertTrue(t instanceof IllegalStateException); }
+	}
+
+	public ArrayList<Integer> fullIntegerList(int n) {
+		ArrayList<Integer> list = new ArrayList<Integer>();
 		for (int i=0; i<n; ++i) {
 			list.add(i);
 		}
 		return list;
 	}
 
-	public <T> List<T> fillList(int n, T elem) {
+	public <T extends ArrayList> List<T> fillList(int n, T elem) {
 		List<T> list = new ArrayList<T>();
 		for (int i=0; i<n; ++i) {
-			list.add(elem);
+			@SuppressWarnings("unchecked") boolean b = list.add((T)elem.clone());
 		}
 		return list;
 	}

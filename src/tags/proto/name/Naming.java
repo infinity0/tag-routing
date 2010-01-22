@@ -116,6 +116,9 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 	/**
 	** Main worker method for {@link #makeAddressScheme()}. This allows us to
 	** avoid having a {@code <D>} type parameter in the class definition.
+	**
+	** OPT NORM use a FibonnacciHeap instead of PriorityQueue. JGraphT has
+	** an implementation.
 	*/
 	protected <D> AddressScheme<T, A> makeAddressScheme(final DistanceMetric<D, U, W> mod_dmtr) {
 		AddressScheme<T, A> scheme_new = new AddressScheme<T, A>(query.seed_tag);

@@ -17,7 +17,7 @@ import java.util.HashMap;
 /**
 ** DOCUMENT.
 **
-** OPTIMISE NORM abstract away from "Query" since this depends only on the
+** OPT NORM abstract away from "Query" since this depends only on the
 ** identity and not any query tag, and therefore can be run continually in the
 ** background.
 **
