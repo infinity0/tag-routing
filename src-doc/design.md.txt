@@ -743,7 +743,7 @@ TODO
 
 see [object-object links](#object-object-links)
 
-#### Combining results from different queries
+#### Ranking results
 
 Given
 :	- $\breveg = \{ t \mapsto w \}$
@@ -753,8 +753,6 @@ Return
 :	- $\breveh = \{(d, w_d)\}$, a results map of documents to their weights.
 
 TODO
-
-possibly could just merge this into routing.
 
 ## Optimisation
 
