@@ -110,8 +110,8 @@ The system has three main networks / planes of information that link to each
 other.
 
 - routing plane - see the `index` section
-- meta-routing plane - see the `tgraph` section
-- social plane - see the `ptable` section
+- naming plane - see the `tgraph` section
+- contact plane - see the `ptable` section
 
 
 # Specification
@@ -128,7 +128,7 @@ Description
 The precise meaning of a weight attribute is intrinsically linked with what the
 routing and the ranking algorithms do. Specific uses include:
 
-- priority of traversal of the routing and meta-routing networks
+- priority of traversal of the routing and naming networks
 - ranking of query results
 
 Probability-based semantics seem quite robust and reliable, since these are
@@ -221,7 +221,7 @@ order to our purposes.
 The analogy to typical navigable networks is that the graph of tags provides
 the same service as an addressing scheme or a name resolution system: a method
 for navigating between related addresses. This works beyond the routing level,
-so we'll call the network of `tgraph` objects the "meta-routing" plane.
+so we'll call the network of `tgraph` objects the "naming" plane.
 
 Conceptually, a tag can be thought of as a "pure" name - ie. the name carries
 no information about its referent, such as its location). IP addresses are the
@@ -249,7 +249,7 @@ This data structure allows an identity to declare a personal list of preferred
 indexes and tgraphs to use for routing purposes.
 
 This is intended to provide an attack-resistant "bootstrapping" path onto the
-routing and meta-routing planes.
+routing and naming planes.
 
 MORE
 
@@ -261,9 +261,9 @@ remote objects are non-blocking and allow other work to be done whilst waiting
 for its results.
 
 The system is partitioned into several layers, each dependent on the one below
-it. The lower layers (initialisation, meta-routing, routing) correspond to the
-data planes introduced previously; the top layer provides the results to the
-user's original query, and interacts directly with the user.
+it. The lower layers (contact, naming, routing) correspond to the data
+planes introduced previously; the top layer provides the results to the user's
+original query, and interacts directly with the user.
 
 Each layer has an interface for interacting with the layer above it, and a
 framework that co-ordinates between the various tasks that make up the layer.
@@ -303,17 +303,15 @@ that consist solely of synchronous data flows (ie. no infinite loops).
 ---------------------------------------------------
                 requires    stores      provides
 --------------- ----------- ----------- -----------
-ranking         $\breveg$,  -           $\breveh$
-                $\breveR$,
-                $\breveH$
+routing         $H_s$,      $\breveQ$,  $\breveh$
+                $\breveT$   $\breveR$,
+                $\breveg$   $\breveH$,
+                            $\breveH_*$
 
-routing         $H_s$,      $\breveQ$,  $\breveH$,
-                $\breveT$   $\breveH_*$ $\breveR$
-
-meta-routing    $t_0$,      $\breveG$,  $\breveT$,
+naming          $t_0$,      $\breveG$,  $\breveT$,
                 $G_s$       $\breveG_*$ $\breveg$
 
-initialisation  $z$         $P_s$       $G_s$,
+contact         $z$         $P_s$       $G_s$,
                                         $H_s$
 ---------------------------------------------------
 
@@ -321,12 +319,12 @@ Table: Data dependency between layers
 
 TODO maybe talk about sending/receiving requests, making this parallel, etc
 
-### Initialisation
+### Contact
 
 Requires
 :	- $z$ from the user
 Provides
-:	- $G_s$ to [meta-routing](#meta-routing)
+:	- $G_s$ to [naming](#naming)
 	- $H_s$ to [routing](#routing)
 
 MORE blah blah, why etc
@@ -409,21 +407,20 @@ Due to these reasons, for our prototype we simply use a low constant, $2^{-4}$.
 This is **not** theoretically sound, but should work adequately in the majority
 of cases, where there are few disagreements or malicious attacks.
 
-### Meta-routing
+### Naming
 
 DIAG
 
 Requires
 :	- $t_0$ from the user
-	- $G_s$ from [initialisation](#initialisation)
+	- $G_s$ from [contact](#contact)
 Provides
 :	- $\breveT$ to [routing](#routing)
-	- $\breveg$ to [ranking](#ranking)
+	- $\breveg$ to [routing](#routing)
 
-The purpose of the meta-routing layer is to provide a routing scheme to the
-routing layer. This routing scheme is dynamic, and updates are requesting by
-the routing layer when it needs more information. The query state consists of
-these objects:
+The purpose of the naming layer is to provide a routing scheme to the routing
+layer. This scheme is dynamic, and updates are requesting by the routing layer
+when it needs more information. The query state consists of these objects:
 
 $\breveG_* = \{ g \mapsto \ddotg \}$
 :	- a map of **data sources**, to the local view of each source.
@@ -448,7 +445,7 @@ $\breveg \in G$
 	  $\breveG_*$.
 	- Initialised with $t_0$ having weight 1. This is just a temporary dummy
 	  value to allow the routing layer to do an initial scan using just the
-	  root tag, when meta-routing information is still unavailable.
+	  root tag, when naming information is still unavailable.
 	- This holds all information related to $\com \breveG_*$; except for arcs
 	  to `tgraph`s already being used as a data source (ie. all $g \in \dom
 	  \breveG$).
@@ -484,8 +481,8 @@ Evt+Async: $\breveG_* \to \breveG$
 
 :	The events that can trigger this are:
 
-	0. After receiving $G_s$ from [initialisation](#initialisation), in which
-	   case $G_s$ is just copied to $\breveG$.
+	0. After receiving $G_s$ from [contact](#contact), in which case $G_s$ is
+	   just copied to $\breveG$.
 	1. A request from [routing](#routing) to add a tag to $\breveT$, in which
 	   case we complete the last element of $\breveT$ in $\breveG_*$, and
 	   continue our calculation of $\breveT$ (see below).
@@ -547,11 +544,11 @@ There are two cases to consider:
 
 Weight of a node $v$
 :	With `tgraph`s, the absolute weight of a single node does not determine
-	its usefulness to the meta-routing layer, but the "distance" between that
-	node and the given query tag $t_0$. To this end, `tgraph`s are *supposed*
-	to include any tag it knows about, including low-weight ones. Therefore,
-	we assume that the absence of a tag *always* means "missing information",
-	and let $\alpha_1(g, v) = 0$.
+	its usefulness to the naming layer, but the "distance" between that node
+	and the given query tag $t_0$. To this end, `tgraph`s are *supposed* to
+	include any tag it knows about, including low-weight ones. Therefore, we
+	assume that the absence of a tag *always* means "missing information", and
+	let $\alpha_1(g, v) = 0$.
 
 	We need to justify that the distribution of weight estimates is roughly
 	even. TODO (see incorporate notes from below)
@@ -626,24 +623,22 @@ see [object-object links](#object-object-links)
 DIAG
 
 Requires
-:	- $H_s$ from [initialisation](#initialisation)
-	- $\breveT$ from [meta-routing](#meta-routing)
+:	- $H_s$ from [contact](#contact)
+	- $\breveT$ from [naming](#naming)
+	- $\breveg$ from [naming](#naming)
 Provides
-:	- $\breveH$ to [ranking](#ranking)
-	- $\breveR$ to [ranking](#ranking)
+:	- $\breveh$ to the user
 
 The purpose of the routing layer is to retrieve results and provide these to
-the ranking layer. The results set is dynamic, and updates are requested by the
-ranking layer when it needs more information. The query state consists of these
-objects:
+the user. The results set is dynamic, and updates are requested by the user
+when it needs more information. The query state consists of these objects:
 
 $\breveH_* = \{ h \mapsto \ddoth_H \}$
 :	- a map of **data sources** to a partial local view of each source.
 	- Initialised with the keys of $H_s$, each mapped to an empty local view.
 	- This only holds arcs to other `index`s; arcs to documents are stored in
-	  $\breveR$ (see below).^[Contrast this with $\breveG_*$ from meta-routing,
-	  which holds all retrieved data, due to the different structure of a
-	  `tgraph`.]
+	  $\breveR$ (see below).^[Contrast this with $\breveG_*$ from naming, which
+	  holds all retrieved data, due to the different structure of a `tgraph`.]
 	- TODO explore and explain the reasons why we have a $\com \breveG_*$ but
 	  not a $\com \breveH_*$.
 $\breveH = \{ h \mapsto w_h \}$
@@ -675,8 +670,8 @@ Evt: $\breveH_* \to \breveH$
 
 :	The events that can trigger this are:
 
-	0. After receiving $H_s$ from [initialisation](#initialisation), in which
-	   case $H_s$ is just copied to $\breveH$.
+	0. After receiving $H_s$ from [contact](#contact), in which case $H_s$ is
+	   just copied to $\breveH$.
 	1. After adding $h \to \dom \breveH_*$ (see below), and its lookups have
 	   all completed, in which case we update $\breveH$ by calling the scoring
 	   algorithm.
@@ -688,10 +683,10 @@ Evt: $\breveH_* \to^\breveT \breveQ$
 
 :	The events that can trigger this are:
 
-	1. A request from [ranking](#ranking) to add a `index` $h \in \breveD$ as
-	   a data source, in which case we add $h$ to $\dom \breveH_*$, and update
+	1. A request from the user to add a `index` $h \in \breveD$ as a data
+	   source, in which case we add $h$ to $\dom \breveH_*$, and update
 	   $\breveQ$, etc... TODO explain this much better....
-	2. Receive an update to $\breveT$ from [meta-routing](#meta-routing), in
+	2. Receive an update to $\breveT$ from [naming](#naming), in
 	   which case we update $\breveQ$ etc.
 
 	For each `index` $h \in \breveH$, we want to select the tags to lookup.
@@ -699,9 +694,9 @@ Evt: $\breveH_* \to^\breveT \breveQ$
 	- if $h$ is from $H_s$, select all tags in $\breveT$.
 	- otherwise, use $\breveH_*$ to find all tags $t$ than we reached $h$ by,
 	  and then use $\breveT$ to select all "short" paths from $t$ to $t_0$.
-	  TODO clarify this, description already in meta-routing
+	  TODO clarify this, description already in naming
 
-	Do this when $\breveT$ is updated from [meta-routing](#meta-routing).
+	Do this when $\breveT$ is updated from [naming](#naming).
 
 Async: $\breveQ \to^\breveP \breveR$
 
@@ -748,15 +743,6 @@ TODO
 
 see [object-object links](#object-object-links)
 
-### Ranking
-
-Requires
-:	- $\breveg$ from [meta-routing](#meta-routing)
-	- $\breveH$ from [ranking](#ranking)
-	- $\breveR$ from [ranking](#ranking)
-Provides
-:	- $\breveh$ to the user
-
 #### Combining results from different queries
 
 Given
@@ -781,11 +767,11 @@ possibly could just merge this into routing.
 - `tgraph`, `index`
 	- where applicable:
 	- quick lookup of node (and weight)
-	- quick lookup of node's out-arcs (and weight) [routing, meta-routing]
+	- quick lookup of node's out-arcs (and weight) [routing, naming]
 
 - `index`
 	- quick partition of tag's to-`index` vs to-document arcs
-	- optionally order these by their score [ranking]
+	- optionally order these by their score [routing]
 
 - $\breveg$
 	- same as `tgraph`
@@ -803,11 +789,11 @@ possibly could just merge this into routing.
 - $\ddotg \in \img \breveG_*$, $\ddoth \in \img \breveH_*$
 	- quick lookup of node (and weight)
 	- quick iteration through all nodes, arcs [$\breveg$]
-	- quick lookup of node`s in-arcs (and weight) [routing, meta-routing]
+	- quick lookup of node`s in-arcs (and weight) [routing, naming]
 	- quick lookup of node's out-arcs (and weight) [maybe needed by some
 	  scoring modules]
 	- quick one-time check that all of a node's out-arcs (and weight) have
-	  been retrieved from the network [routing, meta-routing]
+	  been retrieved from the network [routing, naming]
 
 - $\breveQ$, $\breveR$
 	- quick iteration of all lookups/results [$\breveP$, $\breveh$]
@@ -868,8 +854,8 @@ Signed Subspace Keys network.
 ### Underlying social network
 
 The initialisation algorithm assumes an abstract lower-level social network
-where it can look for friends to query for pointers onto the meta-routing and
-routing planes.
+where it can look for friends to query for pointers onto the naming and routing
+planes.
 
 Any system which has a social network as a major component, needs a method
 of constructing such a network and sustaining its growth. Fortunately, such
@@ -886,11 +872,11 @@ websites only recognise mutual friendship; this is a degenerate form of the
 model, where all weights are constant and all arcs have a reverse-direction
 counterpart.
 
-The meta-routing and routing planes also form what is essentially a social
-network - `tgraph`s and `index`es effectively contain pointers to each other,
-through their arc targets. However, these also carry semantic information (each
-arc has a source tag) and are intrinsic to our search system; by constrast, the
-social network used for initialisation carries no semantic information and is
+The naming and routing planes also form what is essentially a social network -
+`tgraph`s and `index`es effectively contain pointers to each other, through
+their arc targets. However, these also carry semantic information (each arc has
+a source tag) and are intrinsic to our search system; by constrast, the social
+network used for initialisation carries no semantic information and is
 independent of our system. To highlight this difference, we refer to a node on
 the social network as an "identity", and arc weights as "identity scores".
 
@@ -943,11 +929,11 @@ We can think of `tgraph` $g$ (containing tags $t_i$), as a single tag over all
 documents tagged by any $t_i$, and define saturation and relevance accordingly.
 That is, $P(g) = P(\bigcup t_i)$ and $P(t_0|g) = P(t_0|\bigcup t_i)$. Note that
 these values give no information on how well-connected a `tgraph` is within the
-meta-routing network. However, a `tgraph` consists of highly compressed data
-on a large section of the storage network, so in practice the vast majority of
-our meta-routing needs should be satisfied by a small neighbourhood around our
-seed set. Choosing between `tgraph`s probably won't be very important, so for
-now we ignore this deficiency.[EXTN]
+naming network. However, a `tgraph` consists of highly compressed data on a
+large section of the storage network, so in practice the vast majority of our
+naming needs should be satisfied by a small neighbourhood around our seed set.
+Choosing between `tgraph`s probably won't be very important, so for now we
+ignore this deficiency.[EXTN]
 
 Now for the analogy to typical navigable networks: a tag $t$ can be thought of
 as defining a subnetwork - the set of documents tagged with $t$. $P(t)$ tells
@@ -1340,7 +1326,7 @@ with those properties.
 - perfect conditions
 - random failure
 - malicious attacks - under the assumptions of "abstract storage network", only
-  attacks vs the entire network can occur on the meta-routing / routing planes.
+  attacks vs the entire network can occur on the naming / routing planes.
   attacks vs individuals on the social plane is a separate topic, ignore here
 	- attacks vs most well-connected nodes
 	- MORE
