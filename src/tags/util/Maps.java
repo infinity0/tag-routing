@@ -8,6 +8,7 @@ import tags.util.Tuple.X2;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.AbstractSet;
 import java.util.AbstractMap;
 import java.util.HashSet;
@@ -27,21 +28,39 @@ final public class Maps {
 	** @param <K> Type of target key
 	** @param <V> Type of value
 	*/
-	public static <J, K, V> Map.Entry<K, V> composeEntry(final Map.Entry<J, V> en, final K key) {
-		return new Map.Entry<K, V>() {
-			@Override public K getKey() { return key; }
+	public static <J, K, V> Map.Entry<K, V> composeEntry(final Map.Entry<J, V> en, K key) {
+		return new AbstractEntry<K, V>(key) {
 			@Override public V getValue() { return en.getValue(); }
 			@Override public V setValue(V val) { return en.setValue(val); }
-			@Override public boolean equals(Object o) {
-				if (o == this) { return true; }
-				if (!(o instanceof Map.Entry)) { return false; }
-				Map.Entry e2 = (Map.Entry)o;
-				return (key == null? e2.getKey() == null: key.equals(e2.getKey())) && (en.getValue() == null? e2.getValue() == null : en.getValue().equals(e2.getValue()));
-			}
-			@Override public int hashCode() {
-				return (key == null? 0: key.hashCode()) ^ (en.getValue() == null? 0: en.getValue().hashCode());
-			}
 		};
+	}
+
+	/**
+	** A basic {@link Entry}. DOCUMENT more details.
+	*/
+	abstract public static class AbstractEntry<K, V> implements Map.Entry<K, V> {
+
+		final public K key;
+		public AbstractEntry(K key) { this.key = key; }
+		@Override public K getKey() { return key; }
+
+		@Override abstract public V getValue();
+
+		@Override public V setValue(V val) {
+			throw new UnsupportedOperationException("setValue() not overridden");
+		}
+
+		@Override public boolean equals(Object o) {
+			if (o == this) { return true; }
+			if (!(o instanceof Map.Entry)) { return false; }
+			Map.Entry e2 = (Map.Entry)o;
+			return (key == null? e2.getKey() == null: key.equals(e2.getKey())) && (getValue() == null? e2.getValue() == null : getValue().equals(e2.getValue()));
+		}
+
+		@Override public int hashCode() {
+			return (key == null? 0: key.hashCode()) ^ (getValue() == null? 0: getValue().hashCode());
+		}
+
 	}
 
 	/**
@@ -139,17 +158,17 @@ final public class Maps {
 	/**
 	** Returns a view of the disjoint union of two maps.
 	**
-	** It is '''assumed''' that the two maps are disjoint and will always
-	** remain disjoint; it is up to the caller to ensure that this holds.
-	**
 	** @see Maps.BaseU2Map
 	*/
-	public static <K0, K1, V> U2Map<K0, K1, V> unionDisjoint(Map<K0, V> m0, Map<K1, V> m1) {
+	public static <K0, K1, V> U2Map<K0, K1, V> uniteDisjoint(Map<K0, V> m0, Map<K1, V> m1) {
 		return new BaseU2Map<K0, K1, V>(m0, m1);
 	}
 
 	/**
 	** DOCUMENT.
+	**
+	** It is '''assumed''' that the two maps are disjoint and will always
+	** remain disjoint; it is up to the caller to ensure that this holds.
 	**
 	** TODO LOW atm this class iterates through m1, then m0. Would be nice to
 	** be able to define a custom iteration order through the constructor.
@@ -174,7 +193,7 @@ final public class Maps {
 		@Override public boolean containsKey(Object o) {
 			if (!(o instanceof U2)) { return false; }
 			@SuppressWarnings("unchecked") U2<K0, K1> u = (U2<K0, K1>)o;
-			return (u == null)? false: (u.type == 0)? m0.containsKey(u.getT0()): m1.containsKey(u.getT1());
+			return u.type == 0? m0.containsKey(u.getT0()): m1.containsKey(u.getT1());
 		}
 
 		@Override public boolean containsValue(Object o) {
@@ -238,14 +257,13 @@ final public class Maps {
 						if (!(o instanceof Map.Entry)) { return false; }
 						@SuppressWarnings("unchecked") Map.Entry<U2<K0, K1>, V> en = (Map.Entry<U2<K0, K1>, V>)o;
 						U2<K0, K1> u = en.getKey();
-						V val, testval = en.getValue();
-						if (u.type == 0) {
-							if (!m0.containsKey(u.getT0())) { return false; }
-							val = m0.get(u.getT0());
-						} else {
-							if (!m1.containsKey(u.getT1())) { return false; }
-							val = m1.get(u.getT1());
-						}
+						V testval = en.getValue();
+
+						Object key = u.isT0()? u.getT0(): u.getT1();
+						Map<?, V> map = u.isT0()? m0: m1;
+						if (!map.containsKey(key)) { return false; }
+						V val = map.get(key);
+
 						return val == null && testval == null || val.equals(testval);
 					}
 
@@ -254,28 +272,208 @@ final public class Maps {
 						@SuppressWarnings("unchecked") Map.Entry<U2<K0, K1>, V> en = (Map.Entry<U2<K0, K1>, V>)o;
 						U2<K0, K1> u = en.getKey();
 						V testval = en.getValue();
-						if (u.type == 0) {
-							if (!m0.containsKey(u.getT0())) { return false; }
-							V val = m0.get(u.getT0());
-							if (val == null && testval == null || val.equals(testval)) {
-								m0.remove(u.getT0());
-								return true;
-							} else {
-								return false;
-							}
+
+						Object key = u.isT0()? u.getT0(): u.getT1();
+						Map<?, V> map = u.isT0()? m0: m1;
+						if (!map.containsKey(key)) { return false; }
+						V val = map.get(key);
+
+						if (val == null && testval == null || val.equals(testval)) {
+							map.remove(key);
+							return true;
 						} else {
-							if (!m1.containsKey(u.getT1())) { return false; }
-							V val = m1.get(u.getT1());
-							if (val == null && testval == null || val.equals(testval)) {
-								m0.remove(u.getT0());
-								return true;
-							} else {
-								return false;
-							}
+							return false;
 						}
 					}
 
 					@Override public Iterator<Map.Entry<U2<K0, K1>, V>> iterator() {
+						return ib.iterator();
+					}
+
+				};
+			}
+			return entries;
+		}
+
+	}
+
+	/**
+	** Returns a view of the strict convolution of two maps. Only keys in both
+	** maps will be present in the view.
+	*/
+	public static <K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>> MapX2<K, V0, V1, M0, M1> convoluteStrict(M0 m0, M1 m1, BaseMapX2.Inclusion inc) {
+		return new BaseMapX2<K, V0, V1, M0, M1>(m0, m1, inc);
+	}
+
+	/**
+	** DOCUMENT.
+	*/
+	public static class BaseMapX2<K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>> extends AbstractMap<K, X2<V0, V1>> implements MapX2<K, V0, V1, M0, M1> {
+
+		public enum Inclusion {
+			/** Both maps will always have the same keys */
+			EQUAL,
+			/** {@link #m0} will always be a subseteq of {@link #m1} */
+			SUB0SUP1,
+			/** {@link #m1} will always be a subseteq of {@link #m0} */
+			SUB1SUP0
+		}
+
+		final Inclusion inc;
+		final protected M0 m0;
+		final protected M1 m1;
+
+		public BaseMapX2(M0 m0, M1 m1, Inclusion inc) {
+			this.m0 = m0;
+			this.m1 = m1;
+			this.inc = inc;
+		}
+
+		public BaseMapX2(M0 m0, M1 m1) {
+			this(m0, m1, Inclusion.EQUAL);
+		}
+
+		@Override public M0 MapV0() { return m0; }
+		@Override public M1 MapV1() { return m1; }
+
+		@Override public int size() {
+			int s0 = m0.size(), s1 = m1.size();
+			switch (inc) {
+			case EQUAL: assert s0 == s1; return s0;
+			case SUB0SUP1: assert s0 <= s1; return s0;
+			case SUB1SUP0: assert s0 >= s1; return s1;
+			}
+			throw new AssertionError();
+		}
+
+		@Override public boolean containsKey(Object o) {
+			switch (inc) {
+			case EQUAL: return m0.containsKey(o) && m1.containsKey(o);
+			case SUB0SUP1: return m0.containsKey(o);
+			case SUB1SUP0: return m1.containsKey(o);
+			}
+			throw new AssertionError();
+		}
+
+		// No more efficient way than AbstractMap's default implementation that searches the entire map
+		// @Override public boolean containsValue(Object o) { }
+
+		@Override public X2<V0, V1> get(Object o) {
+			return containsKey(o)? Tuple.X2(m0.get(o), m1.get(o)): null;
+		}
+
+		/**
+		** {@inheritDoc}
+		**
+		** This will add {@code key} to both maps, even if one of the values
+		** of the tuple is {@code null}.
+		*/
+		@Override public X2<V0, V1> put(K key, X2<V0, V1> x) {
+			if (containsKey(key)) {
+				return Tuple.X2(m0.put(key, x._0), m1.put(key, x._1));
+			} else {
+				m0.put(key, x._0);
+				m1.put(key, x._1);
+				return null;
+			}
+		}
+
+		@Override public X2<V0, V1> remove(Object o) {
+			if (containsKey(o)) {
+				return Tuple.X2(m0.remove(o), m1.remove(o));
+			} else {
+				m0.remove(o);
+				m1.remove(o);
+				return null;
+			}
+		}
+
+		@Override public void putAll(Map<? extends K, ? extends X2<V0, V1>> map) {
+			throw null;
+		}
+
+		@Override public void clear() {
+			m0.clear();
+			m1.clear();
+		}
+
+		private transient Set<Map.Entry<K, X2<V0, V1>>> entries;
+		@Override public Set<Map.Entry<K, X2<V0, V1>>> entrySet() {
+			if (entries == null) {
+				entries = new AbstractSet<Map.Entry<K, X2<V0, V1>>>() {
+
+					@SuppressWarnings("unchecked")
+					final Iterable<Map.Entry<K, X2<V0, V1>>> ib = buildIterable();
+					private Iterable<Map.Entry<K, X2<V0, V1>>> buildIterable() {
+						switch (inc) {
+						case EQUAL:
+						case SUB0SUP1:
+							return new CompositeIterable<Map.Entry<K, V0>, Map.Entry<K, X2<V0, V1>>>(m0.entrySet()) {
+								@Override public Map.Entry<K, X2<V0, V1>> nextFor(final Map.Entry<K, V0> en) {
+									return new AbstractEntry<K, X2<V0, V1>>(en.getKey()) {
+										@Override public X2<V0, V1> getValue() {
+											return Tuple.X2(en.getValue(), m1.get(key));
+										}
+										@Override public X2<V0, V1> setValue(X2<V0, V1> x) {
+											return Tuple.X2(en.setValue(x._0), m1.put(key, x._1));
+										}
+									};
+								}
+							};
+						case SUB1SUP0:
+							return new CompositeIterable<Map.Entry<K, V1>, Map.Entry<K, X2<V0, V1>>>(m1.entrySet()) {
+								@Override public Map.Entry<K, X2<V0, V1>> nextFor(final Map.Entry<K, V1> en) {
+									return new AbstractEntry<K, X2<V0, V1>>(en.getKey()) {
+										@Override public X2<V0, V1> getValue() {
+											return Tuple.X2(m0.get(key), en.getValue());
+										}
+										@Override public X2<V0, V1> setValue(X2<V0, V1> x) {
+											return Tuple.X2(m0.put(key, x._0), en.setValue(x._1));
+										}
+									};
+								}
+							};
+						}
+						throw new AssertionError();
+					}
+
+					@Override public int size() { return BaseMapX2.this.size(); }
+
+					@Override public void clear() { BaseMapX2.this.clear(); }
+
+					@Override public boolean contains(Object o) {
+						if (!(o instanceof Map.Entry)) { return false; }
+						@SuppressWarnings("unchecked") Map.Entry<K, X2<V0, V1>> en = (Map.Entry<K, X2<V0, V1>>)o;
+						K key = en.getKey();
+						X2<V0, V1> u = en.getValue();
+
+						if (!m0.containsKey(key) || !m1.containsKey(key)) { return false; }
+						V0 v0 = m0.get(key);
+						V1 v1 = m1.get(key);
+
+						return (v0 == null? u._0 == null: v0.equals(u._0)) && (v1 == null? u._1 == null: v1.equals(u._1));
+					}
+
+					@Override public boolean remove(Object o) {
+						if (!(o instanceof Map.Entry)) { return false; }
+						@SuppressWarnings("unchecked") Map.Entry<K, X2<V0, V1>> en = (Map.Entry<K, X2<V0, V1>>)o;
+						K key = en.getKey();
+						X2<V0, V1> u = en.getValue();
+
+						if (!m0.containsKey(key) || !m1.containsKey(key)) { return false; }
+						V0 v0 = m0.get(key);
+						V1 v1 = m1.get(key);
+
+						if ((v0 == null? u._0 == null: v0.equals(u._0)) && (v1 == null? u._1 == null: v1.equals(u._1))) {
+							m0.remove(key);
+							m1.remove(key);
+							return true;
+						} else {
+							return false;
+						}
+					}
+
+					@Override public Iterator<Map.Entry<K, X2<V0, V1>>> iterator() {
 						return ib.iterator();
 					}
 

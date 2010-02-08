@@ -23,11 +23,11 @@ import java.util.HashMap;
 public class AddressScheme<T, A> {
 
 	final protected List<U2<T, A>> node_list = new ArrayList<U2<T, A>>();
-	final protected U2Map<T, A, Integer> node_map = Maps.unionDisjoint(new HashMap<T, Integer>(), new HashMap<A, Integer>());
+	final protected U2Map<T, A, Integer> node_map = Maps.uniteDisjoint(new HashMap<T, Integer>(), new HashMap<A, Integer>());
 
 	final protected Map<T, Set<U2<T, A>>> outgoing = new HashMap<T, Set<U2<T, A>>>();
-	final protected U2Map<T, A, Set<T>> incoming = Maps.unionDisjoint(new HashMap<T, Set<T>>(), new HashMap<A, Set<T>>());
-	final protected U2Map<T, A, Set<T>> preceding = Maps.unionDisjoint(new HashMap<T, Set<T>>(), new HashMap<A, Set<T>>());
+	final protected U2Map<T, A, Set<T>> incoming = Maps.uniteDisjoint(new HashMap<T, Set<T>>(), new HashMap<A, Set<T>>());
+	final protected U2Map<T, A, Set<T>> preceding = Maps.uniteDisjoint(new HashMap<T, Set<T>>(), new HashMap<A, Set<T>>());
 
 	/**
 	** Whether the scheme is complete for the backing graph. If this is {@code

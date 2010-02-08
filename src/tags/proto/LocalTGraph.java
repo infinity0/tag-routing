@@ -12,6 +12,8 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.HashMap;
 
+import java.io.IOException;
+
 /**
 ** Local view of a {@link TGraph}.
 **
@@ -22,13 +24,13 @@ import java.util.HashMap;
 */
 public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 
-	final protected U2Map<T, A, U> node_map = Maps.unionDisjoint(new HashMap<T, U>(), new HashMap<A, U>());
+	final protected U2Map<T, A, U> node_map = Maps.uniteDisjoint(new HashMap<T, U>(), new HashMap<A, U>());
 	final protected Map<T, U2Map<T, A, W>> outgoing = new HashMap<T, U2Map<T, A, W>>();
-	final protected U2Map<T, A, Map<T, W>> incoming = Maps.unionDisjoint(new HashMap<T, Map<T, W>>(), new HashMap<A, Map<T, W>>());
+	final protected U2Map<T, A, Map<T, W>> incoming = Maps.uniteDisjoint(new HashMap<T, Map<T, W>>(), new HashMap<A, Map<T, W>>());
 
-	Map<T, Set<U2<T, A>>> incomplete = new HashMap<T, Set<U2<T, A>>>();
-	Set<T> complete = new HashSet<T>();
-	Set<T> complete_immute = Collections.unmodifiableSet(complete);
+	final protected Map<T, Set<U2<T, A>>> incomplete = new HashMap<T, Set<U2<T, A>>>();
+	final protected Set<T> complete = new HashSet<T>();
+	final protected Set<T> complete_immute = Collections.unmodifiableSet(complete);
 
 	/**
 	** Returns the set of tags for which itself, its out-arcs and its out-nodes
@@ -62,7 +64,6 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 		assert !incomplete.containsKey(subj) && !complete.contains(subj);
 
 		// get the set of outgoing nodes that haven't been loaded
-		// FIXME problem here with inconsistent data structures
 		Set<U2<T, A>> inp = new HashSet<U2<T, A>>(out.keySet());
 		inp.removeAll(node_map.keySet());
 
@@ -77,7 +78,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 
 	/**
 	** Returns the incoming neighbours of the given target tag. Only loaded
-	** neighours will be returned.
+	** neighours (both node and arc) will be returned.
 	*/
 	public Neighbour<T, A, U, W> getIncomingT(T dst) {
 		throw new UnsupportedOperationException("not implemented");
@@ -85,7 +86,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 
 	/**
 	** Returns the incoming neighbours of the given target tgraph. Only loaded
-	** neighbours will be returned.
+	** neighbours (both node and arc) will be returned.
 	*/
 	public Neighbour<T, A, U, W> getIncomingG(A dst) {
 		throw new UnsupportedOperationException("not implemented");
@@ -93,15 +94,35 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 
 	/**
 	** Load a given subject tag, and its node-weight.
+	**
+	** '''NOTE''': This should be called for every single node loaded from the
+	** remote structure; if the node was not found, call this with {@code null}
+	** for the weight.
 	*/
-	public void setNodeAttrT(T subj, U wgt) {
+	public void setNodeAttrT(T subj, U wgt) throws IOException {
+		if (wgt == null) {
+			if (incoming.containsKey(subj)) {
+				throw new IOException("corrupt remote data structure");
+			}
+			return;
+		}
 		node_map.put(updateCompletion(Union.<T, A>U2_0(subj)), wgt);
 	}
 
 	/**
 	** Load a given subject tgraph, and its node-weight.
+	**
+	** '''NOTE''': This should be called for every single node loaded from the
+	** remote structure; if the node was not found, call this with {@code null}
+	** for the weight.
 	*/
-	public void setNodeAttrG(A subj, U wgt) {
+	public void setNodeAttrG(A subj, U wgt) throws IOException {
+		if (wgt == null) {
+			if (incoming.containsKey(subj)) {
+				throw new IOException("corrupt remote data structure");
+			}
+			return;
+		}
 		node_map.put(updateCompletion(Union.<T, A>U2_1(subj)), wgt);
 	}
 
