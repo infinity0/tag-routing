@@ -13,6 +13,13 @@ import java.util.Map;
 */
 public interface IndexScorer<W, S> {
 
-	public <T, A> S getScoreFor(LocalIndex<T, A, W> view, Map<LocalIndex<T, A, W>, S> sources);
+	/**
+	** Infers a score for a given non-seed subject node.
+	**
+	** @param source Map of nodes to their local views
+	** @param seeds Map of seed nodes to their scores
+	** @param subj Node to infer a score for
+	*/
+	public <T, A> S getScoreFor(Map<A, LocalIndex<T, A, W>> source, Map<A, S> seeds, A subj);
 
 }

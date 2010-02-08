@@ -14,6 +14,13 @@ import java.util.Map;
 */
 public interface TGraphScorer<U, W, S> {
 
-	public <T, A> S getScoreFor(LocalTGraph<T, A, U, W> view, Map<LocalTGraph<T, A, U, W>, S> sources);
+	/**
+	** Infers a score for a given non-seed subject node.
+	**
+	** @param source Map of nodes to their local views
+	** @param seeds Map of seed nodes to their scores
+	** @param subj Node to infer a score for
+	*/
+	public <T, A> S getScoreFor(Map<A, LocalTGraph<T, A, U, W>> source, Map<A, S> seeds, A subj);
 
 }
