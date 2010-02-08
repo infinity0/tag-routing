@@ -69,8 +69,30 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
+	/**
+	** This is to be called whenever:
+	**
+	** - we add a source
+	** - a source's lookups have completed
+	*/
 	public Map<A, S> getIndexScores() {
 		throw new UnsupportedOperationException("not implemented");
+		// copy seeds
+		// for each A in source not in seeds, infer its score
+	}
+
+	/**
+	** This is to be called whenever:
+	**
+	** - address scheme is updated
+	** - we add a source
+	*/
+	public Map<A, Set<T>> getLookups() {
+		throw new UnsupportedOperationException("not implemented");
+		// if A in seeds, select all T in scheme
+		// otherwise
+		// - find Set<T> that we reached A by, using data from this.source
+		// - for all T in Set<T>, select all "short" paths in layer_lo.getAddressScheme()
 	}
 
 }

@@ -18,6 +18,7 @@ import java.util.HashMap;
 ** DOCUMENT.
 **
 ** @param <T> Type of tag
+** @param <A> Type of address
 */
 public class AddressScheme<T, A> {
 

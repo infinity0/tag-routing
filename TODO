@@ -1,0 +1,16 @@
+
+- MapX2
+- LocalTGraph and TGraph
+- LocalIndex and Index
+
+
+- ProbabilityLookupRanker
+- probably just merge ranking into routing
+
+
+- add a tags.name.TagScorer, add that to the design document
+- merge Ranking with Routing, don't need the extra layer, pointless
+
+
+- StoreControl should really be in the form of an asynchronous ObjectProcessor
+
