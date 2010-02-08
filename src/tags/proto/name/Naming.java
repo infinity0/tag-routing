@@ -7,7 +7,7 @@ import tags.store.StoreControl;
 import tags.util.LayerInterfaceHi;
 import tags.util.LayerInterfaceLo;
 import tags.proto.route.Routing;
-import tags.proto.init.Init;
+import tags.proto.cont.Contact;
 
 import tags.proto.LocalTGraph;
 import tags.proto.TGraph;
@@ -32,10 +32,10 @@ import java.util.Comparator;
 */
 public class Naming<T, A, U, W, S> extends LayerService<Query<?, T>, StoreControl<?, T, A, U, W, S, ?>> implements
 LayerInterfaceHi<Integer, Routing<T, A, W, S>>,
-LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
+LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 
 	protected Routing<T, A, W, S> layer_hi;
-	protected Init<?, A, S, ?> layer_lo;
+	protected Contact<?, A, S, ?> layer_lo;
 
 	final protected DistanceMetric<?, U, W> mod_dmtr;
 	final protected TGraphComposer<U, W, S> mod_tgr_cmp;
@@ -72,7 +72,7 @@ LayerInterfaceLo<Integer, Init<?, A, S, ?>> {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	@Override public void setLayerLo(Init<?, A, S, ?> layer_lo) {
+	@Override public void setLayerLo(Contact<?, A, S, ?> layer_lo) {
 		this.layer_lo = layer_lo;
 	}
 

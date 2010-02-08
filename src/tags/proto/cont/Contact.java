@@ -1,5 +1,5 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
-package tags.proto.init;
+package tags.proto.cont;
 
 import tags.proto.LayerService;
 import tags.proto.Query;
@@ -26,7 +26,7 @@ import java.util.HashMap;
 ** @param <S> Type of score
 ** @param <R> Type of identity-score
 */
-public class Init<I, A, S, R> extends LayerService<Query<I, ?>, StoreControl<I, ?, A, ?, ?, S, R>> implements
+public class Contact<I, A, S, R> extends LayerService<Query<I, ?>, StoreControl<I, ?, A, ?, ?, S, R>> implements
 LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 
 	protected Naming<?, A, ?, ?, S> layer_hi;
@@ -39,7 +39,7 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 	final protected Iterable<Map<A, S>> src_score_g;
 	final protected Iterable<Map<A, S>> src_score_h;
 
-	public Init(
+	public Contact(
 		Query<I, ?> query,
 		StoreControl<I, ?, A, ?, ?, S, R> sctl,
 		PTableComposer<S, R> mod_ptb_cmp

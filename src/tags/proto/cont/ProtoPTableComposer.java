@@ -1,5 +1,5 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
-package tags.proto.init;
+package tags.proto.cont;
 
 import tags.proto.MultiParts;
 import tags.util.ValueComposer;

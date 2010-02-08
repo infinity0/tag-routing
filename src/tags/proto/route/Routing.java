@@ -22,10 +22,8 @@ import java.util.Map;
 ** @param <S> Type of score
 */
 public class Routing<T, A, W, S> extends LayerService<Query<?, T>, StoreControl<?, T, A, ?, W, S, ?>> implements
-LayerInterfaceHi<Integer, Ranking<A, W>>,
 LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 
-	protected Ranking<A, W> layer_hi;
 	protected Naming<T, A, ?, W, S> layer_lo;
 
 	final protected IndexScorer<W, S> mod_idx_scr;
@@ -47,14 +45,6 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 		this.score = null;
 		this.lookup = null;
 		this.result = null;
-	}
-
-	@Override public void setLayerHi(Ranking<A, W> layer_hi) {
-		this.layer_hi = layer_hi;
-	}
-
-	@Override public Integer request() {
-		throw new UnsupportedOperationException("not implemented");
 	}
 
 	@Override public void setLayerLo(Naming<T, A, ?, W, S> layer_lo) {
@@ -93,6 +83,10 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 		// otherwise
 		// - find Set<T> that we reached A by, using data from this.source
 		// - for all T in Set<T>, select all "short" paths in layer_lo.getAddressScheme()
+	}
+
+	public Map<A, W> getRankedResults() {
+		throw new UnsupportedOperationException("not implemented");
 	}
 
 }

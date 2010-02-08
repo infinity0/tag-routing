@@ -2,4 +2,4 @@
 /**
 ** Init layer.
 */
-package tags.proto.init;
+package tags.proto.cont;
