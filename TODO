@@ -1,16 +1,15 @@
 
-- MapX2
-- LocalTGraph and TGraph
+- LocalTGraph and TGraph (pretty much done, maybe move node_map and outgoing into TGraph)
 - LocalIndex and Index
+(1 day)
 
-
-- ProbabilityLookupRanker
-- probably just merge ranking into routing
-
-
+- ProbabilityEntropyTGraphComposer
 - add a tags.name.TagScorer, add that to the design document
-- merge Ranking with Routing, don't need the extra layer, pointless
+(1 day)
 
+- implement methods in Routing
+- ProbabilityLookupRanker
+(1 day)
 
 - StoreControl should really be in the form of an asynchronous ObjectProcessor
-
+(3 days maybe)
