@@ -14,43 +14,9 @@ public class ChainIterableTest extends TestCase {
 			for (int y=0; y<n; ++y) {
 				List<ArrayList<Integer>> ls = fillList(x, fullIntegerList(y));
 				Iterable<Integer> ib = new ChainIterable<Integer>(false, ls);
-				Iterator<Integer> it;
-				int i = 0;
-
-				// Test standard iteration
-				for (it = ib.iterator(), i = 0; it.hasNext();) {
-					it.next(); ++i;
-				}
-				checkNextException(it);
-				assertTrue(i == x*y);
-
-				// Test removal
-				it = ib.iterator();
-				checkRemoveException(it);
-				for (i = 0; it.hasNext();) {
-					it.next(); ++i;
-					it.remove();
-					checkRemoveException(it);
-				}
-				checkRemoveException(it);
-				assertTrue(i == x*y);
-
-				// No elements left
-				it = ib.iterator();
-				assertFalse(it.hasNext());
-				checkNextException(it);
+				CollectionTests.testIterable(ib, x*y);
 			}
 		}
-	}
-
-	public void checkNextException(Iterator<?> it) {
-		try { it.next(); fail(); }
-		catch (Throwable t) { assertTrue(t instanceof NoSuchElementException); }
-	}
-
-	public void checkRemoveException(Iterator<?> it) {
-		try { it.remove(); fail(); }
-		catch (Throwable t) { assertTrue(t instanceof IllegalStateException); }
 	}
 
 	public ArrayList<Integer> fullIntegerList(int n) {

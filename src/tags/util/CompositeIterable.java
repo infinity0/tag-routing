@@ -12,54 +12,78 @@ import java.util.Iterator;
 */
 abstract public class CompositeIterable<S, T> implements Iterable<T> {
 
+	public enum Mutability {
+		/** {@link Iterator#remove()} throws {@link UnsupportedOperationException} */
+		IMMUTABLE,
+		/** {@link Iterator#remove()} falls through to the backing iterator */
+		MUTABLE,
+		/** {@link Iterator#remove()} falls through to the backing iterator, then calls {@link #removeFor(Object)}. */
+		REMOVE_CLEANUP
+	}
+
 	/**
 	** The backing {@link Iterable}.
 	*/
 	final protected Iterable<S> ib;
 
 	/**
-	** Whether the iterator supports {@link Iterator#remove()}.
+	** @see {@link #Mutability}
 	*/
-	final public boolean immutable;
+	final public Mutability mute;
 
 	/**
-	** Create a new mutable iterable backed by the given iterable. Note that
-	** mutability will only have an effect if the backing iterator is also
-	** mutable.
+	** Create a new mutable iterable backed by the given iterable.
 	*/
 	public CompositeIterable(Iterable<S> i) {
-		this(i, false);
+		this(i, Mutability.MUTABLE);
 	}
 
 	/**
 	** Create a new iterable backed by the given iterable, with the given
-	** mutability setting. Note that mutability will only have an effect if the
-	** backing iterator is also mutable.
+	** {@link #Mutability} setting. Note that mutability will only have an
+	** effect if the backing iterator is also mutable.
 	*/
-	public CompositeIterable(Iterable<S> i, boolean immute) {
-		ib = i;
-		immutable = immute;
+	public CompositeIterable(Iterable<S> ib, Mutability mute) {
+		this.ib = ib;
+		this.mute = mute;
 	}
 
 	/*@Override**/ public Iterator<T> iterator() {
-		return immutable?
-		new Iterator<T>() {
-			final Iterator<S> it = ib.iterator();
-			/*@Override**/ public boolean hasNext() { return it.hasNext(); }
-			/*@Override**/ public T next() { return CompositeIterable.this.nextFor(it.next()); }
-			/*@Override**/ public void remove() { throw new UnsupportedOperationException("Immutable iterator"); }
-		}:
-		new Iterator<T>() {
-			final Iterator<S> it = ib.iterator();
-			/*@Override**/ public boolean hasNext() { return it.hasNext(); }
-			/*@Override**/ public T next() { return CompositeIterable.this.nextFor(it.next()); }
-			/*@Override**/ public void remove() { it.remove(); }
-		};
+		switch (mute) {
+		case IMMUTABLE:
+			return new Iterator<T>() {
+				final Iterator<S> it = ib.iterator();
+				/*@Override**/ public boolean hasNext() { return it.hasNext(); }
+				/*@Override**/ public T next() { return CompositeIterable.this.nextFor(it.next()); }
+				/*@Override**/ public void remove() { throw new UnsupportedOperationException("immutable iterator"); }
+			};
+		case MUTABLE:
+			return new Iterator<T>() {
+				final Iterator<S> it = ib.iterator();
+				/*@Override**/ public boolean hasNext() { return it.hasNext(); }
+				/*@Override**/ public T next() { return CompositeIterable.this.nextFor(it.next()); }
+				/*@Override**/ public void remove() { it.remove(); }
+			};
+		case REMOVE_CLEANUP:
+			return new Iterator<T>() {
+				final Iterator<S> it = ib.iterator();
+				S last = null;
+				/*@Override**/ public boolean hasNext() { return it.hasNext(); }
+				/*@Override**/ public T next() { last = it.next(); return CompositeIterable.this.nextFor(last); }
+				/*@Override**/ public void remove() { it.remove(); assert last != null; CompositeIterable.this.removeFor(last); }
+			};
+		}
+		throw new AssertionError();
 	}
 
 	/**
 	** Returns an object of the target type given an object of the source type.
 	*/
 	abstract protected T nextFor(S elem);
+
+	/**
+	** Performs extra cleanup operations after the given element is removed.
+	*/
+	protected void removeFor(S elem) { }
 
 }

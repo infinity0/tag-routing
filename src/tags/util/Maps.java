@@ -408,7 +408,8 @@ final public class Maps {
 						switch (inc) {
 						case EQUAL:
 						case SUB0SUP1:
-							return new CompositeIterable<Map.Entry<K, V0>, Map.Entry<K, X2<V0, V1>>>(m0.entrySet()) {
+							return new CompositeIterable<Map.Entry<K, V0>, Map.Entry<K, X2<V0, V1>>>(m0.entrySet(), CompositeIterable.Mutability.REMOVE_CLEANUP) {
+								@Override public void removeFor(Map.Entry<K, V0> en) { m1.remove(en.getKey()); }
 								@Override public Map.Entry<K, X2<V0, V1>> nextFor(final Map.Entry<K, V0> en) {
 									return new AbstractEntry<K, X2<V0, V1>>(en.getKey()) {
 										@Override public X2<V0, V1> getValue() {
@@ -421,7 +422,8 @@ final public class Maps {
 								}
 							};
 						case SUB1SUP0:
-							return new CompositeIterable<Map.Entry<K, V1>, Map.Entry<K, X2<V0, V1>>>(m1.entrySet()) {
+							return new CompositeIterable<Map.Entry<K, V1>, Map.Entry<K, X2<V0, V1>>>(m1.entrySet(), CompositeIterable.Mutability.REMOVE_CLEANUP) {
+								@Override public void removeFor(Map.Entry<K, V1> en) { m0.remove(en.getKey()); }
 								@Override public Map.Entry<K, X2<V0, V1>> nextFor(final Map.Entry<K, V1> en) {
 									return new AbstractEntry<K, X2<V0, V1>>(en.getKey()) {
 										@Override public X2<V0, V1> getValue() {
