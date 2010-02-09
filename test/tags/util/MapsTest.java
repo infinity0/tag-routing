@@ -26,6 +26,7 @@ public class MapsTest extends TestCase {
 			for (int s1=0; s1<nn; ++s1) {
 				testUniteDisjoint(s0, s1);
 				testConvoluteStrict(s0, s1);
+				testViewSubMap(s0, s1);
 			}
 		}
 	}
@@ -119,6 +120,28 @@ public class MapsTest extends TestCase {
 			assertTrue(mm.size() == 0);
 			assertTrue(m0.isEmpty());
 			assertTrue(m1.isEmpty());
+		}
+	}
+
+	public void testViewSubMap(int s0, int s1) {
+		Map<Integer, Boolean> parent = new HashMap<Integer, Boolean>();
+		Set<Integer> keys = new HashSet<Integer>();
+
+		for (int i=0; i<4; ++i) {
+			for (int j=0; j<s0+s1; ++j) { parent.put(j, true); }
+			for (int j=0; j<s0; ++j) { keys.add(j); }
+			Map<Integer, Boolean> subview = Maps.viewSubMap(parent, keys);
+			assertTrue(parent.size() == s0+s1);
+			assertTrue(subview.size() == s0);
+			CollectionTests.testIterable(subview.keySet(), s0);
+			assertTrue(subview.size() == 0);
+			assertTrue(parent.size() == s1);
+			parent.clear();
+			for (int j=0; j<s0; ++j) { parent.put(j, true); }
+			assertTrue(subview.size() == s0);
+			subview.clear();
+			assertTrue(parent.size() == 0);
+			assertTrue(subview.size() == 0);
 		}
 	}
 

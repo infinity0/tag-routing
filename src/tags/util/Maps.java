@@ -54,7 +54,8 @@ final public class Maps {
 			if (o == this) { return true; }
 			if (!(o instanceof Map.Entry)) { return false; }
 			Map.Entry e2 = (Map.Entry)o;
-			return (key == null? e2.getKey() == null: key.equals(e2.getKey())) && (getValue() == null? e2.getValue() == null : getValue().equals(e2.getValue()));
+			return (key == null? e2.getKey() == null: key.equals(e2.getKey()))
+			    && (getValue() == null? e2.getValue() == null : getValue().equals(e2.getValue()));
 		}
 
 		@Override public int hashCode() {
@@ -102,6 +103,138 @@ final public class Maps {
 			referent.add(arc.dst);
 		}
 		return referent;
+	}
+
+	/**
+	** Returns a submap view of the {@code parent} map, with at most the given
+	** {@code keys}. If any key is not in the parent map, it will not be in the
+	** submap. Ie. the view's keyset is always a subset of, or equal to, the
+	** given {@code keys}.
+	**
+	** '''Note''': the {@link Map#size()} method has linear time complexity.
+	*/
+	public static <K, V> Map<K, V> viewSubMap(final Map<K, V> parent, final Set<K> keys) {
+		return new AbstractMap<K, V>() {
+
+			// No more efficient way than AbstractMap's default implementation that defers to entrySet().size()
+			// @Override public int size() { }
+
+			@Override public boolean containsKey(Object o) {
+				return keys.contains(o) && parent.containsKey(o);
+			}
+
+			// No more efficient way than AbstractMap's default implementation that searches the entire map
+			// @Override public boolean containsValue(Object o) { }
+
+			@Override public V get(Object o) {
+				return keys.contains(o)? parent.get(o): null;
+			}
+
+			@Override public V put(K key, V val) {
+				if (!keys.contains(key)) {
+					throw new IllegalArgumentException("inappropriate key for submap: " + key);
+				}
+				return parent.put(key, val);
+			}
+
+			@Override public V remove(Object o) {
+				return keys.contains(o)? parent.remove(o): null;
+			}
+
+			// No more efficient way than AbstractMap's default implementation that iterates over the map
+			// @Override public void putAll(Map<? extends K, ? extends V> map) { }
+
+			@Override public void clear() {
+				parent.keySet().removeAll(keys);
+			}
+
+			private transient Set<Map.Entry<K, V>> entries;
+			@Override public Set<Map.Entry<K, V>> entrySet() {
+				if (entries == null) {
+					entries = new AbstractSet<Map.Entry<K, V>>() {
+
+						@Override public int size() {
+							int i = 0;
+							for (Iterator<Map.Entry<K, V>> it = iterator(); it.hasNext(); ++i) { it.next(); }
+							return i;
+						}
+
+						@Override public boolean contains(Object o) {
+							if (!(o instanceof Map.Entry)) { return false; }
+							@SuppressWarnings("unchecked") Map.Entry<K, V> en = (Map.Entry<K, V>)o;
+							K key = en.getKey();
+							V testval = en.getValue();
+							if (!keys.contains(key)) { return false; }
+
+							V val = parent.get(key);
+							return val == null? parent.containsKey(key) && testval == null: val.equals(testval);
+						}
+
+						@Override public boolean remove(Object o) {
+							if (!(o instanceof Map.Entry)) { return false; }
+							@SuppressWarnings("unchecked") Map.Entry<K, V> en = (Map.Entry<K, V>)o;
+							K key = en.getKey();
+							V testval = en.getValue();
+							if (!keys.contains(key)) { return false; }
+
+							V val = parent.get(key);
+							if (val == null? parent.containsKey(key) && testval == null: val.equals(testval)) {
+								parent.remove(key);
+								return true;
+							} else {
+								return false;
+							}
+						}
+
+						@Override public Iterator<Map.Entry<K, V>> iterator() {
+							return new Iterator<Map.Entry<K, V>>() {
+								Iterator<K> kit = keys.iterator();
+								K cur, last;
+								boolean hasnext = findNext(), removeok = false;
+
+								private boolean findNext() {
+									while (kit.hasNext()) {
+										K key = kit.next();
+										if (parent.containsKey(key)) {
+											cur = key;
+											return true;
+										}
+									}
+									return false;
+								}
+
+								@Override public boolean hasNext() {
+									return hasnext;
+								}
+
+								@Override public Map.Entry<K, V> next() {
+									if (!hasnext) { throw new java.util.NoSuchElementException(); }
+									Map.Entry<K, V> en = new AbstractEntry<K, V>(last = cur) {
+										@Override public V getValue() { return parent.get(key); }
+										@Override public V setValue(V val) { return parent.put(key, val); }
+									};
+									removeok = true;
+									hasnext = findNext();
+									return en;
+								}
+
+								@Override public void remove() {
+									if (removeok) {
+										parent.remove(last);
+										removeok = false;
+									} else {
+										throw new IllegalStateException("not appropriate for remove call");
+									}
+								}
+							};
+						}
+
+					};
+				}
+				return entries;
+			}
+
+		};
 	}
 
 	/**
@@ -261,10 +394,8 @@ final public class Maps {
 
 						Object key = u.isT0()? u.getT0(): u.getT1();
 						Map<?, V> map = u.isT0()? m0: m1;
-						if (!map.containsKey(key)) { return false; }
 						V val = map.get(key);
-
-						return val == null && testval == null || val.equals(testval);
+						return val == null? map.containsKey(key) && testval == null: val.equals(testval);
 					}
 
 					@Override public boolean remove(Object o) {
@@ -275,10 +406,9 @@ final public class Maps {
 
 						Object key = u.isT0()? u.getT0(): u.getT1();
 						Map<?, V> map = u.isT0()? m0: m1;
-						if (!map.containsKey(key)) { return false; }
 						V val = map.get(key);
 
-						if (val == null && testval == null || val.equals(testval)) {
+						if (val == null? map.containsKey(key) && testval == null: val.equals(testval)) {
 							map.remove(key);
 							return true;
 						} else {
@@ -300,8 +430,11 @@ final public class Maps {
 	/**
 	** Returns a view of the strict convolution of two maps. Only keys in both
 	** maps will be present in the view.
+	**
+	** @see #BaseMapX2
 	*/
-	public static <K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>> MapX2<K, V0, V1, M0, M1> convoluteStrict(M0 m0, M1 m1, BaseMapX2.Inclusion inc) {
+	public static <K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>>
+	MapX2<K, V0, V1, M0, M1> convoluteStrict(M0 m0, M1 m1, BaseMapX2.Inclusion inc) {
 		return new BaseMapX2<K, V0, V1, M0, M1>(m0, m1, inc);
 	}
 
@@ -388,9 +521,8 @@ final public class Maps {
 			}
 		}
 
-		@Override public void putAll(Map<? extends K, ? extends X2<V0, V1>> map) {
-			throw null;
-		}
+		// No more efficient way than AbstractMap's default implementation which iterates over the map
+		// @Override public void putAll(Map<? extends K, ? extends X2<V0, V1>> map) { }
 
 		@Override public void clear() {
 			m0.clear();
@@ -449,11 +581,10 @@ final public class Maps {
 						K key = en.getKey();
 						X2<V0, V1> u = en.getValue();
 
-						if (!m0.containsKey(key) || !m1.containsKey(key)) { return false; }
 						V0 v0 = m0.get(key);
 						V1 v1 = m1.get(key);
-
-						return (v0 == null? u._0 == null: v0.equals(u._0)) && (v1 == null? u._1 == null: v1.equals(u._1));
+						return (v0 == null? m0.containsKey(key) && u._0 == null: v0.equals(u._0))
+						    && (v1 == null? m1.containsKey(key) && u._1 == null: v1.equals(u._1));
 					}
 
 					@Override public boolean remove(Object o) {
@@ -462,11 +593,11 @@ final public class Maps {
 						K key = en.getKey();
 						X2<V0, V1> u = en.getValue();
 
-						if (!m0.containsKey(key) || !m1.containsKey(key)) { return false; }
 						V0 v0 = m0.get(key);
 						V1 v1 = m1.get(key);
 
-						if ((v0 == null? u._0 == null: v0.equals(u._0)) && (v1 == null? u._1 == null: v1.equals(u._1))) {
+						if ((v0 == null? m0.containsKey(key) && u._0 == null: v0.equals(u._0))
+						 && (v1 == null? m1.containsKey(key) && u._1 == null: v1.equals(u._1))) {
 							m0.remove(key);
 							m1.remove(key);
 							return true;
@@ -482,6 +613,22 @@ final public class Maps {
 				};
 			}
 			return entries;
+		}
+
+	}
+
+	public static <K0, K1, V0, V1> U2MapX2<K0, K1, V0, V1> convoluteStrictUniteDisjoint(
+		Map<K0, V0> m00, Map<K1, V0> m10,
+		Map<K0, V1> m01, Map<K1, V1> m11,
+		BaseMapX2.Inclusion inc
+	) {
+		return new BaseU2MapX2<K0, K1, V0, V1>(m00, m10, m01, m11, inc);
+	}
+
+	public static class BaseU2MapX2<K0, K1, V0, V1> extends BaseMapX2<U2<K0, K1>, V0, V1, U2Map<K0, K1, V0>, U2Map<K0, K1, V1>> implements U2MapX2<K0, K1, V0, V1> {
+
+		public BaseU2MapX2(Map<K0, V0> m00, Map<K1, V0> m10, Map<K0, V1> m01, Map<K1, V1> m11, BaseMapX2.Inclusion inc) {
+			super(uniteDisjoint(m00, m10), uniteDisjoint(m01, m11), inc);
 		}
 
 	}

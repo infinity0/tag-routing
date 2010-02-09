@@ -49,8 +49,8 @@ final public class Tuple {
 			if (o == this) { return true; }
 			if (!(o instanceof X2) || o instanceof X3) { return false; }
 			@SuppressWarnings("unchecked") X2<T0, T1> x = (X2<T0, T1>)o;
-			return (_0 == null? x._0 == null: _0.equals(x._0)) &&
-			       (_1 == null? x._1 == null: _1.equals(x._1));
+			return (_0 == null? x._0 == null: _0.equals(x._0))
+			    && (_1 == null? x._1 == null: _1.equals(x._1));
 		}
 	}
 
@@ -66,9 +66,9 @@ final public class Tuple {
 			if (o == this) { return true; }
 			if (!(o instanceof X3) || o instanceof X4) { return false; }
 			@SuppressWarnings("unchecked") X3<T0, T1, T2> x = (X3<T0, T1, T2>)o;
-			return (_0 == null? x._0 == null: _0.equals(x._0)) &&
-			       (_1 == null? x._1 == null: _1.equals(x._1)) &&
-			       (_2 == null? x._2 == null: _2.equals(x._2));
+			return (_0 == null? x._0 == null: _0.equals(x._0))
+			    && (_1 == null? x._1 == null: _1.equals(x._1))
+			    && (_2 == null? x._2 == null: _2.equals(x._2));
 		}
 	}
 
@@ -84,10 +84,10 @@ final public class Tuple {
 			if (o == this) { return true; }
 			if (!(o instanceof X4) /*|| o instanceof X5*/) { return false; }
 			@SuppressWarnings("unchecked") X4<T0, T1, T2, T3> x = (X4<T0, T1, T2, T3>)o;
-			return (_0 == null? x._0 == null: _0.equals(x._0)) &&
-			       (_1 == null? x._1 == null: _1.equals(x._1)) &&
-			       (_2 == null? x._2 == null: _2.equals(x._2)) &&
-			       (_3 == null? x._3 == null: _3.equals(x._3));
+			return (_0 == null? x._0 == null: _0.equals(x._0))
+			    && (_1 == null? x._1 == null: _1.equals(x._1))
+			    && (_2 == null? x._2 == null: _2.equals(x._2))
+			    && (_3 == null? x._3 == null: _3.equals(x._3));
 		}
 	}
 

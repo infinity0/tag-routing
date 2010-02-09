@@ -81,7 +81,9 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	** neighours (both node and arc) will be returned.
 	*/
 	public Neighbour<T, A, U, W> getIncomingT(T dst) {
-		throw new UnsupportedOperationException("not implemented");
+		Map<T, W> in_arc = incoming.K0Map().get(dst);
+		Map<T, U> in_node = Maps.viewSubMap(node_map.K0Map(), in_arc.keySet());
+		return new Neighbour<T, A, U, W>(in_node, Collections.<A, U>emptyMap(), in_arc, Collections.<A, W>emptyMap());
 	}
 
 	/**
@@ -89,7 +91,9 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	** neighbours (both node and arc) will be returned.
 	*/
 	public Neighbour<T, A, U, W> getIncomingG(A dst) {
-		throw new UnsupportedOperationException("not implemented");
+		Map<T, W> in_arc = incoming.K1Map().get(dst);
+		Map<T, U> in_node = Maps.viewSubMap(node_map.K0Map(), in_arc.keySet());
+		return new Neighbour<T, A, U, W>(in_node, Collections.<A, U>emptyMap(), in_arc, Collections.<A, W>emptyMap());
 	}
 
 	/**
