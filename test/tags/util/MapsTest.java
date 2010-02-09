@@ -128,14 +128,14 @@ public class MapsTest extends TestCase {
 		Set<Integer> keys = new HashSet<Integer>();
 
 		for (int i=0; i<4; ++i) {
-			for (int j=0; j<s0+s1; ++j) { parent.put(j, true); }
+			for (int j=0; j<s0+s1; j+=2) { parent.put(j, true); }
 			for (int j=0; j<s0; ++j) { keys.add(j); }
 			Map<Integer, Boolean> subview = Maps.viewSubMap(parent, keys);
-			assertTrue(parent.size() == s0+s1);
-			assertTrue(subview.size() == s0);
-			CollectionTests.testIterable(subview.keySet(), s0);
+			assertTrue(parent.size() == (s0+s1+1)>>1);
+			assertTrue(subview.size() == (s0+1)>>1);
+			CollectionTests.testIterable(subview.keySet(), (s0+1)>>1);
 			assertTrue(subview.size() == 0);
-			assertTrue(parent.size() == s1);
+			assertTrue(parent.size() == ((s0+s1+1)>>1)-((s0+1)>>1));
 			parent.clear();
 			for (int j=0; j<s0; ++j) { parent.put(j, true); }
 			assertTrue(subview.size() == s0);
