@@ -131,9 +131,12 @@ public class TGraph<T, A, U, W> {
 
 		/**
 		** Number of neighbours. This delegates to {@link #arcAttrMap()}, and
-		** completes in O(1) time; the size() methods of {@link #attrMap()} and
-		** {@link #nodeAttrMap()} both complete in O(n) time, where n is the
-		** number of neighbours.
+		** completes in O(1) time.
+		**
+		** The size() methods of {@link #attrMap()} and {@link #nodeAttrMap()}
+		** both complete in O(n) time, where n is the number of neighbours. If
+		** not all of the nodes have been loaded, then those numbers will also
+		** be smaller than the number reported by this method.
 		*/
 		public int size() {
 			return arc_attr_map.size();

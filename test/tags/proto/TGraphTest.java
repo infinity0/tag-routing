@@ -17,8 +17,8 @@ public class TGraphTest extends TestCase {
 	public void testConstruction() {
 		for (int t=0; t<0x10; ++t) {
 		for (int g=0; g<0x10; ++g) {
-		for (int tt=t*t/4; tt<3*t*t/4; tt+=(t+t)>>1) {
-		for (int tg=t*g/4; tg<3*t*g/4; tg+=(t+g)>>1) {
+		for (int tt=t*t/8; tt<7*t*t/8; tt+=(t+t)>>1) {
+		for (int tg=t*g/8; tg<7*t*g/8; tg+=(t+g)>>1) {
 			TGraph<String, Integer, Probability, Probability> G = randomTGraph(t, g, tt, tg);
 
 			assertTrue(G.nodeMap().size() == t+g);
@@ -36,13 +36,34 @@ public class TGraphTest extends TestCase {
 				gtt += out_arc.K0Map().size();
 				gtg += out_arc.K1Map().size();
 			}
-
 			assertTrue(gtt == tt);
 			assertTrue(gtg == tg);
 		}
 		}
 		}
 		}
+	}
+
+	public void testLocalTGraph() throws java.io.IOException {
+		TGraph<String, Integer, Probability, Probability> G = randomTGraph(0x40, 0x10, 0x400, 0x40);
+		LocalTGraph<String, Integer, Probability, Probability> G_ = new LocalTGraph<String, Integer, Probability, Probability>();
+
+		// load all nodes
+		for (Map.Entry<String, Probability> en: G.nodeMap().K0Map().entrySet()) { G_.setNodeAttrT(en.getKey(), en.getValue()); }
+		for (Map.Entry<Integer, Probability> en: G.nodeMap().K1Map().entrySet()) { G_.setNodeAttrG(en.getKey(), en.getValue()); }
+
+		// empty since no arcs have been loaded
+		assertTrue(G_.getCompletedTags().isEmpty());
+
+		// load each node's out-arcs. this should cause the node to become "complete"
+		for (String tag: G.nodeMap().K0Map().keySet()) {
+			assertFalse(G_.getCompletedTags().contains(tag));
+			G_.setOutgoingT(tag, G.getOutgoingT(tag).arcAttrMap());
+			assertTrue(G_.getCompletedTags().contains(tag));
+			assertTrue(G_.getOutgoingT(tag).nodeAttrMap().size() == G_.getOutgoingT(tag).arcAttrMap().size());
+		}
+
+		// TODO NORM some more tests...
 	}
 
 	/**

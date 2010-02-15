@@ -44,7 +44,11 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	protected U2<T, A> updateCompletion(U2<T, A> subj) {
 		if (subj == null) { throw new NullPointerException(); }
 
-		Set<T> inc = incoming.get(subj).keySet();
+		Map<T, W> incm = incoming.get(subj);
+		if (incm == null) {
+			incoming.put(subj, incm = new HashMap<T, W>());
+		}
+		Set<T> inc = incm.keySet();
 
 		if (inc == null) { return subj; }
 		for (T tag: inc) {
