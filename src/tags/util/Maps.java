@@ -431,7 +431,7 @@ final public class Maps {
 	** Returns a view of the strict convolution of two maps. Only keys in both
 	** maps will be present in the view.
 	**
-	** @see #BaseMapX2
+	** @see BaseMapX2
 	*/
 	public static <K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>>
 	MapX2<K, V0, V1, M0, M1> convoluteStrict(M0 m0, M1 m1, BaseMapX2.Inclusion inc) {

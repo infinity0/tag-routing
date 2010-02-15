@@ -27,7 +27,7 @@ abstract public class CompositeIterable<S, T> implements Iterable<T> {
 	final protected Iterable<S> ib;
 
 	/**
-	** @see {@link #Mutability}
+	** @see Mutability
 	*/
 	final public Mutability mute;
 
@@ -40,7 +40,7 @@ abstract public class CompositeIterable<S, T> implements Iterable<T> {
 
 	/**
 	** Create a new iterable backed by the given iterable, with the given
-	** {@link #Mutability} setting. Note that mutability will only have an
+	** {@link Mutability} setting. Note that mutability will only have an
 	** effect if the backing iterator is also mutable.
 	*/
 	public CompositeIterable(Iterable<S> ib, Mutability mute) {
