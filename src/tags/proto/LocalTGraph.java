@@ -24,8 +24,6 @@ import java.io.IOException;
 */
 public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 
-	final protected U2Map<T, A, U> node_map = Maps.uniteDisjoint(new HashMap<T, U>(), new HashMap<A, U>());
-	final protected Map<T, U2Map<T, A, W>> outgoing = new HashMap<T, U2Map<T, A, W>>();
 	final protected U2Map<T, A, Map<T, W>> incoming = Maps.uniteDisjoint(new HashMap<T, Map<T, W>>(), new HashMap<A, Map<T, W>>());
 
 	final protected Map<T, Set<U2<T, A>>> incomplete = new HashMap<T, Set<U2<T, A>>>();
@@ -81,6 +79,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	** neighours (both node and arc) will be returned.
 	*/
 	public Neighbour<T, A, U, W> getIncomingT(T dst) {
+		// FIXME NORM should really be immutable view
 		Map<T, W> in_arc = incoming.K0Map().get(dst);
 		Map<T, U> in_node = Maps.viewSubMap(node_map.K0Map(), in_arc.keySet());
 		return new Neighbour<T, A, U, W>(in_node, Collections.<A, U>emptyMap(), in_arc, Collections.<A, W>emptyMap());
@@ -91,6 +90,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	** neighbours (both node and arc) will be returned.
 	*/
 	public Neighbour<T, A, U, W> getIncomingG(A dst) {
+		// FIXME NORM should really be immutable view
 		Map<T, W> in_arc = incoming.K1Map().get(dst);
 		Map<T, U> in_node = Maps.viewSubMap(node_map.K0Map(), in_arc.keySet());
 		return new Neighbour<T, A, U, W>(in_node, Collections.<A, U>emptyMap(), in_arc, Collections.<A, W>emptyMap());

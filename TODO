@@ -1,5 +1,7 @@
 
-- LocalTGraph and TGraph (pretty much done, maybe move node_map and outgoing into TGraph)
+- write tests for TGraph, LocalTGraph
+- (1/2 day)
+
 - LocalIndex and Index
 (1 day)
 

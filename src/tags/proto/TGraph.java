@@ -7,6 +7,7 @@ import tags.util.Maps.U2MapX2;
 
 import java.util.Set;
 import java.util.Map;
+import java.util.HashMap;
 import tags.util.Arc;
 
 /**
@@ -19,11 +20,18 @@ import tags.util.Arc;
 */
 public class TGraph<T, A, U, W> {
 
+	final protected U2Map<T, A, U> node_map = Maps.uniteDisjoint(new HashMap<T, U>(), new HashMap<A, U>());
+	final protected Map<T, U2Map<T, A, W>> outgoing = new HashMap<T, U2Map<T, A, W>>();
+
+	// NOTE
+	// node_map.K0Map().keySet() should always be the same as outgoing.keySet()
+
 	/**
 	** Returns a view of the nodes of this graph, each mapped to its attribute.
 	*/
 	public U2Map<T, A, U> nodeMap() {
-		throw new UnsupportedOperationException("not implemented");
+		// FIXME NORM should really be immutable view
+		return node_map;
 	}
 
 	/**
@@ -37,7 +45,12 @@ public class TGraph<T, A, U, W> {
 	** Returns the outgoing neighbours of the given source tag.
 	*/
 	public Neighbour<T, A, U, W> getOutgoingT(T src) {
-		throw new UnsupportedOperationException("not implemented");
+		// FIXME NORM should really be immutable view
+		Map<T, W> out_arc_0 = outgoing.get(src).K0Map();
+		Map<A, W> out_arc_1 = outgoing.get(src).K1Map();
+		Map<T, U> out_node_0 = Maps.viewSubMap(node_map.K0Map(), out_arc_0.keySet());
+		Map<A, U> out_node_1 = Maps.viewSubMap(node_map.K1Map(), out_arc_1.keySet());
+		return new Neighbour<T, A, U, W>(out_node_0, out_node_1, out_arc_0, out_arc_1);
 	}
 
 	/**
