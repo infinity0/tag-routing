@@ -2,11 +2,11 @@
 package tags.proto;
 
 import tags.util.Maps;
-import tags.util.Maps.U2Map;
-import tags.util.Union.U2;
 import tags.util.Union;
 import java.util.Collections;
 
+import tags.util.Union.U2;
+import tags.util.Maps.U2Map;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;

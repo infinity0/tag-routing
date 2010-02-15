@@ -1,6 +1,8 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.util;
 
+import tags.util.Tuple.X2;
+
 /**
 ** Immutable 2-tuple representing an arc.
 **
@@ -30,6 +32,14 @@ public class Arc<S, T> {
 
 	@Override public String toString() {
 		return "<" + src + ", " + dst + ">";
+	}
+
+	public static <S, T> Arc<S, T> arc(S src, T dst) {
+		return new Arc<S, T>(src, dst);
+	}
+
+	public static <S, T> Arc<S, T> fromTuple(X2<S, T> x) {
+		return new Arc<S, T>(x._0, x._1);
 	}
 
 }

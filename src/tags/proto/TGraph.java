@@ -2,13 +2,13 @@
 package tags.proto;
 
 import tags.util.Maps;
+
+import tags.util.Arc;
 import tags.util.Maps.U2Map;
 import tags.util.Maps.U2MapX2;
-
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
-import tags.util.Arc;
 
 /**
 ** Tag graph. DOCUMENT.
@@ -127,6 +127,16 @@ public class TGraph<T, A, U, W> {
 		*/
 		public U2Map<T, A, W> arcAttrMap() {
 			return arc_attr_map;
+		}
+
+		/**
+		** Number of neighbours. This delegates to {@link #arcAttrMap()}, and
+		** completes in O(1) time; the size() methods of {@link #attrMap()} and
+		** {@link #nodeAttrMap()} both complete in O(n) time, where n is the
+		** number of neighbours.
+		*/
+		public int size() {
+			return arc_attr_map.size();
 		}
 
 	}
