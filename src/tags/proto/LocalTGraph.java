@@ -17,6 +17,9 @@ import java.io.IOException;
 /**
 ** Local view of a {@link TGraph}.
 **
+** This implementation provides O(1) lookup for a node's outgoing and incoming
+** neighbours.
+**
 ** @param <T> Type of tag
 ** @param <A> Type of address
 ** @param <U> Type of node-attribute

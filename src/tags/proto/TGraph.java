@@ -13,6 +13,8 @@ import tags.util.Arc;
 /**
 ** Tag graph. DOCUMENT.
 **
+** This implementation provides O(1) lookup for a node's outgoing neighbours.
+**
 ** @param <T> Type of tag
 ** @param <A> Type of address
 ** @param <U> Type of node-attribute
@@ -25,6 +27,41 @@ public class TGraph<T, A, U, W> {
 
 	// NOTE
 	// node_map.K0Map().keySet() should always be the same as outgoing.keySet()
+
+	/**
+	** Creates a new empty tag graph.
+	*/
+	public TGraph() {
+		// pass
+	}
+
+	/**
+	** Creates a new tag graph from the given node-map and arc-map. All nodes
+	** referred to in the arc-map must be present in the node-map.
+	*/
+	public TGraph(U2Map<T, A, U> node_map, U2Map<Arc<T, T>, Arc<T, A>, W> arc_map) {
+		this.node_map.putAll(node_map);
+
+		for (T tag: node_map.K0Map().keySet()) {
+			this.outgoing.put(tag, Maps.uniteDisjoint(new HashMap<T, W>(), new HashMap<A, W>()));
+		}
+
+		for (Map.Entry<Arc<T, T>, W> en: arc_map.K0Map().entrySet()) {
+			Arc<T, T> arc = en.getKey();
+			if (!node_map.K0Map().containsKey(arc.src) || !node_map.K0Map().containsKey(arc.dst)) {
+				throw new IllegalArgumentException("arc refers to non-existant node");
+			}
+			this.outgoing.get(arc.src).K0Map().put(arc.dst, en.getValue());
+		}
+
+		for (Map.Entry<Arc<T, A>, W> en: arc_map.K1Map().entrySet()) {
+			Arc<T, A> arc = en.getKey();
+			if (!node_map.K0Map().containsKey(arc.src) || !node_map.K1Map().containsKey(arc.dst)) {
+				throw new IllegalArgumentException("arc refers to non-existant node");
+			}
+			this.outgoing.get(arc.src).K1Map().put(arc.dst, en.getValue());
+		}
+	}
 
 	/**
 	** Returns a view of the nodes of this graph, each mapped to its attribute.
