@@ -38,6 +38,8 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	** have all been loaded.
 	*/
 	public Set<T> getCompletedTags() {
+		// TODO HIGH this might need to contain tags that we have loaded, that are
+		// NOT part of the TGraph
 		return complete_immute;
 	}
 
