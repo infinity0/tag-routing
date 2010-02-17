@@ -46,7 +46,8 @@ public class TGraphTest extends TestCase {
 
 	public void testLocalTGraph() throws java.io.IOException {
 		TGraph<String, Integer, Probability, Probability> G = randomTGraph(0x40, 0x10, 0x400, 0x40);
-		LocalTGraph<String, Integer, Probability, Probability> G_ = new LocalTGraph<String, Integer, Probability, Probability>();
+		// FIXME HIGH when we properly integrate LocalTGraph into DataSources, we'll need something other than null here
+		LocalTGraph<String, Integer, Probability, Probability> G_ = new LocalTGraph<String, Integer, Probability, Probability>(null, null);
 
 		// load all nodes
 		for (Map.Entry<String, Probability> en: G.nodeMap().K0Map().entrySet()) { G_.setNodeAttrT(en.getKey(), en.getValue()); }

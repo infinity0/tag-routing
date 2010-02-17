@@ -28,6 +28,16 @@ import java.io.IOException;
 public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 
 	/**
+	** Remote address of this local view
+	*/
+	final public A addr;
+
+	/**
+	** The {@link DataSources} collection that this local view is part of.
+	*/
+	final protected DataSources<A, LocalTGraph<T, A, U, W>> src;
+
+	/**
 	** Map of nodes (tags and tgraphs) to their incoming tags and their
 	** arc-weights.
 	*/
@@ -36,6 +46,11 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	final protected Map<T, Set<U2<T, A>>> incomplete = new HashMap<T, Set<U2<T, A>>>();
 	final protected Set<T> complete = new HashSet<T>();
 	final protected Set<T> complete_immute = Collections.unmodifiableSet(complete);
+
+	public LocalTGraph(A addr, DataSources<A, LocalTGraph<T, A, U, W>> src) {
+		this.addr = addr;
+		this.src = src;
+	}
 
 	/**
 	** Returns the set of tags for which itself, its out-arcs and its out-nodes
@@ -169,6 +184,16 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 
 		// calculate incomplete neighbours
 		putIncomplete(subj, out);
+	}
+
+	private static LocalViewFactory stdFactory = new LocalViewFactory() {
+		@Override @SuppressWarnings("unchecked") public Object createLocalView(Object addr, DataSources src) {
+			return new LocalIndex(addr, src);
+		}
+	};
+
+	@SuppressWarnings("unchecked") public static <T, A, U, W> LocalViewFactory<A, LocalTGraph<T, A, U, W>> getFactory() {
+		return (LocalViewFactory<A, LocalTGraph<T, A, U, W>>)stdFactory;
 	}
 
 }

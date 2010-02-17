@@ -21,6 +21,12 @@ public class DataSources<R, L> {
 
 	final protected Map<R, L> in_use = new HashMap<R, L>();
 
+	final protected LocalViewFactory<R, L> view_fac;
+
+	public DataSources(LocalViewFactory<R, L> view_fac) {
+		this.view_fac = view_fac;
+	}
+
 	/**
 	** Returns the set of seed sources, each mapped to its local view.
 	*/
@@ -68,6 +74,7 @@ public class DataSources<R, L> {
 	** TODO maybe make this call inferScore() or something.
 	*/
 	public void useSource(R src) {
+		L view = view_fac.createLocalView(src, this);
 		throw new UnsupportedOperationException("not implemented");
 	}
 

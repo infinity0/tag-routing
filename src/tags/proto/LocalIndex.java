@@ -12,14 +12,24 @@ import java.util.HashMap;
 ** Local view of an {@link Index}.
 **
 ** @param <T> Type of tag
-** @param <A> Type of index address
+** @param <A> Type of document/index address
 ** @param <W> Type of arc-attribute
 */
 public class LocalIndex<T, A, W> extends Index<T, A, W> {
 
+	/**
+	** Remote address of this local view.
+	*/
+	final public A addr;
+
+	/**
+	** The {@link DataSources} collection that this local view is part of.
+	*/
+	final protected DataSources<A, LocalIndex<T, A, W>> src;
+
 	// TODO NOW not entirely sure what this will be for, yet ¬.¬
 	// we'll see what's needed when we code up Routing.
-	final protected Set<A> src;
+	// final protected Set<A> src;
 
 	/**
 	** Map of nodes (documents and indexes) to their incoming tags and their
@@ -27,8 +37,9 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 	*/
 	final protected U2Map<A, A, Map<T, W>> incoming = Maps.uniteDisjoint(new HashMap<A, Map<T, W>>(), new HashMap<A, Map<T, W>>());
 
-	public LocalIndex() {
-		throw new UnsupportedOperationException("not implemented");
+	public LocalIndex(A addr, DataSources<A, LocalIndex<T, A, W>> src) {
+		this.addr = addr;
+		this.src = src;
 	}
 
 	// implementation notes:
@@ -73,6 +84,16 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 	*/
 	public void setDataSource(A index) {
 		throw new UnsupportedOperationException("not implemented");
+	}
+
+	private static LocalViewFactory stdFactory = new LocalViewFactory() {
+		@Override @SuppressWarnings("unchecked") public Object createLocalView(Object addr, DataSources src) {
+			return new LocalIndex(addr, src);
+		}
+	};
+
+	@SuppressWarnings("unchecked") public static <T, A, W> LocalViewFactory<A, LocalIndex<T, A, W>> getFactory() {
+		return (LocalViewFactory<A, LocalIndex<T, A, W>>)stdFactory;
 	}
 
 }
