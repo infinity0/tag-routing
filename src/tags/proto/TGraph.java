@@ -13,7 +13,7 @@ import java.util.HashMap;
 /**
 ** Tag graph. DOCUMENT.
 **
-** This implementation provides O(1) lookup for a node's outgoing neighbours.
+** This implementation provides O(1) lookup for a tag's outgoing neighbours.
 **
 ** @param <T> Type of tag
 ** @param <A> Type of address
@@ -22,7 +22,15 @@ import java.util.HashMap;
 */
 public class TGraph<T, A, U, W> {
 
+	/**
+	** Map of nodes (tags and tgraphs) to their node-weights.
+	*/
 	final protected U2Map<T, A, U> node_map = Maps.uniteDisjoint(new HashMap<T, U>(), new HashMap<A, U>());
+
+	/**
+	** Map of tags to their outgoing nodes (tags and tgraphs) and their
+	** arc-weights.
+	*/
 	final protected Map<T, U2Map<T, A, W>> outgoing = new HashMap<T, U2Map<T, A, W>>();
 
 	// NOTE

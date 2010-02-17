@@ -27,6 +27,10 @@ import java.io.IOException;
 */
 public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 
+	/**
+	** Map of nodes (tags and tgraphs) to their incoming tags and their
+	** arc-weights.
+	*/
 	final protected U2Map<T, A, Map<T, W>> incoming = Maps.uniteDisjoint(new HashMap<T, Map<T, W>>(), new HashMap<A, Map<T, W>>());
 
 	final protected Map<T, Set<U2<T, A>>> incomplete = new HashMap<T, Set<U2<T, A>>>();
