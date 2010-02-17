@@ -36,20 +36,23 @@ public class DataSources<R, L> {
 	}
 
 	/**
-	** Set an outgoing arc for the given pair of sources.
+	** Set outgoing arcs for the given source.
 	*/
-	public void setOutgoing(R src, R dst) {
+	public void setOutgoing(R src, Set<R> out_node) {
 		Set<R> out = outgoing.get(src);
 		if (out == null) {
 			outgoing.put(src, out = new HashSet<R>());
 		}
-		out.add(dst);
+		out.addAll(out_node);
+		// FIXME HIGH need to create entries in both incoming AND outgoing
 
-		Set<R> in = incoming.get(dst);
-		if (in == null) {
-			incoming.put(dst, in = new HashSet<R>());
+		for (R dst: out_node) {
+			Set<R> in = incoming.get(dst);
+			if (in == null) {
+				incoming.put(dst, in = new HashSet<R>());
+			}
+			in.add(src);
 		}
-		in.add(src);
 	}
 
 	/**
@@ -72,10 +75,18 @@ public class DataSources<R, L> {
 	** Mark a data source as being in use.
 	**
 	** TODO maybe make this call inferScore() or something.
+	**
+	** @return The blank local view that was created
+	** @throws IllegalArgumentException if {@code src} is not a known source
 	*/
-	public void useSource(R src) {
+	public L useSource(R src) {
+		if (!outgoing.containsKey(src)) {
+			throw new IllegalArgumentException("unknown source");
+		}
 		L view = view_fac.createLocalView(src, this);
-		throw new UnsupportedOperationException("not implemented");
+		in_use.put(src, view);
+		// TODO NORM bunch of other stuff needed too, probably
+		return view;
 	}
 
 	public Map<R, L> getSources() {

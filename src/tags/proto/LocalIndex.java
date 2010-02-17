@@ -37,7 +37,14 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 	*/
 	final protected U2Map<A, A, Map<T, W>> incoming = Maps.uniteDisjoint(new HashMap<A, Map<T, W>>(), new HashMap<A, Map<T, W>>());
 
+	/**
+	** Constructs a new local view of the given remote address, attached to the
+	** given {@link DataSources} collection.
+	**
+	** @throws NullPointerException if either parameter is {@code null}
+	*/
 	public LocalIndex(A addr, DataSources<A, LocalIndex<T, A, W>> src) {
+		if (addr == null || src == null) { throw new NullPointerException(); }
 		this.addr = addr;
 		this.src = src;
 	}

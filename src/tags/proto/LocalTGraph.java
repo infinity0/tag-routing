@@ -47,7 +47,14 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	final protected Set<T> complete = new HashSet<T>();
 	final protected Set<T> complete_immute = Collections.unmodifiableSet(complete);
 
+	/**
+	** Constructs a new local view of the given remote address, attached to the
+	** given {@link DataSources} collection.
+	**
+	** @throws NullPointerException if either parameter is {@code null}
+	*/
 	public LocalTGraph(A addr, DataSources<A, LocalTGraph<T, A, U, W>> src) {
+		if (addr == null || src == null) { throw new NullPointerException(); }
 		this.addr = addr;
 		this.src = src;
 	}
@@ -57,8 +64,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	** have all been loaded.
 	*/
 	public Set<T> getCompletedTags() {
-		// TODO HIGH this might need to contain tags that we have loaded, that are
-		// NOT part of the TGraph
+		// TODO HIGH this might need to contain tags that we have loaded, that are NOT part of the TGraph
 		return complete_immute;
 	}
 
@@ -170,6 +176,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 		}
 
 		outgoing.put(subj, out);
+		src.setOutgoing(addr, out.K1Map().keySet());
 
 		// calculate incoming arcs
 		for (Map.Entry<U2<T, A>, W> en: out.entrySet()) {
@@ -188,7 +195,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 
 	private static LocalViewFactory stdFactory = new LocalViewFactory() {
 		@Override @SuppressWarnings("unchecked") public Object createLocalView(Object addr, DataSources src) {
-			return new LocalIndex(addr, src);
+			return new LocalTGraph(addr, src);
 		}
 	};
 

@@ -45,9 +45,10 @@ public class TGraphTest extends TestCase {
 	}
 
 	public void testLocalTGraph() throws java.io.IOException {
+		DataSources<Integer, LocalTGraph<String, Integer, Probability, Probability>> src = new DataSources<Integer, LocalTGraph<String, Integer, Probability, Probability>>(LocalTGraph.<String, Integer, Probability, Probability>getFactory());
 		TGraph<String, Integer, Probability, Probability> G = randomTGraph(0x40, 0x10, 0x400, 0x40);
-		// FIXME HIGH when we properly integrate LocalTGraph into DataSources, we'll need something other than null here
-		LocalTGraph<String, Integer, Probability, Probability> G_ = new LocalTGraph<String, Integer, Probability, Probability>(null, null);
+		src.setOutgoing(-1, Collections.<Integer>emptySet());
+		LocalTGraph<String, Integer, Probability, Probability> G_ = src.useSource(-1);
 
 		// load all nodes
 		for (Map.Entry<String, Probability> en: G.nodeMap().K0Map().entrySet()) { G_.setNodeAttrT(en.getKey(), en.getValue()); }
@@ -79,7 +80,7 @@ public class TGraphTest extends TestCase {
 		U2Map<Arc<String, String>, Arc<String, Integer>, Probability> arc_map = Maps.uniteDisjoint(new HashMap<Arc<String, String>, Probability>(), new HashMap<Arc<String, Integer>, Probability>());
 
 		for (int i=0; i<t; ++i) { node_map.K0Map().put(Generators.rndKey(), Generators.rndProb(0, 0.0625)); }
-		for (int i=0; i<g; ++i) { node_map.K1Map().put(Generators.rndInt(), Generators.rndProb(0, 0.5)); }
+		for (int i=0; i<g; ++i) { node_map.K1Map().put(i, Generators.rndProb(0, 0.5)); }
 
 		List<String> ls_t = Arrays.asList(node_map.K0Map().keySet().toArray(new String[t]));
 		List<Integer> ls_g = Arrays.asList(node_map.K1Map().keySet().toArray(new Integer[g]));
