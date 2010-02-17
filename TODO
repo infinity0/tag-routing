@@ -1,5 +1,10 @@
 - LocalIndex and Index
-(1 day)
+(1/2 day)
+
+- LocalTGraph & LocalIndex need to hold its own <A> id, and point to a DataSources class.
+  it needs to call source.setOutgoing(R, R) everytime it receives a setOutgoingT()
+- finish up DataSources
+(1/2 day)
 
 - ProbabilityEntropyTGraphComposer
 - add a tags.name.TagScorer, add that to the design document

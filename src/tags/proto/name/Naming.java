@@ -94,6 +94,8 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	*/
 	protected Set<T> getCompletedTags() {
 		throw new UnsupportedOperationException("not implemented");
+		// need to make LocalTGraph.getCompletedTags() return absent tags too
+		// return intersection of all sources.getCompletedTags(),
 	}
 
 	/**
@@ -103,6 +105,8 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	*/
 	protected TGraph<T, A, U, W> composeTGraph() {
 		throw new UnsupportedOperationException("not implemented");
+		// for all tags in getCompletedTags(), compose their nodes / arcs and
+		// create a new TGraph out of it
 	}
 
 	/**
@@ -152,6 +156,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 		}
 
 		// 2. Loop
+		// TODO HIGH need to get rid of tgraph nodes already in use as a data source
 		while (queue.isEmpty()) {
 			DijkstraNode cur = queue.poll();
 			U2<T, A> node = cur.node;

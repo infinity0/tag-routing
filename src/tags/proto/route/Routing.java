@@ -85,8 +85,16 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 		// - for all T in Set<T>, select all "short" paths in layer_lo.getAddressScheme()
 	}
 
+	/**
+	** Returns a map of results to their scores.
+	*/
 	public Map<A, W> getRankedResults() {
 		throw new UnsupportedOperationException("not implemented");
+		// for each result:
+		//     an index will point to that result from a given set of tags
+		//
+		// use the index-score, the tags scores and the arc scores, to work out
+		// an aggregate score for the result
 	}
 
 }
