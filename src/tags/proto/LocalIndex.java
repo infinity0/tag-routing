@@ -1,7 +1,12 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto;
 
+import tags.util.Maps;
+
 import tags.util.Maps.U2Map;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
 ** Local view of an {@link Index}.
