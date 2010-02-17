@@ -32,14 +32,23 @@ public class Index<T, A, W> {
 	*/
 	final protected Map<T, U2Map<A, A, W>> outgoing = new HashMap<T, U2Map<A, A, W>>();
 
+	/**
+	** Returns the set of tags referred to by this index.
+	*/
 	public Set<T> nodeSetT() {
 		return outgoing.keySet();
 	}
 
+	/**
+	** Returns the set of documents referred to by this index.
+	*/
 	public Set<A> nodeSetD() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
+	/**
+	** Returns the set of indexes referred to by this index.
+	*/
 	public Set<A> nodeSetH() {
 		throw new UnsupportedOperationException("not implemented");
 	}
