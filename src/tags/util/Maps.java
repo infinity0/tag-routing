@@ -272,9 +272,9 @@ final public class Maps {
 	**
 	** @see Maps.BaseU2Map
 	*/
-	public static <K0, K1, V>
-	U2Map<K0, K1, V> uniteDisjoint(Map<K0, V> m0, Map<K1, V> m1) {
-		return new BaseU2Map<K0, K1, V>(m0, m1);
+	public static <K0, K1, V, M0 extends Map<K0, V>, M1 extends Map<K1, V>>
+	U2MMap<K0, K1, V, M0, M1> uniteDisjoint(M0 m0, M1 m1) {
+		return new BaseU2Map<K0, K1, V, M0, M1>(m0, m1);
 	}
 
 	/**
@@ -286,20 +286,20 @@ final public class Maps {
 	** TODO LOW atm this class iterates through m1, then m0. Would be nice to
 	** be able to define a custom iteration order through the constructor.
 	*/
-	public static class BaseU2Map<K0, K1, V>
+	public static class BaseU2Map<K0, K1, V, M0 extends Map<K0, V>, M1 extends Map<K1, V>>
 	extends AbstractMap<U2<K0, K1>, V>
-	implements U2Map<K0, K1, V> {
+	implements U2MMap<K0, K1, V, M0, M1> {
 
-		final protected Map<K0, V> m0;
-		final protected Map<K1, V> m1;
+		final protected M0 m0;
+		final protected M1 m1;
 
-		public BaseU2Map(Map<K0, V> m0, Map<K1, V> m1) {
+		public BaseU2Map(M0 m0, M1 m1) {
 			this.m0 = m0;
 			this.m1 = m1;
 		}
 
-		@Override public Map<K0, V> K0Map() { return m0; }
-		@Override public Map<K1, V> K1Map() { return m1; }
+		@Override public M0 K0Map() { return m0; }
+		@Override public M1 K1Map() { return m1; }
 
 		@Override public int size() {
 			return m0.size() + m1.size();
@@ -648,10 +648,13 @@ final public class Maps {
 		// for convience, like "typedef"
 	}
 
-	public static class BaseU2MapX2<K0, K1, V0, V1> extends BaseMapX2<U2<K0, K1>, V0, V1, U2Map<K0, K1, V0>, U2Map<K0, K1, V1>> implements U2MapX2<K0, K1, V0, V1> {
+	public static class BaseU2MapX2<K0, K1, V0, V1>
+	extends BaseMapX2<U2<K0, K1>, V0, V1, U2Map<K0, K1, V0>, U2Map<K0, K1, V1>>
+	implements U2MapX2<K0, K1, V0, V1> {
 
+		@SuppressWarnings("unchecked") // unnecessary unchecked casts below are WORKAROUND for incomplete java type inference
 		public BaseU2MapX2(Map<K0, V0> m00, Map<K1, V0> m10, Map<K0, V1> m01, Map<K1, V1> m11, BaseMapX2.Inclusion inc) {
-			super(uniteDisjoint(m00, m10), uniteDisjoint(m01, m11), inc);
+			super((U2Map<K0, K1, V0>)uniteDisjoint(m00, m10), (U2Map<K0, K1, V1>)uniteDisjoint(m01, m11), inc);
 		}
 
 	}

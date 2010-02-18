@@ -51,7 +51,9 @@ public class TGraph<T, A, U, W> {
 		this.node_map.putAll(node_map);
 
 		for (T tag: node_map.K0Map().keySet()) {
-			this.outgoing.put(tag, Maps.uniteDisjoint(new HashMap<T, W>(), new HashMap<A, W>()));
+			// unnecessary local variable definition is WORKAROUND for incomplete java type inference
+			U2Map<T, A, W> u2map = Maps.uniteDisjoint(new HashMap<T, W>(), new HashMap<A, W>());
+			this.outgoing.put(tag, u2map);
 		}
 
 		for (Map.Entry<Arc<T, T>, W> en: arc_map.K0Map().entrySet()) {
