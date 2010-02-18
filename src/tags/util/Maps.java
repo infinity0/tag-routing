@@ -79,7 +79,7 @@ final public class Maps {
 	**
 	** OPT LOW making it a view seems quite complicated...
 	*/
-	public static <K, V> Set<K> domain(Iterable<Map<K, V>> maps) {
+	public static <K, V> Set<K> domain(Iterable<? extends Map<K, V>> maps) {
 		int s = 0;
 		for (Map<K, V> m: maps) { s += m.size(); }
 		Set<K> domain = new HashSet<K>(s<<1);

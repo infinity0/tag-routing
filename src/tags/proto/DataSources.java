@@ -33,7 +33,7 @@ public class DataSources<R, L, S> {
 	}
 
 	/**
-	** Returns a map of seeds to their scores
+	** Returns a map view of seeds to their scores
 	*/
 	public Map<R, S> seedMap() {
 		// FIXME NORM should really be immutable view
@@ -41,7 +41,7 @@ public class DataSources<R, L, S> {
 	}
 
 	/**
-	** Returns a map of sources to their local views.
+	** Returns a map view of sources to their local views.
 	*/
 	public Map<R, L> localMap() {
 		// FIXME NORM should really be immutable view
@@ -49,11 +49,19 @@ public class DataSources<R, L, S> {
 	}
 
 	/**
-	** Returns a map of sources to their scores.
+	** Returns a map view of sources to their scores.
 	*/
 	public Map<R, S> scoreMap() {
 		// FIXME NORM should really be immutable view
 		return score;
+	}
+
+	/**
+	** Returns a map view of local views to their scores.
+	*/
+	public Map<L, S> localScoreMap() {
+		// TODO HIGH
+		throw new UnsupportedOperationException("not implemented");
 	}
 
 	/**
