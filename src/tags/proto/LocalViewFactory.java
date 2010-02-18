@@ -9,6 +9,6 @@ public interface LocalViewFactory<R, L> {
 	/**
 	** Creates a new empty local view of the given remote data structure.
 	*/
-	public L createLocalView(R addr, DataSources<R, L> src);
+	public L createLocalView(R addr, DataSources<R, L, ?> src);
 
 }

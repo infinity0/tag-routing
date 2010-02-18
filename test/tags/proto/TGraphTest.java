@@ -5,6 +5,8 @@ import junit.framework.TestCase;
 import tags.util.Generators;
 import tags.util.Maps;
 
+import tags.util.SPUProbabilityInferer;
+
 import tags.util.Probability;
 import tags.util.Arc;
 import static tags.util.Tuple.X2;
@@ -45,7 +47,11 @@ public class TGraphTest extends TestCase {
 	}
 
 	public void testLocalTGraph() throws java.io.IOException {
-		DataSources<Integer, LocalTGraph<String, Integer, Probability, Probability>> src = new DataSources<Integer, LocalTGraph<String, Integer, Probability, Probability>>(LocalTGraph.<String, Integer, Probability, Probability>getFactory());
+		DataSources<Integer, LocalTGraph<String, Integer, Probability, Probability>, Probability> src = new
+		DataSources<Integer, LocalTGraph<String, Integer, Probability, Probability>, Probability>(
+			LocalTGraph.<String, Integer, Probability, Probability>getFactory(),
+			new SPUProbabilityInferer()
+		);
 		TGraph<String, Integer, Probability, Probability> G = randomTGraph(0x40, 0x10, 0x400, 0x40);
 		src.setOutgoing(-1, Collections.<Integer>emptySet());
 		LocalTGraph<String, Integer, Probability, Probability> G_ = src.useSource(-1);

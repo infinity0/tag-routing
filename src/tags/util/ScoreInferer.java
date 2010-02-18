@@ -16,6 +16,9 @@ public interface ScoreInferer<S> {
 	** for which the endorsements are already known, and the link structure of
 	** the network of nodes.
 	**
+	** If the subject node is a seed node, implementations must always return
+	** {@code seeds.get(subj)}, or some equivalent.
+	**
 	** @param incoming Map of nodes to their incoming neighbours
 	** @param seeds Map of seed nodes to their scores
 	** @param subj Node to infer a score for

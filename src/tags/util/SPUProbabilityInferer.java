@@ -29,6 +29,7 @@ public class SPUProbabilityInferer implements ScoreInferer<Probability> {
 	*/
 	public <A> Probability inferScore(Map<A, Set<A>> incoming, Map<A, Probability> seeds, A subj) {
 		if (!incoming.containsKey(subj)) { return Probability.MIN_VALUE; }
+		if (seeds.containsKey(subj)) { return seeds.get(subj); }
 
 		// Dijkstra's algorithm. OPT NORM could possibly put this and the
 		// implementation in Naming into the same code

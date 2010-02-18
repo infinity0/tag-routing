@@ -28,7 +28,7 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 	/**
 	** The {@link DataSources} collection that this local view is part of.
 	*/
-	final protected DataSources<A, LocalIndex<T, A, W>> src;
+	final protected DataSources<A, LocalIndex<T, A, W>, ?> src;
 
 	// TODO NOW not entirely sure what this will be for, yet ¬.¬
 	// we'll see what's needed when we code up Routing.
@@ -46,7 +46,7 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 	**
 	** @throws NullPointerException if either parameter is {@code null}
 	*/
-	public LocalIndex(A addr, DataSources<A, LocalIndex<T, A, W>> src) {
+	public LocalIndex(A addr, DataSources<A, LocalIndex<T, A, W>, ?> src) {
 		if (addr == null || src == null) { throw new NullPointerException(); }
 		this.addr = addr;
 		this.src = src;

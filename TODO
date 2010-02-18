@@ -1,8 +1,7 @@
-- LocalIndex and Index
-(1/2 day)
+- LocalIndex and Index (pretty much done)
 
-- LocalTGraph & LocalIndex need to call source.setOutgoing(R, R) everytime it receives a setOutgoingT()
 - finish up DataSources and use this in Naming and Routing instead of the src maps, etc
+- get rid of TGraphScorer / IndexScorer and use generic SourceScorer instead
 (1/2 day)
 
 - ProbabilityEntropyTGraphComposer

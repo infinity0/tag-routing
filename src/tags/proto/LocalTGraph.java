@@ -35,7 +35,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	/**
 	** The {@link DataSources} collection that this local view is part of.
 	*/
-	final protected DataSources<A, LocalTGraph<T, A, U, W>> src;
+	final protected DataSources<A, LocalTGraph<T, A, U, W>, ?> src;
 
 	/**
 	** Map of nodes (tags and tgraphs) to their incoming tags and their
@@ -53,7 +53,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	**
 	** @throws NullPointerException if either parameter is {@code null}
 	*/
-	public LocalTGraph(A addr, DataSources<A, LocalTGraph<T, A, U, W>> src) {
+	public LocalTGraph(A addr, DataSources<A, LocalTGraph<T, A, U, W>, ?> src) {
 		if (addr == null || src == null) { throw new NullPointerException(); }
 		this.addr = addr;
 		this.src = src;
