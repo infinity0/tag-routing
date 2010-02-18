@@ -60,8 +60,9 @@ public class DataSources<R, L, S> {
 	** Returns a map view of local views to their scores.
 	*/
 	public Map<L, S> localScoreMap() {
-		// TODO HIGH
+		// FIXME NORM should really be immutable view
 		throw new UnsupportedOperationException("not implemented");
+		//return local_score;
 	}
 
 	/**
@@ -83,7 +84,7 @@ public class DataSources<R, L, S> {
 	/**
 	** Set outgoing arcs for the given source.
 	**
-	** **NOTE**: this method must be called whenever outgoing arcs are loaded
+	** '''NOTE''': this method must be called whenever outgoing arcs are loaded
 	** into the local view of the given source.
 	*/
 	public void setOutgoing(R src, Set<R> out_node) {

@@ -11,10 +11,13 @@ import java.util.Map;
 */
 public class PTable<A, S> {
 
+	//final protected A addr;
+
 	final protected Map<A, S> tgraphs;
 	final protected Map<A, S> indexes;
 
-	public PTable(Map<A, S> tgraphs, Map<A, S> indexes) {
+	public PTable(/*A addr, */Map<A, S> tgraphs, Map<A, S> indexes) {
+		//this.addr = addr;
 		this.tgraphs = tgraphs;
 		this.indexes = indexes;
 	}

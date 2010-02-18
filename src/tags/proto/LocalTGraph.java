@@ -113,7 +113,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	/**
 	** Load a given subject tgraph, and its node-weight.
 	**
-	** **NOTE**: This should be called for every single node loaded from the
+	** '''NOTE''': This should be called for every single node loaded from the
 	** remote structure; if the node was not found, call this with {@code null}
 	** for the weight.
 	**
@@ -132,7 +132,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 
 	/**
 	** Load a given subject tag's outgoing arcs, and their weights. This must
-	** be called **after** {@link #setNodeAttrT(Object, Object)}.
+	** be called '''after''' {@link #setNodeAttrT(Object, Object)}.
 	**
 	** @param subj The tag
 	** @param out A map of arc-targets to arc-weights

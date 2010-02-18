@@ -111,7 +111,7 @@ final public class Maps {
 	** submap. Ie. the view's keyset is always a subset of, or equal to, the
 	** given {@code keys}.
 	**
-	** '''Note''': the {@link Map#size()} method has linear time complexity.
+	** '''NOTE''': the {@link Map#size()} method has linear time complexity.
 	*/
 	public static <K, V> Map<K, V> viewSubMap(final Map<K, V> parent, final Set<K> keys) {
 		return new AbstractMap<K, V>() {
@@ -245,47 +245,26 @@ final public class Maps {
 	** @param <V> Type of value
 	*/
 	public static interface U2Map<K0, K1, V> extends Map<U2<K0, K1>, V> {
-
-		/**
-		** Returns a view of the map containing only keys of type {@code K0}.
-		*/
+		/** Returns a view of the map containing only keys of type {@code K0}. */
 		public Map<K0, V> K0Map();
-
-		/**
-		** Returns a view of the map containing only keys of type {@code K1}.
-		*/
+		/** Returns a view of the map containing only keys of type {@code K1}. */
 		public Map<K1, V> K1Map();
-
 	}
 
 	/**
-	** A {@link Map} which has two values for each key.
+	** A {@link Maps.U2Map} which uses a more specific type of component map.
 	**
-	** @param <K> Type of key
-	** @param <V0> Type of value 0
-	** @param <V1> Type of value 1
+	** @param <K0> Type of key 0
+	** @param <K1> Type of key 1
+	** @param <V> Type of value
+	** @param <M0> Type of map 0
+	** @param <M1> Type of map 1
 	*/
-	public static interface MapX2<K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>> extends Map<K, X2<V0, V1>> {
-
-		/**
-		** Returns a view of the map containing only values of type {@code V0}.
-		*/
-		public M0 MapV0();
-
-		/**
-		** Returns a view of the map containing only values of type {@code V1}.
-		*/
-		public M1 MapV1();
-
-	}
-
-	/**
-	** DOCUMENT.
-	**
-	** TODO LOW possibly make this also {@code extend U2Map<K0, K1, X2<V0, V1>, MapX2<K0, V0, V1>, MapX2<K1, V0, V1>>}
-	*/
-	public static interface U2MapX2<K0, K1, V0, V1> extends MapX2<U2<K0, K1>, V0, V1, U2Map<K0, K1, V0>, U2Map<K0, K1, V1>> {
-		// for convience, like "typedef"
+	public static interface U2MMap<K0, K1, V, M0 extends Map<K0, V>, M1 extends Map<K1, V>> extends U2Map<K0, K1, V> {
+		/** {@inheritDoc} */
+		@Override public M0 K0Map();
+		/** {@inheritDoc} */
+		@Override public M1 K1Map();
 	}
 
 	/**
@@ -293,7 +272,8 @@ final public class Maps {
 	**
 	** @see Maps.BaseU2Map
 	*/
-	public static <K0, K1, V> U2Map<K0, K1, V> uniteDisjoint(Map<K0, V> m0, Map<K1, V> m1) {
+	public static <K0, K1, V>
+	U2Map<K0, K1, V> uniteDisjoint(Map<K0, V> m0, Map<K1, V> m1) {
 		return new BaseU2Map<K0, K1, V>(m0, m1);
 	}
 
@@ -306,7 +286,9 @@ final public class Maps {
 	** TODO LOW atm this class iterates through m1, then m0. Would be nice to
 	** be able to define a custom iteration order through the constructor.
 	*/
-	public static class BaseU2Map<K0, K1, V> extends AbstractMap<U2<K0, K1>, V> implements U2Map<K0, K1, V> {
+	public static class BaseU2Map<K0, K1, V>
+	extends AbstractMap<U2<K0, K1>, V>
+	implements U2Map<K0, K1, V> {
 
 		final protected Map<K0, V> m0;
 		final protected Map<K1, V> m1;
@@ -428,20 +410,52 @@ final public class Maps {
 	}
 
 	/**
+	** A {@link Map} which has two values for each key.
+	**
+	** @param <K> Type of key
+	** @param <V0> Type of value 0
+	** @param <V1> Type of value 1
+	*/
+	public static interface MapX2<K, V0, V1> extends Map<K, X2<V0, V1>> {
+		/** Returns a view of the map containing only values of type {@code V0}. */
+		public Map<K, V0> MapV0();
+		/** Returns a view of the map containing only values of type {@code V1}. */
+		public Map<K, V1> MapV1();
+	}
+
+	/**
+	** A {@link Maps.MapX2} which uses a more specific type of component map.
+	**
+	** @param <K> Type of key
+	** @param <V0> Type of value 0
+	** @param <V1> Type of value 1
+	** @param <M0> Type of map 0
+	** @param <M1> Type of map 1
+	*/
+	public static interface MMapX2<K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>> extends MapX2<K, V0, V1> {
+		/** {@inheritDoc} */
+		@Override public M0 MapV0();
+		/** {@inheritDoc} */
+		@Override public M1 MapV1();
+	}
+
+	/**
 	** Returns a view of the strict convolution of two maps. Only keys in both
 	** maps will be present in the view.
 	**
-	** @see BaseMapX2
+	** @see Maps.BaseMapX2
 	*/
 	public static <K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>>
-	MapX2<K, V0, V1, M0, M1> convoluteStrict(M0 m0, M1 m1, BaseMapX2.Inclusion inc) {
+	MMapX2<K, V0, V1, M0, M1> convoluteStrict(M0 m0, M1 m1, BaseMapX2.Inclusion inc) {
 		return new BaseMapX2<K, V0, V1, M0, M1>(m0, m1, inc);
 	}
 
 	/**
 	** DOCUMENT.
 	*/
-	public static class BaseMapX2<K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>> extends AbstractMap<K, X2<V0, V1>> implements MapX2<K, V0, V1, M0, M1> {
+	public static class BaseMapX2<K, V0, V1, M0 extends Map<K, V0>, M1 extends Map<K, V1>>
+	extends AbstractMap<K, X2<V0, V1>>
+	implements MMapX2<K, V0, V1, M0, M1> {
 
 		public enum Inclusion {
 			/** Both maps will always have the same keys */
@@ -623,6 +637,15 @@ final public class Maps {
 		BaseMapX2.Inclusion inc
 	) {
 		return new BaseU2MapX2<K0, K1, V0, V1>(m00, m10, m01, m11, inc);
+	}
+
+	/**
+	** DOCUMENT.
+	**
+	** TODO LOW possibly make this also {@code extend U2Map<K0, K1, X2<V0, V1>, MapX2<K0, V0, V1>, MapX2<K1, V0, V1>>}
+	*/
+	public static interface U2MapX2<K0, K1, V0, V1> extends MMapX2<U2<K0, K1>, V0, V1, U2Map<K0, K1, V0>, U2Map<K0, K1, V1>> {
+		// for convience, like "typedef"
 	}
 
 	public static class BaseU2MapX2<K0, K1, V0, V1> extends BaseMapX2<U2<K0, K1>, V0, V1, U2Map<K0, K1, V0>, U2Map<K0, K1, V1>> implements U2MapX2<K0, K1, V0, V1> {

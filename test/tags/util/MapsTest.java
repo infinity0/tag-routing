@@ -80,7 +80,7 @@ public class MapsTest extends TestCase {
 	public void testConvoluteStrict(int s0, int s1) {
 		Map<Long, String> m0 = new HashMap<Long, String>();
 		Map<Long, Integer> m1 = new HashMap<Long, Integer>();
-		MapX2<Long, String, Integer, Map<Long, String>, Map<Long, Integer>> mm = Maps.convoluteStrict(m0, m1, Maps.BaseMapX2.Inclusion.SUB0SUP1);
+		MapX2<Long, String, Integer> mm = Maps.convoluteStrict(m0, m1, Maps.BaseMapX2.Inclusion.SUB0SUP1);
 
 		for (int i=0; i<4; ++i) {
 			assertTrue(mm.size() == 0);

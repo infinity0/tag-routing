@@ -1,5 +1,7 @@
 - LocalIndex and Index (pretty much done)
 
+- review Maps.viewSubMap
+
 - implement methods in Routing, and finish off Naming
 - ProbabilityLookupRanker
 (1 day)
