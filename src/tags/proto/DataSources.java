@@ -42,13 +42,14 @@ public class DataSources<R, L> {
 		Set<R> out = outgoing.get(src);
 		if (out == null) {
 			outgoing.put(src, out = new HashSet<R>());
+			incoming.put(src, new HashSet<R>());
 		}
 		out.addAll(out_node);
-		// FIXME HIGH need to create entries in both incoming AND outgoing
 
 		for (R dst: out_node) {
 			Set<R> in = incoming.get(dst);
 			if (in == null) {
+				outgoing.put(dst, new HashSet<R>());
 				incoming.put(dst, in = new HashSet<R>());
 			}
 			in.add(src);

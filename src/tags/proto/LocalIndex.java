@@ -3,10 +3,13 @@ package tags.proto;
 
 import tags.util.Maps;
 
+import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
+
+import java.io.IOException;
 
 /**
 ** Local view of an {@link Index}.
@@ -66,11 +69,13 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 	}
 
 	public Map<T, W> getIncomingDarcAttrMap(A doc) {
-		throw new UnsupportedOperationException("not implemented");
+		// FIXME NORM should really be immutable view
+		return incoming.K0Map().get(doc);
 	}
 
 	public Map<T, W> getIncomingHarcAttrMap(A idx) {
-		throw new UnsupportedOperationException("not implemented");
+		// FIXME NORM should really be immutable view
+		return incoming.K1Map().get(idx);
 	}
 
 	/**
@@ -78,11 +83,29 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 	**
 	** @param subj The tag
 	** @param out A map of arc-targets to arc-weights
+	** @throws IllegalStateException if the out-arcs are already loaded
+	** @throws IOException if the remote data structure is inconsistent
 	*/
-	public void setOutgoingT(T subj, U2Map<A, A, W> out) {
-		throw new UnsupportedOperationException("not implemented");
-		// we need to distinguish between arcs to indexes already used as a
-		// data source, and new indexes
+	public void setOutgoingT(T subj, U2Map<A, A, W> out) throws IOException {
+		if (outgoing.containsKey(subj)) { throw new IllegalStateException("already loaded out-arcs for tag " + subj); }
+		if (out == null) {
+			// TODO HIGH this needs to be put somewhere else too
+			return;
+		}
+
+		outgoing.put(subj, out);
+		src.setOutgoing(addr, out.K1Map().keySet());
+
+		// calculate incoming arcs
+		for (Map.Entry<U2<A, A>, W> en: out.entrySet()) {
+			U2<A, A> node = en.getKey();
+			W wgt = en.getValue();
+			Map<T, W> inc = incoming.get(node);
+			if (inc == null) {
+				incoming.put(node, inc = new HashMap<T, W>());
+			}
+			inc.put(subj, wgt);
+		}
 	}
 
 	/**
