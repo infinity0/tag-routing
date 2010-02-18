@@ -1,15 +1,12 @@
 - LocalIndex and Index (pretty much done)
 
-- finish up DataSources and use this in Naming and Routing instead of the src maps, etc
-- get rid of TGraphScorer / IndexScorer and use generic SourceScorer instead
-(1/2 day)
+- implement methods in Routing, and finish off Naming
+- ProbabilityLookupRanker
+(1 day)
 
 - ProbabilityEntropyTGraphComposer
 - add a tags.name.TagScorer, add that to the design document
-(1 day)
-
-- implement methods in Routing
-- ProbabilityLookupRanker
+- maybe add a tags.rout.IndexComposer, add that to the design document
 (1 day)
 
 - StoreControl should really be in the form of an asynchronous ObjectProcessor

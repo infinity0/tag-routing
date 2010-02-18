@@ -9,6 +9,7 @@ import tags.util.LayerInterfaceLo;
 import tags.proto.route.Routing;
 import tags.proto.cont.Contact;
 
+import tags.proto.DataSources;
 import tags.proto.LocalTGraph;
 import tags.proto.TGraph;
 import tags.proto.AddressScheme;
@@ -39,10 +40,8 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 
 	final protected DistanceMetric<?, U, W> mod_dmtr;
 	final protected TGraphComposer<U, W, S> mod_tgr_cmp;
-	final protected TGraphScorer<U, W, S> mod_tgr_scr;
 
-	final protected Map<A, LocalTGraph<T, A, U, W>> source;
-	final protected Map<A, S> score;
+	final protected DataSources<A, LocalTGraph<T, A, U, W>, S> source;
 	final protected LocalTGraph<T, A, U, W> graph;
 	final protected AddressScheme<T, A> scheme;
 
@@ -50,16 +49,13 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 		Query<?, T> query,
 		StoreControl<?, T, A, U, W, S, ?> sctl,
 		DistanceMetric<?, U, W> mod_dmtr,
-		TGraphComposer<U, W, S> mod_tgr_cmp,
-		TGraphScorer<U, W, S> mod_tgr_scr
+		TGraphComposer<U, W, S> mod_tgr_cmp
 	) {
 		super(query, sctl);
 		this.mod_dmtr = mod_dmtr;
 		this.mod_tgr_cmp = mod_tgr_cmp;
-		this.mod_tgr_scr = mod_tgr_scr;
 		// TODO NOW
 		this.source = null;
-		this.score = null;
 		this.graph = null;
 		this.scheme = null;
 	}
@@ -90,7 +86,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 
 	/**
 	** Get the set of tags which have been completed in all the tgraphs that we
-	** are using as a data source (ie. source.values()).
+	** are using as a data source (ie. source.localMap().values()).
 	*/
 	protected Set<T> getCompletedTags() {
 		throw new UnsupportedOperationException("not implemented");
@@ -99,9 +95,8 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	}
 
 	/**
-	** Make a new {@link #graph} from {@link #source}, {@link #score}. To be
-	** called whenever the {@linkplain #getCompletedTags() completed set}
-	** changes.
+	** Make a new {@link #graph} from {@link #source}. To be called whenever
+	** the {@linkplain #getCompletedTags() completed set} changes.
 	*/
 	protected TGraph<T, A, U, W> composeTGraph() {
 		throw new UnsupportedOperationException("not implemented");

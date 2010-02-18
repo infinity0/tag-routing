@@ -8,8 +8,8 @@ import tags.util.LayerInterfaceHi;
 import tags.util.LayerInterfaceLo;
 import tags.proto.name.Naming;
 
+import tags.proto.DataSources;
 import tags.proto.LocalIndex;
-
 import java.util.Set;
 import java.util.Map;
 
@@ -26,23 +26,17 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 
 	protected Naming<T, A, ?, W, S> layer_lo;
 
-	final protected IndexScorer<W, S> mod_idx_scr;
-
-	final protected Map<A, LocalIndex<T, A, W>> source;
-	final protected Map<A, S> score;
+	final protected DataSources<A, LocalIndex<T, A, W>, S> source;
 	final protected Map<A, Set<T>> lookup;
 	final protected Map<A, LocalIndex<T, A, W>> result;
 
 	public Routing(
 		Query<?, T> query,
-		StoreControl<?, T, A, ?, W, S, ?> sctl,
-		IndexScorer<W, S> mod_idx_scr
+		StoreControl<?, T, A, ?, W, S, ?> sctl
 	) {
 		super(query, sctl);
-		this.mod_idx_scr = mod_idx_scr;
 		// TODO NOW
 		this.source = null;
-		this.score = null;
 		this.lookup = null;
 		this.result = null;
 	}

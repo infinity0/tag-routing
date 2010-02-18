@@ -25,7 +25,6 @@ public class DataSources<R, L, S> {
 	final protected Map<R, S> score = new HashMap<R, S>();
 
 	final protected LocalViewFactory<R, L> view_fac;
-
 	final protected ScoreInferer<S> score_inf;
 
 	public DataSources(LocalViewFactory<R, L> view_fac, ScoreInferer<S> score_inf) {
@@ -75,6 +74,9 @@ public class DataSources<R, L, S> {
 
 	/**
 	** Set outgoing arcs for the given source.
+	**
+	** **NOTE**: this method must be called whenever outgoing arcs are loaded
+	** into the local view of the given source.
 	*/
 	public void setOutgoing(R src, Set<R> out_node) {
 		Set<R> out = outgoing.get(src);
@@ -94,12 +96,17 @@ public class DataSources<R, L, S> {
 		}
 	}
 
+	public void setSeeds(Map<R, S> seed_score) {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
 	/**
-	** Mark a data source as being in use.
+	** Mark a data source as being in use, and return a blank local view for
+	** it.
 	**
-	** TODO maybe make this call inferScore() or something.
+	** TODO maybe make this call score_inf.inferScore() or something.
 	**
-	** @return The blank local view that was created
+	** @return The empty local view that was created
 	** @throws IllegalArgumentException if {@code src} is not a known source
 	*/
 	public L useSource(R src) {
