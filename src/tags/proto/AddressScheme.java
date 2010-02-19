@@ -58,12 +58,21 @@ public class AddressScheme<T, A> {
 
 	// TODO HIGH code some getter methods for these
 
+	public Set<T> getAllTags() {
+		// FIXME NORM should really be immutable view
+		return outgoing.keySet();
+	}
+
 	/**
 	** Returns all tags nearer than the given node, which lie on a greedy path
 	** between it and the seed tag.
 	*/
 	public Set<T> getPreceding(U2<T, A> node) {
 		return Collections.unmodifiableSet(preceding.get(node));
+	}
+
+	public Set<T> getPrecedingT(T tag) {
+		return Collections.unmodifiableSet(preceding.K0Map().get(tag));
 	}
 
 	public void pushNodeT(T tag, Set<T> inc) {

@@ -122,7 +122,7 @@ public class DataSources<R, L, S> {
 	** @throws IllegalArgumentException if {@code src} is not a known source
 	*/
 	public L useSource(R src) {
-		if (!outgoing.containsKey(src)) {
+		if (!incoming.containsKey(src)) { // FIXME HIGH and not in seeds
 			throw new IllegalArgumentException("unknown source");
 		}
 		L view = view_fac.createLocalView(src, this);

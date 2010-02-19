@@ -8,10 +8,13 @@ import tags.util.LayerInterfaceHi;
 import tags.util.LayerInterfaceLo;
 import tags.proto.name.Naming;
 
+import tags.proto.AddressScheme;
 import tags.proto.DataSources;
 import tags.proto.LocalIndex;
 import java.util.Set;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.HashMap;
 
 /**
 ** DOCUMENT.
@@ -59,12 +62,27 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	** - address scheme is updated
 	** - we add a source
 	*/
-	public Map<A, Set<T>> getLookups() {
-		throw new UnsupportedOperationException("not implemented");
-		// if A in seeds, select all T in scheme
-		// otherwise
-		// - find Set<T> that we reached A by, using data from this.source
-		// - for all T in Set<T>, select all "short" paths in layer_lo.getAddressScheme()
+	public Map<A, Set<T>> getLookups(AddressScheme<T, A> scheme) {
+		Map<A, Set<T>> lookups = new HashMap<A, Set<T>>();
+		for (A idx: source.localMap().keySet()) {
+			if (source.seedMap().containsKey(idx)) {
+				// select all T in scheme
+				lookups.put(idx, scheme.getAllTags());
+			} else {
+				Set<T> tags = new HashSet<T>();
+				for (A in_node: source.getIncoming(idx)) {
+					LocalIndex<T, A, W> view = source.localMap().get(in_node);
+					assert view.getIncomingHarcAttrMap(idx) != null;
+					// find Set<T> that we reached A by
+					for (T tag: view.getIncomingHarcAttrMap(idx).keySet()) {
+						// for all T in Set<T>, select all "short" paths in layer_lo.getAddressScheme()
+						tags.addAll(scheme.getPrecedingT(tag));
+					}
+				}
+				lookups.put(idx, tags);
+			}
+		}
+		return lookups;
 	}
 
 	/**
