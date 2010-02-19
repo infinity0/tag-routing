@@ -11,6 +11,7 @@ import tags.proto.name.Naming;
 import tags.proto.AddressScheme;
 import tags.proto.DataSources;
 import tags.proto.LocalIndex;
+import tags.proto.Index;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashSet;
@@ -29,15 +30,19 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 
 	protected Naming<T, A, ?, W, S> layer_lo;
 
+	final protected IndexComposer<W, S> mod_idx_cmp;
+
 	final protected DataSources<A, LocalIndex<T, A, W>, S> source;
 	final protected Map<A, Set<T>> lookup;
 	final protected Map<A, LocalIndex<T, A, W>> result;
 
 	public Routing(
 		Query<?, T> query,
-		StoreControl<?, T, A, ?, W, S, ?> sctl
+		StoreControl<?, T, A, ?, W, S, ?> sctl,
+		IndexComposer<W, S> mod_idx_cmp
 	) {
 		super(query, sctl);
+		this.mod_idx_cmp = mod_idx_cmp;
 		// TODO NOW
 		this.source = null;
 		this.lookup = null;
@@ -85,17 +90,25 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 		return lookups;
 	}
 
+
+	/**
+	** DOCUMENT
+	*/
+	public Index<T, A, W> composeIndex() {
+		throw new UnsupportedOperationException("not implemented");
+		// follow basically what Naming.composeTGraph() does
+	}
+
 	/**
 	** Returns a map of results to their scores.
 	*/
-	public Map<A, W> getRankedResults() {
-		// TODO HIGH probably will need to make an IndexComposer out of this
+	public Map<A, W> getResults(AddressScheme<T, A> scheme) {
 		throw new UnsupportedOperationException("not implemented");
-		// for each result:
-		//     an index will point to that result from a given set of tags
+		// for each result dst
+		//   - select from its incoming arcs a, the nearest tag a.src to the root tag of the query
+		//   - add an arc (root, dst) with weight a.src.weight * a.weight, to the results map
 		//
-		// use the index-score, the tags scores and the arc scores, to work out
-		// an aggregate score for the result
+		// return results map
 	}
 
 }
