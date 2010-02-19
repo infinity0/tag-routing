@@ -1,12 +1,14 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto.cont;
 
-import tags.proto.MultiParts;
+import tags.proto.Viewers;
 import tags.util.ValueComposer;
 import tags.util.MeanProbabilityComposer;
-import tags.util.Probability;
+import tags.util.MapViewer;
 
 import tags.proto.PTable;
+import tags.util.Maps.MapX2;
+import tags.util.Probability;
 import java.util.Map;
 
 /**
@@ -21,6 +23,16 @@ public class ProtoPTableComposer implements PTableComposer<Probability, Probabil
 	** not in the map's {@link Map#keySet()}).
 	*/
 	final public double alpha;
+
+	/**
+	** The {@link MeanProbabilityComposer#alpha(Map, Object)} method of this
+	** composer just returns {@link #alpha}.
+	*/
+	final public ValueComposer<Probability, Probability> val_cmp = new MeanProbabilityComposer() {
+		@Override protected <A> double alpha(Map<A, Probability> src, A item) {
+			return alpha;
+		}
+	};
 
 	/**
 	** Construct a new composer with an {@link #alpha} of 2^-4.
@@ -44,27 +56,17 @@ public class ProtoPTableComposer implements PTableComposer<Probability, Probabil
 	}
 
 	/**
-	** The {@link MeanProbabilityComposer#alpha(Map, Object)} method of this
-	** composer just returns {@link #alpha}.
-	*/
-	final public ValueComposer<Probability, Probability> val_cmp = new MeanProbabilityComposer() {
-		@Override protected <K> double alpha(Map<K, Probability> src, K item) {
-			return alpha;
-		}
-	};
-
-	/**
 	** {@inheritDoc}
 	*/
-	@Override public <A> Probability composePTableGNode(Map<PTable<A, Probability>, Probability> src_score, A item) {
-		return val_cmp.composeValue(MultiParts.viewTGraphs(src_score), item);
+	@Override public <I, A> Probability composePTableGNode(MapX2<I, PTable<A, Probability>, Probability> src_score, A item) {
+		return val_cmp.composeValue(src_score, item, Viewers.<A, Probability>PTableTGraphs());
 	}
 
 	/**
 	** {@inheritDoc}
 	*/
-	@Override public <A> Probability composePTableHNode(Map<PTable<A, Probability>, Probability> src_score, A item) {
-		return val_cmp.composeValue(MultiParts.viewIndexes(src_score), item);
+	@Override public <I, A> Probability composePTableHNode(MapX2<I, PTable<A, Probability>, Probability> src_score, A item) {
+		return val_cmp.composeValue(src_score, item, Viewers.<A, Probability>PTableIndexes());
 	}
 
 }

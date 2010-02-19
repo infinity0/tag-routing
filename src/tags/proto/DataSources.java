@@ -2,7 +2,9 @@
 package tags.proto;
 
 import tags.util.ScoreInferer;
+import tags.util.Maps;
 
+import tags.util.Maps.MapX2;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashSet;
@@ -13,6 +15,7 @@ import java.util.HashMap;
 **
 ** @param <R> Type of remote address
 ** @param <L> Type of local view
+** @param <S> Type of score
 */
 public class DataSources<R, L, S> {
 
@@ -23,6 +26,7 @@ public class DataSources<R, L, S> {
 
 	final protected Map<R, L> local = new HashMap<R, L>();
 	final protected Map<R, S> score = new HashMap<R, S>();
+	final protected MapX2<R, L, S> local_score = Maps.convoluteStrict(local, score, Maps.BaseMapX2.Inclusion.SUB1SUP0);
 
 	final protected LocalViewFactory<R, L> view_fac;
 	final protected ScoreInferer<S> score_inf;
@@ -59,10 +63,9 @@ public class DataSources<R, L, S> {
 	/**
 	** Returns a map view of local views to their scores.
 	*/
-	public Map<L, S> localScoreMap() {
+	public MapX2<R, L, S> localScoreMap() {
 		// FIXME NORM should really be immutable view
-		throw new UnsupportedOperationException("not implemented");
-		//return local_score;
+		return local_score;
 	}
 
 	/**

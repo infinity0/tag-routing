@@ -11,6 +11,7 @@ import tags.proto.MultiParts;
 import tags.util.Maps;
 
 import tags.proto.PTable;
+import tags.util.Maps.MapX2;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -33,7 +34,8 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 
 	final protected PTableComposer<S, R> mod_ptb_cmp;
 
-	final protected Map<PTable<A, S>, R> src_score;
+	// TODO NORM maybe use a DataSources for this too...
+	final protected MapX2<I, PTable<A, S>, R> source;
 	final protected PTable<A, S> table;
 
 	final protected Iterable<Map<A, S>> src_score_g;
@@ -47,10 +49,10 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 		super(query, sctl);
 		this.mod_ptb_cmp = mod_ptb_cmp;
 		// TODO NOW
-		this.src_score = null;
+		this.source = null;
 		this.table = null;
-		this.src_score_g = MultiParts.iterTGraphs(src_score.keySet());
-		this.src_score_h = MultiParts.iterIndexes(src_score.keySet());
+		this.src_score_g = MultiParts.iterTGraphs(source.MapV0().values());
+		this.src_score_h = MultiParts.iterIndexes(source.MapV0().values());
 	}
 
 	@Override public void setLayerHi(Naming<?, A, ?, ?, S> layer_hi) {
@@ -70,16 +72,16 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 	}
 
 	/**
-	** Make a new {@link #table} from {@link #src_score}. To be called
+	** Make a new {@link #table} from {@link #source}. To be called
 	** whenever the latter changes.
 	*/
 	protected PTable<A, S> composePTable() {
 		Map<A, S> g = new HashMap<A, S>(), h = new HashMap<A, S>();
 		for (A addr: Maps.domain(src_score_g)) {
-			g.put(addr, mod_ptb_cmp.composePTableGNode(src_score, addr));
+			g.put(addr, mod_ptb_cmp.composePTableGNode(source, addr));
 		}
 		for (A addr: Maps.domain(src_score_h)) {
-			g.put(addr, mod_ptb_cmp.composePTableHNode(src_score, addr));
+			g.put(addr, mod_ptb_cmp.composePTableHNode(source, addr));
 		}
 		return new PTable<A, S>(g, h);
 	}

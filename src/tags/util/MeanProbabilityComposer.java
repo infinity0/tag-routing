@@ -1,6 +1,8 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.util;
 
+import tags.util.Maps.MapX2;
+import tags.util.Tuple.X2;
 import java.util.Map;
 
 /**
@@ -17,16 +19,16 @@ abstract public class MeanProbabilityComposer implements ValueComposer<Probabili
 	** @throws NullPointerException if any of the data sources map the item to
 	**         a {@code null} probability
 	*/
-	@Override public <K> Probability composeValue(Map<Map<K, Probability>, Probability> src_score, K item) {
+	@Override public <R, L, K> Probability composeValue(MapX2<R, L, Probability> source, K item, MapViewer<L, Map<K, Probability>> viewer) {
 		double top = 0, div = 0;
-		for (Map.Entry<Map<K, Probability>, Probability> en: src_score.entrySet()) {
-			Map<K, Probability> src = en.getKey();
-			Probability score = en.getValue();
-			if (src.containsKey(item)) {
-				top += score.val * src.get(item).val;
+		for (X2<L, Probability> x: source.values()) {
+			Map<K, Probability> view = viewer.mapFor(x._0);
+			Probability score = x._1;
+			if (view.containsKey(item)) {
+				top += score.val * view.get(item).val;
 				div += score.val;
 			} else {
-				div += score.val * alpha(src, item);
+				div += score.val * alpha(view, item);
 			}
 		}
 		return new Probability(top/div);
@@ -36,6 +38,6 @@ abstract public class MeanProbabilityComposer implements ValueComposer<Probabili
 	** Returns the probability that the the given data source implicitly judges
 	** the given item to be worthless.
 	*/
-	abstract protected <K> double alpha(Map<K, Probability> src, K item);
+	abstract protected <K> double alpha(Map<K, Probability> view, K item);
 
 }
