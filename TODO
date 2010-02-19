@@ -1,15 +1,17 @@
 - LocalIndex and Index (pretty much done)
-
 - review Maps.viewSubMap
+(0 day)
 
 - implement methods in Routing, and finish off Naming
 - ProbabilityLookupRanker
+- add a tags.rout.IndexComposer, add that to the design document. this is basically just "ranking".
 (1 day)
 
 - ProbabilityEntropyTGraphComposer
 - add a tags.name.TagScorer, add that to the design document
-- maybe add a tags.rout.IndexComposer, add that to the design document
+- ProbabilityIndexComposer
 (1 day)
 
+- link everything together n' shiii
 - StoreControl should really be in the form of an asynchronous ObjectProcessor
 (3 days maybe)

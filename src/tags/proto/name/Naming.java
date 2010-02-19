@@ -114,7 +114,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 				return item.nodeMap();
 			}
 		})) {
-			node_map.put(node, mod_tgr_cmp.composeTGraphNode(source.localScoreMap(), node));
+			node_map.put(node, mod_tgr_cmp.composeNode(source.localScoreMap(), node));
 		}
 
 		// iterates through all arcs present in every source
@@ -123,7 +123,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 				return item.arcMap();
 			}
 		})) {
-			arc_map.put(arc, mod_tgr_cmp.composeTGraphArc(source.localScoreMap(), arc));
+			arc_map.put(arc, mod_tgr_cmp.composeArc(source.localScoreMap(), arc));
 		}
 
 		return new TGraph<T, A, U, W>(node_map, arc_map);

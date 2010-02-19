@@ -56,18 +56,6 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	/**
 	** This is to be called whenever:
 	**
-	** - we add a source
-	** - a source's lookups have completed
-	*/
-	public Map<A, S> getIndexScores() {
-		throw new UnsupportedOperationException("not implemented");
-		// copy seeds
-		// for each A in source not in seeds, infer its score
-	}
-
-	/**
-	** This is to be called whenever:
-	**
 	** - address scheme is updated
 	** - we add a source
 	*/
@@ -83,6 +71,7 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	** Returns a map of results to their scores.
 	*/
 	public Map<A, W> getRankedResults() {
+		// TODO HIGH probably will need to make an IndexComposer out of this
 		throw new UnsupportedOperationException("not implemented");
 		// for each result:
 		//     an index will point to that result from a given set of tags

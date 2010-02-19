@@ -17,8 +17,8 @@ import java.util.Map;
 */
 public interface TGraphComposer<U, W, S> {
 
-	public <T, A> U composeTGraphNode(MapX2<A, LocalTGraph<T, A, U, W>, S> source, U2<T, A> node);
+	public <T, A> U composeNode(MapX2<A, LocalTGraph<T, A, U, W>, S> source, U2<T, A> node);
 
-	public <T, A> W composeTGraphArc(MapX2<A, LocalTGraph<T, A, U, W>, S> source, U2<Arc<T, T>, Arc<T, A>> arc);
+	public <T, A> W composeArc(MapX2<A, LocalTGraph<T, A, U, W>, S> source, U2<Arc<T, T>, Arc<T, A>> arc);
 
 }
