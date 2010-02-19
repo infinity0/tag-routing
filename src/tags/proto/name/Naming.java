@@ -106,6 +106,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	protected TGraph<T, A, U, W> composeTGraph() {
 		U2Map<T, A, U> node_map = Maps.uniteDisjoint(new HashMap<T, U>(), new HashMap<A, U>());
 		U2Map<Arc<T, T>, Arc<T, A>, W> arc_map = Maps.uniteDisjoint(new HashMap<Arc<T, T>, W>(), new HashMap<Arc<T, A>, W>());
+		// TODO HIGH probably move the CompositeIterable shit into MultiParts
 
 		// iterates through all nodes present in every source
 		for (U2<T, A> node: Maps.domain(new CompositeIterable<LocalTGraph<T, A, U, W>, U2Map<T, A, U>>(source.localMap().values()) {

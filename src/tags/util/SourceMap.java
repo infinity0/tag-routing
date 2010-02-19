@@ -18,12 +18,13 @@ import java.util.Map;
 ** they use the default implementations of {@link AbstractMap}. The only
 ** "efficient" methods here are {@link #entrySet()} and {@link #size()}.
 **
+** @deprecated No longer used
 ** @param <T> Type of object to view as a map
 ** @param <S> Type of score (weight of a data source)
 ** @param <K> Type of item
 ** @param <V> Type of value (weight of a data item)
 */
-abstract public class SourceMap<T, S, K, V> extends AbstractMap<Map<K, V>, S> implements Map<Map<K, V>, S> {
+@Deprecated abstract public class SourceMap<T, S, K, V> extends AbstractMap<Map<K, V>, S> implements Map<Map<K, V>, S> {
 
 	final public Map<T, S> smap;
 
