@@ -47,8 +47,9 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	final protected TGraphComposer<U, W, S> mod_tgr_cmp;
 
 	final protected DataSources<A, LocalTGraph<T, A, U, W>, S> source;
-	final protected LocalTGraph<T, A, U, W> graph;
-	final protected AddressScheme<T, A> scheme;
+
+	protected LocalTGraph<T, A, U, W> graph;
+	protected AddressScheme<T, A> scheme;
 
 	public Naming(
 		Query<?, T> query,

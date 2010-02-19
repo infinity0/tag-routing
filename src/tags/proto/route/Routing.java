@@ -34,7 +34,8 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 
 	final protected DataSources<A, LocalIndex<T, A, W>, S> source;
 	final protected Map<A, Set<T>> lookup;
-	final protected Map<A, LocalIndex<T, A, W>> result;
+
+	protected LocalIndex<T, A, W> index;
 
 	public Routing(
 		Query<?, T> query,
@@ -46,7 +47,6 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 		// TODO NOW
 		this.source = null;
 		this.lookup = null;
-		this.result = null;
 	}
 
 	@Override public void setLayerLo(Naming<T, A, ?, W, S> layer_lo) {
@@ -101,9 +101,22 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 
 	/**
 	** Returns a map of results to their scores.
+	**
+	** TODO arguably this could be in a separate module instead of a fixed
+	** "pick the nearest tag".
 	*/
 	public Map<A, W> getResults(AddressScheme<T, A> scheme) {
-		throw new UnsupportedOperationException("not implemented");
+		Map<A, W> results = new HashMap<A, W>();
+		for (A dst: index.nodeSetD()) {
+			Map<T, W> in_tag = index.getIncomingDarcAttrMap(dst);
+			assert in_tag != null && !in_tag.isEmpty();
+			T nearest = scheme.getNearest(in_tag.keySet());
+			W wgt = null; // TODO HIGH combine(nearest.weight, in_tag.get(nearest));
+			results.put(dst, wgt);
+		}
+		return results;
+		// TODO HIGH and same for nodeSetH()
+
 		// for each result dst
 		//   - select from its incoming arcs a, the nearest tag a.src to the root tag of the query
 		//   - add an arc (root, dst) with weight a.src.weight * a.weight, to the results map

@@ -58,6 +58,22 @@ public class AddressScheme<T, A> {
 
 	// TODO HIGH code some getter methods for these
 
+	/**
+	** @throws NullPointerException if {@code tags} is {@code null}.
+	*/
+	public T getNearest(Set<T> tags) {
+		T near = null;
+		int min = Integer.MAX_VALUE;
+		for (T tag: tags) {
+			int ti = node_map.K0Map().get(tag);
+			if (ti < min) {
+				near = tag;
+				min = ti;
+			}
+		}
+		return near;
+	}
+
 	public Set<T> getAllTags() {
 		// FIXME NORM should really be immutable view
 		return outgoing.keySet();
