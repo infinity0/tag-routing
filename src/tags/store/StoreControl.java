@@ -17,14 +17,14 @@ import java.util.concurrent.Executor;
 ** @param <U> Type of node-attribute
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
-** @param <R> Type of identity-score
+** @param <Z> Type of identity-score
 */
-public interface StoreControl<I, T, A, U, W, S, R> {
+public interface StoreControl<I, T, A, U, W, S, Z> {
 
 	/**
 	** Retrieves the friends (and their score-ratings) of a given identity.
 	*/
-	public Map<I, R> getFriends(I id);
+	public Map<I, Z> getFriends(I id);
 
 	/**
 	** Retrieves the {@link PTable} for a given identity.

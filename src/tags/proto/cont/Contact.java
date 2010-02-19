@@ -25,17 +25,17 @@ import java.util.HashMap;
 ** @param <I> Type of identity
 ** @param <A> Type of address
 ** @param <S> Type of score
-** @param <R> Type of identity-score
+** @param <Z> Type of identity-score
 */
-public class Contact<I, A, S, R> extends LayerService<Query<I, ?>, StoreControl<I, ?, A, ?, ?, S, R>> implements
+public class Contact<I, A, S, Z> extends LayerService<Query<I, ?>, StoreControl<I, ?, A, ?, ?, S, Z>> implements
 LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 
 	protected Naming<?, A, ?, ?, S> layer_hi;
 
-	final protected PTableComposer<S, R> mod_ptb_cmp;
+	final protected PTableComposer<S, Z> mod_ptb_cmp;
 
 	// TODO NORM maybe use a DataSources for this too...
-	final protected MapX2<I, PTable<A, S>, R> source;
+	final protected MapX2<I, PTable<A, S>, Z> source;
 	final protected PTable<A, S> table;
 
 	final protected Iterable<Map<A, S>> src_score_g;
@@ -43,8 +43,8 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 
 	public Contact(
 		Query<I, ?> query,
-		StoreControl<I, ?, A, ?, ?, S, R> sctl,
-		PTableComposer<S, R> mod_ptb_cmp
+		StoreControl<I, ?, A, ?, ?, S, Z> sctl,
+		PTableComposer<S, Z> mod_ptb_cmp
 	) {
 		super(query, sctl);
 		this.mod_ptb_cmp = mod_ptb_cmp;
