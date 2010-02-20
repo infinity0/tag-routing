@@ -2,16 +2,23 @@
 - review Maps.viewSubMap
 (0 day)
 
-- implement methods in Routing, and finish off Naming
-- ProbabilityLookupRanker
-- add a tags.rout.IndexComposer, add that to the design document. this is basically just "ranking".
-(1 day)
+- split off Naming.makeAddressScheme() into its own module
+- have AddressScheme keep track of scores
+- split AddressScheme up into an interface and an implementation
+- actually keep track of the shortest path (pointer to next hop will do)
+(1/2 day)
 
+- finish off methods in Naming and Routing
+- ProbabilityLookupRanker
 - ProbabilityEntropyTGraphComposer
-- add a tags.name.TagScorer, add that to the design document
 - ProbabilityIndexComposer
-(1 day)
+(1/2 day)
 
 - link everything together n' shiii
 - StoreControl should really be in the form of an asynchronous ObjectProcessor
 (3 days maybe)
+
+
+- add tags.rout.IndexComposer to the design document
+- add tags.name.TagScorer to the design document
+(laterz)
