@@ -4,8 +4,6 @@
 
 - split off Naming.makeAddressScheme() into its own module
 - have AddressScheme keep track of scores
-- split AddressScheme up into an interface and an implementation
-- actually keep track of the shortest path (pointer to next hop will do)
 (1/2 day)
 
 - finish off methods in Naming and Routing

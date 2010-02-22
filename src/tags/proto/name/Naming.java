@@ -15,6 +15,7 @@ import tags.proto.DataSources;
 import tags.proto.LocalTGraph;
 import tags.proto.TGraph;
 import tags.proto.AddressScheme;
+import tags.proto.ProtoAddressScheme;
 import tags.util.CompositeIterable;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
@@ -49,7 +50,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	final protected DataSources<A, LocalTGraph<T, A, U, W>, S> source;
 
 	protected LocalTGraph<T, A, U, W> graph;
-	protected AddressScheme<T, A> scheme;
+	protected AddressScheme<T, A, W> scheme;
 
 	public Naming(
 		Query<?, T> query,
@@ -86,7 +87,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public AddressScheme<T, A> getAddressScheme() {
+	public AddressScheme<T, A, W> getAddressScheme() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
@@ -134,7 +135,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	** Make a new {@link #scheme} from {@link #graph}. To be called whenever
 	** the latter changes, ie. after {@link #composeTGraph()}.
 	*/
-	protected AddressScheme<T, A> makeAddressScheme() {
+	protected AddressScheme<T, A, W> makeAddressScheme() {
 		return makeAddressScheme(this.mod_dmtr);
 	}
 
@@ -145,8 +146,8 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	** OPT NORM use a FibonnacciHeap instead of PriorityQueue. JGraphT has
 	** an implementation.
 	*/
-	protected <D> AddressScheme<T, A> makeAddressScheme(final DistanceMetric<D, U, W> mod_dmtr) {
-		AddressScheme<T, A> scheme_new = new AddressScheme<T, A>(query.seed_tag);
+	protected <D> AddressScheme<T, A, W> makeAddressScheme(final DistanceMetric<D, U, W> mod_dmtr) {
+		AddressScheme<T, A, W> scheme_new = new ProtoAddressScheme<T, A, W>(query.seed_tag);
 		Set<T> completed = getCompletedTags();
 
 		// Dijkstra's algorithm
@@ -154,6 +155,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 		class DijkstraNode {
 
 			final public U2<T, A> node;
+			protected T parent;
 			protected D dist;
 
 			public DijkstraNode(U2<T, A> node) {
@@ -181,18 +183,19 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 		while (queue.isEmpty()) {
 			DijkstraNode cur = queue.poll();
 			U2<T, A> node = cur.node;
+			T parent = cur.parent;
 			assert(dmap.get(node) == cur);
 			dmap.remove(node);
 
 			if (node.isT1()) {
-				scheme_new.pushNode(node, null);
+				scheme_new.pushNode(node, parent, null);
 				continue;
 			}
 			T tag = node.getT0();
 
 			// tag is not fully loaded, set as incomplete
 			if (!completed.contains(tag)) {
-				scheme_new.pushNode(node, null);
+				scheme_new.pushNode(node, parent, null);
 				scheme_new.setIncomplete();
 				break;
 			}
@@ -212,11 +215,12 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 					// PriorityQueue treats its elements as immutable, so need to remove first
 					queue.remove(out);
 					out.dist = dist;
+					out.parent = tag;
 					queue.add(out);
 				}
 			}
 
-			scheme_new.pushNode(node, graph.getIncomingT(tag).nodeAttrMap().K0Map().keySet());
+			scheme_new.pushNode(node, parent, graph.getIncomingT(tag).nodeAttrMap().K0Map().keySet());
 		}
 
 		return scheme_new;

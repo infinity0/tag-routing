@@ -16,6 +16,6 @@ import java.util.Map;
 */
 public interface LookupRanker<W> {
 
-	public <T, A> List<Lookup<T, A>> rankLookups(Map<LocalIndex<T, A, W>, Set<T>> lookups, AddressScheme<T, A> scheme);
+	public <T, A> List<Lookup<T, A>> rankLookups(Map<LocalIndex<T, A, W>, Set<T>> lookups, AddressScheme<T, A, W> scheme);
 
 }

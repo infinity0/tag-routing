@@ -67,12 +67,12 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	** - address scheme is updated
 	** - we add a source
 	*/
-	public Map<A, Set<T>> getLookups(AddressScheme<T, A> scheme) {
+	public Map<A, Set<T>> getLookups(AddressScheme<T, A, W> scheme) {
 		Map<A, Set<T>> lookups = new HashMap<A, Set<T>>();
 		for (A idx: source.localMap().keySet()) {
 			if (source.seedMap().containsKey(idx)) {
 				// select all T in scheme
-				lookups.put(idx, scheme.getAllTags());
+				lookups.put(idx, scheme.tagSet());
 			} else {
 				Set<T> tags = new HashSet<T>();
 				for (A in_node: source.getIncoming(idx)) {
@@ -81,7 +81,7 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 					// find Set<T> that we reached A by
 					for (T tag: view.getIncomingHarcAttrMap(idx).keySet()) {
 						// for all T in Set<T>, select all "short" paths in layer_lo.getAddressScheme()
-						tags.addAll(scheme.getPrecedingT(tag));
+						tags.addAll(scheme.ancestorMap().K0Map().get(tag));
 					}
 				}
 				lookups.put(idx, tags);
@@ -105,12 +105,12 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	** TODO arguably this could be in a separate module instead of a fixed
 	** "pick the nearest tag".
 	*/
-	public Map<A, W> getResults(AddressScheme<T, A> scheme) {
+	public Map<A, W> getResults(AddressScheme<T, A, W> scheme) {
 		Map<A, W> results = new HashMap<A, W>();
 		for (A dst: index.nodeSetD()) {
 			Map<T, W> in_tag = index.getIncomingDarcAttrMap(dst);
 			assert in_tag != null && !in_tag.isEmpty();
-			T nearest = scheme.getNearest(in_tag.keySet());
+			T nearest = scheme.getMostRelevant(in_tag.keySet());
 			W wgt = null; // TODO HIGH combine(nearest.weight, in_tag.get(nearest));
 			results.put(dst, wgt);
 		}
