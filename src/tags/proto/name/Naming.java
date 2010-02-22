@@ -15,18 +15,13 @@ import tags.proto.DataSources;
 import tags.proto.LocalTGraph;
 import tags.proto.TGraph;
 import tags.proto.AddressScheme;
-import tags.proto.ProtoAddressScheme;
 import tags.util.CompositeIterable;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
-import tags.util.Tuple.X2;
 import tags.util.Arc;
 import java.util.Map;
 import java.util.Set;
-import java.util.Queue;
 import java.util.HashMap;
-import java.util.PriorityQueue;
-import java.util.Comparator;
 
 /**
 ** DOCUMENT.
@@ -44,8 +39,8 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	protected Routing<T, A, W, S> layer_hi;
 	protected Contact<?, A, S, ?> layer_lo;
 
-	final protected DistanceMetric<?, U, W> mod_dmtr;
 	final protected TGraphComposer<U, W, S> mod_tgr_cmp;
+	final protected AddressSchemeBuilder<T, A, U, W> mod_asc_bld;
 
 	final protected DataSources<A, LocalTGraph<T, A, U, W>, S> source;
 
@@ -55,12 +50,12 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	public Naming(
 		Query<?, T> query,
 		StoreControl<?, T, A, U, W, S, ?> sctl,
-		DistanceMetric<?, U, W> mod_dmtr,
-		TGraphComposer<U, W, S> mod_tgr_cmp
+		TGraphComposer<U, W, S> mod_tgr_cmp,
+		AddressSchemeBuilder<T, A, U, W> mod_asc_bld
 	) {
 		super(query, sctl);
-		this.mod_dmtr = mod_dmtr;
 		this.mod_tgr_cmp = mod_tgr_cmp;
+		this.mod_asc_bld = mod_asc_bld;
 		// TODO NOW
 		this.source = null;
 		this.graph = null;
@@ -136,94 +131,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	** the latter changes, ie. after {@link #composeTGraph()}.
 	*/
 	protected AddressScheme<T, A, W> makeAddressScheme() {
-		return makeAddressScheme(this.mod_dmtr);
-	}
-
-	/**
-	** Main worker method for {@link #makeAddressScheme()}. This allows us to
-	** avoid having a {@code <D>} type parameter in the class definition.
-	**
-	** OPT NORM use a FibonnacciHeap instead of PriorityQueue. JGraphT has
-	** an implementation.
-	*/
-	protected <D> AddressScheme<T, A, W> makeAddressScheme(final DistanceMetric<D, U, W> mod_dmtr) {
-		AddressScheme<T, A, W> scheme_new = new ProtoAddressScheme<T, A, W>(query.seed_tag);
-		Set<T> completed = getCompletedTags();
-
-		// Dijkstra's algorithm
-
-		class DijkstraNode {
-
-			final public U2<T, A> node;
-			protected T parent;
-			protected D dist;
-
-			public DijkstraNode(U2<T, A> node) {
-				this.node = node;
-				this.dist = (query.seed_tag.equals(node.val))? mod_dmtr.getMinElement(): mod_dmtr.getMaxElement();
-			}
-
-		}
-
-		// 1. Init
-		Queue<DijkstraNode> queue = new PriorityQueue<DijkstraNode>(graph.nodeMap().size(), new Comparator<DijkstraNode>() {
-			@Override public int compare(DijkstraNode d1, DijkstraNode d2) {
-				return mod_dmtr.compare(d1.dist, d2.dist);
-			}
-		});
-		Map<U2<T, A>, DijkstraNode> dmap = new HashMap<U2<T, A>, DijkstraNode>();
-		for (U2<T, A> u: graph.nodeMap().keySet()) {
-			DijkstraNode n = new DijkstraNode(u);
-			dmap.put(u, n);
-			queue.add(n);
-		}
-
-		// 2. Loop
-		// TODO HIGH need to get rid of tgraph nodes already in use as a data source
-		while (queue.isEmpty()) {
-			DijkstraNode cur = queue.poll();
-			U2<T, A> node = cur.node;
-			T parent = cur.parent;
-			assert(dmap.get(node) == cur);
-			dmap.remove(node);
-
-			if (node.isT1()) {
-				scheme_new.pushNode(node, parent, null);
-				continue;
-			}
-			T tag = node.getT0();
-
-			// tag is not fully loaded, set as incomplete
-			if (!completed.contains(tag)) {
-				scheme_new.pushNode(node, parent, null);
-				scheme_new.setIncomplete();
-				break;
-			}
-
-			// "relax" all out-neighbours
-			U srcw = graph.nodeMap().K0Map().get(tag);
-			for (Map.Entry<U2<T, A>, X2<U, W>> en: graph.getOutgoingT(tag).attrMap().entrySet()) {
-				U2<T, A> nb = en.getKey();
-				U dstw = en.getValue()._0;
-				W arcw = en.getValue()._1;
-
-				DijkstraNode out = dmap.get(nb);
-				if (out == null) { continue; } // already visited
-
-				D dist = mod_dmtr.combine(cur.dist, mod_dmtr.getDistance(srcw, dstw, arcw));
-				if (mod_dmtr.compare(dist, out.dist) < 0) {
-					// PriorityQueue treats its elements as immutable, so need to remove first
-					queue.remove(out);
-					out.dist = dist;
-					out.parent = tag;
-					queue.add(out);
-				}
-			}
-
-			scheme_new.pushNode(node, parent, graph.getIncomingT(tag).nodeAttrMap().K0Map().keySet());
-		}
-
-		return scheme_new;
+		return mod_asc_bld.buildAddressScheme(graph, getCompletedTags(), query.seed_tag);
 	}
 
 }

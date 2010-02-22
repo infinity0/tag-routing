@@ -2,7 +2,6 @@
 - review Maps.viewSubMap
 (0 day)
 
-- split off Naming.makeAddressScheme() into its own module
 - have AddressScheme keep track of scores
 (1/2 day)
 
