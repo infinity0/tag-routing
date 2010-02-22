@@ -14,7 +14,7 @@ import java.util.Map;
 **
 ** @param <W> Type of arc-attribute
 */
-public interface LookupRanker<W> {
+public interface LookupScorer<W, S> {
 
 	public <T, A> List<Lookup<T, A>> rankLookups(Map<LocalIndex<T, A, W>, Set<T>> lookups, AddressScheme<T, A, W> scheme);
 

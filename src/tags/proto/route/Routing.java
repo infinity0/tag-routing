@@ -31,6 +31,7 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	protected Naming<T, A, ?, W, S> layer_lo;
 
 	final protected IndexComposer<W, S> mod_idx_cmp;
+	final protected LookupScorer<W, S> mod_lku_scr;
 
 	final protected DataSources<A, LocalIndex<T, A, W>, S> source;
 	final protected Map<A, Set<T>> lookup;
@@ -40,10 +41,12 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	public Routing(
 		Query<?, T> query,
 		StoreControl<?, T, A, ?, W, S, ?> sctl,
-		IndexComposer<W, S> mod_idx_cmp
+		IndexComposer<W, S> mod_idx_cmp,
+		LookupScorer<W, S> mod_lku_scr
 	) {
 		super(query, sctl);
 		this.mod_idx_cmp = mod_idx_cmp;
+		this.mod_lku_scr = mod_lku_scr;
 		// TODO NOW
 		this.source = null;
 		this.lookup = null;
@@ -102,26 +105,22 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	/**
 	** Returns a map of results to their scores.
 	**
-	** TODO arguably this could be in a separate module instead of a fixed
-	** "pick the nearest tag".
+	** TODO NORM arguably this could be in a separate module instead of just
+	** "pick the most relevant tag".
 	*/
 	public Map<A, W> getResults(AddressScheme<T, A, W> scheme) {
 		Map<A, W> results = new HashMap<A, W>();
 		for (A dst: index.nodeSetD()) {
+			// get most relevant tag which points to it
 			Map<T, W> in_tag = index.getIncomingDarcAttrMap(dst);
 			assert in_tag != null && !in_tag.isEmpty();
 			T nearest = scheme.getMostRelevant(in_tag.keySet());
+
 			W wgt = null; // TODO HIGH combine(nearest.weight, in_tag.get(nearest));
 			results.put(dst, wgt);
 		}
-		return results;
 		// TODO HIGH and same for nodeSetH()
-
-		// for each result dst
-		//   - select from its incoming arcs a, the nearest tag a.src to the root tag of the query
-		//   - add an arc (root, dst) with weight a.src.weight * a.weight, to the results map
-		//
-		// return results map
+		return results;
 	}
 
 }
