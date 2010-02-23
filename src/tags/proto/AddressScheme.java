@@ -92,12 +92,12 @@ public interface AddressScheme<T, A, W> {
 	public void pushNode(U2<T, A> node, T parent, Set<T> inc);
 
 	/**
-	** @see #pushNode(U2, Set)
+	** @see #pushNode(Union.U2, Object, Set)
 	*/
 	public void pushNodeT(T tag, T parent, Set<T> inc);
 
 	/**
-	** @see #pushNode(U2, Set)
+	** @see #pushNode(Union.U2, Object, Set)
 	*/
 	public void pushNodeG(A addr, T parent, Set<T> inc);
 

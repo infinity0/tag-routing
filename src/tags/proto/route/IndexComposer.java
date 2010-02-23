@@ -11,7 +11,6 @@ import java.util.Map;
 /**
 ** DOCUMENT.
 **
-** @param <U> Type of node-attribute
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
