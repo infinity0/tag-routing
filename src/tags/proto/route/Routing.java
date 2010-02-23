@@ -110,16 +110,27 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	*/
 	public Map<A, W> getResults(AddressScheme<T, A, W> scheme) {
 		Map<A, W> results = new HashMap<A, W>();
+
 		for (A dst: index.nodeSetD()) {
 			// get most relevant tag which points to it
 			Map<T, W> in_tag = index.getIncomingDarcAttrMap(dst);
 			assert in_tag != null && !in_tag.isEmpty();
 			T nearest = scheme.getMostRelevant(in_tag.keySet());
 
-			W wgt = null; // TODO HIGH combine(nearest.weight, in_tag.get(nearest));
+			W wgt = mod_lku_scr.getResultAttr(scheme.arcAttrMap().get(nearest), in_tag.get(nearest));
 			results.put(dst, wgt);
 		}
-		// TODO HIGH and same for nodeSetH()
+
+		for (A dst: index.nodeSetH()) {
+			// get most relevant tag which points to it
+			Map<T, W> in_tag = index.getIncomingHarcAttrMap(dst);
+			assert in_tag != null && !in_tag.isEmpty();
+			T nearest = scheme.getMostRelevant(in_tag.keySet());
+
+			W wgt = mod_lku_scr.getResultAttr(scheme.arcAttrMap().get(nearest), in_tag.get(nearest));
+			results.put(dst, wgt);
+		}
+
 		return results;
 	}
 
