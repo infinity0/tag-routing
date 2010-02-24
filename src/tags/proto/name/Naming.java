@@ -9,19 +9,22 @@ import tags.util.LayerInterfaceLo;
 import tags.proto.route.Routing;
 import tags.proto.cont.Contact;
 
+import tags.proto.MultiParts;
 import tags.util.Maps;
+import java.util.Collections;
 
 import tags.proto.DataSources;
 import tags.proto.LocalTGraph;
 import tags.proto.TGraph;
 import tags.proto.AddressScheme;
-import tags.util.CompositeIterable;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Arc;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashMap;
+import java.util.HashSet;
 
 /**
 ** DOCUMENT.
@@ -91,9 +94,19 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	** are using as a data source (ie. source.localMap().values()).
 	*/
 	protected Set<T> getCompletedTags() {
-		throw new UnsupportedOperationException("not implemented");
-		// need to make LocalTGraph.getCompletedTags() return absent tags too
+		// TODO HIGH need to make LocalTGraph.getCompletedTags() return absent tags too
+		if (source.localMap().isEmpty()) { return Collections.emptySet(); }
+
 		// return intersection of all sources.getCompletedTags(),
+		Iterator<LocalTGraph<T, A, U, W>> it = source.localMap().values().iterator();
+		assert it.hasNext();
+		Set<T> complete = new HashSet<T>(it.next().getCompletedTags());
+
+		while (it.hasNext()) {
+			complete.retainAll(it.next().getCompletedTags());
+		}
+
+		return complete;
 	}
 
 	/**
@@ -101,28 +114,19 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	** the {@linkplain #getCompletedTags() completed set} changes.
 	*/
 	protected TGraph<T, A, U, W> composeTGraph() {
-		U2Map<T, A, U> node_map = Maps.uniteDisjoint(new HashMap<T, U>(), new HashMap<A, U>());
-		U2Map<Arc<T, T>, Arc<T, A>, W> arc_map = Maps.uniteDisjoint(new HashMap<Arc<T, T>, W>(), new HashMap<Arc<T, A>, W>());
-		// TODO HIGH probably move the CompositeIterable shit into MultiParts
-
 		// iterates through all nodes present in every source
-		for (U2<T, A> node: Maps.domain(new CompositeIterable<LocalTGraph<T, A, U, W>, U2Map<T, A, U>>(source.localMap().values()) {
-			@Override public U2Map<T, A, U> nextFor(LocalTGraph<T, A, U, W> item) {
-				return item.nodeMap();
-			}
-		})) {
+		U2Map<T, A, U> node_map = Maps.uniteDisjoint(new HashMap<T, U>(), new HashMap<A, U>());
+		for (U2<T, A> node: Maps.domain(MultiParts.iterTGraphNodeMaps(source.localMap().values()))) {
 			node_map.put(node, mod_tgr_cmp.composeNode(source.localScoreMap(), node));
 		}
 
 		// iterates through all arcs present in every source
-		for (U2<Arc<T, T>, Arc<T, A>> arc: Maps.domain(new CompositeIterable<LocalTGraph<T, A, U, W>, U2Map<Arc<T, T>, Arc<T, A>, W>>(source.localMap().values()) {
-			@Override public U2Map<Arc<T, T>, Arc<T, A>, W> nextFor(LocalTGraph<T, A, U, W> item) {
-				return item.arcMap();
-			}
-		})) {
+		U2Map<Arc<T, T>, Arc<T, A>, W> arc_map = Maps.uniteDisjoint(new HashMap<Arc<T, T>, W>(), new HashMap<Arc<T, A>, W>());
+		for (U2<Arc<T, T>, Arc<T, A>> arc: Maps.domain(MultiParts.iterTGraphArcMaps(source.localMap().values()))) {
 			arc_map.put(arc, mod_tgr_cmp.composeArc(source.localScoreMap(), arc));
 		}
 
+		// TODO HIGH this method needs to return a LocalTGraph
 		return new TGraph<T, A, U, W>(node_map, arc_map);
 	}
 

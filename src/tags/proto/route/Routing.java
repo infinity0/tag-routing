@@ -8,10 +8,16 @@ import tags.util.LayerInterfaceHi;
 import tags.util.LayerInterfaceLo;
 import tags.proto.name.Naming;
 
+import tags.proto.MultiParts;
+import tags.util.Maps;
+
 import tags.proto.AddressScheme;
 import tags.proto.DataSources;
 import tags.proto.LocalIndex;
 import tags.proto.Index;
+import tags.util.Maps.U2Map;
+import tags.util.Union.U2;
+import tags.util.Arc;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashSet;
@@ -97,8 +103,15 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	** DOCUMENT
 	*/
 	public Index<T, A, W> composeIndex() {
-		throw new UnsupportedOperationException("not implemented");
-		// follow basically what Naming.composeTGraph() does
+		// iterates through all arcs present in every source
+		U2Map<Arc<T, A>, Arc<T, A>, W> arc_map = Maps.uniteDisjoint(new HashMap<Arc<T, A>, W>(), new HashMap<Arc<T, A>, W>());
+		for (U2<Arc<T, A>, Arc<T, A>> arc: Maps.domain(MultiParts.iterIndexArcMaps(source.localMap().values()))) {
+			arc_map.put(arc, mod_idx_cmp.composeArc(source.localScoreMap(), arc));
+		}
+
+		// TODO HIGH this method needs to return a LocalIndex
+		// return new Index<T, A, W>(arc_map);
+		throw null;
 	}
 
 	/**

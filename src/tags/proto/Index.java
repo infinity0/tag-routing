@@ -43,6 +43,7 @@ public class Index<T, A, W> {
 	** Returns the set of documents referred to by this index.
 	*/
 	public Set<A> nodeSetD() {
+		// TODO HIGH maybe this need to go into LocalIndex
 		throw new UnsupportedOperationException("not implemented");
 	}
 
@@ -50,10 +51,11 @@ public class Index<T, A, W> {
 	** Returns the set of indexes referred to by this index.
 	*/
 	public Set<A> nodeSetH() {
+		// TODO HIGH maybe this need to go into LocalIndex
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public U2Map<Arc<T, T>, Arc<T, A>, W> arcMap() {
+	public U2Map<Arc<T, A>, Arc<T, A>, W> arcMap() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 

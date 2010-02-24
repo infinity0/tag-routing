@@ -52,14 +52,6 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 		this.src = src;
 	}
 
-	// implementation notes:
-	//
-	// a LocalIndex needs to link to a map of indexes (representing data sources in use)
-	//
-	// this is so we can distinguish between neighbouring indexes that are already being
-	// used as a data source (and hide these from the search results), and new indexes
-	// that are not already being used as a data source.
-
 	/**
 	** Returns the results for a given tag, filtering out the indexes that are
 	** in use as a data source.

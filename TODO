@@ -5,8 +5,6 @@
 (0 day)
 
 - finish off methods in Naming and Routing
-  - Naming.getCompletedTags()
-  - Routing.composeIndex()
   - Routing.rankLookups()
 - have AddressScheme keep track of scores, maybe need a TagScorer
 - ProbabilityLookupScorer
