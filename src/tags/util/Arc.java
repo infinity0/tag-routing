@@ -27,7 +27,7 @@ public class Arc<S, T> {
 	}
 
 	@Override public int hashCode() {
-		return src.hashCode() ^ dst.hashCode();
+		return src.hashCode() ^ dst.hashCode() ^ 0x7f7f7f7f;
 	}
 
 	@Override public String toString() {

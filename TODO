@@ -4,8 +4,6 @@
 - possibly move AddressScheme.pushNode* into ProtoAddressScheme
 (0 day)
 
-- finish off methods in Naming and Routing
-  - Routing.rankLookups()
 - have AddressScheme keep track of scores, maybe need a TagScorer
 - ProbabilityLookupScorer
 - ProbabilityEntropyTGraphComposer

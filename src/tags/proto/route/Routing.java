@@ -15,11 +15,13 @@ import tags.proto.AddressScheme;
 import tags.proto.DataSources;
 import tags.proto.LocalIndex;
 import tags.proto.Index;
+import tags.proto.Lookup;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Arc;
 import java.util.Set;
 import java.util.Map;
+import java.util.PriorityQueue;
 import java.util.HashSet;
 import java.util.HashMap;
 
@@ -97,6 +99,22 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 			}
 		}
 		return lookups;
+	}
+
+	public PriorityQueue<Lookup<T, A>> sortLookups(AddressScheme<T, A, W> scheme, Map<A, Set<T>> lookups) {
+		Map<Lookup<T, A>, W> lku_score = new HashMap<Lookup<T, A>, W>();
+
+		for (Map.Entry<A, Set<T>> en: lookups.entrySet()) {
+			A idx = en.getKey();
+			Set<T> tags = en.getValue();
+			S idxs = source.scoreMap().get(idx);
+
+			for (T tag: tags) {
+				lku_score.put(Lookup.lookup(idx, tag), mod_lku_scr.getLookupScore(idxs, scheme.arcAttrMap().get(tag)));
+			}
+		}
+
+		return mod_lku_scr.sortLookups(lku_score);
 	}
 
 	/**

@@ -1,13 +1,12 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto.route;
 
+import tags.proto.AddressScheme;
 import tags.proto.LocalIndex;
 import tags.proto.Lookup;
-import tags.proto.AddressScheme;
-
-import java.util.List;
 import java.util.Set;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 /**
 ** DOCUMENT.
@@ -17,10 +16,13 @@ import java.util.Map;
 */
 public interface LookupScorer<W, S> {
 
-	public <T, A> List<Lookup<T, A>> rankLookups(Map<LocalIndex<T, A, W>, Set<T>> lookups, AddressScheme<T, A, W> scheme);
+	/**
+	** Returns a priority queue of lookups, given their scores.
+	*/
+	public <T, A> PriorityQueue<Lookup<T, A>> sortLookups(Map<Lookup<T, A>, W> lookups);
 
 	/**
-	** Returns the arc-attribute ...
+	** Returns a score for a lookup.
 	**
 	** @param idxs Score of index
 	** @param tagw Attribute of seed-subject arc
