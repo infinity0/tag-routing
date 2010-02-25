@@ -12,9 +12,6 @@ import java.util.PriorityQueue;
 
 /**
 ** DOCUMENT.
-**
-** @param <W> Type of arc-attribute
-** @param <S> Type of score
 */
 public class ProbabilityLookupScorer implements LookupScorer<Probability, Probability> {
 
@@ -36,10 +33,36 @@ public class ProbabilityLookupScorer implements LookupScorer<Probability, Probab
 		return queue;
 	}
 
+	/**
+	** {@inheritDoc}
+	**
+	** This implementation takes {@code idxs} to be P(index), and {@code tagw}
+	** to be P(seed|subj), and returns P(index) P(seed|subj), which is supposed
+	** to be an approximation of P(seed, subj, index).
+	**
+	** # P(seed, subj, index)
+	** # = P(seed | index, subj) P(index|subj) [''chain rule'']
+	** # ≅ P(seed|subj) P(index) [''assume independence'']
+	**
+	** @see tags.proto.Notation
+	*/
 	public Probability getLookupScore(Probability idxs, Probability tagw) {
 		return idxs.intersect(tagw);
 	}
 
+	/**
+	** {@inheritDoc}
+	**
+	** This implementation takes {@code tagw} to be P(seed|subj), and {@code
+	** docw} to be P(doc ∊ subj), and returns P(seed|subj) P(doc ∊ subj), which
+	** is supposed to be P(doc ∊ seed, doc ∊ subj).
+	**
+	** # P(doc ∊ seed, doc ∊ subj)
+	** # = P(doc ∊ seed | doc ∊ subj) P(doc ∊ subj) [''chain rule'']
+	** # = P(seed|subj) P(doc ∊ subj)
+	**
+	** @see tags.proto.Notation
+	*/
 	public Probability getResultAttr(Probability tagw, Probability docw) {
 		return tagw.intersect(docw);
 	}

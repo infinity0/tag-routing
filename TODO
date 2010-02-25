@@ -15,7 +15,7 @@
 
 
 - add tags.rout.IndexComposer to the design document
-- add tags.name.TagScorer to the design document
+- explain how tags are scored, in the design document
 (laterz)
 - rename Probability to just Prob?
 - rename SPUProbabilityInferer to ShortPathUnionProbInferer?
