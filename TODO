@@ -4,8 +4,7 @@
 - possibly move AddressScheme.pushNode* into ProtoAddressScheme
 (0 day)
 
-- have AddressScheme keep track of scores, maybe need a TagScorer
-- ProbabilityLookupScorer
+- have SPAddressSchemeBuilder keep track of scores, maybe need a TagScorer
 - ProbabilityEntropyTGraphComposer
 - ProbabilityIndexComposer
 (1/2 day)
