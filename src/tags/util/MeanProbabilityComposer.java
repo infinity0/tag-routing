@@ -19,7 +19,7 @@ abstract public class MeanProbabilityComposer implements ValueComposer<Probabili
 	** @throws NullPointerException if any of the data sources map the item to
 	**         a {@code null} probability
 	*/
-	@Override public <R, L, K> Probability composeValue(MapX2<R, L, Probability> source, K item, MapViewer<L, Map<K, Probability>> viewer) {
+	@Override public <R, L, K> Probability composeValue(MapX2<R, L, Probability> source, K item, MapViewer<L, ? extends Map<K, Probability>> viewer) {
 		double top = 0, div = 0;
 		for (X2<L, Probability> x: source.values()) {
 			Map<K, Probability> view = viewer.mapFor(x._0);

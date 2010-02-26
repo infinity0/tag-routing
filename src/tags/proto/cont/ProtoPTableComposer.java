@@ -18,9 +18,8 @@ import java.util.Map;
 public class ProtoPTableComposer implements PTableComposer<Probability, Probability> {
 
 	/**
-	** Probability that a (ie&#x2e; any) data source judges an item to be
-	** worthless, given that the item does not exist in the source (ie&#x2e;
-	** not in the map's {@link Map#keySet()}).
+	** Probability that a data source judges an item to be worthless, given
+	** that the item does not exist in the source.
 	*/
 	final public double alpha;
 
@@ -45,14 +44,14 @@ public class ProtoPTableComposer implements PTableComposer<Probability, Probabil
 	** @param alpha See {@link #alpha}
 	*/
 	public ProtoPTableComposer(double alpha) {
-		this(new Probability(alpha));
+		this.alpha = alpha;
 	}
 
 	/**
 	** @param alpha See {@link #alpha}
 	*/
 	public ProtoPTableComposer(Probability alpha) {
-		this.alpha = alpha.val;
+		this(alpha.val);
 	}
 
 	/**

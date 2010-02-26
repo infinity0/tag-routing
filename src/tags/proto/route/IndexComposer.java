@@ -2,7 +2,6 @@
 package tags.proto.route;
 
 import tags.proto.LocalIndex;
-
 import tags.util.Maps.MapX2;
 import tags.util.Union.U2;
 import tags.util.Arc;
@@ -16,6 +15,6 @@ import java.util.Map;
 */
 public interface IndexComposer<W, S> {
 
-	public <T, A> W composeArc(MapX2<A, LocalIndex<T, A, W>, S> source, U2<Arc<T, A>, Arc<T, A>> arc);
+	public <T, A> W composeArc(MapX2<A, LocalIndex<T, A, W>, S> src_score, U2<Arc<T, A>, Arc<T, A>> arc);
 
 }

@@ -21,6 +21,6 @@ public interface ValueComposer<S, V> {
 	** @param <R> Type of remote address
 	** @param <K> Type of item
 	*/
-	public <R, L, K> V composeValue(MapX2<R, L, S> source, K item, MapViewer<L, Map<K, V>> viewer);
+	public <R, L, K> V composeValue(MapX2<R, L, S> source, K item, MapViewer<L, ? extends Map<K, V>> viewer);
 
 }
