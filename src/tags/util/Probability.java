@@ -35,11 +35,49 @@ public class Probability /*extends Number TODO LOW*/ implements Comparable<Proba
 	}
 
 	/**
-	** Returns the intersection of this and the given probability. It is assumed
-	** that the two events (for which these are probabilities) are independent.
+	** Returns the intersection of this and the given probability. It is
+	** assumed that the two events are independent.
 	*/
 	public Probability intersect(Probability p) {
-		return new Probability(val * p.val);
+		return new Probability(this.val * p.val);
+	}
+
+	/**
+	** Returns this probability normalised with the given probability. It is
+	** assumed that the given event is a superset of this event.
+	*/
+	public Probability normalise(Probability p) {
+		return new Probability(this.val / p.val);
+	}
+
+	/**
+	** Returns the union of this and the given probability. It is assumed that
+	** the two events are mutually exclusive.
+	*/
+	public Probability union(Probability p) {
+		return new Probability(this.val + p.val);
+	}
+
+	/**
+	** Returns the conditional inverse.
+	**
+	** @param given P(this|evt)
+	** @param p P(evt)
+	** @return P(evt|this)
+	*/
+	public Probability conditionalInverse(Probability given, Probability p) {
+		return new Probability(given.val * p.val / this.val);
+	}
+
+	/**
+	** Returns the conditional complement.
+	**
+	** @param given P(this|evt)
+	** @param p P(evt)
+	** @return P(this|¬evt)
+	*/
+	public Probability conditionalComplement(Probability given, Probability p) {
+		return new Probability((this.val - given.val * p.val)/(1.0 - p.val));
 	}
 
 	@Override public int compareTo(Probability c) {

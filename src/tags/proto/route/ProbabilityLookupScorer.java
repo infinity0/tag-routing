@@ -61,9 +61,19 @@ public class ProbabilityLookupScorer implements LookupScorer<Probability, Probab
 	** # = P(doc ∊ seed | doc ∊ subj) P(doc ∊ subj) [''chain rule'']
 	** # = P(seed|subj) P(doc ∊ subj)
 	**
+	** TODO HIGH we should actually return P(doc ∊ seed) according to the below
+	** formula, but then we will need extra inputs to this method.
+	**
+	** # P(doc ∊ seed)
+	** # = P(doc ∊ seed, doc ∊ subj) + P(doc ∊ seed, doc ∊ ¬subj)
+	** # = P(seed|subj) P(doc ∊ subj) + P(seed|¬subj) (1-P(doc ∊ subj))
+	**
+	** @param tagw P(seed|subj)
+	** @param docw P(doc ∊ subj)
 	** @see tags.proto.Notation
 	*/
 	public Probability getResultAttr(Probability tagw, Probability docw) {
+		// return tagw.intersect(docw).union(seedu.complementConditional(tagw, tagu), docw.complement());
 		return tagw.intersect(docw);
 	}
 

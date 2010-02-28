@@ -7,6 +7,8 @@ import tags.proto.LocalTGraph;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Tuple.X2;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.Queue;
@@ -15,8 +17,7 @@ import java.util.PriorityQueue;
 import java.util.HashMap;
 
 /**
-** DOCUMENT. Distance between two tags. The type of "distance" should be such
-** that there is a "minimum" or "zero" element.
+** DOCUMENT.
 **
 ** @param <T> Type of tag
 ** @param <A> Type of address
@@ -34,6 +35,11 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 
 	@Override public AddressScheme<T, A, W> buildAddressScheme(LocalTGraph<T, A, U, W> graph, Set<T> completed, final T seed) {
 		AddressScheme<T, A, W> scheme = new ProtoAddressScheme<T, A, W>(seed);
+
+		U seedu = graph.nodeMap().get(seed);
+		if (seedu == null) {
+			throw new IllegalArgumentException("seed " + seed + " is not in the given graph");
+		}
 
 		// Dijkstra's algorithm
 		// OPT NORM use a FibonnacciHeap instead of PriorityQueue. JGraphT has an implementation.
@@ -66,7 +72,7 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 
 		// 2. Loop
 		// TODO HIGH need to get rid of tgraph nodes already in use as a data source
-		while (queue.isEmpty()) {
+		while (!queue.isEmpty()) {
 			DijkstraNode cur = queue.poll();
 			U2<T, A> node = cur.node;
 			T parent = cur.parent;
@@ -87,16 +93,16 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 			}
 
 			// "relax" all out-neighbours
-			U srcw = graph.nodeMap().K0Map().get(tag);
+			U srcu = graph.nodeMap().K0Map().get(tag);
 			for (Map.Entry<U2<T, A>, X2<U, W>> en: graph.getOutgoingT(tag).attrMap().entrySet()) {
 				U2<T, A> nb = en.getKey();
-				U dstw = en.getValue()._0;
+				U dstu = en.getValue()._0;
 				W arcw = en.getValue()._1;
 
 				DijkstraNode out = dmap.get(nb);
 				if (out == null) { continue; } // already visited
 
-				D dist = dmetric.combine(cur.dist, dmetric.getDistance(srcw, dstw, arcw));
+				D dist = dmetric.combine(cur.dist, dmetric.getDistance(srcu, dstu, arcw));
 				if (dmetric.compare(dist, out.dist) < 0) {
 					// PriorityQueue treats its elements as immutable, so need to remove first
 					queue.remove(out);
@@ -106,7 +112,10 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 				}
 			}
 
-			scheme.pushNode(node, parent, graph.getIncomingT(tag).nodeAttrMap().K0Map().keySet());
+			if (!tag.equals(seed)) {
+				scheme.pushNode(node, parent, graph.getIncomingT(tag).nodeAttrMap().K0Map().keySet());
+			}
+			scheme.arcAttrMap().put(tag, dmetric.getAttrFromDistance(seedu, srcu, cur.dist));
 		}
 
 		return scheme;

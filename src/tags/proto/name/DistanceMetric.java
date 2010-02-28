@@ -13,19 +13,38 @@ import java.util.Comparator;
 */
 public interface DistanceMetric<D, U, W> extends Comparator<D> {
 
+	/**
+	** Returns the distance between a node and itself.
+	*/
 	public D getMinElement();
 
+	/**
+	** Returns the distance between a node and another node unreachable from
+	** it.
+	*/
 	public D getMaxElement();
 
-	public D combine(D d1, D d2);
+	/**
+	** Returns the distance between two nodes.
+	*/
+	public D getDistance(U srcu, U dstu, W arcw);
 
-	public D getDistance(U srcw, U dstw, W arcw);
+	/**
+	** Combines two distances.
+	*/
+	public D combine(D d0, D d1);
+
+	/**
+	** Returns an attribute for an inferred arc between the seed node and the
+	** subject node, given the distance between them.
+	*/
+	public W getAttrFromDistance(U srcu, U subju, D dist);
 
 	/**
 	** {@inheritDoc}
 	**
 	** Smaller is nearer.
 	*/
-	public int compare(D d1, D d2);
+	public int compare(D d0, D d1);
 
 }

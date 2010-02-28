@@ -32,7 +32,8 @@ public class ProbabilityIndexComposer implements IndexComposer<Probability, Prob
 
 	/**
 	** The {@link MeanProbabilityComposer#alpha(Map, Object)} method of this
-	** composer just returns {@link #alpha}.
+	** composer will return either {@link #alpha_1} or {@link #alpha_2},
+	** whichever is appropriate.
 	*/
 	final public ValueComposer<Probability, Probability> val_cmp = new MeanProbabilityComposer() {
 		@Override protected <A> double alpha(Map<A, Probability> src, A item) {
