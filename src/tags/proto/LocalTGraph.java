@@ -6,6 +6,7 @@ import tags.util.Union;
 
 import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
+import tags.util.Arc;
 import java.util.Collections;
 import java.util.Set;
 import java.util.Map;
@@ -57,6 +58,10 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 		if (addr == null || src == null) { throw new NullPointerException(); }
 		this.addr = addr;
 		this.src = src;
+	}
+
+	public LocalTGraph(U2Map<T, A, U> node_map, U2Map<Arc<T, T>, Arc<T, A>, W> arc_map) {
+		throw new UnsupportedOperationException("not implemented");
 	}
 
 	/**

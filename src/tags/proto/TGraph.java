@@ -37,6 +37,8 @@ public class TGraph<T, A, U, W> {
 	// NOTE
 	// node_map.K0Map().keySet() should always be the same as outgoing.keySet()
 
+	final protected U2Map<Arc<T, T>, Arc<T, A>, W> arc_map_view = Maps.viewAsArcMap(outgoing);
+
 	/**
 	** Creates a new empty tag graph.
 	*/
@@ -86,7 +88,8 @@ public class TGraph<T, A, U, W> {
 	** Returns a view of the arcs of this graph, each mapped to its attribute.
 	*/
 	public U2Map<Arc<T, T>, Arc<T, A>, W> arcMap() {
-		throw new UnsupportedOperationException("not implemented");
+		// FIXME NORM should really be immutable view
+		return arc_map_view;
 	}
 
 	/**

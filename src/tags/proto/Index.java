@@ -9,6 +9,7 @@ import tags.util.Maps.U2Map;
 import tags.util.Maps.U2MapX2;
 import java.util.Set;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.HashMap;
 
 /**
@@ -25,13 +26,25 @@ import java.util.HashMap;
 public class Index<T, A, W> {
 
 	// TODO NORM
-	// may not be good idea to have the same type of address for both documents and indexes
+	// may not be good idea to have the same type of address for both documents and indexes...
 
 	/**
 	** Map of tags to their outgoing nodes (documents and indexes) and their
 	** arc-weights.
 	*/
 	final protected Map<T, U2Map<A, A, W>> outgoing = new HashMap<T, U2Map<A, A, W>>();
+
+	final protected U2Map<Arc<T, A>, Arc<T, A>, W> arc_map_view = Maps.viewAsArcMap(outgoing);
+
+	/**
+	** Set of indexes pointed to by this index.
+	*/
+	final protected Set<A> node_set_h = new HashSet<A>();
+
+	/**
+	** Set of documents pointed to by this index.
+	*/
+	final protected Set<A> node_set_d = new HashSet<A>();
 
 	/**
 	** Returns the set of tags referred to by this index.
@@ -41,21 +54,31 @@ public class Index<T, A, W> {
 	}
 
 	/**
-	** Returns the set of documents referred to by this index.
-	*/
-	public Set<A> nodeSetD() {
-		throw new UnsupportedOperationException("not implemented");
-	}
-
-	/**
 	** Returns the set of indexes referred to by this index.
 	*/
 	public Set<A> nodeSetH() {
-		throw new UnsupportedOperationException("not implemented");
+		// FIXME NORM should really be immutable view
+		return node_set_h;
+	}
+
+	/**
+	** Returns the set of documents referred to by this index.
+	*/
+	public Set<A> nodeSetD() {
+		// FIXME NORM should really be immutable view
+		return node_set_d;
+	}
+
+	/**
+	** Creates a new empty index.
+	*/
+	public Index() {
+		// pass
 	}
 
 	public U2Map<Arc<T, A>, Arc<T, A>, W> arcMap() {
-		throw new UnsupportedOperationException("not implemented");
+		// FIXME NORM should really be immutable view
+		return arc_map_view;
 	}
 
 	/**

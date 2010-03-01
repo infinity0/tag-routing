@@ -5,6 +5,7 @@ import tags.util.Maps;
 
 import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
+import tags.util.Arc;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
@@ -30,10 +31,6 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 	*/
 	final protected DataSources<A, LocalIndex<T, A, W>, ?> src;
 
-	// TODO NOW not entirely sure what this will be for, yet ¬.¬
-	// we'll see what's needed when we code up Routing.
-	// final protected Set<A> src;
-
 	/**
 	** Map of nodes (documents and indexes) to their incoming tags and their
 	** arc-weights.
@@ -50,6 +47,10 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 		if (addr == null || src == null) { throw new NullPointerException(); }
 		this.addr = addr;
 		this.src = src;
+	}
+
+	public LocalIndex(U2Map<Arc<T, A>, Arc<T, A>, W> arc_map) {
+		throw new UnsupportedOperationException("not implemented");
 	}
 
 	/**

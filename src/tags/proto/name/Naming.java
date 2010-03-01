@@ -115,7 +115,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	** Make a new {@link #graph} from {@link #source}. To be called whenever
 	** the {@linkplain #getCompletedTags() completed set} changes.
 	*/
-	protected TGraph<T, A, U, W> composeTGraph() {
+	protected LocalTGraph<T, A, U, W> composeTGraph() {
 		// iterates through all nodes present in every source
 		U2Map<T, A, U> node_map = Maps.uniteDisjoint(new HashMap<T, U>(), new HashMap<A, U>());
 		for (U2<T, A> node: Maps.domain(MultiParts.iterTGraphNodeMaps(source.localMap().values()))) {
@@ -128,8 +128,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 			arc_map.put(arc, mod_tgr_cmp.composeArc(source.localScoreMap(), arc));
 		}
 
-		// TODO HIGH this method needs to return a LocalTGraph
-		return new TGraph<T, A, U, W>(node_map, arc_map);
+		return new LocalTGraph<T, A, U, W>(node_map, arc_map);
 	}
 
 	/**

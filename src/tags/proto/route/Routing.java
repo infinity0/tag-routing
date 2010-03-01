@@ -122,16 +122,14 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	/**
 	** DOCUMENT
 	*/
-	public Index<T, A, W> composeIndex() {
+	public LocalIndex<T, A, W> composeIndex() {
 		// iterates through all arcs present in every source
 		U2Map<Arc<T, A>, Arc<T, A>, W> arc_map = Maps.uniteDisjoint(new HashMap<Arc<T, A>, W>(), new HashMap<Arc<T, A>, W>());
 		for (U2<Arc<T, A>, Arc<T, A>> arc: Maps.domain(MultiParts.iterIndexArcMaps(source.localMap().values()))) {
 			arc_map.put(arc, mod_idx_cmp.composeArc(source.localScoreMap(), arc));
 		}
 
-		// TODO HIGH this method needs to return a LocalIndex
-		// return new Index<T, A, W>(arc_map);
-		throw null;
+		return new LocalIndex<T, A, W>(arc_map);
 	}
 
 	/**
