@@ -11,14 +11,22 @@ import java.util.Map;
 /**
 ** DOCUMENT.
 **
+** @param <T> Type of tag
+** @param <A> Type of address
 ** @param <U> Type of node-attribute
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
-public interface TGraphComposer<U, W, S> {
+public interface TGraphComposer<T, A, U, W, S> {
 
-	public <T, A> U composeNode(MapX2<A, LocalTGraph<T, A, U, W>, S> source, U2<T, A> node);
+	/**
+	** Infer an attribute for the given node, from the given data sources.
+	*/
+	public U composeNode(MapX2<A, LocalTGraph<T, A, U, W>, S> src_score, U2<T, A> node);
 
-	public <T, A> W composeArc(MapX2<A, LocalTGraph<T, A, U, W>, S> source, U2<Arc<T, T>, Arc<T, A>> arc);
+	/**
+	** Infer an attribute for the given arc, from the given data sources.
+	*/
+	public W composeArc(MapX2<A, LocalTGraph<T, A, U, W>, S> src_score, U2<Arc<T, T>, Arc<T, A>> arc);
 
 }

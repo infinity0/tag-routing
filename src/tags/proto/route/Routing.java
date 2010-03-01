@@ -53,6 +53,8 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 		LookupScorer<W, S> mod_lku_scr
 	) {
 		super(query, sctl);
+		if (mod_idx_cmp == null) { throw new NullPointerException(); }
+		if (mod_lku_scr == null) { throw new NullPointerException(); }
 		this.mod_idx_cmp = mod_idx_cmp;
 		this.mod_lku_scr = mod_lku_scr;
 		// TODO NOW

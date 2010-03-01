@@ -16,6 +16,7 @@ abstract public class MeanProbabilityComposer<R, L, K> implements ValueComposer<
 	final protected MapViewer<? super L, ? extends Map<? extends K, ? extends Probability>> viewer;
 
 	public MeanProbabilityComposer(MapViewer<? super L, ? extends Map<? extends K, ? extends Probability>> viewer) {
+		if (viewer == null) { throw new NullPointerException(); }
 		this.viewer = viewer;
 	}
 

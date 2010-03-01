@@ -8,6 +8,8 @@ import java.util.Map;
 /**
 ** DOCUMENT.
 **
+** @param <I> Type of identity
+** @param <A> Type of address
 ** @param <S> Type of score
 ** @param <Z> Type of identity-score
 */

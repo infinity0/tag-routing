@@ -42,7 +42,7 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	protected Routing<T, A, W, S> layer_hi;
 	protected Contact<?, A, S, ?> layer_lo;
 
-	final protected TGraphComposer<U, W, S> mod_tgr_cmp;
+	final protected TGraphComposer<T, A, U, W, S> mod_tgr_cmp;
 	final protected AddressSchemeBuilder<T, A, U, W> mod_asc_bld;
 
 	final protected DataSources<A, LocalTGraph<T, A, U, W>, S> source;
@@ -53,10 +53,12 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 	public Naming(
 		Query<?, T> query,
 		StoreControl<?, T, A, U, W, S, ?> sctl,
-		TGraphComposer<U, W, S> mod_tgr_cmp,
+		TGraphComposer<T, A, U, W, S> mod_tgr_cmp,
 		AddressSchemeBuilder<T, A, U, W> mod_asc_bld
 	) {
 		super(query, sctl);
+		if (mod_tgr_cmp == null) { throw new NullPointerException(); }
+		if (mod_asc_bld == null) { throw new NullPointerException(); }
 		this.mod_tgr_cmp = mod_tgr_cmp;
 		this.mod_asc_bld = mod_asc_bld;
 		// TODO NOW

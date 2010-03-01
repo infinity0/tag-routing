@@ -47,6 +47,7 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 		PTableComposer<I, A, S, Z> mod_ptb_cmp
 	) {
 		super(query, sctl);
+		if (mod_ptb_cmp == null) { throw new NullPointerException(); }
 		this.mod_ptb_cmp = mod_ptb_cmp;
 		// TODO NOW
 		this.source = null;
