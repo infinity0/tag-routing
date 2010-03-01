@@ -19,7 +19,7 @@ public class Probability /*extends Number TODO LOW*/ implements Comparable<Proba
 	final public double val;
 
 	public Probability(double v) {
-		if (v < 0 || v > 1) {
+		if (!(0 <= v && v <= 1)) { // catch NaN
 			throw new IllegalArgumentException("Invalid probability");
 		}
 		// this turns -0.0 to +0.0, so that +0.0 is the unique "minimum element"

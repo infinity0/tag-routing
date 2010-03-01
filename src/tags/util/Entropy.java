@@ -19,7 +19,7 @@ public class Entropy /*extends Number TODO LOW*/ implements Comparable<Entropy> 
 	final public double val;
 
 	public Entropy(double v) {
-		if (v < 0) {
+		if (!(0 <= v)) { // catch NaN
 			throw new IllegalArgumentException("Invalid entropy");
 		}
 		// this turns -0.0 to +0.0, so that +0.0 is the unique "minimum element"
