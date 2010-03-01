@@ -10,6 +10,10 @@ final public class CollectionTests extends TestCase {
 	private CollectionTests() { }
 
 	public static void testIterable(Iterable<?> ib, int sz) {
+		testIterable(ib, sz, true);
+	}
+
+	public static void testIterable(Iterable<?> ib, int sz, boolean testrem) {
 		Iterator<?> it;
 		int i = 0;
 
@@ -19,6 +23,8 @@ final public class CollectionTests extends TestCase {
 		}
 		checkNextException(it);
 		assertTrue(i == sz);
+
+		if (!testrem) { return; }
 
 		// Test removal
 		it = ib.iterator();

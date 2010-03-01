@@ -660,6 +660,15 @@ final public class Maps {
 	}
 
 
+	/**
+	** Returns an immutable (arc-map view) of the given (map of nodes to their
+	** outgoing neighbours and arc-attributes).
+	**
+	** This implementation is efficient for entrySet().iterator(), get(), and
+	** containsKey(); and O(V) (ie. better than O(E)) for size(), isEmpty().
+	**
+	** TODO NORM make the view mutable
+	*/
 	public static <S, T0, T1, W> U2Map<Arc<S, T0>, Arc<S, T1>, W> viewAsArcMap(final Map<S, U2Map<T0, T1, W>> outgoing) {
 		return Maps.uniteDisjoint(
 			new AbstractMap<Arc<S, T0>, W>() {

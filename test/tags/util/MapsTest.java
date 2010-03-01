@@ -26,6 +26,9 @@ public class MapsTest extends TestCase {
 				testUniteDisjoint(s0, s1);
 				testConvoluteStrict(s0, s1);
 				testViewSubMap(s0, s1);
+				for (int ni=0; ni<nn; ++ni) {
+					testViewArcMap(s0, s1, ni);
+				}
 			}
 		}
 	}
@@ -142,6 +145,24 @@ public class MapsTest extends TestCase {
 			assertTrue(parent.size() == 0);
 			assertTrue(subview.size() == 0);
 		}
+	}
+
+	public void testViewArcMap(int s0, int s1, int ni) {
+		// TODO NORM some more sophisticated tests for when the view is made mutable
+		Map<String, U2Map<Integer, Long, Double>> outgoing = new HashMap<String, U2Map<Integer, Long, Double>>();
+		for (int i=0; i<ni; ++i) {
+			String key = Generators.rndKey();
+			U2Map<Integer, Long, Double> out = Maps.uniteDisjoint(new HashMap<Integer, Double>(), new HashMap<Long, Double>());
+			for (int j=0; j<s0; ++j) { out.K0Map().put(j, Math.random()); }
+			for (int j=0; j<s1; ++j) { out.K1Map().put((long)j, Math.random()); }
+			outgoing.put(key, out);
+		}
+
+		U2Map<Arc<String, Integer>, Arc<String, Long>, Double> view = Maps.viewAsArcMap(outgoing);
+		CollectionTests.testIterable(view.entrySet(), ni*(s0+s1), false);
+
+		outgoing.clear();
+		CollectionTests.testIterable(view.entrySet(), 0, false);
 	}
 
 }
