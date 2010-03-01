@@ -109,7 +109,8 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 	}
 
 	private static LocalViewFactory stdFactory = new LocalViewFactory() {
-		@Override @SuppressWarnings("unchecked") public Object createLocalView(Object addr, DataSources src) {
+		@SuppressWarnings("unchecked")
+		@Override public Object createLocalView(Object addr, DataSources src) {
 			return new LocalIndex(addr, src);
 		}
 	};

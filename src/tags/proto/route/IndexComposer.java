@@ -13,8 +13,8 @@ import java.util.Map;
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
-public interface IndexComposer<W, S> {
+public interface IndexComposer<T, A, W, S> {
 
-	public <T, A> W composeArc(MapX2<A, LocalIndex<T, A, W>, S> src_score, U2<Arc<T, A>, Arc<T, A>> arc);
+	public W composeArc(MapX2<A, LocalIndex<T, A, W>, S> src_score, U2<Arc<T, A>, Arc<T, A>> arc);
 
 }

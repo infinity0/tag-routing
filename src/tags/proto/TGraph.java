@@ -4,6 +4,7 @@ package tags.proto;
 import tags.util.Maps;
 
 import tags.util.Arc;
+import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
 import tags.util.Maps.U2MapX2;
 import java.util.Set;
@@ -86,6 +87,21 @@ public class TGraph<T, A, U, W> {
 	*/
 	public U2Map<Arc<T, T>, Arc<T, A>, W> arcMap() {
 		throw new UnsupportedOperationException("not implemented");
+	}
+
+	/**
+	** Whether this object knows about both endpoints of the given arc. If this
+	** is true, but the given arc does not belong to this object, then it is
+	** likely that the two endpoints have an implicit "zero-arc" between them.
+	*/
+	public boolean hasEndpoints(U2<Arc<T, T>, Arc<T, A>> arc) {
+		if (arc.isT0()) {
+			Arc<T, T> a = arc.getT0();
+			return node_map.K0Map().containsKey(a.src) && node_map.K0Map().containsKey(a.dst);
+		} else {
+			Arc<T, A> a = arc.getT1();
+			return node_map.K0Map().containsKey(a.src) && node_map.K1Map().containsKey(a.dst);
+		}
 	}
 
 	/**

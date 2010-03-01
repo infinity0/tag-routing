@@ -11,18 +11,18 @@ import java.util.Map;
 ** @param <S> Type of score
 ** @param <Z> Type of identity-score
 */
-public interface PTableComposer<S, Z> {
+public interface PTableComposer<I, A, S, Z> {
 
 	/**
 	** Returns the combined value for the given item (interpreted as a TGraph
 	** address), using data from the given sources.
 	*/
-	public <I, A> S composePTableGNode(MapX2<I, PTable<A, S>, Z> src_score, A item);
+	public S composePTableGNode(MapX2<I, PTable<A, S>, Z> src_score, A item);
 
 	/**
 	** Returns the combined value for the given item (interpreted as an Index
 	** address), using data from the given sources.
 	*/
-	public <I, A> S composePTableHNode(MapX2<I, PTable<A, S>, Z> src_score, A item);
+	public S composePTableHNode(MapX2<I, PTable<A, S>, Z> src_score, A item);
 
 }

@@ -32,7 +32,7 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 
 	protected Naming<?, A, ?, ?, S> layer_hi;
 
-	final protected PTableComposer<S, Z> mod_ptb_cmp;
+	final protected PTableComposer<I, A, S, Z> mod_ptb_cmp;
 
 	// TODO NORM maybe use a DataSources for this too...
 	final protected MapX2<I, PTable<A, S>, Z> source;
@@ -44,7 +44,7 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 	public Contact(
 		Query<I, ?> query,
 		StoreControl<I, ?, A, ?, ?, S, Z> sctl,
-		PTableComposer<S, Z> mod_ptb_cmp
+		PTableComposer<I, A, S, Z> mod_ptb_cmp
 	) {
 		super(query, sctl);
 		this.mod_ptb_cmp = mod_ptb_cmp;

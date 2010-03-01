@@ -38,7 +38,7 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 
 	protected Naming<T, A, ?, W, S> layer_lo;
 
-	final protected IndexComposer<W, S> mod_idx_cmp;
+	final protected IndexComposer<T, A, W, S> mod_idx_cmp;
 	final protected LookupScorer<W, S> mod_lku_scr;
 
 	final protected DataSources<A, LocalIndex<T, A, W>, S> source;
@@ -49,7 +49,7 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	public Routing(
 		Query<?, T> query,
 		StoreControl<?, T, A, ?, W, S, ?> sctl,
-		IndexComposer<W, S> mod_idx_cmp,
+		IndexComposer<T, A, W, S> mod_idx_cmp,
 		LookupScorer<W, S> mod_lku_scr
 	) {
 		super(query, sctl);

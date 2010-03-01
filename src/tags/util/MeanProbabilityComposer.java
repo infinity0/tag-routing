@@ -11,24 +11,32 @@ import java.util.Map;
 **
 ** DOCUMENT. more details...
 */
-abstract public class MeanProbabilityComposer implements ValueComposer<Probability, Probability> {
+abstract public class MeanProbabilityComposer<R, L, K> implements ValueComposer<R, L, Probability, K, Probability> {
+
+	final protected MapViewer<? super L, ? extends Map<? extends K, ? extends Probability>> viewer;
+
+	public MeanProbabilityComposer(MapViewer<? super L, ? extends Map<? extends K, ? extends Probability>> viewer) {
+		this.viewer = viewer;
+	}
 
 	/**
 	** {@inheritDoc}
 	**
+	** DOCUMENT the precise formula used here...
+	**
 	** @throws NullPointerException if any of the data sources map the item to
 	**         a {@code null} probability
 	*/
-	@Override public <R, L, K> Probability composeValue(MapX2<R, L, Probability> source, K item, MapViewer<L, ? extends Map<K, Probability>> viewer) {
+	@Override public Probability composeValue(MapX2<? extends R, ? extends L, ? extends Probability> source, K item) {
 		double top = 0, div = 0;
-		for (X2<L, Probability> x: source.values()) {
-			Map<K, Probability> view = viewer.mapFor(x._0);
+		for (X2<? extends L, ? extends Probability> x: source.values()) {
+			Map<? extends K, ? extends Probability> view = viewer.mapFor(x._0);
 			Probability score = x._1;
 			if (view.containsKey(item)) {
 				top += score.val * view.get(item).val;
 				div += score.val;
 			} else {
-				div += score.val * alpha(view, item);
+				div += score.val * alpha(x._0, item);
 			}
 		}
 		return new Probability(top/div);
@@ -38,6 +46,6 @@ abstract public class MeanProbabilityComposer implements ValueComposer<Probabili
 	** Returns the probability that the the given data source implicitly judges
 	** the given item to be worthless.
 	*/
-	abstract protected <K> double alpha(Map<K, Probability> view, K item);
+	abstract protected double alpha(L view, K item);
 
 }

@@ -4,6 +4,7 @@ package tags.proto;
 import tags.util.Maps;
 
 import tags.util.Arc;
+import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
 import tags.util.Maps.U2MapX2;
 import java.util.Set;
@@ -43,7 +44,6 @@ public class Index<T, A, W> {
 	** Returns the set of documents referred to by this index.
 	*/
 	public Set<A> nodeSetD() {
-		// TODO HIGH maybe this need to go into LocalIndex
 		throw new UnsupportedOperationException("not implemented");
 	}
 
@@ -51,12 +51,26 @@ public class Index<T, A, W> {
 	** Returns the set of indexes referred to by this index.
 	*/
 	public Set<A> nodeSetH() {
-		// TODO HIGH maybe this need to go into LocalIndex
 		throw new UnsupportedOperationException("not implemented");
 	}
 
 	public U2Map<Arc<T, A>, Arc<T, A>, W> arcMap() {
 		throw new UnsupportedOperationException("not implemented");
+	}
+
+	/**
+	** Whether this object knows about both endpoints of the given arc. If this
+	** is true, but the given arc does not belong to this object, then it is
+	** likely that the two endpoints have an implicit "zero-arc" between them.
+	*/
+	public boolean hasEndpoints(U2<Arc<T, A>, Arc<T, A>> arc) {
+		if (arc.isT0()) {
+			Arc<T, A> a = arc.getT0();
+			return nodeSetT().contains(a.src) && nodeSetH().contains(a.dst);
+		} else {
+			Arc<T, A> a = arc.getT1();
+			return nodeSetT().contains(a.src) && nodeSetD().contains(a.dst);
+		}
 	}
 
 	public U2Map<A, A, W> getOutgoingTarcAttrMap(T src) {

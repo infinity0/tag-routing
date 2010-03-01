@@ -15,7 +15,7 @@ import java.util.Map;
 ** Basic implementation of {@link PTableComposer} which uses {@link
 ** MeanProbabilityComposer} with a constant {@code alpha} value.
 */
-public class ProtoPTableComposer implements PTableComposer<Probability, Probability> {
+public class ProtoPTableComposer<I, A> implements PTableComposer<I, A, Probability, Probability> {
 
 	/**
 	** Probability that a data source judges an item to be worthless, given
@@ -27,8 +27,16 @@ public class ProtoPTableComposer implements PTableComposer<Probability, Probabil
 	** The {@link MeanProbabilityComposer#alpha(Map, Object)} method of this
 	** composer just returns {@link #alpha}.
 	*/
-	final public ValueComposer<Probability, Probability> val_cmp = new MeanProbabilityComposer() {
-		@Override protected <A> double alpha(Map<A, Probability> src, A item) {
+	final public ValueComposer<I, PTable<A, Probability>, Probability, A, Probability> val_cmp_g =
+	new MeanProbabilityComposer<I, PTable<A, Probability>, A>(Viewers.<A, Probability>PTableTGraphs()) {
+		@Override protected double alpha(PTable<A, Probability> view, A item) {
+			return alpha;
+		}
+	};
+
+	final public ValueComposer<I, PTable<A, Probability>, Probability, A, Probability> val_cmp_h =
+	new MeanProbabilityComposer<I, PTable<A, Probability>, A>(Viewers.<A, Probability>PTableIndexes()) {
+		@Override protected double alpha(PTable<A, Probability> view, A item) {
 			return alpha;
 		}
 	};
@@ -57,15 +65,15 @@ public class ProtoPTableComposer implements PTableComposer<Probability, Probabil
 	/**
 	** {@inheritDoc}
 	*/
-	@Override public <I, A> Probability composePTableGNode(MapX2<I, PTable<A, Probability>, Probability> src_score, A item) {
-		return val_cmp.composeValue(src_score, item, Viewers.<A, Probability>PTableTGraphs());
+	@Override public Probability composePTableGNode(MapX2<I, PTable<A, Probability>, Probability> src_score, A item) {
+		return val_cmp_g.composeValue(src_score, item);
 	}
 
 	/**
 	** {@inheritDoc}
 	*/
-	@Override public <I, A> Probability composePTableHNode(MapX2<I, PTable<A, Probability>, Probability> src_score, A item) {
-		return val_cmp.composeValue(src_score, item, Viewers.<A, Probability>PTableIndexes());
+	@Override public Probability composePTableHNode(MapX2<I, PTable<A, Probability>, Probability> src_score, A item) {
+		return val_cmp_h.composeValue(src_score, item);
 	}
 
 }

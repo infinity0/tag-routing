@@ -41,7 +41,7 @@ final public class Viewers {
 		}
 	};
 
-	final protected static MapViewer h_view_a = new MapViewer<Index, U2Map>() {
+	final public static MapViewer h_view_a = new MapViewer<Index, U2Map>() {
 		@Override public U2Map mapFor(Index obj) {
 			return obj.arcMap();
 		}
