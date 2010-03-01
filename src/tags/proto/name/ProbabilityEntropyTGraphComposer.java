@@ -4,6 +4,7 @@ package tags.proto.name;
 import tags.proto.Viewers;
 import tags.util.ValueComposer;
 import tags.util.MeanProbabilityComposer;
+import tags.util.MeanEntropyComposer;
 import tags.util.MapViewer;
 
 import tags.proto.LocalTGraph;
@@ -11,6 +12,7 @@ import tags.util.Maps.MapX2;
 import tags.util.Union.U2;
 import tags.util.Arc;
 import tags.util.Probability;
+import tags.util.Entropy;
 import java.util.Map;
 
 /**
@@ -40,8 +42,8 @@ public class ProbabilityEntropyTGraphComposer<T, A> implements TGraphComposer<T,
 	** The {@link MeanProbabilityComposer#alpha(Map, Object)} method of this
 	** composer just returns {@link #alpha}.
 	*/
-	final public ValueComposer<A, LocalTGraph<T, A, Probability, Probability>, Probability, U2<T, A>, Probability> val_cmp_node =
-	new MeanProbabilityComposer<A, LocalTGraph<T, A, Probability, Probability>, U2<T, A>>(null/* TODO HIGH */) {
+	final public ValueComposer<A, LocalTGraph<T, A, Probability, Probability>, Probability, U2<T, A>, Entropy> val_cmp_node =
+	new MeanEntropyComposer<A, LocalTGraph<T, A, Probability, Probability>, U2<T, A>>(Viewers.<T, A>ProbabilityTGraphEntropyNodeMap()) {
 		@Override protected double alpha(LocalTGraph<T, A, Probability, Probability> src, U2<T, A> item) {
 			return node_alpha;
 		}
@@ -91,7 +93,7 @@ public class ProbabilityEntropyTGraphComposer<T, A> implements TGraphComposer<T,
 	** {@inheritDoc}
 	*/
 	public Probability composeNode(MapX2<A, LocalTGraph<T, A, Probability, Probability>, Probability> src_score, U2<T, A> node) {
-		throw new UnsupportedOperationException("not implemented");
+		return val_cmp_node.composeValue(src_score, node).probability();
 	}
 
 	/**

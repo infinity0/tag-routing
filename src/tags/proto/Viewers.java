@@ -1,11 +1,15 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto;
 
+import tags.util.Maps;
 import tags.util.MapViewer;
 
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Arc;
+import tags.util.CompositeMap;
+import tags.util.Probability;
+import tags.util.Entropy;
 import java.util.Map;
 
 /**
@@ -47,6 +51,24 @@ final public class Viewers {
 		}
 	};
 
+	final public static MapViewer pg_view_en = new MapViewer<TGraph, U2Map>() {
+		@SuppressWarnings("unchecked")
+		@Override public U2Map mapFor(TGraph obj) {
+			return Maps.uniteDisjoint(
+				new CompositeMap<Object, Probability, Entropy>(obj.nodeMap().K0Map()) {
+					@Override public Entropy itemFor(Probability p) {
+						return p.entropy();
+					}
+				},
+				new CompositeMap<Object, Probability, Entropy>(obj.nodeMap().K1Map()) {
+					@Override public Entropy itemFor(Probability p) {
+						return p.entropy();
+					}
+				}
+			);
+		}
+	};
+
 	@SuppressWarnings("unchecked") public static <A, S> MapViewer<PTable<A, S>, Map<A, S>> PTableTGraphs() {
 		return (MapViewer<PTable<A, S>, Map<A, S>>)p_view_g;
 	}
@@ -67,7 +89,8 @@ final public class Viewers {
 		return (MapViewer<LocalIndex<T, A, W>, U2Map<Arc<T, A>, Arc<T, A>, W>>)p_view_h;
 	}
 
-
-
+	@SuppressWarnings("unchecked") public static <T, A> MapViewer<LocalTGraph<T, A, Probability, Probability>, U2Map<T, A, Entropy>> ProbabilityTGraphEntropyNodeMap() {
+		return (MapViewer<LocalTGraph<T, A, Probability, Probability>, U2Map<T, A, Entropy>>)p_view_h;
+	}
 
 }

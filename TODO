@@ -1,11 +1,8 @@
-- LocalIndex and Index (pretty much done)
+- LocalIndex/LocalTGraph constructors
 - review Maps.viewSubMap
 - review Naming.composeTGraph
-- possibly move AddressScheme.pushNode* into ProtoAddressScheme
-(0 day)
-
-- ProbabilityEntropyTGraphComposer
-- ProbabilityIndexComposer
+- review CompositeMap, MeanEntropyComposer
+- test ProbabilityEntropyTGraphComposer, ProbabilityIndexComposer
 (1/2 day)
 
 - link everything together n' shiii
@@ -13,8 +10,10 @@
 (3 days maybe)
 
 
+
 - add tags.rout.IndexComposer to the design document
 - explain how tags are scored, in the design document
 (laterz)
 - rename Probability to just Prob?
 - rename SPUProbabilityInferer to ShortPathUnionProbInferer?
+- possibly move AddressScheme.pushNode* into ProtoAddressScheme
