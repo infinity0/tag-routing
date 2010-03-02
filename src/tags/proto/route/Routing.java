@@ -14,7 +14,7 @@ import tags.util.Maps;
 import tags.proto.AddressScheme;
 import tags.proto.DataSources;
 import tags.proto.LocalIndex;
-import tags.proto.Index;
+import tags.proto.FullIndex;
 import tags.proto.Lookup;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
@@ -44,7 +44,7 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	final protected DataSources<A, LocalIndex<T, A, W>, S> source;
 	final protected Map<A, Set<T>> lookup;
 
-	protected LocalIndex<T, A, W> index;
+	protected FullIndex<T, A, W> index;
 
 	public Routing(
 		Query<?, T> query,
@@ -122,14 +122,14 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 	/**
 	** DOCUMENT
 	*/
-	public LocalIndex<T, A, W> composeIndex() {
+	public FullIndex<T, A, W> composeIndex() {
 		// iterates through all arcs present in every source
 		U2Map<Arc<T, A>, Arc<T, A>, W> arc_map = Maps.uniteDisjoint(new HashMap<Arc<T, A>, W>(), new HashMap<Arc<T, A>, W>());
 		for (U2<Arc<T, A>, Arc<T, A>> arc: Maps.domain(MultiParts.iterIndexArcMaps(source.localMap().values()))) {
 			arc_map.put(arc, mod_idx_cmp.composeArc(source.localScoreMap(), arc));
 		}
 
-		return new LocalIndex<T, A, W>(arc_map);
+		return new FullIndex<T, A, W>(arc_map);
 	}
 
 	/**

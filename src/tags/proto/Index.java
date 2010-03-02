@@ -1,7 +1,7 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto;
 
-import tags.util.Maps;
+import tags.util.Graphs;
 
 import tags.util.Arc;
 import tags.util.Union.U2;
@@ -25,16 +25,13 @@ import java.util.HashMap;
 */
 public class Index<T, A, W> {
 
-	// TODO NORM
-	// may not be good idea to have the same type of address for both documents and indexes...
-
 	/**
 	** Map of tags to their outgoing nodes (documents and indexes) and their
 	** arc-weights.
 	*/
 	final protected Map<T, U2Map<A, A, W>> outgoing = new HashMap<T, U2Map<A, A, W>>();
 
-	final protected U2Map<Arc<T, A>, Arc<T, A>, W> arc_map_view = Maps.viewAsArcMap(outgoing);
+	final protected U2Map<Arc<T, A>, Arc<T, A>, W> arc_map_view = Graphs.viewAsArcMap(outgoing);
 
 	/**
 	** Set of indexes pointed to by this index.
@@ -45,6 +42,16 @@ public class Index<T, A, W> {
 	** Set of documents pointed to by this index.
 	*/
 	final protected Set<A> node_set_d = new HashSet<A>();
+
+	/**
+	** Creates a new empty index.
+	*/
+	public Index() { }
+
+	public Index(U2Map<Arc<T, A>, Arc<T, A>, W> arc_map) {
+		Graphs.populateOutgoing(arc_map, this.outgoing);
+		// TODO HIGH populate nodes
+	}
 
 	/**
 	** Returns the set of tags referred to by this index.
@@ -67,13 +74,6 @@ public class Index<T, A, W> {
 	public Set<A> nodeSetD() {
 		// FIXME NORM should really be immutable view
 		return node_set_d;
-	}
-
-	/**
-	** Creates a new empty index.
-	*/
-	public Index() {
-		// pass
 	}
 
 	public U2Map<Arc<T, A>, Arc<T, A>, W> arcMap() {

@@ -158,7 +158,7 @@ public class MapsTest extends TestCase {
 			outgoing.put(key, out);
 		}
 
-		U2Map<Arc<String, Integer>, Arc<String, Long>, Double> view = Maps.viewAsArcMap(outgoing);
+		U2Map<Arc<String, Integer>, Arc<String, Long>, Double> view = Graphs.viewAsArcMap(outgoing);
 		CollectionTests.testIterable(view.entrySet(), ni*(s0+s1), false);
 
 		outgoing.clear();

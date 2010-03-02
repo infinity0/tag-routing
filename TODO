@@ -1,6 +1,5 @@
 - LocalIndex/LocalTGraph constructors
 - review Maps.viewSubMap
-- review Naming.composeTGraph
 - review CompositeMap, MeanEntropyComposer
 - test ProbabilityEntropyTGraphComposer, ProbabilityIndexComposer
 (1/2 day)

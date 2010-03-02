@@ -13,13 +13,13 @@ import java.util.HashMap;
 import java.io.IOException;
 
 /**
-** Local view of an {@link Index}.
+** Local view of an {@link Index}, implemented on top of {@link FullIndex}.
 **
 ** @param <T> Type of tag
 ** @param <A> Type of document/index address
 ** @param <W> Type of arc-attribute
 */
-public class LocalIndex<T, A, W> extends Index<T, A, W> {
+public class LocalIndex<T, A, W> extends FullIndex<T, A, W> {
 
 	/**
 	** Remote address of this local view.
@@ -30,12 +30,6 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 	** The {@link DataSources} collection that this local view is part of.
 	*/
 	final protected DataSources<A, LocalIndex<T, A, W>, ?> src;
-
-	/**
-	** Map of nodes (documents and indexes) to their incoming tags and their
-	** arc-weights.
-	*/
-	final protected U2Map<A, A, Map<T, W>> incoming = Maps.uniteDisjoint(new HashMap<A, Map<T, W>>(), new HashMap<A, Map<T, W>>());
 
 	/**
 	** Constructs a new local view of the given remote address, attached to the
@@ -49,26 +43,12 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 		this.src = src;
 	}
 
-	public LocalIndex(U2Map<Arc<T, A>, Arc<T, A>, W> arc_map) {
-		throw new UnsupportedOperationException("not implemented");
-	}
-
 	/**
 	** Returns the results for a given tag, filtering out the indexes that are
 	** in use as a data source.
 	*/
 	public U2Map<A, A, W> getOutgoingTLeaf(T src) {
 		throw new UnsupportedOperationException("not implemented");
-	}
-
-	public Map<T, W> getIncomingDarcAttrMap(A doc) {
-		// FIXME NORM should really be immutable view
-		return incoming.K0Map().get(doc);
-	}
-
-	public Map<T, W> getIncomingHarcAttrMap(A idx) {
-		// FIXME NORM should really be immutable view
-		return incoming.K1Map().get(idx);
 	}
 
 	/**
@@ -87,7 +67,7 @@ public class LocalIndex<T, A, W> extends Index<T, A, W> {
 		}
 
 		outgoing.put(subj, out);
-		src.setOutgoing(addr, out.K1Map().keySet());
+		if (src != null) { src.setOutgoing(addr, out.K1Map().keySet()); }
 
 		// calculate incoming arcs
 		for (Map.Entry<U2<A, A>, W> en: out.entrySet()) {

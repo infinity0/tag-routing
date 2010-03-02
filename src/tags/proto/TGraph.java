@@ -1,6 +1,7 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto;
 
+import tags.util.Graphs;
 import tags.util.Maps;
 
 import tags.util.Arc;
@@ -37,14 +38,12 @@ public class TGraph<T, A, U, W> {
 	// NOTE
 	// node_map.K0Map().keySet() should always be the same as outgoing.keySet()
 
-	final protected U2Map<Arc<T, T>, Arc<T, A>, W> arc_map_view = Maps.viewAsArcMap(outgoing);
+	final protected U2Map<Arc<T, T>, Arc<T, A>, W> arc_map_view = Graphs.viewAsArcMap(outgoing);
 
 	/**
-	** Creates a new empty tag graph.
+	** Creates a new empty tag-graph.
 	*/
-	public TGraph() {
-		// pass
-	}
+	public TGraph() { }
 
 	/**
 	** Creates a new tag graph from the given node-map and arc-map. All nodes

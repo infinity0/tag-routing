@@ -16,33 +16,25 @@ import java.util.HashMap;
 import java.io.IOException;
 
 /**
-** Local view of a {@link TGraph}.
-**
-** This implementation provides O(1) lookup for a node's outgoing and incoming
-** neighbours.
+** Local view of a {@link TGraph}, implemented on top of {@link FullTGraph}.
 **
 ** @param <T> Type of tag
 ** @param <A> Type of address
 ** @param <U> Type of node-attribute
 ** @param <W> Type of arc-attribute
 */
-public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
+public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 
 	/**
-	** Remote address of this local view
+	** Remote address of this local view.
 	*/
 	final public A addr;
 
 	/**
-	** The {@link DataSources} collection that this local view is part of.
+	** The {@link DataSources} collection that this local view is part of. This
+	** may be {@code null}, in which case this is a standalone local view.
 	*/
 	final protected DataSources<A, LocalTGraph<T, A, U, W>, ?> src;
-
-	/**
-	** Map of nodes (tags and tgraphs) to their incoming tags and their
-	** arc-weights.
-	*/
-	final protected U2Map<T, A, Map<T, W>> incoming = Maps.uniteDisjoint(new HashMap<T, Map<T, W>>(), new HashMap<A, Map<T, W>>());
 
 	final protected Map<T, Set<U2<T, A>>> incomplete = new HashMap<T, Set<U2<T, A>>>();
 	final protected Set<T> complete = new HashSet<T>();
@@ -60,10 +52,6 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 		this.src = src;
 	}
 
-	public LocalTGraph(U2Map<T, A, U> node_map, U2Map<Arc<T, T>, Arc<T, A>, W> arc_map) {
-		throw new UnsupportedOperationException("not implemented");
-	}
-
 	/**
 	** Returns the set of tags for which itself, its out-arcs and its out-nodes
 	** have all been loaded.
@@ -71,28 +59,6 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	public Set<T> getCompletedTags() {
 		// TODO HIGH this might need to contain tags that we have loaded, that are NOT part of the TGraph
 		return complete_immute;
-	}
-
-	/**
-	** Returns the incoming neighbours of the given target tag. Only loaded
-	** neighours (both node and arc) will be returned.
-	*/
-	public Neighbour<T, A, U, W> getIncomingT(T dst) {
-		// FIXME NORM should really be immutable view
-		Map<T, W> in_arc = incoming.K0Map().get(dst);
-		Map<T, U> in_node = Maps.viewSubMap(node_map.K0Map(), in_arc.keySet());
-		return new Neighbour<T, A, U, W>(in_node, Collections.<A, U>emptyMap(), in_arc, Collections.<A, W>emptyMap());
-	}
-
-	/**
-	** Returns the incoming neighbours of the given target tgraph. Only loaded
-	** neighbours (both node and arc) will be returned.
-	*/
-	public Neighbour<T, A, U, W> getIncomingG(A dst) {
-		// FIXME NORM should really be immutable view
-		Map<T, W> in_arc = incoming.K1Map().get(dst);
-		Map<T, U> in_node = Maps.viewSubMap(node_map.K0Map(), in_arc.keySet());
-		return new Neighbour<T, A, U, W>(in_node, Collections.<A, U>emptyMap(), in_arc, Collections.<A, W>emptyMap());
 	}
 
 	/**
@@ -154,7 +120,7 @@ public class LocalTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 		}
 
 		outgoing.put(subj, out);
-		src.setOutgoing(addr, out.K1Map().keySet());
+		if (src != null) { src.setOutgoing(addr, out.K1Map().keySet()); }
 
 		// calculate incoming arcs
 		for (Map.Entry<U2<T, A>, W> en: out.entrySet()) {
