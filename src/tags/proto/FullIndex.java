@@ -4,11 +4,11 @@ package tags.proto;
 import tags.util.Graphs;
 import tags.util.Maps;
 
+import tags.util.Arc;
 import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
-import tags.util.Arc;
-import java.util.Set;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.HashMap;
 
 /**
@@ -33,8 +33,7 @@ public class FullIndex<T, A, W> extends Index<T, A, W> {
 	public FullIndex() { }
 
 	public FullIndex(U2Map<Arc<T, A>, Arc<T, A>, W> arc_map) {
-		super(arc_map);
-		Graphs.populateIncoming(arc_map, incoming);
+		Graphs.populateFromArcMap(arc_map, outgoing, incoming, new java.util.HashSet<T>(), node_set_d, node_set_h);
 	}
 
 	public Map<T, W> getIncomingDarcAttrMap(A doc) {

@@ -1,19 +1,15 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto;
 
+import tags.util.Graphs;
 import tags.util.Maps;
-import tags.util.Union;
 
+import tags.util.Arc;
 import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
-import tags.util.Arc;
 import java.util.Collections;
-import java.util.Set;
 import java.util.Map;
-import java.util.HashSet;
 import java.util.HashMap;
-
-import java.io.IOException;
 
 /**
 ** On top of {@link TGraph}, this class provides O(1) lookup for a node's
@@ -38,7 +34,13 @@ public class FullTGraph<T, A, U, W> extends TGraph<T, A, U, W> {
 	public FullTGraph() { }
 
 	public FullTGraph(U2Map<T, A, U> node_map, U2Map<Arc<T, T>, Arc<T, A>, W> arc_map) {
-		throw new UnsupportedOperationException("not implemented");
+		this.node_map.putAll(node_map);
+		Graphs.populateFromNodesAndArcs(
+			node_map.K0Map().keySet(),
+			node_map.K0Map().keySet(),
+			node_map.K1Map().keySet(),
+			arc_map, this.outgoing, this.incoming
+		);
 	}
 
 	/**

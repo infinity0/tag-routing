@@ -31,9 +31,9 @@ public class ProbabilityIndexComposer<T, A> implements IndexComposer<T, A, Proba
 	final public double alpha_2;
 
 	/**
-	** The {@link MeanProbabilityComposer#alpha(Map, Object)} method of this
-	** composer will return either {@link #alpha_1} or {@link #alpha_2},
-	** whichever is appropriate.
+	** The {@link MeanProbabilityComposer#alpha(Object, Object)} method of this
+	** composer returns either {@link #alpha_1} or {@link #alpha_2}, whichever
+	** is appropriate.
 	*/
 	final public ValueComposer<A, LocalIndex<T, A, Probability>, Probability, U2<Arc<T, A>, Arc<T, A>>, Probability> val_cmp =
 	new MeanProbabilityComposer<A, LocalIndex<T, A, Probability>, U2<Arc<T, A>, Arc<T, A>>>(Viewers.<T, A, Probability>IndexArcMap()) {

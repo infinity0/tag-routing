@@ -116,7 +116,7 @@ public class DataSources<R, L, S> {
 	** Mark a data source as being in use, and return a blank local view for
 	** it.
 	**
-	** TODO maybe make this call score_inf.inferScore() or something.
+	** TODO HIGH maybe make this call score_inf.inferScore() or something.
 	**
 	** @return The empty local view that was created
 	** @throws IllegalArgumentException if {@code src} is not a known source

@@ -15,7 +15,7 @@ import java.util.HashMap;
 /**
 ** Index. DOCUMENT.
 **
-** Bi-partite graph from tags to indexes/documents.
+** Bi-partite graph from tags to documents/indexes.
 **
 ** This implementation provides O(1) lookup for a tag's outgoing neighbours.
 **
@@ -49,8 +49,7 @@ public class Index<T, A, W> {
 	public Index() { }
 
 	public Index(U2Map<Arc<T, A>, Arc<T, A>, W> arc_map) {
-		Graphs.populateOutgoing(arc_map, this.outgoing);
-		// TODO HIGH populate nodes
+		Graphs.populateFromArcMap(arc_map, outgoing, null, new java.util.HashSet<T>(), node_set_d, node_set_h);
 	}
 
 	/**
@@ -61,19 +60,21 @@ public class Index<T, A, W> {
 	}
 
 	/**
-	** Returns the set of indexes referred to by this index.
-	*/
-	public Set<A> nodeSetH() {
-		// FIXME NORM should really be immutable view
-		return node_set_h;
-	}
-
-	/**
 	** Returns the set of documents referred to by this index.
 	*/
 	public Set<A> nodeSetD() {
 		// FIXME NORM should really be immutable view
 		return node_set_d;
+		//return incoming.K0Map().keySet();
+	}
+
+	/**
+	** Returns the set of indexes referred to by this index.
+	*/
+	public Set<A> nodeSetH() {
+		// FIXME NORM should really be immutable view
+		return node_set_h;
+		//return incoming.K1Map().keySet();
 	}
 
 	public U2Map<Arc<T, A>, Arc<T, A>, W> arcMap() {

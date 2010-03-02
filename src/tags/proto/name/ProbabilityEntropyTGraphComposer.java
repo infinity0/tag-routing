@@ -39,8 +39,8 @@ public class ProbabilityEntropyTGraphComposer<T, A> implements TGraphComposer<T,
 	final public double arc_alpha_2;
 
 	/**
-	** The {@link MeanProbabilityComposer#alpha(Map, Object)} method of this
-	** composer just returns {@link #alpha}.
+	** The {@link MeanProbabilityComposer#alpha(Object, Object)} method of this
+	** composer just returns {@link #node_alpha}.
 	*/
 	final public ValueComposer<A, LocalTGraph<T, A, Probability, Probability>, Probability, U2<T, A>, Entropy> val_cmp_node =
 	new MeanEntropyComposer<A, LocalTGraph<T, A, Probability, Probability>, U2<T, A>>(Viewers.<T, A>ProbabilityTGraphEntropyNodeMap()) {
@@ -50,8 +50,8 @@ public class ProbabilityEntropyTGraphComposer<T, A> implements TGraphComposer<T,
 	};
 
 	/**
-	** The {@link MeanProbabilityComposer#alpha(Map, Object)} method of this
-	** composer will return either {@link #alpha_1} or {@link #alpha_2},
+	** The {@link MeanProbabilityComposer#alpha(Object, Object)} method of this
+	** composer returns either {@link #arc_alpha_1} or {@link #arc_alpha_2},
 	** whichever is appropriate.
 	*/
 	final public ValueComposer<A, LocalTGraph<T, A, Probability, Probability>, Probability, U2<Arc<T, T>, Arc<T, A>>, Probability> val_cmp_arc =

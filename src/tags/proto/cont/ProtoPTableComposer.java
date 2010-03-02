@@ -24,7 +24,7 @@ public class ProtoPTableComposer<I, A> implements PTableComposer<I, A, Probabili
 	final public double alpha;
 
 	/**
-	** The {@link MeanProbabilityComposer#alpha(Map, Object)} method of this
+	** The {@link MeanProbabilityComposer#alpha(Object, Object)} method of this
 	** composer just returns {@link #alpha}.
 	*/
 	final public ValueComposer<I, PTable<A, Probability>, Probability, A, Probability> val_cmp_g =

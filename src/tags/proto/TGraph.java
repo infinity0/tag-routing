@@ -10,6 +10,7 @@ import tags.util.Maps.U2Map;
 import tags.util.Maps.U2MapX2;
 import java.util.Set;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.HashMap;
 
 /**
@@ -51,28 +52,12 @@ public class TGraph<T, A, U, W> {
 	*/
 	public TGraph(U2Map<T, A, U> node_map, U2Map<Arc<T, T>, Arc<T, A>, W> arc_map) {
 		this.node_map.putAll(node_map);
-
-		for (T tag: node_map.K0Map().keySet()) {
-			// unnecessary local variable definition is WORKAROUND for incomplete java type inference
-			U2Map<T, A, W> u2map = Maps.uniteDisjoint(new HashMap<T, W>(), new HashMap<A, W>());
-			this.outgoing.put(tag, u2map);
-		}
-
-		for (Map.Entry<Arc<T, T>, W> en: arc_map.K0Map().entrySet()) {
-			Arc<T, T> arc = en.getKey();
-			if (!node_map.K0Map().containsKey(arc.src) || !node_map.K0Map().containsKey(arc.dst)) {
-				throw new IllegalArgumentException("arc refers to non-existant node");
-			}
-			this.outgoing.get(arc.src).K0Map().put(arc.dst, en.getValue());
-		}
-
-		for (Map.Entry<Arc<T, A>, W> en: arc_map.K1Map().entrySet()) {
-			Arc<T, A> arc = en.getKey();
-			if (!node_map.K0Map().containsKey(arc.src) || !node_map.K1Map().containsKey(arc.dst)) {
-				throw new IllegalArgumentException("arc refers to non-existant node");
-			}
-			this.outgoing.get(arc.src).K1Map().put(arc.dst, en.getValue());
-		}
+		Graphs.populateFromNodesAndArcs(
+			node_map.K0Map().keySet(),
+			node_map.K0Map().keySet(),
+			node_map.K1Map().keySet(),
+			arc_map, this.outgoing, null
+		);
 	}
 
 	/**

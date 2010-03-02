@@ -1,6 +1,8 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.util;
 
+import tags.proto.TGraph;
+import tags.proto.Index;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Tuple.X2; // TODO NORM move TGraph.Neighbour here
@@ -10,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.AbstractSet;
 import java.util.AbstractMap;
+import java.util.HashMap;
 
 /**
 ** Utilities for Graphs (eg. {@link TGraph}, {@link Index}).
@@ -18,12 +21,151 @@ final public class Graphs {
 
 	private Graphs() { }
 
-	public static <S, T0, T1, W> void populateOutgoing(U2Map<Arc<S, T0>, Arc<S, T1>, W> arcmap, Map<S, U2Map<T0, T1, W>> outgoing) {
-		throw new UnsupportedOperationException("not implemented");
+	/**
+	** Populate the given empty data structures from the given node-set and
+	** arc-map. The arc-map must refer only to nodes in the set.
+	**
+	** TODO NORM make this use a Factory instead of just constructing HashMap
+	**
+	** @param node_src Set of source nodes
+	** @param node_dst_0 Set of target (0) nodes
+	** @param node_dst_1 Set of target (1) nodes
+	** @param arc_map Map of arcs to their attributes
+	** @param outgoing [Output] Map of nodes to their outgoing neighbours
+	** @param incoming [Output] Map of nodes to their incoming neighbours
+	** @param <S> Type of source node
+	** @param <T0> Type of target node (0)
+	** @param <T1> Type of target node (1)
+	** @param <W> Type of arc attribute
+	** @throws NullPointerException if any argument except {@code incoming} is
+	**         {@code null}.
+	** @throws IllegalArgumentException if the output structures are not empty,
+	**         or if the arc-map refers to objects not contained in the node
+	**         sets.
+	*/
+	public static <S, T0, T1, W> void populateFromNodesAndArcs(
+		Set<S> node_src,
+		Set<T0> node_dst_0,
+		Set<T1> node_dst_1,
+		U2Map<Arc<S, T0>, Arc<S, T1>, W> arc_map,
+		Map<S, U2Map<T0, T1, W>> outgoing,
+		U2Map<T0, T1, Map<S, W>> incoming
+	) {
+		if (!outgoing.isEmpty()) { throw new IllegalArgumentException("outgoing not empty"); }
+		if (incoming != null && !incoming.isEmpty()) { throw new IllegalArgumentException("incoming not empty"); }
+
+		// init arc holders
+		for (S src: node_src) {
+			U2Map<T0, T1, W> u2m = Maps.uniteDisjoint(new HashMap<T0, W>(), new HashMap<T1, W>());
+			outgoing.put(src, u2m);
+		}
+		if (incoming != null) {
+			for (T0 dst: node_dst_0) { incoming.K0Map().put(dst, new HashMap<S, W>()); }
+			for (T1 dst: node_dst_1) { incoming.K1Map().put(dst, new HashMap<S, W>()); }
+		}
+
+		for (Map.Entry<Arc<S, T0>, W> en: arc_map.K0Map().entrySet()) {
+			Arc<S, T0> arc = en.getKey(); W attr = en.getValue();
+
+			U2Map<T0, T1, W> out = outgoing.get(arc.src);
+			if (out == null) { throw new IllegalArgumentException("arc " + arc + " source not defined"); }
+			out.K0Map().put(arc.dst, attr);
+
+			if (incoming == null) {
+				if (!node_dst_0.contains(arc.dst)) {
+					throw new IllegalArgumentException("arc " + arc + " target not defined");
+				}
+				continue;
+			}
+
+			Map<S, W> in = incoming.K0Map().get(arc.dst);
+			if (in == null) { throw new IllegalArgumentException("arc " + arc + " target not defined"); }
+			in.put(arc.src, attr);
+		}
+
+		for (Map.Entry<Arc<S, T1>, W> en: arc_map.K1Map().entrySet()) {
+			Arc<S, T1> arc = en.getKey(); W attr = en.getValue();
+
+			U2Map<T0, T1, W> out = outgoing.get(arc.src);
+			if (out == null) { throw new IllegalArgumentException("arc " + arc + " source not defined"); }
+			out.K1Map().put(arc.dst, attr);
+
+			if (incoming == null) {
+				if (!node_dst_1.contains(arc.dst)) {
+					throw new IllegalArgumentException("arc " + arc + " target not defined");
+				}
+				continue;
+			}
+
+			Map<S, W> in = incoming.K1Map().get(arc.dst);
+			if (in == null) { throw new IllegalArgumentException("arc " + arc + " target not defined"); }
+			in.put(arc.src, attr);
+		}
 	}
 
-	public static <S, T0, T1, W> void populateIncoming(U2Map<Arc<S, T0>, Arc<S, T1>, W> arcmap, U2Map<T0, T1, Map<S, W>> incoming) {
-		throw new UnsupportedOperationException("not implemented");
+	/**
+	** Populate the given empty data structures from the given arc-map. The
+	** node-sets will be filled automatically.
+	**
+	** TODO NORM make this use a Factory instead of just constructing HashMap
+	**
+	** @param arc_map Map of arcs to their attributes
+	** @param outgoing [Output] Map of nodes to their outgoing neighbours
+	** @param incoming [Output] Map of nodes to their incoming neighbours
+	** @param node_src [Output] Set of source nodes
+	** @param node_dst_0 [Output] Set of target (0) nodes
+	** @param node_dst_1 [Output] Set of target (1) nodes
+	** @param <S> Type of source node
+	** @param <T0> Type of target node (0)
+	** @param <T1> Type of target node (1)
+	** @param <W> Type of arc attribute
+	** @throws NullPointerException if any argument except {@code incoming} is
+	**         {@code null}.
+	** @throws IllegalArgumentException if the output structures are not empty
+	*/
+	public static <S, T0, T1, W> void populateFromArcMap(
+		U2Map<Arc<S, T0>, Arc<S, T1>, W> arc_map,
+		Map<S, U2Map<T0, T1, W>> outgoing,
+		U2Map<T0, T1, Map<S, W>> incoming,
+		Set<S> node_src,
+		Set<T0> node_dst_0,
+		Set<T1> node_dst_1
+	) {
+		if (!node_src.isEmpty()) { throw new IllegalArgumentException("node_src not empty"); }
+		if (!node_dst_0.isEmpty()) { throw new IllegalArgumentException("node_dst_0 not empty"); }
+		if (!node_dst_1.isEmpty()) { throw new IllegalArgumentException("node_dst_1 not empty"); }
+		if (!outgoing.isEmpty()) { throw new IllegalArgumentException("outgoing not empty"); }
+		if (incoming != null && !incoming.isEmpty()) { throw new IllegalArgumentException("incoming not empty"); }
+
+		for (Map.Entry<Arc<S, T0>, W> en: arc_map.K0Map().entrySet()) {
+			Arc<S, T0> arc = en.getKey(); W attr = en.getValue();
+			node_src.add(arc.src); node_dst_0.add(arc.dst);
+
+			U2Map<T0, T1, W> out = outgoing.get(arc.src);
+			if (out == null) { outgoing.put(arc.src, out = Maps.uniteDisjoint(new HashMap<T0, W>(), new HashMap<T1, W>())); }
+			out.K0Map().put(arc.dst, attr);
+
+			if (incoming == null) { continue; }
+
+			Map<S, W> in = incoming.K0Map().get(arc.dst);
+			if (in == null) { incoming.K0Map().put(arc.dst, in = new HashMap<S, W>()); }
+			in.put(arc.src, attr);
+		}
+
+		for (Map.Entry<Arc<S, T1>, W> en: arc_map.K1Map().entrySet()) {
+			Arc<S, T1> arc = en.getKey(); W attr = en.getValue();
+			node_src.add(arc.src); node_dst_1.add(arc.dst);
+
+			U2Map<T0, T1, W> out = outgoing.get(arc.src);
+			if (out == null) { outgoing.put(arc.src, out = Maps.uniteDisjoint(new HashMap<T0, W>(), new HashMap<T1, W>())); }
+			out.K1Map().put(arc.dst, attr);
+
+			if (incoming == null) { continue; }
+
+			Map<S, W> in = incoming.K1Map().get(arc.dst);
+			if (in == null) { incoming.K1Map().put(arc.dst, in = new HashMap<S, W>()); }
+			in.put(arc.src, attr);
+		}
 	}
 
 	/**
