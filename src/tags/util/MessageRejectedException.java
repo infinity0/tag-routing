@@ -8,7 +8,7 @@ import java.io.IOException;
 */
 public class MessageRejectedException extends IOException {
 
-	final private static long serialVersionUID = 8688384884411841888L;
+	final private static long serialVersionUID = 8662663023464374721L;
 
 	public MessageRejectedException() { }
 

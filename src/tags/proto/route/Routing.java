@@ -61,16 +61,35 @@ implements MessageReceiver<Routing.MSG_I> {
 		this.lookup = null;
 	}
 
-	@Override public void recv(MSG_I msg) throws MessageRejectedException {
+	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {
 		switch (msg) {
 		case REQ_MORE_DATA: // request more data, from the user
+
+			// if no seeds, or no indexes to add, or some other heuristic
+			// - pass request to naming layer
+
+			// otherwise,
+			// - complete some more lookups, or
+			// - add an index as a data source
+
+			throw new UnsupportedOperationException("not implemented");
+
 			break;
 		case RECV_SEED_H: // receive seed indexes, from Contact
+
+			// init data structures etc. reset everything.
+			// OPT HIGH only update things that need to be updated
+			throw new UnsupportedOperationException("not implemented");
+
 			break;
 		case RECV_ADDR_SCH: // receive update to address scheme, from Naming
+
+			// - update set of lookups
+			throw new UnsupportedOperationException("not implemented");
+
 			break;
 		}
-		throw new UnsupportedOperationException("not implemented");
+		assert false;
 	}
 
 	public Map<A, LocalIndex<T, A, W>> getResults() {

@@ -56,12 +56,21 @@ implements MessageReceiver<Contact.MSG_I> {
 		this.src_score_h = MultiParts.iterIndexes(source.MapV0().values());
 	}
 
-	@Override public void recv(MSG_I msg) throws MessageRejectedException {
+	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {
 		switch (msg) {
-		case REQ_MORE_DATA: // request for more data, from Naming (currently not used)
+		case REQ_MORE_DATA: // request for more data, from Naming
+
+			// if no data
+			// - get data
+
+			// otherwise,
+			// - get more data (not worked out)
+			// - ask user to supply different tag? (not worked out)
+			throw new UnsupportedOperationException("not implemented");
+
 			break;
 		}
-		throw new UnsupportedOperationException("not implemented");
+		assert false;
 	}
 
 	public Map<A, S> getSeedTGraphs() {

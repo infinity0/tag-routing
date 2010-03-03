@@ -63,14 +63,28 @@ implements MessageReceiver<Naming.MSG_I> {
 		this.scheme = null;
 	}
 
-	@Override public void recv(MSG_I msg) throws MessageRejectedException {
+	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {
 		switch (msg) {
 		case REQ_MORE_DATA: // request for more data, from Routing
+
+			// if no seeds, or no tgraphs to add, or some other heuristic,
+			// - pass request onto contact layer
+
+			// otherwise,
+			// - complete the next tag in the address scheme, or
+			// - add a tgraph as a data source
+
+			throw new UnsupportedOperationException("not implemented");
+
 			break;
 		case RECV_SEED_G: // receive seed tgraphs, from Contact
+
+			//
+			throw new UnsupportedOperationException("not implemented");
+
 			break;
 		}
-		throw new UnsupportedOperationException("not implemented");
+		assert false;
 	}
 
 	public FullTGraph<T, A, U, W> getCompositeTGraph() {
