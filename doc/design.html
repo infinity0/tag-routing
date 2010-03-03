@@ -6,32 +6,9 @@
     ><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"
      /><meta name="generator" content="pandoc"
      /><meta name="author" content="Ximin Luo"
-     /><script src="LaTeXMathML.js" type="text/javascript"
+     /><script src="res/LaTeXMathML.js" type="text/javascript"
     ></script
-    ><style type="text/css"
-    >
-table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode, table.sourceCode pre 
-   { margin: 0; padding: 0; border: 0; vertical-align: baseline; border: none; }
-td.lineNumbers { border-right: 1px solid #AAAAAA; text-align: right; color: #AAAAAA; padding-right: 5px; padding-left: 5px; }
-td.sourceCode { padding-left: 5px; }
-pre.sourceCode { }
-pre.sourceCode span.Normal { }
-pre.sourceCode span.Keyword { color: #007020; font-weight: bold; } 
-pre.sourceCode span.DataType { color: #902000; }
-pre.sourceCode span.DecVal { color: #40a070; }
-pre.sourceCode span.BaseN { color: #40a070; }
-pre.sourceCode span.Float { color: #40a070; }
-pre.sourceCode span.Char { color: #4070a0; }
-pre.sourceCode span.String { color: #4070a0; }
-pre.sourceCode span.Comment { color: #60a0b0; font-style: italic; }
-pre.sourceCode span.Others { color: #007020; }
-pre.sourceCode span.Alert { color: red; font-weight: bold; }
-pre.sourceCode span.Function { color: #06287e; }
-pre.sourceCode span.RegionMarker { }
-pre.sourceCode span.Error { color: red; font-weight: bold; }
-</style
-    ><link rel="stylesheet" href="common.css" type="text/css" media="all" />
-<link rel="stylesheet" href="screen.css" type="text/css" media="screen" />
+    ><link rel="stylesheet" href="res/common.css" type="text/css" media="all" />
 <script type="text/javascript">
 /*<![CDATA[*/
 
@@ -208,8 +185,8 @@ window.onload = function() {
 	      >Algorithms</a
 	      ><ul
 	      ><li
-		><a href="#initialisation"
-		  >Initialisation</a
+		><a href="#contact"
+		  >Contact</a
 		  ><ul
 		  ><li
 		    ><a href="#obtaining-initial-ptables"
@@ -224,8 +201,8 @@ window.onload = function() {
 		    ></ul
 		  ></li
 		><li
-		><a href="#meta-routing"
-		  >Meta-routing</a
+		><a href="#naming"
+		  >Naming</a
 		  ><ul
 		  ><li
 		    ><a href="#combining-tgraph-objects"
@@ -259,15 +236,9 @@ window.onload = function() {
 			>index</code
 			></a
 		      ></li
-		    ></ul
-		  ></li
-		><li
-		><a href="#ranking"
-		  >Ranking</a
-		  ><ul
-		  ><li
-		    ><a href="#combining-results-from-different-queries"
-		      >Combining results from different queries</a
+		    ><li
+		    ><a href="#ranking-results"
+		      >Ranking results</a
 		      ></li
 		    ></ul
 		  ></li
@@ -440,10 +411,6 @@ window.onload = function() {
 		></ul
 	      ></li
 	    ></ul
-	  ></li
-	><li
-	><a href="#java-class-definitions"
-	  >Java class definitions</a
 	  ></li
 	></ul
       ></div
@@ -732,11 +699,11 @@ window.onload = function() {
 	  >index</code
 	  > section</li
 	><li
-	>meta-routing plane - see the <code
+	>naming plane - see the <code
 	  >tgraph</code
 	  > section</li
 	><li
-	>social plane - see the <code
+	>contact plane - see the <code
 	  >ptable</code
 	  > section</li
 	></ul
@@ -772,7 +739,7 @@ window.onload = function() {
 	  >The precise meaning of a weight attribute is intrinsically linked with what the routing and the ranking algorithms do. Specific uses include:</p
 	  ><ul
 	  ><li
-	    >priority of traversal of the routing and meta-routing networks</li
+	    >priority of traversal of the routing and naming networks</li
 	    ><li
 	    >ranking of query results</li
 	    ></ul
@@ -853,7 +820,7 @@ $$</span
 	    ><span class="LaTeX"
 	      >$$
 g = \left[ \begin{array}{lrr} \\
-  V_g \subseteq & T & \to W \\
+  V_g \subseteq & T \cup G & \to W \\
   E_g \subseteq & T \times T \cup G & \to W \\
 \end{array} \right]
 $$</span
@@ -896,7 +863,7 @@ $$</span
 	  ><p
 	  >The analogy to typical navigable networks is that the graph of tags provides the same service as an addressing scheme or a name resolution system: a method for navigating between related addresses. This works beyond the routing level, so we&rsquo;ll call the network of <code
 	    >tgraph</code
-	    > objects the &ldquo;meta-routing&rdquo; plane.</p
+	    > objects the &ldquo;naming&rdquo; plane.</p
 	  ><p
 	  >Conceptually, a tag can be thought of as a &ldquo;pure&rdquo; name - ie. the name carries no information about its referent, such as its location). IP addresses are the opposite, and DNS names are somewhere in between the two. DNS names need to be resolved; likewise, we have an additional system here for tags.</p
 	  ></div
@@ -940,7 +907,7 @@ $$</span
 	  ><p
 	  >This data structure allows an identity to declare a personal list of preferred indexes and tgraphs to use for routing purposes.</p
 	  ><p
-	  >This is intended to provide an attack-resistant &ldquo;bootstrapping&rdquo; path onto the routing and meta-routing planes.</p
+	  >This is intended to provide an attack-resistant &ldquo;bootstrapping&rdquo; path onto the routing and naming planes.</p
 	  ><p
 	  >MORE</p
 	  ></div
@@ -953,7 +920,7 @@ $$</span
 	><p
 	>Since network latency is far greater than processing latency, we design these algorithms to be inherently concurrent. Operations involving retrieval of remote objects are non-blocking and allow other work to be done whilst waiting for its results.</p
 	><p
-	>The system is partitioned into several layers, each dependent on the one below it. The lower layers (initialisation, meta-routing, routing) correspond to the data planes introduced previously; the top layer provides the results to the user&rsquo;s original query, and interacts directly with the user.</p
+	>The system is partitioned into several layers, each dependent on the one below it. The lower layers (contact, naming, routing) correspond to the data planes introduced previously; the top layer provides the results to the user&rsquo;s original query, and interacts directly with the user.</p
 	><p
 	>Each layer has an interface for interacting with the layer above it, and a framework that co-ordinates between the various tasks that make up the layer. Some are quite general and complex, and have a wide range of applications - so these are specified as upgradable modules. For our prototype, we only suggest some basic heuristics for these, and briefly comment on their reliability and usefulness; better solutions can be explored by future projects.[EXTN]</p
 	><p
@@ -993,17 +960,25 @@ $$</span
 	    ></tr
 	  ><tr class="odd"
 	  ><td align="left"
-	    >ranking</td
+	    >routing</td
 	    ><td align="left"
 	    ><span class="LaTeX"
+	      >$H_s$</span
+	      >, <span class="LaTeX"
+	      >$\breveT$</span
+	      > <span class="LaTeX"
 	      >$\breveg$</span
+	      ></td
+	    ><td align="left"
+	    ><span class="LaTeX"
+	      >$\breveQ$</span
 	      >, <span class="LaTeX"
 	      >$\breveR$</span
 	      >, <span class="LaTeX"
 	      >$\breveH$</span
+	      >, <span class="LaTeX"
+	      >$\breveH_*$</span
 	      ></td
-	    ><td align="left"
-	    >-</td
 	    ><td align="left"
 	    ><span class="LaTeX"
 	      >$\breveh$</span
@@ -1011,29 +986,7 @@ $$</span
 	    ></tr
 	  ><tr class="even"
 	  ><td align="left"
-	    >routing</td
-	    ><td align="left"
-	    ><span class="LaTeX"
-	      >$H_s$</span
-	      >, <span class="LaTeX"
-	      >$\breveT$</span
-	      ></td
-	    ><td align="left"
-	    ><span class="LaTeX"
-	      >$\breveQ$</span
-	      >, <span class="LaTeX"
-	      >$\breveH_*$</span
-	      ></td
-	    ><td align="left"
-	    ><span class="LaTeX"
-	      >$\breveH$</span
-	      >, <span class="LaTeX"
-	      >$\breveR$</span
-	      ></td
-	    ></tr
-	  ><tr class="odd"
-	  ><td align="left"
-	    >meta-routing</td
+	    >naming</td
 	    ><td align="left"
 	    ><span class="LaTeX"
 	      >$t_0$</span
@@ -1053,9 +1006,9 @@ $$</span
 	      >$\breveg$</span
 	      ></td
 	    ></tr
-	  ><tr class="even"
+	  ><tr class="odd"
 	  ><td align="left"
-	    >initialisation</td
+	    >contact</td
 	    ><td align="left"
 	    ><span class="LaTeX"
 	      >$z$</span
@@ -1074,10 +1027,10 @@ $$</span
 	  ></table
 	><p
 	>TODO maybe talk about sending/receiving requests, making this parallel, etc</p
-	><div id="initialisation"
+	><div id="contact"
 	><h3
 	  ><a href="#TOC"
-	    >Initialisation</a
+	    >Contact</a
 	    ></h3
 	  ><dl
 	  ><dt
@@ -1097,8 +1050,8 @@ $$</span
 	      ><li
 		><span class="LaTeX"
 		  >$G_s$</span
-		  > to <a href="#meta-routing"
-		  >meta-routing</a
+		  > to <a href="#naming"
+		  >naming</a
 		  ></li
 		><li
 		><span class="LaTeX"
@@ -1260,10 +1213,10 @@ $$</span
 	      > theoretically sound, but should work adequately in the majority of cases, where there are few disagreements or malicious attacks.</p
 	    ></div
 	  ></div
-	><div id="meta-routing"
+	><div id="naming"
 	><h3
 	  ><a href="#TOC"
-	    >Meta-routing</a
+	    >Naming</a
 	    ></h3
 	  ><p
 	  >DIAG</p
@@ -1279,8 +1232,8 @@ $$</span
 		><li
 		><span class="LaTeX"
 		  >$G_s$</span
-		  > from <a href="#initialisation"
-		  >initialisation</a
+		  > from <a href="#contact"
+		  >contact</a
 		  ></li
 		></ul
 	      ></dd
@@ -1297,14 +1250,14 @@ $$</span
 		><li
 		><span class="LaTeX"
 		  >$\breveg$</span
-		  > to <a href="#ranking"
-		  >ranking</a
+		  > to <a href="#routing"
+		  >routing</a
 		  ></li
 		></ul
 	      ></dd
 	    ></dl
 	  ><p
-	  >The purpose of the meta-routing layer is to provide a routing scheme to the routing layer. This routing scheme is dynamic, and updates are requesting by the routing layer when it needs more information. The query state consists of these objects:</p
+	  >The purpose of the naming layer is to provide a routing scheme to the routing layer. This scheme is dynamic, and updates are requesting by the routing layer when it needs more information. The query state consists of these objects:</p
 	  ><dl
 	  ><dt
 	    ><span class="LaTeX"
@@ -1395,7 +1348,7 @@ $$</span
 		><li
 		>Initialised with <span class="LaTeX"
 		  >$t_0$</span
-		  > having weight 1. This is just a temporary dummy value to allow the routing layer to do an initial scan using just the root tag, when meta-routing information is still unavailable.</li
+		  > having weight 1. This is just a temporary dummy value to allow the routing layer to do an initial scan using just the root tag, when naming information is still unavailable.</li
 		><li
 		>This holds all information related to <span class="LaTeX"
 		  >$\mathtt{\mathrm{com}}\, \breveG_*$</span
@@ -1481,8 +1434,8 @@ $$</span
 	      ><li
 		>After receiving <span class="LaTeX"
 		  >$G_s$</span
-		  > from <a href="#initialisation"
-		  >initialisation</a
+		  > from <a href="#contact"
+		  >contact</a
 		  >, in which case <span class="LaTeX"
 		  >$G_s$</span
 		  > is just copied to <span class="LaTeX"
@@ -1657,7 +1610,7 @@ $$</span
 	      ><p
 		>With <code
 		  >tgraph</code
-		  >s, the absolute weight of a single node does not determine its usefulness to the meta-routing layer, but the &ldquo;distance&rdquo; between that node and the given query tag <span class="LaTeX"
+		  >s, the absolute weight of a single node does not determine its usefulness to the naming layer, but the &ldquo;distance&rdquo; between that node and the given query tag <span class="LaTeX"
 		  >$t_0$</span
 		  >. To this end, <code
 		  >tgraph</code
@@ -1841,14 +1794,20 @@ $$</span
 	      ><li
 		><span class="LaTeX"
 		  >$H_s$</span
-		  > from <a href="#initialisation"
-		  >initialisation</a
+		  > from <a href="#contact"
+		  >contact</a
 		  ></li
 		><li
 		><span class="LaTeX"
 		  >$\breveT$</span
-		  > from <a href="#meta-routing"
-		  >meta-routing</a
+		  > from <a href="#naming"
+		  >naming</a
+		  ></li
+		><li
+		><span class="LaTeX"
+		  >$\breveg$</span
+		  > from <a href="#naming"
+		  >naming</a
 		  ></li
 		></ul
 	      ></dd
@@ -1858,21 +1817,13 @@ $$</span
 	    ><ul
 	      ><li
 		><span class="LaTeX"
-		  >$\breveH$</span
-		  > to <a href="#ranking"
-		  >ranking</a
-		  ></li
-		><li
-		><span class="LaTeX"
-		  >$\breveR$</span
-		  > to <a href="#ranking"
-		  >ranking</a
-		  ></li
+		  >$\breveh$</span
+		  > to the user</li
 		></ul
 	      ></dd
 	    ></dl
 	  ><p
-	  >The purpose of the routing layer is to retrieve results and provide these to the ranking layer. The results set is dynamic, and updates are requested by the ranking layer when it needs more information. The query state consists of these objects:</p
+	  >The purpose of the routing layer is to retrieve results and provide these to the user. The results set is dynamic, and updates are requested by the user when it needs more information. The query state consists of these objects:</p
 	  ><dl
 	  ><dt
 	    ><span class="LaTeX"
@@ -1991,8 +1942,8 @@ $$</span
 	      ><li
 		>After receiving <span class="LaTeX"
 		  >$H_s$</span
-		  > from <a href="#initialisation"
-		  >initialisation</a
+		  > from <a href="#contact"
+		  >contact</a
 		  >, in which case <span class="LaTeX"
 		  >$H_s$</span
 		  > is just copied to <span class="LaTeX"
@@ -2021,9 +1972,7 @@ $$</span
 	      >The events that can trigger this are:</p
 	      ><ol style="list-style-type: decimal;"
 	      ><li
-		>A request from <a href="#ranking"
-		  >ranking</a
-		  > to add a <code
+		>A request from the user to add a <code
 		  >index</code
 		  > <span class="LaTeX"
 		  >$h \in \breveD$</span
@@ -2037,8 +1986,8 @@ $$</span
 		><li
 		>Receive an update to <span class="LaTeX"
 		  >$\breveT$</span
-		  > from <a href="#meta-routing"
-		  >meta-routing</a
+		  > from <a href="#naming"
+		  >naming</a
 		  >, in which case we update <span class="LaTeX"
 		  >$\breveQ$</span
 		  > etc.</li
@@ -2071,13 +2020,13 @@ $$</span
 		  >$t$</span
 		  > to <span class="LaTeX"
 		  >$t_0$</span
-		  >. TODO clarify this, description already in meta-routing</li
+		  >. TODO clarify this, description already in naming</li
 		></ul
 	      ><p
 	      >Do this when <span class="LaTeX"
 		>$\breveT$</span
-		> is updated from <a href="#meta-routing"
-		>meta-routing</a
+		> is updated from <a href="#naming"
+		>naming</a
 		>.</p
 	      ></dd
 	    ><dt
@@ -2207,52 +2156,10 @@ $$</span
 	      >object-object links</a
 	      ></p
 	    ></div
-	  ></div
-	><div id="ranking"
-	><h3
-	  ><a href="#TOC"
-	    >Ranking</a
-	    ></h3
-	  ><dl
-	  ><dt
-	    >Requires</dt
-	    ><dd
-	    ><ul
-	      ><li
-		><span class="LaTeX"
-		  >$\breveg$</span
-		  > from <a href="#meta-routing"
-		  >meta-routing</a
-		  ></li
-		><li
-		><span class="LaTeX"
-		  >$\breveH$</span
-		  > from <a href="#ranking"
-		  >ranking</a
-		  ></li
-		><li
-		><span class="LaTeX"
-		  >$\breveR$</span
-		  > from <a href="#ranking"
-		  >ranking</a
-		  ></li
-		></ul
-	      ></dd
-	    ><dt
-	    >Provides</dt
-	    ><dd
-	    ><ul
-	      ><li
-		><span class="LaTeX"
-		  >$\breveh$</span
-		  > to the user</li
-		></ul
-	      ></dd
-	    ></dl
-	  ><div id="combining-results-from-different-queries"
+	  ><div id="ranking-results"
 	  ><h4
 	    ><a href="#TOC"
-	      >Combining results from different queries</a
+	      >Ranking results</a
 	      ></h4
 	    ><dl
 	    ><dt
@@ -2286,8 +2193,6 @@ $$</span
 	      ></dl
 	    ><p
 	    >TODO</p
-	    ><p
-	    >possibly could just merge this into routing.</p
 	    ></div
 	  ></div
 	></div
@@ -2331,7 +2236,7 @@ $$</span
 		><li
 		>quick lookup of node (and weight)</li
 		><li
-		>quick lookup of node&rsquo;s out-arcs (and weight) [routing, meta-routing]</li
+		>quick lookup of node&rsquo;s out-arcs (and weight) [routing, naming]</li
 		></ul
 	      ></li
 	    ><li
@@ -2343,7 +2248,7 @@ $$</span
 		  >index</code
 		  > vs to-document arcs</li
 		><li
-		>optionally order these by their score [ranking]</li
+		>optionally order these by their score [routing]</li
 		></ul
 	      ></li
 	    ><li
@@ -2403,11 +2308,11 @@ $$</span
 		  >$\breveg$</span
 		  >]</li
 		><li
-		>quick lookup of node`s in-arcs (and weight) [routing, meta-routing]</li
+		>quick lookup of node`s in-arcs (and weight) [routing, naming]</li
 		><li
 		>quick lookup of node&rsquo;s out-arcs (and weight) [maybe needed by some scoring modules]</li
 		><li
-		>quick one-time check that all of a node&rsquo;s out-arcs (and weight) have been retrieved from the network [routing, meta-routing]</li
+		>quick one-time check that all of a node&rsquo;s out-arcs (and weight) have been retrieved from the network [routing, naming]</li
 		></ul
 	      ></li
 	    ><li
@@ -2528,7 +2433,7 @@ $$</span
 	    >Underlying social network</a
 	    ></h3
 	  ><p
-	  >The initialisation algorithm assumes an abstract lower-level social network where it can look for friends to query for pointers onto the meta-routing and routing planes.</p
+	  >The initialisation algorithm assumes an abstract lower-level social network where it can look for friends to query for pointers onto the naming and routing planes.</p
 	  ><p
 	  >Any system which has a social network as a major component, needs a method of constructing such a network and sustaining its growth. Fortunately, such systems are already widely deployed on the www; new networks can bootstrap themselves by extracting social data from existing networks, through invites, etc. [EXTN]</p
 	  ><p
@@ -2538,7 +2443,7 @@ $$</span
 	  ><p
 	  >This model is sufficiently general for our purposes. Many social networking websites only recognise mutual friendship; this is a degenerate form of the model, where all weights are constant and all arcs have a reverse-direction counterpart.</p
 	  ><p
-	  >The meta-routing and routing planes also form what is essentially a social network - <code
+	  >The naming and routing planes also form what is essentially a social network - <code
 	    >tgraph</code
 	    >s and <code
 	    >index</code
@@ -2657,9 +2562,9 @@ $$</span
 	  >$P(t_0|g) = P(t_0|\bigcup t_i)$</span
 	  >. Note that these values give no information on how well-connected a <code
 	  >tgraph</code
-	  > is within the meta-routing network. However, a <code
+	  > is within the naming network. However, a <code
 	  >tgraph</code
-	  > consists of highly compressed data on a large section of the storage network, so in practice the vast majority of our meta-routing needs should be satisfied by a small neighbourhood around our seed set. Choosing between <code
+	  > consists of highly compressed data on a large section of the storage network, so in practice the vast majority of our naming needs should be satisfied by a small neighbourhood around our seed set. Choosing between <code
 	  >tgraph</code
 	  >s probably won&rsquo;t be very important, so for now we ignore this deficiency.[EXTN]</p
 	><p
@@ -2742,13 +2647,47 @@ $$</span
 	      > to provide this information more efficiently (ie. have a &ldquo;referents&rdquo; table)</li
 	    ></ul
 	  ><p
-	  >TODO talk about endorser of a node vs maintainer of a node - two different things</p
+	  >TODO talk about endorser of a node vs maintainer of a node - two different things (here &ldquo;node&rdquo; refers to <code
+	    >tgraph</code
+	    > or <code
+	    >index</code
+	    >)</p
+	  ><ul
+	  ><li
+	    ><strong
+	      >maintainer</strong
+	      > of a node defines its nodes and its out-arcs, and provides no information about any other nodes beyond its out-neighbours</li
+	    ><li
+	    ><strong
+	      >endorser</strong
+	      > of a node points to it in its <code
+	      >ptable</code
+	      >, and may follow out-arcs to potentially reach <em
+	      >any</em
+	      > other nodes in its connected component of the data network</li
+	    ></ul
+	  ><p
+	  >In other words, when scoring nodes not in our seed set, we must <strong
+	    >not</strong
+	    > use weight information from nodes themselves (including the seed nodes), since this information comes from the <em
+	    >maintainer</em
+	    > and not the <em
+	    >endorser</em
+	    >. It might be feasible to extend <code
+	    >ptable</code
+	    > to allow endorsers to provide extra information to help the scoring process [EXTN].</p
+	  ><p
+	  >Below, we explore a rough and basic heuristic to infer scores using only the link structure of the data network.</p
 	  ><p
 	  >MORE</p
 	  ><p
 	  >Let <span class="LaTeX"
 	    >$x$</span
-	    > be the node we want to infer a weight for. For each seed node <span class="LaTeX"
+	    > be the node (here, a <code
+	    >tgraph</code
+	    > or <code
+	    >index</code
+	    >) we want to infer a score for. For each seed node <span class="LaTeX"
 	    >$s$</span
 	    >, let <span class="LaTeX"
 	    >$w_{p(s)}$</span
@@ -2772,11 +2711,11 @@ $$</span
 	    >$s$</span
 	    >) of all path weights, assuming that paths are independent. A rough justification for this is that we only need to traverse one path to satisfy a query; we can pick any one we wish.</p
 	  ><p
-	  >This can theoretically be attacked when multiple colluding seed nodes point to a single remote node (which breaks the assumption of independence), but in such a situation, worse attacks are possible. TODO explore more&hellip;</p
+	  >This is open to attack by multiple colluding seed nodes (which breaks the assumption of independence), but in such cases, worse attacks are possible. TODO explore more&hellip;</p
 	  ><p
 	  >This leaves us to derive a model for <span class="LaTeX"
 	    >$w_{p(s)}$</span
-	    >. For our prototype, we use:</p
+	    >. A simple one is:</p
 	  ><ul
 	  ><li
 	    ><span class="LaTeX"
@@ -2809,7 +2748,7 @@ $$</span
 	  >This ignores several important factors. For example:</p
 	  ><ul
 	  ><li
-	    >for nodes with larger out-degree, an typical endorser will follow a smaller proportion of its out-arcs.</li
+	    >for nodes with larger out-degree, a typical endorser will follow a smaller proportion of its out-arcs.</li
 	    ><li
 	    >an endorser is more likely to visit a node that can be reached in more ways from <span class="LaTeX"
 	      >$s$</span
@@ -2826,7 +2765,7 @@ $$</span
 	  ><p
 	  >Some of these suggest potential vectors of attack upon the <span class="LaTeX"
 	    >$k^i$</span
-	    > scheme. For example, the assumption that the proportion of out-arcs followed is constant, could encourage a malicious seed node to define huge numbers of out-arcs, whose referents will then enjoy a larger path weight than appropriate. This specific attack is easy to detect, but there may be more effective ones.</p
+	    > scheme. For example, the assumption that the proportion of out-arcs followed is constant, could encourage a malicious seed node to define huge numbers of out-arcs, whose referents will then enjoy a larger path weight than appropriate. (This attack is easy to detect, but there may be more effective ones.)</p
 	  ><p
 	  >This problem can be stated more generally as: <em
 	    >Given an endorsement of a node in a (social) network, what other nodes can I infer that the endorsement also covers, and to what degree?</em
@@ -2836,7 +2775,7 @@ $$</span
 	    >$k^i$</span
 	    >. Due to the security concerns, we try to give an underestimate for <span class="LaTeX"
 	    >$k$</span
-	    >. This way, near (from our seed set) nodes have a much greater priority than far nodes. Attacks from far nodes should mostly only affect other far nodes; we also have the option of construct local overrides against the attacks that are detected.</p
+	    >. This should not affect the reachability of the nodes in the network; only that near nodes (to our seed set) will have a much greater priority than far nodes. Attacks from far nodes can only affect other far nodes; and we also have the option of constructing local overrides against the attacks that are detected.</p
 	  ><p
 	  >TODO make an actual estimate&hellip; <span class="LaTeX"
 	    >$2^{-4}$</span
@@ -3269,7 +3208,7 @@ $$</span
 	    ><li
 	    >random failure</li
 	    ><li
-	    >malicious attacks - under the assumptions of &ldquo;abstract storage network&rdquo;, only attacks vs the entire network can occur on the meta-routing / routing planes. attacks vs individuals on the social plane is a separate topic, ignore here<ul
+	    >malicious attacks - under the assumptions of &ldquo;abstract storage network&rdquo;, only attacks vs the entire network can occur on the naming / routing planes. attacks vs individuals on the social plane is a separate topic, ignore here<ul
 	      ><li
 		>attacks vs most well-connected nodes</li
 		><li
@@ -3279,396 +3218,6 @@ $$</span
 	    ></ul
 	  ></div
 	></div
-      ></div
-    ><div id="java-class-definitions"
-    ><h1
-      ><a href="#TOC"
-	>Java class definitions</a
-	></h1
-      ><p
-      >Note: I started doing these, then thought I&rsquo;d leave it for the coding stage; Here&rsquo;s what I have so far.</p
-      ><pre class="sourceCode java"
-      ><code
-	><span class="Normal NormalText"
-	  >    </span
-	  ><span class="Keyword"
-	  >interface</span
-	  ><span class="Normal NormalText"
-	  > NetworkStorageAdapter </span
-	  ><span class="Normal Symbol"
-	  >{</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >        Index </span
-	  ><span class="Function"
-	  >getIndex</span
-	  ><span class="Normal Symbol"
-	  >(</span
-	  ><span class="Normal NormalText"
-	  >ObjectID id</span
-	  ><span class="Normal Symbol"
-	  >);</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >        TGraph </span
-	  ><span class="Function"
-	  >getTGraph</span
-	  ><span class="Normal Symbol"
-	  >(</span
-	  ><span class="Normal NormalText"
-	  >ObjectID id</span
-	  ><span class="Normal Symbol"
-	  >);</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >    </span
-	  ><span class="Normal Symbol"
-	  >}</span
-	  ><br
-	   /></code
-	></pre
-      ><pre class="sourceCode java"
-      ><code
-	><span class="Normal NormalText"
-	  >    </span
-	  ><span class="Keyword"
-	  >interface</span
-	  ><span class="Normal NormalText"
-	  > SocialNetworkAdapter </span
-	  ><span class="Normal Symbol"
-	  >{</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >        </span
-	  ><span class="Normal Java15"
-	  >Map</span
-	  ><span class="Normal Symbol"
-	  >&lt;</span
-	  ><span class="Normal Java15"
-	  >Identity</span
-	  ><span class="Normal Symbol"
-	  >,</span
-	  ><span class="Normal NormalText"
-	  > IdScore</span
-	  ><span class="Normal Symbol"
-	  >&gt;</span
-	  ><span class="Normal NormalText"
-	  > </span
-	  ><span class="Function"
-	  >getFriends</span
-	  ><span class="Normal Symbol"
-	  >(</span
-	  ><span class="Normal Java15"
-	  >Identity</span
-	  ><span class="Normal NormalText"
-	  > id</span
-	  ><span class="Normal Symbol"
-	  >);</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >        PTable </span
-	  ><span class="Function"
-	  >getPTable</span
-	  ><span class="Normal Symbol"
-	  >(</span
-	  ><span class="Normal Java15"
-	  >Identity</span
-	  ><span class="Normal NormalText"
-	  > id</span
-	  ><span class="Normal Symbol"
-	  >);</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >    </span
-	  ><span class="Normal Symbol"
-	  >}</span
-	  ><br
-	   /></code
-	></pre
-      ><pre class="sourceCode java"
-      ><code
-	><span class="Normal NormalText"
-	  >    </span
-	  ><span class="Keyword"
-	  >interface</span
-	  ><span class="Normal NormalText"
-	  > SeedSetGetter </span
-	  ><span class="Normal Symbol"
-	  >{</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >        </span
-	  >/**<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  > <span class="Normal NormalText"
-	  >@</span
-	  >param self<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  >      A root identity <span class="Normal Symbol"
-	  >(</span
-	  >typically our own<span class="Normal Symbol"
-	  >)</span
-	  ><br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  > <span class="Normal NormalText"
-	  >@</span
-	  >return<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  >      A set of seed identities<span class="Normal Symbol"
-	  >,</span
-	  > with corresponding weights<br
-	   />        */<br
-	   /><span class="Normal NormalText"
-	  >        </span
-	  ><span class="Normal Java15"
-	  >Map</span
-	  ><span class="Normal Symbol"
-	  >&lt;</span
-	  ><span class="Normal Java15"
-	  >Identity</span
-	  ><span class="Normal Symbol"
-	  >,</span
-	  ><span class="Normal NormalText"
-	  > IdScore</span
-	  ><span class="Normal Symbol"
-	  >&gt;</span
-	  ><span class="Normal NormalText"
-	  > </span
-	  ><span class="Function"
-	  >getSeedSet</span
-	  ><span class="Normal Symbol"
-	  >(</span
-	  ><span class="Normal Java15"
-	  >Identity</span
-	  ><span class="Normal NormalText"
-	  > self</span
-	  ><span class="Normal Symbol"
-	  >);</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >    </span
-	  ><span class="Normal Symbol"
-	  >}</span
-	  ><br
-	   /></code
-	></pre
-      ><pre class="sourceCode java"
-      ><code
-	><span class="Normal NormalText"
-	  >    </span
-	  ><span class="Keyword"
-	  >interface</span
-	  ><span class="Normal NormalText"
-	  > TGraphComposer </span
-	  ><span class="Normal Symbol"
-	  >{</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >        </span
-	  >/**<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  > <span class="Normal NormalText"
-	  >@</span
-	  >param tables<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  ><br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  > <span class="Normal NormalText"
-	  >@</span
-	  >return<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  >      A set of mapping targets <span class="Normal Symbol"
-	  >(</span
-	  >which can be a tag or tgraph<span class="Normal Symbol"
-	  >)</span
-	  > and<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  >      their weights<span class="Normal Symbol"
-	  >;</span
-	  > the source of each mapping being the source tag<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  ><br
-	   />        */<br
-	   /><span class="Normal NormalText"
-	  >        </span
-	  ><span class="Normal Java15"
-	  >Map</span
-	  ><span class="Normal Symbol"
-	  >&lt;</span
-	  ><span class="Normal NormalText"
-	  >TGraphEntry</span
-	  ><span class="Normal Symbol"
-	  >,</span
-	  ><span class="Normal NormalText"
-	  > EntryWeight</span
-	  ><span class="Normal Symbol"
-	  >&gt;</span
-	  ><span class="Normal NormalText"
-	  > </span
-	  ><span class="Function"
-	  >compositeTGraphNode</span
-	  ><span class="Normal Symbol"
-	  >(</span
-	  ><span class="Normal Java15"
-	  >Map</span
-	  ><span class="Normal Symbol"
-	  >&lt;</span
-	  ><span class="Normal NormalText"
-	  >TGraph</span
-	  ><span class="Normal Symbol"
-	  >,</span
-	  ><span class="Normal NormalText"
-	  > EntryWeight</span
-	  ><span class="Normal Symbol"
-	  >&gt;</span
-	  ><span class="Normal NormalText"
-	  > </span
-	  ><span class="Normal Symbol"
-	  >,</span
-	  ><span class="Normal NormalText"
-	  > Tag source</span
-	  ><span class="Normal Symbol"
-	  >);</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >    </span
-	  ><span class="Normal Symbol"
-	  >}</span
-	  ><br
-	   /></code
-	></pre
-      ><pre class="sourceCode java"
-      ><code
-	><span class="Normal NormalText"
-	  >    </span
-	  ><span class="Keyword"
-	  >interface</span
-	  ><span class="Normal NormalText"
-	  > PTableComposer </span
-	  ><span class="Normal Symbol"
-	  >{</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >        </span
-	  >/**<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  > <span class="Normal NormalText"
-	  >@</span
-	  >param tables<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  >      A set of ptables<span class="Normal Symbol"
-	  >,</span
-	  > each being mapped to its identity<span class="Normal NormalText"
-	  >'</span
-	  >s score<span class="Normal Symbol"
-	  >.</span
-	  ><br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  > <span class="Normal NormalText"
-	  >@</span
-	  >return<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  >      A ptable that combines all of the input information<span class="Normal Symbol"
-	  >,</span
-	  > with<br
-	   />        <span class="Normal Symbol"
-	  >**</span
-	  >      <span class="Normal NormalText"
-	  >$\</span
-	  >mathtt<span class="Normal Symbol"
-	  >{</span
-	  ><span class="Normal NormalText"
-	  >\</span
-	  >mathrm<span class="Normal Symbol"
-	  >{</span
-	  >dom<span class="Normal Symbol"
-	  >}}</span
-	  ><span class="Normal NormalText"
-	  >\</span
-	  ><span class="Normal Symbol"
-	  >,</span
-	  > p <span class="Normal Symbol"
-	  >=</span
-	  > <span class="Normal NormalText"
-	  >\</span
-	  >bigcup <span class="Normal NormalText"
-	  >\</span
-	  >mathtt<span class="Normal Symbol"
-	  >{</span
-	  ><span class="Normal NormalText"
-	  >\</span
-	  >mathrm<span class="Normal Symbol"
-	  >{</span
-	  >dom<span class="Normal Symbol"
-	  >}}</span
-	  ><span class="Normal NormalText"
-	  >\</span
-	  ><span class="Normal Symbol"
-	  >,</span
-	  > p<span class="Normal NormalText"
-	  >_</span
-	  >i<span class="Normal NormalText"
-	  >$</span
-	  ><span class="Normal Symbol"
-	  >.</span
-	  ><br
-	   />        */<br
-	   /><span class="Normal NormalText"
-	  >        PTable </span
-	  ><span class="Function"
-	  >composite</span
-	  ><span class="Normal Symbol"
-	  >(</span
-	  ><span class="Normal Java15"
-	  >Map</span
-	  ><span class="Normal Symbol"
-	  >&lt;</span
-	  ><span class="Normal NormalText"
-	  >PTable</span
-	  ><span class="Normal Symbol"
-	  >,</span
-	  ><span class="Normal NormalText"
-	  > IdScore</span
-	  ><span class="Normal Symbol"
-	  >&gt;</span
-	  ><span class="Normal NormalText"
-	  > tables</span
-	  ><span class="Normal Symbol"
-	  >);</span
-	  ><br
-	   /><br
-	   /><span class="Normal NormalText"
-	  >    </span
-	  ><span class="Normal Symbol"
-	  >}</span
-	  ><br
-	   /></code
-	></pre
       ></div
     ><div class="footnotes"
     ><hr
@@ -3695,7 +3244,7 @@ $$</span
 	><p
 	  >Contrast this with <span class="LaTeX"
 	    >$\breveG_*$</span
-	    > from meta-routing,  which holds all retrieved data, due to the different structure of a  <code
+	    > from naming, which  holds all retrieved data, due to the different structure of a <code
 	    >tgraph</code
 	    >. <a href="#fnref4" class="footnoteBackLink" title="Jump back to footnote 4">&#8617;</a></p
 	  ></li
