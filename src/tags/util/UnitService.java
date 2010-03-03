@@ -21,9 +21,7 @@ public class UnitService {
 	** @throws NullPointerException if {@code exec} is {@code null}
 	*/
 	public synchronized void setExecutor(Executor exec) {
-		if (exec == null) {
-			throw new NullPointerException();
-		}
+		if (exec == null) { throw new NullPointerException(); }
 		this.exec = exec;
 	}
 

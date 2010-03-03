@@ -9,17 +9,17 @@ import tags.store.StoreControl;
 ** DOCUMENT.
 **
 ** @param <Q> Type of query
-** @param <S> Type of store control
+** @param <P> Type of query processor
 */
-abstract public class LayerService<Q extends Query, S extends StoreControl> extends UnitService {
+abstract public class LayerService<Q extends Query, P extends QueryProcessor> extends UnitService {
 
 	final protected Q query;
-	final protected S sctl;
+	final protected P proc;
 
-	public LayerService(Q query, S sctl) {
-		super(query.exec);
+	public LayerService(Q query, P proc) {
+		super(proc.exec);
 		this.query = query;
-		this.sctl = sctl;
+		this.proc = proc;
 	}
 
 }

@@ -3,11 +3,9 @@ package tags.proto.name;
 
 import tags.proto.LayerService;
 import tags.proto.Query;
-import tags.store.StoreControl;
-import tags.util.LayerInterfaceHi;
-import tags.util.LayerInterfaceLo;
-import tags.proto.route.Routing;
-import tags.proto.cont.Contact;
+import tags.proto.QueryProcessor;
+import tags.util.MessageReceiver;
+import tags.util.MessageRejectedException;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
@@ -35,12 +33,10 @@ import java.util.HashSet;
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
-public class Naming<T, A, U, W, S> extends LayerService<Query<?, T>, StoreControl<?, T, A, U, W, S, ?>> implements
-LayerInterfaceHi<Integer, Routing<T, A, W, S>>,
-LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
+public class Naming<T, A, U, W, S> extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>>
+implements MessageReceiver<Naming.MSG_I> {
 
-	protected Routing<T, A, W, S> layer_hi;
-	protected Contact<?, A, S, ?> layer_lo;
+	public static enum MSG_I { REQ_MORE_DATA, RECV_SEED_G }
 
 	final protected TGraphComposer<T, A, U, W, S> mod_tgr_cmp;
 	final protected AddressSchemeBuilder<T, A, U, W> mod_asc_bld;
@@ -52,11 +48,11 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 
 	public Naming(
 		Query<?, T> query,
-		StoreControl<?, T, A, U, W, S, ?> sctl,
+		QueryProcessor<?, T, A, U, W, S, ?> proc,
 		TGraphComposer<T, A, U, W, S> mod_tgr_cmp,
 		AddressSchemeBuilder<T, A, U, W> mod_asc_bld
 	) {
-		super(query, sctl);
+		super(query, proc);
 		if (mod_tgr_cmp == null) { throw new NullPointerException(); }
 		if (mod_asc_bld == null) { throw new NullPointerException(); }
 		this.mod_tgr_cmp = mod_tgr_cmp;
@@ -67,19 +63,13 @@ LayerInterfaceLo<Integer, Contact<?, A, S, ?>> {
 		this.scheme = null;
 	}
 
-	@Override public void setLayerHi(Routing<T, A, W, S> layer_hi) {
-		this.layer_hi = layer_hi;
-	}
-
-	@Override public Integer request() {
-		throw new UnsupportedOperationException("not implemented");
-	}
-
-	@Override public void setLayerLo(Contact<?, A, S, ?> layer_lo) {
-		this.layer_lo = layer_lo;
-	}
-
-	@Override public void receive(Integer tkt) {
+	@Override public void recv(MSG_I msg) throws MessageRejectedException {
+		switch (msg) {
+		case REQ_MORE_DATA: // request for more data, from Routing
+			break;
+		case RECV_SEED_G: // receive seed tgraphs, from Contact
+			break;
+		}
 		throw new UnsupportedOperationException("not implemented");
 	}
 

@@ -3,9 +3,9 @@ package tags.proto.cont;
 
 import tags.proto.LayerService;
 import tags.proto.Query;
-import tags.store.StoreControl;
-import tags.util.LayerInterfaceHi;
-import tags.proto.name.Naming;
+import tags.proto.QueryProcessor;
+import tags.util.MessageReceiver;
+import tags.util.MessageRejectedException;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
@@ -27,10 +27,10 @@ import java.util.HashMap;
 ** @param <S> Type of score
 ** @param <Z> Type of identity-score
 */
-public class Contact<I, A, S, Z> extends LayerService<Query<I, ?>, StoreControl<I, ?, A, ?, ?, S, Z>> implements
-LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
+public class Contact<I, A, S, Z> extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>>
+implements MessageReceiver<Contact.MSG_I> {
 
-	protected Naming<?, A, ?, ?, S> layer_hi;
+	public enum MSG_I { REQ_MORE_DATA }
 
 	final protected PTableComposer<I, A, S, Z> mod_ptb_cmp;
 
@@ -43,10 +43,10 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 
 	public Contact(
 		Query<I, ?> query,
-		StoreControl<I, ?, A, ?, ?, S, Z> sctl,
+		QueryProcessor<I, ?, A, ?, ?, S, Z> proc,
 		PTableComposer<I, A, S, Z> mod_ptb_cmp
 	) {
-		super(query, sctl);
+		super(query, proc);
 		if (mod_ptb_cmp == null) { throw new NullPointerException(); }
 		this.mod_ptb_cmp = mod_ptb_cmp;
 		// TODO NOW
@@ -56,11 +56,11 @@ LayerInterfaceHi<Integer, Naming<?, A, ?, ?, S>> {
 		this.src_score_h = MultiParts.iterIndexes(source.MapV0().values());
 	}
 
-	@Override public void setLayerHi(Naming<?, A, ?, ?, S> layer_hi) {
-		this.layer_hi = layer_hi;
-	}
-
-	@Override public Integer request() {
+	@Override public void recv(MSG_I msg) throws MessageRejectedException {
+		switch (msg) {
+		case REQ_MORE_DATA: // request for more data, from Naming (currently not used)
+			break;
+		}
 		throw new UnsupportedOperationException("not implemented");
 	}
 

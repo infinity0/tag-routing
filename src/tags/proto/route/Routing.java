@@ -3,10 +3,9 @@ package tags.proto.route;
 
 import tags.proto.LayerService;
 import tags.proto.Query;
-import tags.store.StoreControl;
-import tags.util.LayerInterfaceHi;
-import tags.util.LayerInterfaceLo;
-import tags.proto.name.Naming;
+import tags.proto.QueryProcessor;
+import tags.util.MessageReceiver;
+import tags.util.MessageRejectedException;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
@@ -33,10 +32,10 @@ import java.util.HashMap;
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
-public class Routing<T, A, W, S> extends LayerService<Query<?, T>, StoreControl<?, T, A, ?, W, S, ?>> implements
-LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
+public class Routing<T, A, W, S> extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>>
+implements MessageReceiver<Routing.MSG_I> {
 
-	protected Naming<T, A, ?, W, S> layer_lo;
+	public static enum MSG_I { REQ_MORE_DATA, RECV_SEED_H, RECV_ADDR_SCH }
 
 	final protected IndexComposer<T, A, W, S> mod_idx_cmp;
 	final protected LookupScorer<W, S> mod_lku_scr;
@@ -48,11 +47,11 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 
 	public Routing(
 		Query<?, T> query,
-		StoreControl<?, T, A, ?, W, S, ?> sctl,
+		QueryProcessor<?, T, A, ?, W, S, ?> proc,
 		IndexComposer<T, A, W, S> mod_idx_cmp,
 		LookupScorer<W, S> mod_lku_scr
 	) {
-		super(query, sctl);
+		super(query, proc);
 		if (mod_idx_cmp == null) { throw new NullPointerException(); }
 		if (mod_lku_scr == null) { throw new NullPointerException(); }
 		this.mod_idx_cmp = mod_idx_cmp;
@@ -62,11 +61,15 @@ LayerInterfaceLo<Integer, Naming<T, A, ?, W, S>> {
 		this.lookup = null;
 	}
 
-	@Override public void setLayerLo(Naming<T, A, ?, W, S> layer_lo) {
-		this.layer_lo = layer_lo;
-	}
-
-	@Override public void receive(Integer tkt) {
+	@Override public void recv(MSG_I msg) throws MessageRejectedException {
+		switch (msg) {
+		case REQ_MORE_DATA: // request more data, from the user
+			break;
+		case RECV_SEED_H: // receive seed indexes, from Contact
+			break;
+		case RECV_ADDR_SCH: // receive update to address scheme, from Naming
+			break;
+		}
 		throw new UnsupportedOperationException("not implemented");
 	}
 
