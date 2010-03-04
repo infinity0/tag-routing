@@ -4,8 +4,10 @@ package tags.proto.cont;
 import tags.proto.LayerService;
 import tags.proto.Query;
 import tags.proto.QueryProcessor;
-import tags.util.MessageReceiver;
-import tags.util.MessageRejectedException;
+import tags.proto.name.Naming;
+import tags.proto.route.Routing;
+import tags.util.exec.MessageReceiver;
+import tags.util.exec.MessageRejectedException;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
@@ -35,11 +37,8 @@ implements MessageReceiver<Contact.MSG_I> {
 	final protected PTableComposer<I, A, S, Z> mod_ptb_cmp;
 
 	// TODO NORM maybe use a DataSources for this too...
-	final protected MapX2<I, PTable<A, S>, Z> source;
-	final protected PTable<A, S> table;
-
-	final protected Iterable<Map<A, S>> src_score_g;
-	final protected Iterable<Map<A, S>> src_score_h;
+	protected MapX2<I, PTable<A, S>, Z> source;
+	protected PTable<A, S> table;
 
 	public Contact(
 		Query<I, ?> query,
@@ -52,22 +51,20 @@ implements MessageReceiver<Contact.MSG_I> {
 		// TODO NOW
 		this.source = null;
 		this.table = null;
-		this.src_score_g = MultiParts.iterTGraphs(source.MapV0().values());
-		this.src_score_h = MultiParts.iterIndexes(source.MapV0().values());
 	}
 
 	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {
 		switch (msg) {
 		case REQ_MORE_DATA: // request for more data, from Naming
+			if (table == null) {
+				// - get data
+				//throw new UnsupportedOperationException("not implemented");
 
-			// if no data
-			// - get data
-
-			// otherwise,
-			// - get more data (not worked out)
-			// - ask user to supply different tag? (not worked out)
-			throw new UnsupportedOperationException("not implemented");
-
+			} else {
+				// - get more data (not worked out)
+				// - ask user to supply different tag? (not worked out)
+				throw new MessageRejectedException("not implemented");
+			}
 			break;
 		}
 		assert false;
@@ -81,16 +78,24 @@ implements MessageReceiver<Contact.MSG_I> {
 		return table.getIndexes();
 	}
 
+	protected void get() throws MessageRejectedException { // TODO NOW rename
+
+		table = composePTable();
+
+		proc.naming.recv(Naming.MSG_I.RECV_SEED_G);
+		proc.routing.recv(Routing.MSG_I.RECV_SEED_H);
+	}
+
 	/**
 	** Make a new {@link #table} from {@link #source}. To be called
 	** whenever the latter changes.
 	*/
 	protected PTable<A, S> composePTable() {
 		Map<A, S> g = new HashMap<A, S>(), h = new HashMap<A, S>();
-		for (A addr: Maps.domain(src_score_g)) {
+		for (A addr: Maps.domain(MultiParts.iterTGraphs(source.MapV0().values()))) {
 			g.put(addr, mod_ptb_cmp.composePTableGNode(source, addr));
 		}
-		for (A addr: Maps.domain(src_score_h)) {
+		for (A addr: Maps.domain(MultiParts.iterIndexes(source.MapV0().values()))) {
 			g.put(addr, mod_ptb_cmp.composePTableHNode(source, addr));
 		}
 		return new PTable<A, S>(g, h);

@@ -1,7 +1,7 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto;
 
-import tags.util.UnitService;
+import tags.util.exec.UnitService;
 import tags.proto.Query;
 import tags.store.StoreControl;
 

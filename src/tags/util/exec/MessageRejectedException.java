@@ -1,10 +1,10 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
-package tags.util;
+package tags.util.exec;
 
 import java.io.IOException;
 
 /**
-** DOCUMENT.
+** An exception thrown to indicate rejection of a message.
 */
 public class MessageRejectedException extends IOException {
 

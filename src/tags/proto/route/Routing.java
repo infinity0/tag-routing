@@ -4,8 +4,8 @@ package tags.proto.route;
 import tags.proto.LayerService;
 import tags.proto.Query;
 import tags.proto.QueryProcessor;
-import tags.util.MessageReceiver;
-import tags.util.MessageRejectedException;
+import tags.util.exec.MessageReceiver;
+import tags.util.exec.MessageRejectedException;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
@@ -72,20 +72,20 @@ implements MessageReceiver<Routing.MSG_I> {
 			// - complete some more lookups, or
 			// - add an index as a data source
 
-			throw new UnsupportedOperationException("not implemented");
+			//throw new UnsupportedOperationException("not implemented");
 
 			break;
 		case RECV_SEED_H: // receive seed indexes, from Contact
 
 			// init data structures etc. reset everything.
 			// OPT HIGH only update things that need to be updated
-			throw new UnsupportedOperationException("not implemented");
+			//throw new UnsupportedOperationException("not implemented");
 
 			break;
 		case RECV_ADDR_SCH: // receive update to address scheme, from Naming
 
 			// - update set of lookups
-			throw new UnsupportedOperationException("not implemented");
+			//throw new UnsupportedOperationException("not implemented");
 
 			break;
 		}

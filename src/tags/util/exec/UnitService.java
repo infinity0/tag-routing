@@ -1,5 +1,5 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
-package tags.util;
+package tags.util.exec;
 
 import java.util.concurrent.Executor;
 

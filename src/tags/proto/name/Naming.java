@@ -4,8 +4,8 @@ package tags.proto.name;
 import tags.proto.LayerService;
 import tags.proto.Query;
 import tags.proto.QueryProcessor;
-import tags.util.MessageReceiver;
-import tags.util.MessageRejectedException;
+import tags.util.exec.MessageReceiver;
+import tags.util.exec.MessageRejectedException;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
@@ -74,13 +74,13 @@ implements MessageReceiver<Naming.MSG_I> {
 			// - complete the next tag in the address scheme, or
 			// - add a tgraph as a data source
 
-			throw new UnsupportedOperationException("not implemented");
+			//throw new UnsupportedOperationException("not implemented");
 
 			break;
 		case RECV_SEED_G: // receive seed tgraphs, from Contact
 
 			//
-			throw new UnsupportedOperationException("not implemented");
+			//throw new UnsupportedOperationException("not implemented");
 
 			break;
 		}
