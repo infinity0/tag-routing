@@ -42,8 +42,9 @@ implements MessageReceiver<Contact.MSG_I> {
 	final protected PTableComposer<I, A, S, Z> mod_ptb_cmp;
 
 	// TODO NORM maybe use a DataSources for this too...
-	protected MapX2<I, PTable<A, S>, Z> source;
-	protected PTable<A, S> table;
+	final protected MapX2<I, PTable<A, S>, Z> source;
+
+	volatile protected PTable<A, S> table;
 
 	public Contact(
 		Query<I, ?> query,
@@ -59,11 +60,11 @@ implements MessageReceiver<Contact.MSG_I> {
 	}
 
 	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {
+		if (isActive()) { throw new MessageRejectedException("bad timing"); }
 		switch (msg) {
 		case REQ_MORE_DATA: // request for more data, from Naming
 			if (table == null) {
-				// - get data
-				//throw new UnsupportedOperationException("not implemented");
+				start(new Runnable() { @Override public void run() { makePTable(); } });
 
 			} else {
 				// - get more data (not worked out)
@@ -83,7 +84,7 @@ implements MessageReceiver<Contact.MSG_I> {
 		return table.getIndexes();
 	}
 
-	protected void get() throws MessageRejectedException { // TODO NOW rename
+	protected void makePTable() {
 		Map<I, Z> id_score = proc.getTrustedIDs();
 
 		TaskService<I, PTable<A, S>, IOException> srv = proc.newPTableService();
@@ -99,18 +100,22 @@ implements MessageReceiver<Contact.MSG_I> {
 			} while (srv.hasPending());
 
 		} catch (InterruptedException e) {
-			// TODO HIGH
-
+			// FIXME HIGH
 		} catch (IOException e) {
-			// TODO HIGH
-
+			// FIXME HIGH
 		} finally {
 			srv.close();
 		}
 
 		table = composePTable();
-		proc.naming.recv(Naming.MSG_I.RECV_SEED_G);
-		proc.routing.recv(Routing.MSG_I.RECV_SEED_H);
+
+		try {
+			proc.naming.recv(Naming.MSG_I.RECV_SEED_G);
+			proc.routing.recv(Routing.MSG_I.RECV_SEED_H);
+
+		} catch (MessageRejectedException e) {
+			// FIXME HIGH
+		}
 	}
 
 	/**

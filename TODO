@@ -16,3 +16,12 @@
 (very later)
 - add tags.rout.IndexComposer to the design document
 - explain how tags are scored, in the design document
+
+
+(architecture issues)
+current architecture has each QueryProcessor spawn new Contact/Naming/Routing
+layers. ideally, Contact should be split off from this, since the information
+it uses is independent of any query.
+
+to do this we first need to extend MessageReceiver.recv() to accept a "sender"
+argument, or something.
