@@ -32,14 +32,13 @@ final public class Union {
 		** @throws NullPointerException if {@code val} is {@code null}
 		*/
 		private U0(Object val, int type) {
-			if (val == null) {
-				throw new NullPointerException();
-			}
+			if (val == null) { throw new NullPointerException(); }
 			this.val = val;
 			this.type = type;
 		}
 
-		protected void check(int type) {
+		final protected void check(int type) {
+			// mark method as final so javac inlines it
 			if (this.type != type) { throw new IllegalStateException("Not the correct type"); }
 		}
 
@@ -47,7 +46,7 @@ final public class Union {
 			if (o == this) { return true; }
 			if (!(o instanceof U0)) { return false; }
 			U0 u = (U0)o;
-			return val.equals(u.val) && type == u.type;
+			return type == u.type && val.equals(u.val);
 		}
 
 		@Override public int hashCode() {

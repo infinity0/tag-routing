@@ -14,7 +14,7 @@ import tags.proto.AddressScheme;
 import tags.proto.DataSources;
 import tags.proto.LocalIndex;
 import tags.proto.FullIndex;
-import tags.proto.Lookup;
+import tags.proto.Index.Lookup;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Arc;
@@ -134,7 +134,7 @@ implements MessageReceiver<Routing.MSG_I> {
 			S idxs = source.scoreMap().get(idx);
 
 			for (T tag: tags) {
-				lku_score.put(Lookup.lookup(idx, tag), mod_lku_scr.getLookupScore(idxs, scheme.arcAttrMap().get(tag)));
+				lku_score.put(Lookup.make(idx, tag), mod_lku_scr.getLookupScore(idxs, scheme.arcAttrMap().get(tag)));
 			}
 		}
 

@@ -3,10 +3,9 @@ package tags.proto.route;
 
 import tags.proto.AddressScheme;
 import tags.proto.LocalIndex;
-import tags.proto.Lookup;
+import tags.proto.Index.Lookup;
 import tags.util.Probability;
 import java.util.Comparator;
-import java.util.Set;
 import java.util.Map;
 import java.util.PriorityQueue;
 

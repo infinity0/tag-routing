@@ -3,6 +3,7 @@ package tags.proto;
 
 import tags.util.Graphs;
 import tags.util.Maps;
+import tags.util.Union;
 
 import tags.util.Arc;
 import tags.util.Union.U2;
@@ -154,6 +155,78 @@ public class TGraph<T, A, U, W> {
 		*/
 		public int size() {
 			return arc_attr_map.size();
+		}
+
+	}
+
+	public static class Lookup<T, A> {
+
+		final public A tgr;
+		final public T tag;
+
+		public Lookup(A tgr, T tag) {
+			if (tgr == null || tag == null) { throw new NullPointerException(); }
+			this.tgr = tgr;
+			this.tag = tag;
+		}
+
+		@Override public boolean equals(Object o) {
+			if (o == this) { return true; }
+			if (!(o instanceof Lookup)) { return false; }
+			Lookup lku = (Lookup)o;
+			return tgr.equals(lku.tgr) && tag.equals(lku.tag);
+		}
+
+		@Override public int hashCode() {
+			return tgr.hashCode() ^ tag.hashCode() ^ -2092781606;
+		}
+
+		@Override public String toString() {
+			return "(" + tgr + ": " + tag + ")";
+		}
+
+		public static <T, A> Lookup<T, A> make(A tgr, T tag) {
+			return new Lookup<T, A>(tgr, tag);
+		}
+
+	}
+
+	public static class NodeLookup<T, A> {
+
+		final public A tgr;
+		final public U2<T, A> node;
+
+		public NodeLookup(A tgr, U2<T, A> node) {
+			if (tgr == null || node == null) { throw new NullPointerException(); }
+			this.tgr = tgr;
+			this.node = node;
+		}
+
+		@Override public boolean equals(Object o) {
+			if (o == this) { return true; }
+			if (!(o instanceof NodeLookup)) { return false; }
+			NodeLookup lku = (NodeLookup)o;
+			return tgr.equals(lku.tgr) && node.equals(lku.node);
+		}
+
+		@Override public int hashCode() {
+			return tgr.hashCode() ^ node.hashCode() ^ -451720236;
+		}
+
+		@Override public String toString() {
+			return "(" + tgr + ": " + node + ")";
+		}
+
+		public static <T, A> NodeLookup<T, A> make(A tgr, U2<T, A> node) {
+			return new NodeLookup<T, A>(tgr, node);
+		}
+
+		public static <T, A> NodeLookup<T, A> makeT(A tgr, T ntag) {
+			return new NodeLookup<T, A>(tgr, Union.<T, A>U2_0(ntag));
+		}
+
+		public static <T, A> NodeLookup<T, A> makeG(A tgr, A ntgr) {
+			return new NodeLookup<T, A>(tgr, Union.<T, A>U2_1(ntgr));
 		}
 
 	}

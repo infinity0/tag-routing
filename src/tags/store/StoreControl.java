@@ -4,9 +4,10 @@ package tags.store;
 import tags.proto.PTable;
 import tags.proto.TGraph;
 import tags.proto.Index;
-
+import tags.util.exec.TaskService;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutionException;
 
 /**
 ** DOCUMENT.
@@ -51,5 +52,16 @@ public interface StoreControl<I, T, A, U, W, S, Z> {
 	** @param addr Address of the {@link Index}.
 	*/
 	public Map<A, W> getIndexOutgoing(A addr, T src);
+
+
+
+	public TaskService<I, PTable<A, S>, ExecutionException> newPTableService();
+
+	public TaskService<Index.Lookup<T, A>, Map<A, W>, ExecutionException> newIndexService();
+
+	public TaskService<TGraph.Lookup<T, A>, Map<T, W>, ExecutionException> newTGraphService();
+
+	public TaskService<TGraph.NodeLookup<T, A>, U, ExecutionException> newTGraphNodeService();
+
 
 }

@@ -1,10 +1,7 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto.route;
 
-import tags.proto.AddressScheme;
-import tags.proto.LocalIndex;
-import tags.proto.Lookup;
-import java.util.Set;
+import tags.proto.Index.Lookup;
 import java.util.Map;
 import java.util.PriorityQueue;
 

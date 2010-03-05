@@ -101,4 +101,37 @@ public class Index<T, A, W> {
 		return outgoing.get(src);
 	}
 
+
+	public static class Lookup<T, A> {
+
+		final public A idx;
+		final public T tag;
+
+		public Lookup(A idx, T tag) {
+			if (idx == null || tag == null) { throw new NullPointerException(); }
+			this.idx = idx;
+			this.tag = tag;
+		}
+
+		@Override public boolean equals(Object o) {
+			if (o == this) { return true; }
+			if (!(o instanceof Lookup)) { return false; }
+			Lookup lku = (Lookup)o;
+			return idx.equals(lku.idx) && tag.equals(lku.tag);
+		}
+
+		@Override public int hashCode() {
+			return idx.hashCode() ^ tag.hashCode() ^ 1446548050;
+		}
+
+		@Override public String toString() {
+			return "(" + idx + ": " + tag + ")";
+		}
+
+		public static <T, A> Lookup<T, A> make(A idx, T tag) {
+			return new Lookup<T, A>(idx, tag);
+		}
+
+	}
+
 }
