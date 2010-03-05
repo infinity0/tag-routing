@@ -40,7 +40,7 @@ public interface AddressScheme<T, A, W> {
 	**         to this address scheme
 	** @throws NullPointerException if {@code tags} is {@code null}.
 	*/
-	public T getMostRelevant(Iterable<T> tags);
+	public T getMostRelevant(Set<T> tags);
 
 	/**
 	** Returns the set of tags contained within this scheme.

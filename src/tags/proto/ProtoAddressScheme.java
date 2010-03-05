@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
@@ -33,13 +34,17 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 	final protected U2Map<T, A, List<T>> path = Maps.uniteDisjoint(new HashMap<T, List<T>>(), new HashMap<A, List<T>>());
 
 	final protected Map<T, W> arc_attr_map = new HashMap<T, W>();
+	final protected Comparator<W> cmp;
 
 	protected boolean incomplete = false;
 
 	/**
 	** Construct a new scheme with the given tag as the zeroth (ie. seed) tag.
+	** If {@code cmp} is used, then {@link #getMostRelevant(Iterable)} will use
+	** the natural ordering for {@code <W>} (it must be {@link Comparable}).
 	*/
-	public ProtoAddressScheme(T src) {
+	public ProtoAddressScheme(T src, Comparator<W> cmp) {
+		this.cmp = cmp;
 		// initialise structures with src tag
 		node_list.add(Union.<T, A>U2_0(src));
 		node_map.K0Map().put(src, 0);
@@ -62,18 +67,25 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		return zero.getT0();
 	}
 
-	@Override public T getMostRelevant(Iterable<T> tags) {
-		// TODO HIGH this needs to be rewritten in terms of arcAttr not distance
-		T near = null;
-		int min = Integer.MAX_VALUE;
-		for (T tag: tags) {
-			int ti = node_map.K0Map().get(tag);
-			if (ti < min) {
-				near = tag;
-				min = ti;
+	/**
+	** Returns the tag with the highest arc-attribute (ie. opposite of default
+	** java sort order), or {@code null} if none of the tags have an attribute
+	** defined.
+	*/
+	@Override public T getMostRelevant(Set<T> tags) {
+		Map.Entry<T, W> max = Collections.max(Maps.viewSubMap(arc_attr_map, tags).entrySet(), (cmp == null)?
+		new Comparator<Map.Entry<T, W>>() {
+			@SuppressWarnings("unchecked")
+			@Override public int compare(Map.Entry<T, W> en0, Map.Entry<T, W> en1) {
+				return ((Comparable<W>)en0.getValue()).compareTo(en1.getValue());
 			}
-		}
-		return near;
+		}:
+		new Comparator<Map.Entry<T, W>>() {
+			@Override public int compare(Map.Entry<T, W> en0, Map.Entry<T, W> en1) {
+				return cmp.compare(en0.getValue(), en1.getValue());
+			}
+		});
+		return max.getKey();
 	}
 
 	@Override public Set<T> tagSet() {
