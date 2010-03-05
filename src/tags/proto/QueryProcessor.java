@@ -7,7 +7,7 @@ import tags.proto.name.Naming;
 import tags.proto.route.Routing;
 import tags.util.exec.TaskService;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutionException;
+import java.io.IOException;
 
 import tags.util.Maps.U2Map;
 import java.util.Map;
@@ -33,6 +33,9 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 	final public Naming<T, A, U, W, S> naming;
 	final public Routing<T, A, W, S> routing;
 
+	// interval for Thread.sleep in the control-loops in Contact/Naming/Routing
+	final public int interval = 1000;
+
 	public QueryProcessor(Executor exec, Query<I, T> query, StoreControl<I, T, A, U, W, S, Z> sctl) {
 		if (exec == null || sctl == null || query == null) { throw new NullPointerException(); }
 		this.exec = exec;
@@ -44,19 +47,31 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 		this.routing = null;
 	}
 
-	public TaskService<I, PTable<A, S>, ExecutionException> newPTableService() {
+	/**
+	** Retrieves a set of inferred trusted identities from the social graph,
+	** each mapped to their score rating.
+	**
+	** This method blocks until the operation is complete.
+	**
+	** TODO NORM this should really be a module in the Contact layer.
+	*/
+	public Map<I, Z> getTrustedIDs() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public TaskService<TGraph.Lookup<T, A>, U2Map<T, A, W>, ExecutionException> newTGraphService() {
+	public TaskService<I, PTable<A, S>, IOException> newPTableService() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public TaskService<TGraph.NodeLookup<T, A>, U, ExecutionException> newTGraphNodeService() {
+	public TaskService<TGraph.Lookup<T, A>, U2Map<T, A, W>, IOException> newTGraphService() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 
-	public TaskService<Index.Lookup<T, A>, U2Map<A, A, W>, ExecutionException> newIndexService() {
+	public TaskService<TGraph.NodeLookup<T, A>, U, IOException> newTGraphNodeService() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	public TaskService<Index.Lookup<T, A>, U2Map<A, A, W>, IOException> newIndexService() {
 		throw new UnsupportedOperationException("not implemented");
 	}
 

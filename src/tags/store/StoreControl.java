@@ -24,11 +24,12 @@ import java.io.IOException;
 public interface StoreControl<I, T, A, U, W, S, Z> {
 
 	/**
-	** Retrieves the friends (and their score-ratings) of a given identity.
+	** Retrieves the immediate trusted neighbours of a given identity, each
+	** mapped to their score rating.
 	**
 	** This method blocks until the operation is complete.
 	*/
-	public Map<I, Z> getTrusted(I id) throws IOException;
+	public Map<I, Z> getFriends(I id) throws IOException;
 
 	/**
 	** Retrieves the {@link PTable} for a given identity.

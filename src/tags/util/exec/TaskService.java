@@ -16,7 +16,7 @@ public interface TaskService<K, V, X extends Exception> {
 	public boolean hasPending();
 
 	/**
-	** Whether there are completed tasks that have not been accepted.
+	** Whether there are completed tasks that have not been reclaimed.
 	*/
 	public boolean hasComplete();
 
@@ -26,8 +26,14 @@ public interface TaskService<K, V, X extends Exception> {
 	public void submit(Task<K> task);
 
 	/**
-	** Accept a completed task and its result, blocking if no such tasks exist.
+	** Returns a completed task and its result, blocking if no such tasks exist.
 	*/
-	public TaskResult<K, V, X> accept();
+	public TaskResult<K, V, X> reclaim();
+
+	/**
+	** Stop accepting submissions. Pending tasks are still run, and completed
+	** tags are still held until they have been reclaimed.
+	*/
+	public void close();
 
 }

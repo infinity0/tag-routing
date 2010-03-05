@@ -6,8 +6,13 @@ import tags.proto.Query;
 import tags.proto.QueryProcessor;
 import tags.proto.name.Naming;
 import tags.proto.route.Routing;
+
 import tags.util.exec.MessageReceiver;
 import tags.util.exec.MessageRejectedException;
+import tags.util.exec.Tasks;
+import tags.util.exec.TaskResult;
+import tags.util.exec.TaskService;
+import java.io.IOException;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
@@ -79,9 +84,31 @@ implements MessageReceiver<Contact.MSG_I> {
 	}
 
 	protected void get() throws MessageRejectedException { // TODO NOW rename
+		Map<I, Z> id_score = proc.getTrustedIDs();
+
+		TaskService<I, PTable<A, S>, IOException> srv = proc.newPTableService();
+		try {
+			for (I id: id_score.keySet()) { srv.submit(Tasks.newTask(id)); }
+			do {
+				while (srv.hasComplete()) {
+					TaskResult<I, PTable<A, S>, IOException> res = srv.reclaim();
+					source.putX2(res.getKey(), res.getValue(), id_score.get(res.getKey()));
+				}
+				Thread.sleep(proc.interval);
+
+			} while (srv.hasPending());
+
+		} catch (InterruptedException e) {
+			// TODO HIGH
+
+		} catch (IOException e) {
+			// TODO HIGH
+
+		} finally {
+			srv.close();
+		}
 
 		table = composePTable();
-
 		proc.naming.recv(Naming.MSG_I.RECV_SEED_G);
 		proc.routing.recv(Routing.MSG_I.RECV_SEED_H);
 	}

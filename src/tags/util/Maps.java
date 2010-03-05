@@ -421,6 +421,11 @@ final public class Maps {
 		public Map<K, V0> MapV0();
 		/** Returns a view of the map containing only values of type {@code V1}. */
 		public Map<K, V1> MapV1();
+		/**
+		** Puts both values into the map, returning both previous values, or
+		** {@code null} if the key did not exist in this map.
+		*/
+		public X2<V0, V1> putX2(K key, V0 v0, V1 v1);
 	}
 
 	/**
@@ -482,6 +487,10 @@ final public class Maps {
 
 		@Override public M0 MapV0() { return m0; }
 		@Override public M1 MapV1() { return m1; }
+
+		@Override public X2<V0, V1> putX2(K key, V0 v0, V1 v1) {
+			return put(key, Tuple.X2(v0, v1));
+		}
 
 		@Override public int size() {
 			int s0 = m0.size(), s1 = m1.size();
