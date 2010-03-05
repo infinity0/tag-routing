@@ -5,7 +5,12 @@ import tags.store.StoreControl;
 import tags.proto.cont.Contact;
 import tags.proto.name.Naming;
 import tags.proto.route.Routing;
+import tags.util.exec.TaskService;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutionException;
+
+import tags.util.Maps.U2Map;
+import java.util.Map;
 
 /**
 ** DOCUMENT.
@@ -37,6 +42,22 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 		this.contact = null;
 		this.naming = null;
 		this.routing = null;
+	}
+
+	public TaskService<I, PTable<A, S>, ExecutionException> newPTableService() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	public TaskService<TGraph.Lookup<T, A>, U2Map<T, A, W>, ExecutionException> newTGraphService() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	public TaskService<TGraph.NodeLookup<T, A>, U, ExecutionException> newTGraphNodeService() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	public TaskService<Index.Lookup<T, A>, U2Map<A, A, W>, ExecutionException> newIndexService() {
+		throw new UnsupportedOperationException("not implemented");
 	}
 
 }

@@ -4,10 +4,11 @@ package tags.store;
 import tags.proto.PTable;
 import tags.proto.TGraph;
 import tags.proto.Index;
-import tags.util.exec.TaskService;
+import tags.util.Union.U2;
+import tags.util.Maps.U2Map;
 import java.util.Map;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutionException;
+
+import java.io.IOException;
 
 /**
 ** DOCUMENT.
@@ -24,44 +25,46 @@ public interface StoreControl<I, T, A, U, W, S, Z> {
 
 	/**
 	** Retrieves the friends (and their score-ratings) of a given identity.
+	**
+	** This method blocks until the operation is complete.
 	*/
-	public Map<I, Z> getFriends(I id);
+	public Map<I, Z> getTrusted(I id) throws IOException;
 
 	/**
 	** Retrieves the {@link PTable} for a given identity.
+	**
+	** This method blocks until the operation is complete.
 	*/
-	public PTable<A, S> getPTable(I id);
+	public PTable<A, S> getPTable(I id) throws IOException;
 
 	/**
 	** Retrieves the out-neighbours (and the weights of the out-arcs) for a
 	** given source tag, in the given {@link TGraph}.
 	**
+	** This method blocks until the operation is complete.
+	**
 	** @param addr Address of the {@link TGraph}.
 	*/
-	public Map<T, W> getTGraphOutgoing(A addr, T src);
+	public U2Map<T, A, W> getTGraphOutgoing(A addr, T src) throws IOException;
 
 	/**
-	** Retrieves the weight for a given tag, in the given {@link TGraph}.
+	** Retrieves the node-attribute for a given tag or tgraph, in the given
+	** {@link TGraph}.
+	**
+	** This method blocks until the operation is complete.
+	**
+	** @param addr Address of the {@link TGraph}.
 	*/
-	public U getTGraphTagAttr(A addr, T tag);
+	public U getTGraphNodeAttr(A addr, U2<T, A> node) throws IOException;
 
 	/**
 	** Retrieves the out-neighbours (and the weights of the out-arcs) for a
 	** given source tag, in the given {@link Index}.
 	**
+	** This method blocks until the operation is complete.
+	**
 	** @param addr Address of the {@link Index}.
 	*/
-	public Map<A, W> getIndexOutgoing(A addr, T src);
-
-
-
-	public TaskService<I, PTable<A, S>, ExecutionException> newPTableService();
-
-	public TaskService<Index.Lookup<T, A>, Map<A, W>, ExecutionException> newIndexService();
-
-	public TaskService<TGraph.Lookup<T, A>, Map<T, W>, ExecutionException> newTGraphService();
-
-	public TaskService<TGraph.NodeLookup<T, A>, U, ExecutionException> newTGraphNodeService();
-
+	public U2Map<A, A, W> getIndexOutgoing(A addr, T src) throws IOException;
 
 }
