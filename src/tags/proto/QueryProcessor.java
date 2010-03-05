@@ -9,6 +9,13 @@ import tags.util.exec.TaskService;
 import java.util.concurrent.Executor;
 import java.io.IOException;
 
+import tags.proto.cont.PTableComposer;
+import tags.proto.name.TGraphComposer;
+import tags.proto.name.AddressSchemeBuilder;
+import tags.proto.route.IndexComposer;
+import tags.proto.route.LookupScorer;
+import tags.util.ScoreInferer;
+
 import tags.util.Maps.U2Map;
 import java.util.Map;
 
@@ -36,15 +43,27 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 	// interval for Thread.sleep in the control-loops in Contact/Naming/Routing
 	final public int interval = 1000;
 
-	public QueryProcessor(Executor exec, Query<I, T> query, StoreControl<I, T, A, U, W, S, Z> sctl) {
+	public QueryProcessor(
+		Executor exec,
+		Query<I, T> query,
+		StoreControl<I, T, A, U, W, S, Z> sctl,
+		PTableComposer<I, A, S, Z> mod_ptb_cmp,
+		TGraphComposer<T, A, U, W, S> mod_tgr_cmp,
+		AddressSchemeBuilder<T, A, U, W> mod_asc_bld,
+		LocalViewFactory<A, LocalTGraph<T, A, U, W>> view_fac_g,
+		IndexComposer<T, A, W, S> mod_idx_cmp,
+		LookupScorer<W, S> mod_lku_scr,
+		LocalViewFactory<A, LocalIndex<T, A, W>> view_fac_h,
+		ScoreInferer<S> score_inf
+	) {
 		if (exec == null || sctl == null || query == null) { throw new NullPointerException(); }
 		this.exec = exec;
 		this.sctl = sctl;
 		this.query = query;
 		// TODO NOW
-		this.contact = null;
-		this.naming = null;
-		this.routing = null;
+		this.contact = new Contact<I, A, S, Z>(query, this, mod_ptb_cmp);
+		this.naming = new Naming<T, A, U, W, S>(query, this, mod_tgr_cmp, mod_asc_bld, view_fac_g, score_inf);
+		this.routing = new Routing<T, A, W, S>(query, this, mod_idx_cmp, mod_lku_scr, view_fac_h, score_inf);
 	}
 
 	/**

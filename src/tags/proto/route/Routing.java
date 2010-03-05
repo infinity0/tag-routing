@@ -6,6 +6,8 @@ import tags.proto.Query;
 import tags.proto.QueryProcessor;
 import tags.util.exec.MessageReceiver;
 import tags.util.exec.MessageRejectedException;
+import tags.proto.LocalViewFactory;
+import tags.util.ScoreInferer;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
@@ -50,16 +52,17 @@ implements MessageReceiver<Routing.MSG_I> {
 		Query<?, T> query,
 		QueryProcessor<?, T, A, ?, W, S, ?> proc,
 		IndexComposer<T, A, W, S> mod_idx_cmp,
-		LookupScorer<W, S> mod_lku_scr
+		LookupScorer<W, S> mod_lku_scr,
+		LocalViewFactory<A, LocalIndex<T, A, W>> view_fac,
+		ScoreInferer<S> score_inf
 	) {
 		super(query, proc);
 		if (mod_idx_cmp == null) { throw new NullPointerException(); }
 		if (mod_lku_scr == null) { throw new NullPointerException(); }
 		this.mod_idx_cmp = mod_idx_cmp;
 		this.mod_lku_scr = mod_lku_scr;
-		// TODO NOW
-		this.source = null;
-		this.lookup = null;
+		this.source = new DataSources<A, LocalIndex<T, A, W>, S>(view_fac, score_inf);
+		this.lookup = new HashMap<A, Set<T>>();
 	}
 
 	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {

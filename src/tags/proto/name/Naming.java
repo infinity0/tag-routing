@@ -6,6 +6,8 @@ import tags.proto.Query;
 import tags.proto.QueryProcessor;
 import tags.util.exec.MessageReceiver;
 import tags.util.exec.MessageRejectedException;
+import tags.proto.LocalViewFactory;
+import tags.util.ScoreInferer;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
@@ -50,17 +52,16 @@ implements MessageReceiver<Naming.MSG_I> {
 		Query<?, T> query,
 		QueryProcessor<?, T, A, U, W, S, ?> proc,
 		TGraphComposer<T, A, U, W, S> mod_tgr_cmp,
-		AddressSchemeBuilder<T, A, U, W> mod_asc_bld
+		AddressSchemeBuilder<T, A, U, W> mod_asc_bld,
+		LocalViewFactory<A, LocalTGraph<T, A, U, W>> view_fac,
+		ScoreInferer<S> score_inf
 	) {
 		super(query, proc);
 		if (mod_tgr_cmp == null) { throw new NullPointerException(); }
 		if (mod_asc_bld == null) { throw new NullPointerException(); }
 		this.mod_tgr_cmp = mod_tgr_cmp;
 		this.mod_asc_bld = mod_asc_bld;
-		// TODO NOW
-		this.source = null;
-		this.graph = null;
-		this.scheme = null;
+		this.source = new DataSources<A, LocalTGraph<T, A, U, W>, S>(view_fac, score_inf);
 	}
 
 	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {

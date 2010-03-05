@@ -54,9 +54,7 @@ implements MessageReceiver<Contact.MSG_I> {
 		super(query, proc);
 		if (mod_ptb_cmp == null) { throw new NullPointerException(); }
 		this.mod_ptb_cmp = mod_ptb_cmp;
-		// TODO NOW
-		this.source = null;
-		this.table = null;
+		this.source = Maps.convoluteStrict(new HashMap<I, PTable<A, S>>(), new HashMap<I, Z>(), Maps.BaseMapX2.Inclusion.EQUAL);
 	}
 
 	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {
