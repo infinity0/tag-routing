@@ -44,7 +44,7 @@ implements MessageReceiver<Naming.MSG_I> {
 	final protected DataSources<A, LocalTGraph<T, A, U, W>, S> source;
 
 	protected LocalTGraph<T, A, U, W> graph;
-	protected AddressScheme<T, A, W> scheme;
+	volatile protected AddressScheme<T, A, W> scheme;
 
 	public Naming(
 		Query<?, T> query,
@@ -79,7 +79,9 @@ implements MessageReceiver<Naming.MSG_I> {
 			break;
 		case RECV_SEED_G: // receive seed tgraphs, from Contact
 
-			//
+			// init data structures etc. reset everything
+			source.setSeeds(proc.contact.getSeedTGraphs());
+			source.calculateScores();
 			//throw new UnsupportedOperationException("not implemented");
 
 			break;
@@ -87,12 +89,8 @@ implements MessageReceiver<Naming.MSG_I> {
 		assert false;
 	}
 
-	public FullTGraph<T, A, U, W> getCompositeTGraph() {
-		throw new UnsupportedOperationException("not implemented");
-	}
-
 	public AddressScheme<T, A, W> getAddressScheme() {
-		throw new UnsupportedOperationException("not implemented");
+		return scheme;
 	}
 
 	/**

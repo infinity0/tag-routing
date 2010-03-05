@@ -44,6 +44,7 @@ implements MessageReceiver<Routing.MSG_I> {
 	final protected Map<A, Set<T>> lookup;
 
 	protected FullIndex<T, A, W> index;
+	volatile protected Map<A, W> results;
 
 	public Routing(
 		Query<?, T> query,
@@ -78,22 +79,29 @@ implements MessageReceiver<Routing.MSG_I> {
 		case RECV_SEED_H: // receive seed indexes, from Contact
 
 			// init data structures etc. reset everything.
-			// OPT HIGH only update things that need to be updated
+			source.setSeeds(proc.contact.getSeedIndexes());
+			source.calculateScores();
 			//throw new UnsupportedOperationException("not implemented");
 
 			break;
 		case RECV_ADDR_SCH: // receive update to address scheme, from Naming
 
 			// - update set of lookups
+			// OPT HIGH only update things that need to be updated
+			AddressScheme<T, A, W> scheme = proc.naming.getAddressScheme();
+			Map<A, Set<T>> lookups = getLookups(scheme);
 			//throw new UnsupportedOperationException("not implemented");
+
+			index = composeIndex();
+			results = makeResults(scheme);
 
 			break;
 		}
 		assert false;
 	}
 
-	public Map<A, LocalIndex<T, A, W>> getResults() {
-		throw new UnsupportedOperationException("not implemented");
+	public Map<A, W> getResults() {
+		return results;
 	}
 
 	/**
@@ -102,7 +110,7 @@ implements MessageReceiver<Routing.MSG_I> {
 	** - address scheme is updated
 	** - we add a source
 	*/
-	public Map<A, Set<T>> getLookups(AddressScheme<T, A, W> scheme) {
+	protected Map<A, Set<T>> getLookups(AddressScheme<T, A, W> scheme) {
 		Map<A, Set<T>> lookups = new HashMap<A, Set<T>>();
 		for (A idx: source.localMap().keySet()) {
 			if (source.seedMap().containsKey(idx)) {
@@ -125,7 +133,7 @@ implements MessageReceiver<Routing.MSG_I> {
 		return lookups;
 	}
 
-	public PriorityQueue<Lookup<T, A>> sortLookups(AddressScheme<T, A, W> scheme, Map<A, Set<T>> lookups) {
+	protected PriorityQueue<Lookup<T, A>> sortLookups(AddressScheme<T, A, W> scheme, Map<A, Set<T>> lookups) {
 		Map<Lookup<T, A>, W> lku_score = new HashMap<Lookup<T, A>, W>();
 
 		for (Map.Entry<A, Set<T>> en: lookups.entrySet()) {
@@ -144,7 +152,7 @@ implements MessageReceiver<Routing.MSG_I> {
 	/**
 	** DOCUMENT
 	*/
-	public FullIndex<T, A, W> composeIndex() {
+	protected FullIndex<T, A, W> composeIndex() {
 		// iterates through all arcs present in every source
 		U2Map<Arc<T, A>, Arc<T, A>, W> arc_map = Maps.uniteDisjoint(new HashMap<Arc<T, A>, W>(), new HashMap<Arc<T, A>, W>());
 		for (U2<Arc<T, A>, Arc<T, A>> arc: Maps.domain(MultiParts.iterIndexArcMaps(source.localMap().values()))) {
@@ -160,7 +168,7 @@ implements MessageReceiver<Routing.MSG_I> {
 	** TODO NORM arguably this could be in a separate module instead of just
 	** "pick the most relevant tag".
 	*/
-	public Map<A, W> getResults(AddressScheme<T, A, W> scheme) {
+	protected Map<A, W> makeResults(AddressScheme<T, A, W> scheme) {
 		Map<A, W> results = new HashMap<A, W>();
 
 		for (A dst: index.nodeSetD()) {
