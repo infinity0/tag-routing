@@ -3,7 +3,7 @@ package tags.proto.name;
 
 import tags.proto.AddressScheme;
 import tags.proto.ProtoAddressScheme;
-import tags.proto.LocalTGraph;
+import tags.proto.FullTGraph;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Tuple.X2;
@@ -33,7 +33,7 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 		this.dmetric = dmetric;
 	}
 
-	@Override public AddressScheme<T, A, W> buildAddressScheme(LocalTGraph<T, A, U, W> graph, Set<T> completed, final T seed) {
+	@Override public AddressScheme<T, A, W> buildAddressScheme(FullTGraph<T, A, U, W> graph, Set<T> completed, final T seed) {
 		AddressScheme<T, A, W> scheme = new ProtoAddressScheme<T, A, W>(seed, null);
 
 		U seedu = graph.nodeMap().get(seed);

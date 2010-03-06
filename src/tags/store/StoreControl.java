@@ -42,7 +42,8 @@ public interface StoreControl<I, T, A, U, W, S, Z> {
 	** Retrieves the out-neighbours (and the weights of the out-arcs) for a
 	** given source tag, in the given {@link TGraph}.
 	**
-	** This method blocks until the operation is complete.
+	** This method blocks until the operation is complete. It returns {@code
+	** null} if the given node is not defined in the data structure.
 	**
 	** @param addr Address of the {@link TGraph}.
 	*/
@@ -52,7 +53,8 @@ public interface StoreControl<I, T, A, U, W, S, Z> {
 	** Retrieves the node-attribute for a given tag or tgraph, in the given
 	** {@link TGraph}.
 	**
-	** This method blocks until the operation is complete.
+	** This method blocks until the operation is complete. It returns {@code
+	** null} if the given node is not defined in the data structure.
 	**
 	** @param addr Address of the {@link TGraph}.
 	*/
@@ -62,7 +64,8 @@ public interface StoreControl<I, T, A, U, W, S, Z> {
 	** Retrieves the out-neighbours (and the weights of the out-arcs) for a
 	** given source tag, in the given {@link Index}.
 	**
-	** This method blocks until the operation is complete.
+	** This method blocks until the operation is complete. It returns {@code
+	** null} if the given node is not defined in the data structure.
 	**
 	** @param addr Address of the {@link Index}.
 	*/

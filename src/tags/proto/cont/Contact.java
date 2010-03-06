@@ -37,6 +37,8 @@ import java.util.HashMap;
 public class Contact<I, A, S, Z> extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>>
 implements MessageReceiver<Contact.MSG_I> {
 
+	public enum State { NEW, IDLE }
+
 	public enum MSG_I { REQ_MORE_DATA }
 
 	final protected PTableComposer<I, A, S, Z> mod_ptb_cmp;

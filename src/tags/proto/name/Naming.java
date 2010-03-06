@@ -4,19 +4,25 @@ package tags.proto.name;
 import tags.proto.LayerService;
 import tags.proto.Query;
 import tags.proto.QueryProcessor;
-import tags.util.exec.MessageReceiver;
-import tags.util.exec.MessageRejectedException;
 import tags.proto.LocalViewFactory;
 import tags.util.ScoreInferer;
 
+import tags.util.exec.MessageReceiver;
+import tags.util.exec.MessageRejectedException;
+import tags.util.exec.Tasks;
+import tags.util.exec.TaskResult;
+import tags.util.exec.TaskService;
+import java.io.IOException;
+
 import tags.proto.MultiParts;
 import tags.util.Maps;
-import java.util.Collections;
 
+import tags.proto.AddressScheme;
 import tags.proto.DataSources;
 import tags.proto.LocalTGraph;
 import tags.proto.FullTGraph;
-import tags.proto.AddressScheme;
+import tags.proto.TGraph.Lookup;
+import tags.proto.TGraph.NodeLookup;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Arc;
@@ -38,14 +44,16 @@ import java.util.HashSet;
 public class Naming<T, A, U, W, S> extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>>
 implements MessageReceiver<Naming.MSG_I> {
 
-	public static enum MSG_I { REQ_MORE_DATA, RECV_SEED_G }
+	public enum State { NEW, AWAIT_SEEDS, IDLE }
+
+	public enum MSG_I { REQ_MORE_DATA, RECV_SEED_G }
 
 	final protected TGraphComposer<T, A, U, W, S> mod_tgr_cmp;
 	final protected AddressSchemeBuilder<T, A, U, W> mod_asc_bld;
 
 	final protected DataSources<A, LocalTGraph<T, A, U, W>, S> source;
 
-	protected LocalTGraph<T, A, U, W> graph;
+	protected FullTGraph<T, A, U, W> graph;
 	volatile protected AddressScheme<T, A, W> scheme;
 
 	public Naming(
@@ -94,22 +102,101 @@ implements MessageReceiver<Naming.MSG_I> {
 		return scheme;
 	}
 
+	protected void addDataSourceAndComplete(A addr) {
+		Set<T> old_complete = getCompletedTags();
+		LocalTGraph<T, A, U, W> view = source.useSource(addr);
+
+		TaskService<Lookup<T, A>, U2Map<T, A, W>, IOException> srv = proc.newTGraphService();
+		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
+
+		Map<T, U2Map<T, A, W>> outgoing = new HashMap<T, U2Map<T, A, W>>();
+		Set<U2<T, A>> submitted = new HashSet<U2<T, A>>();
+
+		try {
+			for (T tag: old_complete) {
+				srv.submit(Tasks.newTask(Lookup.make(addr, tag)));
+				NodeLookup<T, A> lku = NodeLookup.makeT(addr, tag);
+				srv_node.submit(Tasks.newTask(lku));
+				submitted.add(lku.node);
+			}
+
+			do {
+				while (srv_node.hasComplete()) {
+					TaskResult<NodeLookup<T, A>, U, IOException> res = srv_node.reclaim();
+					U2<T, A> node = res.getKey().node;
+					if (node.isT0()) {
+						T tag = node.getT0();
+						view.setNodeAttrT(tag, res.getValue());
+						if (outgoing.containsKey(tag)) {
+							// pick up the outgoing map too, if it's there
+							view.setOutgoingT(tag, outgoing.remove(tag));
+						}
+
+					} else {
+						view.setNodeAttrG(node.getT1(), res.getValue());
+					}
+				}
+
+				while (srv.hasComplete()) {
+					TaskResult<Lookup<T, A>, U2Map<T, A, W>, IOException> res = srv.reclaim();
+					T tag = res.getKey().tag;
+					U2Map<T, A, W> out = res.getValue();
+
+					if (view.nodeMap().containsKey(tag)) {
+						// if we've already added the node-attribute
+						view.setOutgoingT(tag, out);
+					} else {
+						// otherwise store it and pick it up later, when we have the node-attribute
+						outgoing.put(tag, out);
+					}
+
+					for (U2<T, A> u2: out.keySet()) {
+						// don't submit same node twice
+						if (submitted.contains(u2)) { continue; }
+						submitted.add(u2);
+						srv_node.submit(Tasks.newTask(NodeLookup.make(addr, u2)));
+					}
+				}
+
+				Thread.sleep(proc.interval);
+
+			} while (srv.hasPending() || srv_node.hasPending());
+
+			assert outgoing.isEmpty();
+
+		} catch (InterruptedException e) {
+			// FIXME HIGH
+		} catch (IOException e) {
+			// FIXME HIGH
+		} finally {
+			srv.close();
+		}
+
+	}
+
+	protected void addTagToAllSources(T tag) {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	protected void updateAddressScheme() {
+		source.calculateScores();
+		graph = composeTGraph();
+		scheme = makeAddressScheme();
+	}
+
 	/**
 	** Get the set of tags which have been completed in all the tgraphs that we
 	** are using as a data source (ie. source.localMap().values()).
 	*/
 	protected Set<T> getCompletedTags() {
 		// TODO HIGH need to make LocalTGraph.getCompletedTags() return absent tags too
-		if (source.localMap().isEmpty()) { return Collections.emptySet(); }
+		if (source.localMap().isEmpty()) { return java.util.Collections.emptySet(); }
 
 		// return intersection of all sources.getCompletedTags(),
 		Iterator<LocalTGraph<T, A, U, W>> it = source.localMap().values().iterator();
 		assert it.hasNext();
 		Set<T> complete = new HashSet<T>(it.next().getCompletedTags());
-
-		while (it.hasNext()) {
-			complete.retainAll(it.next().getCompletedTags());
-		}
+		while (it.hasNext()) { complete.retainAll(it.next().getCompletedTags()); }
 
 		return complete;
 	}

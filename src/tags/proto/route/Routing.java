@@ -37,7 +37,9 @@ import java.util.HashMap;
 public class Routing<T, A, W, S> extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>>
 implements MessageReceiver<Routing.MSG_I> {
 
-	public static enum MSG_I { REQ_MORE_DATA, RECV_SEED_H, RECV_ADDR_SCH }
+	public enum State { NEW, AWAIT_SEEDS, IDLE }
+
+	public enum MSG_I { REQ_MORE_DATA, RECV_SEED_H, RECV_ADDR_SCH }
 
 	final protected IndexComposer<T, A, W, S> mod_idx_cmp;
 	final protected LookupScorer<W, S> mod_lku_scr;

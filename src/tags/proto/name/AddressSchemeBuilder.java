@@ -2,7 +2,7 @@
 package tags.proto.name;
 
 import tags.proto.AddressScheme;
-import tags.proto.LocalTGraph;
+import tags.proto.FullTGraph;
 import java.util.Set;
 
 /**
@@ -25,6 +25,6 @@ public interface AddressSchemeBuilder<T, A, U, W> {
 	** @param completed Set of completed tags
 	** @param seed The seed tag
 	*/
-	public AddressScheme<T, A, W> buildAddressScheme(LocalTGraph<T, A, U, W> graph, Set<T> completed, T seed);
+	public AddressScheme<T, A, W> buildAddressScheme(FullTGraph<T, A, U, W> graph, Set<T> completed, T seed);
 
 }
