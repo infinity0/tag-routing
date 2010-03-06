@@ -27,6 +27,7 @@ import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Arc;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.HashMap;
@@ -90,7 +91,6 @@ implements MessageReceiver<Naming.MSG_I> {
 
 			// init data structures etc. reset everything
 			source.setSeeds(proc.contact.getSeedTGraphs());
-			source.calculateScores();
 			//throw new UnsupportedOperationException("not implemented");
 
 			break;
@@ -102,15 +102,34 @@ implements MessageReceiver<Naming.MSG_I> {
 		return scheme;
 	}
 
+	protected void getMoreData() {
+		List<U2<T, A>> nlist = scheme.nodeList();
+
+		if (scheme.isIncomplete()) {
+			U2<T, A> u2 = nlist.get(nlist.size()-1);
+			assert u2.isT0();
+			addTagAndComplete(u2.getT0());
+
+		} else {
+			// find nearest tgraph node and add it as data source
+			for (U2<T, A> u2: nlist) {
+				if (u2.isT1()) {
+					addDataSourceAndComplete(u2.getT1());
+					break;
+				}
+			}
+			throw new UnsupportedOperationException("not implemented");
+		}
+	}
+
 	protected void addDataSourceAndComplete(A addr) {
 		Set<T> old_complete = getCompletedTags();
 		LocalTGraph<T, A, U, W> view = source.useSource(addr);
 
 		TaskService<Lookup<T, A>, U2Map<T, A, W>, IOException> srv = proc.newTGraphService();
 		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
-
-		Map<T, U2Map<T, A, W>> outgoing = new HashMap<T, U2Map<T, A, W>>();
 		Set<U2<T, A>> submitted = new HashSet<U2<T, A>>();
+		Map<T, U2Map<T, A, W>> outgoing = new HashMap<T, U2Map<T, A, W>>();
 
 		try {
 			for (T tag: old_complete) {
@@ -121,6 +140,7 @@ implements MessageReceiver<Naming.MSG_I> {
 			}
 
 			do {
+				// handle downloaded node-attributes
 				while (srv_node.hasComplete()) {
 					TaskResult<NodeLookup<T, A>, U, IOException> res = srv_node.reclaim();
 					U2<T, A> node = res.getKey().node;
@@ -137,12 +157,13 @@ implements MessageReceiver<Naming.MSG_I> {
 					}
 				}
 
+				// handle downloaded arc-maps
 				while (srv.hasComplete()) {
 					TaskResult<Lookup<T, A>, U2Map<T, A, W>, IOException> res = srv.reclaim();
 					T tag = res.getKey().tag;
 					U2Map<T, A, W> out = res.getValue();
 
-					if (view.nodeMap().containsKey(tag)) {
+					if (view.nodeMap().K0Map().containsKey(tag)) {
 						// if we've already added the node-attribute
 						view.setOutgoingT(tag, out);
 					} else {
@@ -150,6 +171,7 @@ implements MessageReceiver<Naming.MSG_I> {
 						outgoing.put(tag, out);
 					}
 
+					// retrieve node-weights of all out-neighbours
 					for (U2<T, A> u2: out.keySet()) {
 						// don't submit same node twice
 						if (submitted.contains(u2)) { continue; }
@@ -159,10 +181,10 @@ implements MessageReceiver<Naming.MSG_I> {
 				}
 
 				Thread.sleep(proc.interval);
-
 			} while (srv.hasPending() || srv_node.hasPending());
 
 			assert outgoing.isEmpty();
+			assert getCompletedTags().equals(old_complete); // FIXME HIGH need to make LocalTGraph.getCompletedTags() return absent tags too
 
 		} catch (InterruptedException e) {
 			// FIXME HIGH
@@ -171,11 +193,59 @@ implements MessageReceiver<Naming.MSG_I> {
 		} finally {
 			srv.close();
 		}
-
 	}
 
-	protected void addTagToAllSources(T tag) {
-		throw new UnsupportedOperationException("not implemented");
+	protected void addTagAndComplete(T tag) {
+		Map<A, LocalTGraph<T, A, U, W>> local = source.localMap();
+
+		TaskService<Lookup<T, A>, U2Map<T, A, W>, IOException> srv = proc.newTGraphService();
+		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
+		Set<U2<T, A>> submitted = new HashSet<U2<T, A>>();
+
+		try {
+			// retrieve outgoing arcs of tag, in all sources
+			for (LocalTGraph<T, A, U, W> view: local.values()) {
+				assert view.nodeMap().K0Map().containsKey(tag);
+				srv.submit(Tasks.newTask(Lookup.make(view.addr, tag)));
+			}
+
+			do {
+				// handle downloaded node-attributes
+				while (srv_node.hasComplete()) {
+					TaskResult<NodeLookup<T, A>, U, IOException> res = srv_node.reclaim();
+					LocalTGraph<T, A, U, W> view = local.get(res.getKey().tgr);
+					view.setNodeAttr(res.getKey().node, res.getValue());
+				}
+
+				// handle downloaded arc-maps
+				while (srv.hasComplete()) {
+					TaskResult<Lookup<T, A>, U2Map<T, A, W>, IOException> res = srv.reclaim();
+					LocalTGraph<T, A, U, W> view = local.get(res.getKey().tgr);
+					U2Map<T, A, W> out = res.getValue();
+
+					assert res.getKey().tag.equals(tag);
+					assert view.nodeMap().K0Map().containsKey(tag);
+					view.setOutgoingT(tag, out);
+
+					// retrieve node-weights of all out-neighbours
+					for (U2<T, A> u2: out.keySet()) {
+						// don't submit same node twice
+						if (submitted.contains(u2)) { continue; }
+						submitted.add(u2);
+						srv_node.submit(Tasks.newTask(NodeLookup.make(view.addr, u2)));
+					}
+				}
+
+				Thread.sleep(proc.interval);
+			} while (srv.hasPending() || srv_node.hasPending());
+
+		} catch (InterruptedException e) {
+			// FIXME HIGH
+		} catch (IOException e) {
+			// FIXME HIGH
+		} finally {
+			srv.close();
+		}
 	}
 
 	protected void updateAddressScheme() {
@@ -189,7 +259,6 @@ implements MessageReceiver<Naming.MSG_I> {
 	** are using as a data source (ie. source.localMap().values()).
 	*/
 	protected Set<T> getCompletedTags() {
-		// TODO HIGH need to make LocalTGraph.getCompletedTags() return absent tags too
 		if (source.localMap().isEmpty()) { return java.util.Collections.emptySet(); }
 
 		// return intersection of all sources.getCompletedTags(),

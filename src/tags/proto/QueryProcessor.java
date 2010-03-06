@@ -44,17 +44,18 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 	final public int interval = 1000;
 
 	public QueryProcessor(
-		Executor exec,
 		Query<I, T> query,
 		StoreControl<I, T, A, U, W, S, Z> sctl,
 		PTableComposer<I, A, S, Z> mod_ptb_cmp,
 		TGraphComposer<T, A, U, W, S> mod_tgr_cmp,
 		AddressSchemeBuilder<T, A, U, W> mod_asc_bld,
 		LocalViewFactory<A, LocalTGraph<T, A, U, W>> view_fac_g,
+		ScoreInferer<S> score_inf_g,
 		IndexComposer<T, A, W, S> mod_idx_cmp,
 		LookupScorer<W, S> mod_lku_scr,
 		LocalViewFactory<A, LocalIndex<T, A, W>> view_fac_h,
-		ScoreInferer<S> score_inf
+		ScoreInferer<S> score_inf_h,
+		Executor exec
 	) {
 		if (exec == null || sctl == null || query == null) { throw new NullPointerException(); }
 		this.exec = exec;
@@ -62,8 +63,8 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 		this.query = query;
 		// TODO NOW
 		this.contact = new Contact<I, A, S, Z>(query, this, mod_ptb_cmp);
-		this.naming = new Naming<T, A, U, W, S>(query, this, mod_tgr_cmp, mod_asc_bld, view_fac_g, score_inf);
-		this.routing = new Routing<T, A, W, S>(query, this, mod_idx_cmp, mod_lku_scr, view_fac_h, score_inf);
+		this.naming = new Naming<T, A, U, W, S>(query, this, mod_tgr_cmp, mod_asc_bld, view_fac_g, score_inf_g);
+		this.routing = new Routing<T, A, W, S>(query, this, mod_idx_cmp, mod_lku_scr, view_fac_h, score_inf_h);
 	}
 
 	/**

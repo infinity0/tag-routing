@@ -62,7 +62,7 @@ public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 	}
 
 	/**
-	** Load a given subject tag, and its node-weight.
+	** Load a given subject node, and its node-weight.
 	**
 	** '''NOTE''': This should be called for every single node loaded from the
 	** remote structure; if the node was not found, call this with {@code null}
@@ -70,6 +70,17 @@ public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 	**
 	** @throws IllegalStateException if the tag is already loaded
 	** @throws IOException if the remote data structure is inconsistent
+	*/
+	public void setNodeAttr(U2<T, A> u2, U wgt) throws IOException {
+		if (u2.isT0()) {
+			setNodeAttrT(u2.getT0(), wgt);
+		} else {
+			setNodeAttrG(u2.getT1(), wgt);
+		}
+	}
+
+	/**
+	** @see #setNodeAttr(U2, Object)
 	*/
 	public void setNodeAttrT(T subj, U wgt) throws IOException {
 		if (node_map.K0Map().containsKey(subj)) { throw new IllegalStateException("already loaded tag " + subj); }
@@ -82,14 +93,7 @@ public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 	}
 
 	/**
-	** Load a given subject tgraph, and its node-weight.
-	**
-	** '''NOTE''': This should be called for every single node loaded from the
-	** remote structure; if the node was not found, call this with {@code null}
-	** for the weight.
-	**
-	** @throws IllegalStateException if the tag is already loaded
-	** @throws IOException if the remote data structure is inconsistent
+	** @see #setNodeAttr(U2, Object)
 	*/
 	public void setNodeAttrG(A subj, U wgt) throws IOException {
 		if (node_map.K1Map().containsKey(subj)) { throw new IllegalStateException("already loaded tgraph " + subj); }

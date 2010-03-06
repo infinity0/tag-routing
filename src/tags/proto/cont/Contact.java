@@ -95,8 +95,8 @@ implements MessageReceiver<Contact.MSG_I> {
 					TaskResult<I, PTable<A, S>, IOException> res = srv.reclaim();
 					source.putX2(res.getKey(), res.getValue(), id_score.get(res.getKey()));
 				}
-				Thread.sleep(proc.interval);
 
+				Thread.sleep(proc.interval);
 			} while (srv.hasPending());
 
 		} catch (InterruptedException e) {
