@@ -14,7 +14,8 @@ public class UnitService<S> {
 	protected boolean active;
 	protected int completed;
 
-	public UnitService(Executor exec) {
+	public UnitService(S state, Executor exec) {
+		this.state = state;
 		setExecutor(exec);
 	}
 

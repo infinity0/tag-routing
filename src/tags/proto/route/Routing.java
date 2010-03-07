@@ -67,7 +67,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		LocalViewFactory<A, LocalIndex<T, A, W>> view_fac,
 		ScoreInferer<S> score_inf
 	) {
-		super(query, proc);
+		super(query, proc, State.NEW);
 		if (mod_idx_cmp == null) { throw new NullPointerException(); }
 		if (mod_lku_scr == null) { throw new NullPointerException(); }
 		this.mod_idx_cmp = mod_idx_cmp;
@@ -93,28 +93,44 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 			case RECV_SEED_H:
 				// init data structures etc. reset everything
 				source.setSeeds(proc.contact.getSeedIndexes());
+				state = State.IDLE;
 
+				// TODO HIGH this is a hack
+				execute(new Runnable() {
+					@Override public void run() {
+						runLookups();
+					}
+				});
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
 			}
 		case IDLE:
+			AddressScheme<T, A, W> scheme = proc.naming.getAddressScheme();
 			switch (msg) {
 			case REQ_MORE_DATA:
+				// OPT NORM this is really really really wasteful
+				updateResults(scheme);
+				Map.Entry<A, W> idx_en = scheme.getMostRelevant(results.K1Map());
 
-				// if no indexes to add, or some other heuristic
-				// - pass request to naming layer
+				if (idx_en == null) {
+					if (!hasThingsToDo()) {
+						// nothing to do, pass request to naming layer
+						proc.naming.recv(tags.proto.name.Naming.MRecv.REQ_MORE_DATA);
+					}
 
-				// TODO NOW
-
-				// otherwise,
-				// - complete some more lookups, or
-				// - add an index as a data source
+				} else {
+					// TODO HIGH need to review this later; the algorithm was decided ad-hoc and
+					// without any forethought. maybe if the difference is above some threshold.
+					if (!hasThingsToDo() || scheme.comparator().compare(idx_en.getValue(), queue.peekValue()) > 0) {
+						// add an index as a data source
+						addDataSourceAndLookups(scheme, idx_en.getKey());
+					}
+				}
 
 				return;
 			case RECV_ADDR_SCH:
-
-				// - update set of lookups
-				// TODO NOW
+				// update set of lookups
+				addLookupsFromNewAddressScheme(scheme);
 
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
@@ -126,28 +142,14 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		return results;
 	}
 
-	protected void getMoreData(AddressScheme<T, A, W> scheme) {
-		// OPT NORM this is really really really wasteful
-		updateResults(scheme);
-		Map.Entry<A, W> idx_en = scheme.getMostRelevant(results.K1Map());
-
-		// TODO HIGH need to review this later; the algorithm decided ad-hoc and
-		// without any forethought
-
-		if (queue.isEmpty()) {
-			addDataSourceAndLookups(scheme, idx_en.getKey());
-
-		} else {
-			W lku_s = queue.peekValue();
-			if (scheme.comparator().compare(idx_en.getValue(), lku_s) > 0) {
-				addDataSourceAndLookups(scheme, idx_en.getKey());
-			}
-		}
+	// TODO HIGH this is a major hack...
+	volatile protected int pending = 0;
+	protected boolean hasThingsToDo() {
+		return queue.isEmpty() && pending == 0;
 	}
 
 	protected void runLookups() {
 		TaskService<Lookup<T, A>, U2Map<A, A, W>, IOException> srv = proc.newIndexService();
-		int pending = 0;
 
 		try {
 			do {
@@ -287,10 +289,10 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 			// get most relevant tag which points to it
 			Map<T, W> in_tag = index.getIncomingDarcAttrMap(dst);
 			assert in_tag != null && !in_tag.isEmpty();
-			T nearest = scheme.getMostRelevant(in_tag.keySet());
+			Map.Entry<T, W> nearest = scheme.getMostRelevant(in_tag.keySet());
 			// FIXME HIGH nearest could be null if an update to the address scheme deleted all tags
 
-			W wgt = mod_lku_scr.getResultAttr(scheme.arcAttrMap().get(nearest), in_tag.get(nearest));
+			W wgt = mod_lku_scr.getResultAttr(nearest.getValue(), in_tag.get(nearest.getKey()));
 			res_d.put(dst, wgt);
 		}
 
@@ -300,10 +302,10 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 			// get most relevant tag which points to it
 			Map<T, W> in_tag = index.getIncomingHarcAttrMap(dst);
 			assert in_tag != null && !in_tag.isEmpty();
-			T nearest = scheme.getMostRelevant(in_tag.keySet());
+			Map.Entry<T, W> nearest = scheme.getMostRelevant(in_tag.keySet());
 			// FIXME HIGH nearest could be null if an update to the address scheme deleted all tags
 
-			W wgt = mod_lku_scr.getResultAttr(scheme.arcAttrMap().get(nearest), in_tag.get(nearest));
+			W wgt = mod_lku_scr.getResultAttr(nearest.getValue(), in_tag.get(nearest.getKey()));
 			res_h.put(dst, wgt);
 		}
 

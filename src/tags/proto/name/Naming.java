@@ -65,7 +65,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 		LocalViewFactory<A, LocalTGraph<T, A, U, W>> view_fac,
 		ScoreInferer<S> score_inf
 	) {
-		super(query, proc);
+		super(query, proc, State.NEW);
 		if (mod_tgr_cmp == null) { throw new NullPointerException(); }
 		if (mod_asc_bld == null) { throw new NullPointerException(); }
 		this.mod_tgr_cmp = mod_tgr_cmp;
@@ -90,6 +90,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 			case RECV_SEED_G:
 				// init data structures etc. reset everything
 				source.setSeeds(proc.contact.getSeedTGraphs());
+				state = State.IDLE;
 
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
@@ -97,7 +98,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 		case IDLE:
 			switch (msg) {
 			case REQ_MORE_DATA:
-				if (scheme.isIncomplete() /* TODO NORM and maybe if its distance is above some threshold */) {
+				if (scheme.isIncomplete() /* TODO HIGH or maybe if its distance is above some threshold */) {
 					// complete the next tag in the address scheme
 					execute(new Runnable() {
 						@Override public void run() {
@@ -128,7 +129,6 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 				} else {
 					// nothing to do, pass request onto contact layer
 					proc.contact.recv(tags.proto.cont.Contact.MRecv.REQ_MORE_DATA);
-					state = State.AWAIT_SEEDS;
 				}
 				return;
 			default: throw mismatchMsgRejEx(state, msg);

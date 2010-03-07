@@ -21,8 +21,8 @@ extends UnitService<S> implements MessageReceiver<M> {
 	final protected Q query;
 	final protected P proc;
 
-	public LayerService(Q query, P proc) {
-		super(proc.exec);
+	public LayerService(Q query, P proc, S state) {
+		super(state, proc.exec);
 		this.query = query;
 		this.proc = proc;
 	}

@@ -65,6 +65,9 @@ public interface AddressScheme<T, A, W> {
 
 	public Comparator<W> comparator();
 
+	/**
+	** DOCUMENT. Returns {@code null} if {@code map} is empty
+	*/
 	public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map);
 
 	/**
@@ -74,9 +77,9 @@ public interface AddressScheme<T, A, W> {
 	**
 	** @throws IllegalArgumentException if the iterable contains a tag unknown
 	**         to this address scheme
-	** @throws NullPointerException if {@code tags} is {@code null}.
+	** @throws NullPointerException if {@code tags} is {@code null}
 	*/
-	public T getMostRelevant(Set<T> tags);
+	public Map.Entry<T, W> getMostRelevant(Set<T> tags);
 
 	public A getNearestTGraph();
 

@@ -52,7 +52,7 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 		QueryProcessor<I, ?, A, ?, ?, S, Z> proc,
 		PTableComposer<I, A, S, Z> mod_ptb_cmp
 	) {
-		super(query, proc);
+		super(query, proc, State.NEW);
 		if (mod_ptb_cmp == null) { throw new NullPointerException(); }
 		this.mod_ptb_cmp = mod_ptb_cmp;
 		this.source = Maps.convoluteStrict(new HashMap<I, PTable<A, S>>(), new HashMap<I, Z>(), Maps.BaseMapX2.Inclusion.EQUAL);

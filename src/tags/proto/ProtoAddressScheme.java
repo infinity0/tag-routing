@@ -103,11 +103,12 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 	}
 
 	@Override public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map) {
+		if (map.isEmpty()) { return null; }
 		return Collections.max(map.entrySet(), Maps.<K, W>entryValueComparator(cmp));
 	}
 
-	@Override public T getMostRelevant(Set<T> tags) {
-		return Collections.max(Maps.viewSubMap(arc_attr_map, tags).entrySet(), Maps.<T, W>entryValueComparator(cmp)).getKey();
+	@Override public Map.Entry<T, W> getMostRelevant(Set<T> tags) {
+		return getMostRelevant(Maps.viewSubMap(arc_attr_map, tags));
 	}
 
 	@Override public A getNearestTGraph() {

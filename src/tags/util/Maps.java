@@ -151,6 +151,10 @@ final public class Maps {
 			// No more efficient way than AbstractMap's default implementation that defers to entrySet().size()
 			// @Override public int size() { }
 
+			@Override public boolean isEmpty() {
+				return entrySet().isEmpty();
+			}
+
 			@Override public boolean containsKey(Object o) {
 				return keys.contains(o) && parent.containsKey(o);
 			}
@@ -189,6 +193,10 @@ final public class Maps {
 							int i = 0;
 							for (Iterator<Map.Entry<K, V>> it = iterator(); it.hasNext(); ++i) { it.next(); }
 							return i;
+						}
+
+						@Override public boolean isEmpty() {
+							return !iterator().hasNext();
 						}
 
 						@Override public boolean contains(Object o) {
