@@ -41,8 +41,8 @@ import java.util.HashMap;
 ** @param <W> Type of arc-attribute
 ** @param <S> Type of score
 */
-public class Routing<T, A, W, S> extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>>
-implements MessageReceiver<Routing.MRecv> {
+public class Routing<T, A, W, S>
+extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.State, Routing.MRecv> {
 
 	public enum State { NEW, AWAIT_SEEDS, IDLE }
 	public enum MRecv { REQ_MORE_DATA, RECV_SEED_H, RECV_ADDR_SCH }
@@ -77,6 +77,7 @@ implements MessageReceiver<Routing.MRecv> {
 	}
 
 	@Override public synchronized void recv(MRecv msg) throws MessageRejectedException {
+		super.recv(msg);
 		switch (msg) {
 		case REQ_MORE_DATA: // request more data, from the user
 

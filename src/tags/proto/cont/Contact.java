@@ -34,8 +34,8 @@ import java.util.HashMap;
 ** @param <S> Type of score
 ** @param <Z> Type of identity-score
 */
-public class Contact<I, A, S, Z> extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>>
-implements MessageReceiver<Contact.MRecv> {
+public class Contact<I, A, S, Z>
+extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.State, Contact.MRecv> {
 
 	public enum State { NEW, IDLE }
 	public enum MRecv { REQ_MORE_DATA }
@@ -59,11 +59,11 @@ implements MessageReceiver<Contact.MRecv> {
 	}
 
 	@Override public synchronized void recv(MRecv msg) throws MessageRejectedException {
-		if (isActive()) { throw new MessageRejectedException("bad timing"); }
+		super.recv(msg);
 		switch (msg) {
 		case REQ_MORE_DATA: // request for more data, from Naming
 			if (table == null) {
-				start(new Runnable() { @Override public void run() { makePTable(); } });
+				execute(new Runnable() { @Override public void run() { makePTable(); } });
 
 			} else {
 				// - get more data (not worked out)
