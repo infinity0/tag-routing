@@ -43,6 +43,9 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 	// interval for Thread.sleep in the control-loops in Contact/Naming/Routing
 	final public int interval = 1000;
 
+	// TODO NORM this is a hack, make a better way of doing this
+	final public int parallel_idx_lku = 0x10;
+
 	public QueryProcessor(
 		Query<I, T> query,
 		StoreControl<I, T, A, U, W, S, Z> sctl,

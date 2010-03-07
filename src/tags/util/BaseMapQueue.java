@@ -8,6 +8,7 @@ import java.util.Queue;
 import java.util.AbstractQueue;
 import java.util.HashMap;
 import java.util.PriorityQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.PriorityBlockingQueue;
 
 /**
@@ -38,7 +39,7 @@ implements MapQueue<K, V> {
 	**        {@code true}.
 	*/
 	public BaseMapQueue(Comparator<V> cmp, boolean sync, boolean useDefault, V dval) {
-		this.map = new HashMap<K, V>();
+		this.map = sync? new ConcurrentHashMap<K, V>(): new HashMap<K, V>();
 		this.cmp = cmp;
 		Comparator<K> keycmp = (cmp == null)?
 		new Comparator<K>() {
@@ -78,7 +79,7 @@ implements MapQueue<K, V> {
 		throw new IllegalStateException();
 	}
 
-	@Override public boolean offer(K key, V val) {
+	@Override public synchronized boolean offer(K key, V val) {
 		if (map.containsKey(key)) { queue.remove(key); }
 		map.put(key, val);
 		if (queue.offer(key)) { return true; }
@@ -99,7 +100,7 @@ implements MapQueue<K, V> {
 		return queue.peek();
 	}
 
-	@Override public K poll() {
+	@Override public synchronized K poll() {
 		K key = queue.poll();
 		map.remove(key);
 		return key;
@@ -115,7 +116,7 @@ implements MapQueue<K, V> {
 		return queue.isEmpty();
 	}
 
-	@Override public void clear() {
+	@Override public synchronized void clear() {
 		queue.clear();
 		map.clear();
 	}
@@ -124,7 +125,7 @@ implements MapQueue<K, V> {
 		return map.containsKey(o);
 	}
 
-	@Override public boolean remove(Object o) {
+	@Override public synchronized boolean remove(Object o) {
 		if (map.containsKey(o)) {
 			queue.remove(o);
 			map.remove(o);
@@ -139,7 +140,11 @@ implements MapQueue<K, V> {
 			K last = null;
 			@Override public boolean hasNext() { return it.hasNext(); }
 			@Override public K next() { return last = it.next(); }
-			@Override public void remove() { it.remove(); assert last != null; map.remove(last); }
+			@Override public void remove() {
+				synchronized (BaseMapQueue.this) {
+					it.remove(); assert last != null; map.remove(last);
+				}
+			}
 		};
 	}
 

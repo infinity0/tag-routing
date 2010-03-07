@@ -16,6 +16,7 @@ import java.io.IOException;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
+import java.util.Collections;
 
 import tags.proto.AddressScheme;
 import tags.proto.DataSources;
@@ -25,9 +26,10 @@ import tags.proto.Index.Lookup;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Arc;
+import tags.util.MapQueue;
+import tags.util.BaseMapQueue;
 import java.util.Set;
 import java.util.Map;
-import java.util.PriorityQueue;
 import java.util.HashSet;
 import java.util.HashMap;
 
@@ -40,11 +42,10 @@ import java.util.HashMap;
 ** @param <S> Type of score
 */
 public class Routing<T, A, W, S> extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>>
-implements MessageReceiver<Routing.MSG_I> {
+implements MessageReceiver<Routing.MRecv> {
 
 	public enum State { NEW, AWAIT_SEEDS, IDLE }
-
-	public enum MSG_I { REQ_MORE_DATA, RECV_SEED_H, RECV_ADDR_SCH }
+	public enum MRecv { REQ_MORE_DATA, RECV_SEED_H, RECV_ADDR_SCH }
 
 	final protected IndexComposer<T, A, W, S> mod_idx_cmp;
 	final protected LookupScorer<W, S> mod_lku_scr;
@@ -52,8 +53,11 @@ implements MessageReceiver<Routing.MSG_I> {
 	final protected DataSources<A, LocalIndex<T, A, W>, S> source;
 	final protected Map<A, Set<T>> completed;
 
+	final protected MapQueue<Lookup<T, A>, W> queue = new BaseMapQueue<Lookup<T, A>, W>(Collections.<W>reverseOrder(), true);
+
 	protected FullIndex<T, A, W> index;
 	volatile protected Map<A, W> results;
+	protected boolean rcache_v; // accesses to this field need to be synchronized(Routing.this)
 
 	public Routing(
 		Query<?, T> query,
@@ -72,7 +76,7 @@ implements MessageReceiver<Routing.MSG_I> {
 		this.completed = new HashMap<A, Set<T>>();
 	}
 
-	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {
+	@Override public synchronized void recv(MRecv msg) throws MessageRejectedException {
 		switch (msg) {
 		case REQ_MORE_DATA: // request more data, from the user
 
@@ -112,18 +116,39 @@ implements MessageReceiver<Routing.MSG_I> {
 		// pass
 	}
 
-	protected void addDataSourceAndLookups(A addr, AddressScheme<T, A, W> scheme) {
-		LocalIndex<T, A, W> view = source.useSource(addr);
-
+	protected void runLookups() {
 		TaskService<Lookup<T, A>, U2Map<A, A, W>, IOException> srv = proc.newIndexService();
+		int pending = 0;
 
 		try {
-			for (T tag: getLookups(scheme, addr)) {
-				// submit...
-				throw new IOException();
-			}
-			// pass
-			throw new InterruptedException();
+			do {
+				while (pending < proc.parallel_idx_lku && !queue.isEmpty()) {
+					srv.submit(Tasks.newTask(queue.remove()));
+					++pending;
+				}
+
+				while (srv.hasComplete()) {
+					TaskResult<Lookup<T, A>, U2Map<A, A, W>, IOException> res = srv.reclaim();
+					Lookup<T, A> lku = res.getKey();
+					// FIXME NORM RACE this might need synchronization. maybe we can get away with it;
+					// Doing It Properly would either require use of ConcurrentHashMap in DataSources
+					// or adding a shit load of synchronized() {} to this class...
+					LocalIndex<T, A, W> view = source.localMap().get(lku.idx);
+
+					synchronized (this) {
+						rcache_v = false;
+						view.setOutgoingT(lku.tag, res.getValue());
+
+						// update completed lookups
+						Set<T> tags = completed.get(lku.idx);
+						if (tags == null) { completed.put(lku.idx, tags = new HashSet<T>()); }
+						tags.add(lku.tag);
+					}
+					--pending;
+				}
+
+				Thread.sleep(proc.interval);
+			} while (true);
 
 		} catch (InterruptedException e) {
 			// FIXME HIGH
@@ -134,24 +159,32 @@ implements MessageReceiver<Routing.MSG_I> {
 		}
 	}
 
-	protected void addLookupsFromNewAddressScheme(AddressScheme<T, A, W> scheme) {
-		Map<A, Set<T>> lookups = getLookups(scheme);
-		Maps.multiMapRemoveAll(lookups, completed);
-
-
+	protected void addDataSourceAndLookups(A addr, AddressScheme<T, A, W> scheme) {
+		source.useSource(addr);
+		Map<Lookup<T, A>, W> lku_score = scoreLookups(scheme, Collections.singletonMap(addr, getLookups(scheme, addr)));
+		for (Map.Entry<Lookup<T, A>, W> en: lku_score.entrySet()) { queue.add(en.getKey(), en.getValue()); }
 	}
 
-	protected void updateResults(AddressScheme<T, A, W> scheme) {
+	protected void addLookupsFromNewAddressScheme(AddressScheme<T, A, W> scheme) {
+		Map<A, Set<T>> lookups = getLookups(scheme);
+		synchronized (this) { Maps.multiMapRemoveAll(lookups, completed); }
+		Map<Lookup<T, A>, W> lku_score = scoreLookups(scheme, lookups);
+		queue.clear();
+		for (Map.Entry<Lookup<T, A>, W> en: lku_score.entrySet()) { queue.add(en.getKey(), en.getValue()); }
+	}
+
+	protected synchronized void updateResults(AddressScheme<T, A, W> scheme) {
+		if (rcache_v == true) { return; }
 		source.calculateScores();
 		index = composeIndex();
 		results = makeResults(scheme);
+		rcache_v = true;
 	}
 
 	/**
 	** This is to be called whenever:
 	**
 	** - address scheme is updated
-	** - we add a source
 	*/
 	protected Map<A, Set<T>> getLookups(AddressScheme<T, A, W> scheme) {
 		Map<A, Set<T>> lookups = new HashMap<A, Set<T>>();
@@ -161,6 +194,11 @@ implements MessageReceiver<Routing.MSG_I> {
 		return lookups;
 	}
 
+	/**
+	** This is to be called whenever:
+	**
+	** - we add a source
+	*/
 	protected Set<T> getLookups(AddressScheme<T, A, W> scheme, A idx) {
 		Set<T> tags = new HashSet<T>();
 		for (A in_node: source.getIncoming(idx)) {
@@ -175,6 +213,9 @@ implements MessageReceiver<Routing.MSG_I> {
 		return tags;
 	}
 
+	/**
+	** DOCUMENT
+	*/
 	protected Map<Lookup<T, A>, W> scoreLookups(AddressScheme<T, A, W> scheme, Map<A, Set<T>> lookups) {
 		Map<Lookup<T, A>, W> lku_score = new HashMap<Lookup<T, A>, W>();
 
@@ -187,7 +228,6 @@ implements MessageReceiver<Routing.MSG_I> {
 				lku_score.put(Lookup.make(idx, tag), mod_lku_scr.getLookupScore(idxs, scheme.arcAttrMap().get(tag)));
 			}
 		}
-
 		return lku_score;
 	}
 

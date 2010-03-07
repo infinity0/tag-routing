@@ -16,6 +16,7 @@ import java.io.IOException;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
+import java.util.Collections;
 
 import tags.proto.AddressScheme;
 import tags.proto.DataSources;
@@ -43,11 +44,10 @@ import java.util.HashSet;
 ** @param <S> Type of score
 */
 public class Naming<T, A, U, W, S> extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>>
-implements MessageReceiver<Naming.MSG_I> {
+implements MessageReceiver<Naming.MRecv> {
 
 	public enum State { NEW, AWAIT_SEEDS, IDLE }
-
-	public enum MSG_I { REQ_MORE_DATA, RECV_SEED_G }
+	public enum MRecv { REQ_MORE_DATA, RECV_SEED_G }
 
 	final protected TGraphComposer<T, A, U, W, S> mod_tgr_cmp;
 	final protected AddressSchemeBuilder<T, A, U, W> mod_asc_bld;
@@ -73,7 +73,7 @@ implements MessageReceiver<Naming.MSG_I> {
 		this.source = new DataSources<A, LocalTGraph<T, A, U, W>, S>(view_fac, score_inf);
 	}
 
-	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {
+	@Override public synchronized void recv(MRecv msg) throws MessageRejectedException {
 		switch (msg) {
 		case REQ_MORE_DATA: // request for more data, from Routing
 
@@ -144,6 +144,7 @@ implements MessageReceiver<Naming.MSG_I> {
 				while (srv_node.hasComplete()) {
 					TaskResult<NodeLookup<T, A>, U, IOException> res = srv_node.reclaim();
 					U2<T, A> node = res.getKey().node;
+
 					if (node.isT0()) {
 						T tag = node.getT0();
 						view.setNodeAttrT(tag, res.getValue());
@@ -151,7 +152,6 @@ implements MessageReceiver<Naming.MSG_I> {
 							// pick up the outgoing map too, if it's there
 							view.setOutgoingT(tag, outgoing.remove(tag));
 						}
-
 					} else {
 						view.setNodeAttrG(node.getT1(), res.getValue());
 					}
@@ -261,7 +261,7 @@ implements MessageReceiver<Naming.MSG_I> {
 	** are using as a data source (ie. source.localMap().values()).
 	*/
 	protected Set<T> getCompletedTags() {
-		if (source.localMap().isEmpty()) { return java.util.Collections.emptySet(); }
+		if (source.localMap().isEmpty()) { return Collections.emptySet(); }
 
 		// return intersection of all sources.getCompletedTags(),
 		Iterator<LocalTGraph<T, A, U, W>> it = source.localMap().values().iterator();

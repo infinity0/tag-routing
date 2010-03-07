@@ -35,11 +35,10 @@ import java.util.HashMap;
 ** @param <Z> Type of identity-score
 */
 public class Contact<I, A, S, Z> extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>>
-implements MessageReceiver<Contact.MSG_I> {
+implements MessageReceiver<Contact.MRecv> {
 
 	public enum State { NEW, IDLE }
-
-	public enum MSG_I { REQ_MORE_DATA }
+	public enum MRecv { REQ_MORE_DATA }
 
 	final protected PTableComposer<I, A, S, Z> mod_ptb_cmp;
 
@@ -59,7 +58,7 @@ implements MessageReceiver<Contact.MSG_I> {
 		this.source = Maps.convoluteStrict(new HashMap<I, PTable<A, S>>(), new HashMap<I, Z>(), Maps.BaseMapX2.Inclusion.EQUAL);
 	}
 
-	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {
+	@Override public synchronized void recv(MRecv msg) throws MessageRejectedException {
 		if (isActive()) { throw new MessageRejectedException("bad timing"); }
 		switch (msg) {
 		case REQ_MORE_DATA: // request for more data, from Naming
@@ -110,8 +109,8 @@ implements MessageReceiver<Contact.MSG_I> {
 		table = composePTable();
 
 		try {
-			proc.naming.recv(Naming.MSG_I.RECV_SEED_G);
-			proc.routing.recv(Routing.MSG_I.RECV_SEED_H);
+			proc.naming.recv(Naming.MRecv.RECV_SEED_G);
+			proc.routing.recv(Routing.MRecv.RECV_SEED_H);
 
 		} catch (MessageRejectedException e) {
 			// FIXME HIGH
