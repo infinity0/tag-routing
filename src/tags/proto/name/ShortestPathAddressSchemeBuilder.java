@@ -34,7 +34,7 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 	}
 
 	@Override public AddressScheme<T, A, W> buildAddressScheme(FullTGraph<T, A, U, W> graph, Set<T> completed, final T seed) {
-		AddressScheme<T, A, W> scheme = new ProtoAddressScheme<T, A, W>(seed, null);
+		ProtoAddressScheme<T, A, W> scheme = new ProtoAddressScheme<T, A, W>(seed, null);
 
 		U seedu = graph.nodeMap().get(seed);
 		if (seedu == null) {

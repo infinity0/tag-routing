@@ -78,35 +78,48 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 
 	@Override public synchronized void recv(MRecv msg) throws MessageRejectedException {
 		super.recv(msg);
-		switch (msg) {
-		case REQ_MORE_DATA: // request more data, from the user
+		switch (state) {
+		case NEW:
+			switch (msg) {
+			case REQ_MORE_DATA:
+				proc.naming.recv(tags.proto.name.Naming.MRecv.REQ_MORE_DATA);
+				state = State.AWAIT_SEEDS;
 
-			// if no seeds, or no indexes to add, or some other heuristic
-			// - pass request to naming layer
+				return;
+			default: throw mismatchMsgRejEx(state, msg);
+			}
+		case AWAIT_SEEDS:
+			switch (msg) {
+			case RECV_SEED_H:
+				// init data structures etc. reset everything
+				source.setSeeds(proc.contact.getSeedIndexes());
 
-			// otherwise,
-			// - complete some more lookups, or
-			// - add an index as a data source
+				return;
+			default: throw mismatchMsgRejEx(state, msg);
+			}
+		case IDLE:
+			switch (msg) {
+			case REQ_MORE_DATA:
 
-			//throw new UnsupportedOperationException("not implemented");
+				// if no indexes to add, or some other heuristic
+				// - pass request to naming layer
 
-			break;
-		case RECV_SEED_H: // receive seed indexes, from Contact
+				// TODO NOW
 
-			// init data structures etc. reset everything.
-			source.setSeeds(proc.contact.getSeedIndexes());
-			//throw new UnsupportedOperationException("not implemented");
+				// otherwise,
+				// - complete some more lookups, or
+				// - add an index as a data source
 
-			break;
-		case RECV_ADDR_SCH: // receive update to address scheme, from Naming
+				return;
+			case RECV_ADDR_SCH:
 
-			// - update set of lookups
-			// OPT HIGH only update things that need to be updated
-			//throw new UnsupportedOperationException("not implemented");
+				// - update set of lookups
+				// TODO NOW
 
-			break;
+				return;
+			default: throw mismatchMsgRejEx(state, msg);
+			}
 		}
-		assert false;
 	}
 
 	public U2Map<A, A, W> getResults() {

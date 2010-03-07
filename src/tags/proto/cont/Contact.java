@@ -60,19 +60,24 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 
 	@Override public synchronized void recv(MRecv msg) throws MessageRejectedException {
 		super.recv(msg);
-		switch (msg) {
-		case REQ_MORE_DATA: // request for more data, from Naming
-			if (table == null) {
-				execute(new Runnable() { @Override public void run() { makePTable(); } });
+		switch (state) {
+		case NEW:
+			execute(new Runnable() {
+				@Override public void run() {
+					makePTable();
+					try {
+						proc.naming.recv(Naming.MRecv.RECV_SEED_G);
+						proc.routing.recv(Routing.MRecv.RECV_SEED_H);
 
-			} else {
-				// - get more data (not worked out)
-				// - ask user to supply different tag? (not worked out)
-				throw new MessageRejectedException("not implemented");
-			}
-			break;
+					} catch (MessageRejectedException e) {
+						throw new RuntimeException(e); // FIXME HIGH
+					}
+				}
+			}, State.IDLE);
+			return;
+		case IDLE:
+			throw new MessageRejectedException("not implemented");
 		}
-		assert false;
 	}
 
 	public Map<A, S> getSeedTGraphs() {
@@ -99,22 +104,14 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 			} while (srv.hasPending());
 
 		} catch (InterruptedException e) {
-			// FIXME HIGH
+			throw new UnsupportedOperationException(e); // FIXME HIGH
 		} catch (IOException e) {
-			// FIXME HIGH
+			throw new RuntimeException(e); // FIXME HIGH
 		} finally {
 			srv.close();
 		}
 
 		table = composePTable();
-
-		try {
-			proc.naming.recv(Naming.MRecv.RECV_SEED_G);
-			proc.routing.recv(Routing.MRecv.RECV_SEED_H);
-
-		} catch (MessageRejectedException e) {
-			// FIXME HIGH
-		}
 	}
 
 	/**

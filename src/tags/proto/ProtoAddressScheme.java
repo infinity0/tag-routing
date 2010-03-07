@@ -37,6 +37,8 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 	final protected Comparator<W> cmp;
 
 	protected boolean incomplete = false;
+	protected T incomplete_tag;
+	protected A nearest_tgraph;
 
 	/**
 	** Construct a new scheme with the given tag as the zeroth (ie. seed) tag.
@@ -54,29 +56,9 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		path.K0Map().put(src, Collections.<T>singletonList(src));
 	}
 
-	@Override public boolean isIncomplete() {
-		return incomplete;
-	}
-
-	@Override public void setIncomplete() {
-		incomplete = true;
-	}
-
-	@Override public Comparator<W> comparator() {
-		return cmp;
-	}
-
 	@Override public T seedTag() {
 		U2<T, A> zero = node_list.get(0);
 		return zero.getT0();
-	}
-
-	@Override public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map) {
-		return Collections.max(map.entrySet(), Maps.<K, W>entryValueComparator(cmp));
-	}
-
-	@Override public T getMostRelevant(Set<T> tags) {
-		return Collections.max(Maps.viewSubMap(arc_attr_map, tags).entrySet(), Maps.<T, W>entryValueComparator(cmp)).getKey();
 	}
 
 	@Override public Set<T> tagSet() {
@@ -108,6 +90,43 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		return ancestor;
 	}
 
+	@Override public boolean isIncomplete() {
+		return incomplete;
+	}
+
+	@Override public T getIncomplete() {
+		return incomplete_tag;
+	}
+
+	@Override public Comparator<W> comparator() {
+		return cmp;
+	}
+
+	@Override public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map) {
+		return Collections.max(map.entrySet(), Maps.<K, W>entryValueComparator(cmp));
+	}
+
+	@Override public T getMostRelevant(Set<T> tags) {
+		return Collections.max(Maps.viewSubMap(arc_attr_map, tags).entrySet(), Maps.<T, W>entryValueComparator(cmp)).getKey();
+	}
+
+	@Override public A getNearestTGraph() {
+		return nearest_tgraph;
+	}
+
+	/**
+	** @throws IllegalStateException if the last node to be push is not a tag
+	*/
+	public void setIncomplete() {
+		U2<T, A> node = node_list.get(node_list.size()-1);
+		if (node.isT0()) {
+			incomplete_tag = node.getT0();
+			incomplete = true;
+		} else {
+			throw new IllegalStateException("last node is not a tag");
+		}
+	}
+
 	@Override public void pushNode(U2<T, A> node, T parent, Set<T> inc) {
 		if (node_map.containsKey(node)) {
 			throw new IllegalArgumentException("scheme already contains node: " + node);
@@ -120,6 +139,9 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		}
 		if (!inc.contains(parent)) {
 			throw new IllegalArgumentException("incoming set does not define: " + parent);
+		}
+		if (incomplete) {
+			throw new IllegalStateException("scheme set to incomplete");
 		}
 		if (parent == null) {
 			throw new NullPointerException();
@@ -147,6 +169,10 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 				tinc.add(t);
 				tpre.addAll(ancestor.K0Map().get(t));
 			}
+		}
+
+		if (nearest_tgraph == null && node.isT1()) {
+			nearest_tgraph = node.getT1();
 		}
 	}
 

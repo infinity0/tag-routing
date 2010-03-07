@@ -18,36 +18,9 @@ import java.util.Map;
 public interface AddressScheme<T, A, W> {
 
 	/**
-	** Whether the scheme is complete for the backing graph. If this is {@code
-	** true}, then further information could be extracted by completing a tag
-	** in the backing graph (ie. loading it and all its out-arcs, out-nodes).
-	*/
-	public boolean isIncomplete();
-
-	/**
-	** Sets this address scheme as being incomplete.
-	*/
-	public void setIncomplete();
-
-	/**
 	** Return the seed tag.
 	*/
 	public T seedTag();
-
-	public Comparator<W> comparator();
-
-	public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map);
-
-	/**
-	** Returns the tag with the highest arc-attribute (ie. opposite of default
-	** java sort order), or {@code null} if none of the tags have an attribute
-	** defined.
-	**
-	** @throws IllegalArgumentException if the iterable contains a tag unknown
-	**         to this address scheme
-	** @throws NullPointerException if {@code tags} is {@code null}.
-	*/
-	public T getMostRelevant(Set<T> tags);
 
 	/**
 	** Returns the set of tags contained within this scheme.
@@ -82,6 +55,32 @@ public interface AddressScheme<T, A, W> {
 	public U2Map<T, A, Set<T>> ancestorMap();
 
 	/**
+	** Whether the scheme is complete for the backing graph. If this is {@code
+	** true}, then further information could be extracted by completing a tag
+	** in the backing graph (ie. loading it and all its out-arcs, out-nodes).
+	*/
+	public boolean isIncomplete();
+
+	public T getIncomplete();
+
+	public Comparator<W> comparator();
+
+	public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map);
+
+	/**
+	** Returns the tag with the highest arc-attribute (ie. opposite of default
+	** java sort order), or {@code null} if none of the tags have an attribute
+	** defined.
+	**
+	** @throws IllegalArgumentException if the iterable contains a tag unknown
+	**         to this address scheme
+	** @throws NullPointerException if {@code tags} is {@code null}.
+	*/
+	public T getMostRelevant(Set<T> tags);
+
+	public A getNearestTGraph();
+
+	/**
 	** Attaches the given node to the address scheme, with a set of incoming
 	** neighbours. Only nodes already in the scheme (ie. nearer to the seed)
 	** will be added as incoming neighbours; the rest will be filtered out.
@@ -94,7 +93,8 @@ public interface AddressScheme<T, A, W> {
 	** @param inc The incoming neighbours of the node
 	** @throws IllegalArgumentException if the scheme or {@code inc} contains
 	**         {@code tag}, or if either of them do not contain {@code parent}.
-	** @throws NullPointerException if {@code parent} is {@code null}.
+	** @throws IllegalStateException if the scheme has been made incomplete
+	** @throws NullPointerException if {@code parent} is {@code null}
 	*/
 	public void pushNode(U2<T, A> node, T parent, Set<T> inc);
 

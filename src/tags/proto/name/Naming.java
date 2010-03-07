@@ -75,52 +75,69 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 
 	@Override public synchronized void recv(MRecv msg) throws MessageRejectedException {
 		super.recv(msg);
-		switch (msg) {
-		case REQ_MORE_DATA: // request for more data, from Routing
+		switch (state) {
+		case NEW:
+			switch (msg) {
+			case REQ_MORE_DATA:
+				proc.contact.recv(tags.proto.cont.Contact.MRecv.REQ_MORE_DATA);
+				state = State.AWAIT_SEEDS;
 
-			// if no seeds, or no tgraphs to add, or some other heuristic,
-			// - pass request onto contact layer
+				return;
+			default: throw mismatchMsgRejEx(state, msg);
+			}
+		case AWAIT_SEEDS:
+			switch (msg) {
+			case RECV_SEED_G:
+				// init data structures etc. reset everything
+				source.setSeeds(proc.contact.getSeedTGraphs());
 
-			// otherwise,
-			// - complete the next tag in the address scheme, or
-			// - add a tgraph as a data source
+				return;
+			default: throw mismatchMsgRejEx(state, msg);
+			}
+		case IDLE:
+			switch (msg) {
+			case REQ_MORE_DATA:
+				if (scheme.isIncomplete() /* TODO NORM and maybe if its distance is above some threshold */) {
+					// complete the next tag in the address scheme
+					execute(new Runnable() {
+						@Override public void run() {
+							addTagAndComplete(scheme.getIncomplete());
+							updateAddressScheme();
+							try {
+								proc.routing.recv(tags.proto.route.Routing.MRecv.RECV_ADDR_SCH);
+							} catch (MessageRejectedException e) {
+								throw new RuntimeException(e); // FIXME HIGH
+							}
+						}
+					}, State.IDLE);
 
-			//throw new UnsupportedOperationException("not implemented");
+				} else if (scheme.getNearestTGraph() != null) {
+					// add a tgraph as a data source
+					execute(new Runnable() {
+						@Override public void run() {
+							addDataSourceAndComplete(scheme.getNearestTGraph());
+							updateAddressScheme();
+							try {
+								proc.routing.recv(tags.proto.route.Routing.MRecv.RECV_ADDR_SCH);
+							} catch (MessageRejectedException e) {
+								throw new RuntimeException(e); // FIXME HIGH
+							}
+						}
+					}, State.IDLE);
 
-			break;
-		case RECV_SEED_G: // receive seed tgraphs, from Contact
-
-			// init data structures etc. reset everything
-			source.setSeeds(proc.contact.getSeedTGraphs());
-			//throw new UnsupportedOperationException("not implemented");
-
-			break;
+				} else {
+					// nothing to do, pass request onto contact layer
+					proc.contact.recv(tags.proto.cont.Contact.MRecv.REQ_MORE_DATA);
+					state = State.AWAIT_SEEDS;
+				}
+				return;
+			default: throw mismatchMsgRejEx(state, msg);
+			}
 		}
-		assert false;
 	}
 
 	public AddressScheme<T, A, W> getAddressScheme() {
 		return scheme;
-	}
-
-	protected void getMoreData() {
-		List<U2<T, A>> nlist = scheme.nodeList();
-
-		if (scheme.isIncomplete()) {
-			U2<T, A> u2 = nlist.get(nlist.size()-1);
-			assert u2.isT0();
-			addTagAndComplete(u2.getT0());
-
-		} else {
-			// find nearest tgraph node and add it as data source
-			for (U2<T, A> u2: nlist) {
-				if (u2.isT1()) {
-					addDataSourceAndComplete(u2.getT1());
-					break;
-				}
-			}
-			throw new UnsupportedOperationException("not implemented");
-		}
 	}
 
 	protected void addDataSourceAndComplete(A addr) {
@@ -188,9 +205,9 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 			assert getCompletedTags().equals(old_complete); // FIXME HIGH need to make LocalTGraph.getCompletedTags() return absent tags too
 
 		} catch (InterruptedException e) {
-			// FIXME HIGH
+			throw new UnsupportedOperationException(e); // FIXME HIGH
 		} catch (IOException e) {
-			// FIXME HIGH
+			throw new RuntimeException(e); // FIXME HIGH
 		} finally {
 			srv.close();
 			srv_node.close();
@@ -242,9 +259,9 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 			} while (srv.hasPending() || srv_node.hasPending());
 
 		} catch (InterruptedException e) {
-			// FIXME HIGH
+			throw new UnsupportedOperationException(e); // FIXME HIGH
 		} catch (IOException e) {
-			// FIXME HIGH
+			throw new RuntimeException(e); // FIXME HIGH
 		} finally {
 			srv.close();
 			srv_node.close();
