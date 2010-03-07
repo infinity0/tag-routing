@@ -34,7 +34,9 @@ public interface AddressScheme<T, A, W> {
 	public T seedTag();
 
 	/**
-	** Returns the tag most relevant to the seed tag, from the given iterable.
+	** Returns the tag with the highest arc-attribute (ie. opposite of default
+	** java sort order), or {@code null} if none of the tags have an attribute
+	** defined.
 	**
 	** @throws IllegalArgumentException if the iterable contains a tag unknown
 	**         to this address scheme

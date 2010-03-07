@@ -123,8 +123,8 @@ implements MessageReceiver<Naming.MSG_I> {
 	}
 
 	protected void addDataSourceAndComplete(A addr) {
-		Set<T> old_complete = getCompletedTags();
 		LocalTGraph<T, A, U, W> view = source.useSource(addr);
+		Set<T> old_complete = getCompletedTags();
 
 		TaskService<Lookup<T, A>, U2Map<T, A, W>, IOException> srv = proc.newTGraphService();
 		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
@@ -192,6 +192,7 @@ implements MessageReceiver<Naming.MSG_I> {
 			// FIXME HIGH
 		} finally {
 			srv.close();
+			srv_node.close();
 		}
 	}
 
@@ -245,6 +246,7 @@ implements MessageReceiver<Naming.MSG_I> {
 			// FIXME HIGH
 		} finally {
 			srv.close();
+			srv_node.close();
 		}
 	}
 

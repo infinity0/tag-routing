@@ -40,8 +40,8 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 
 	/**
 	** Construct a new scheme with the given tag as the zeroth (ie. seed) tag.
-	** If {@code cmp} is used, then {@link #getMostRelevant(Iterable)} will use
-	** the natural ordering for {@code <W>} (it must be {@link Comparable}).
+	** If {@code cmp} is used, then {@link #getMostRelevant(Set)} will use the
+	** natural ordering for {@code <W>} (it must be {@link Comparable}).
 	*/
 	public ProtoAddressScheme(T src, Comparator<W> cmp) {
 		this.cmp = cmp;
@@ -67,11 +67,6 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		return zero.getT0();
 	}
 
-	/**
-	** Returns the tag with the highest arc-attribute (ie. opposite of default
-	** java sort order), or {@code null} if none of the tags have an attribute
-	** defined.
-	*/
 	@Override public T getMostRelevant(Set<T> tags) {
 		Map.Entry<T, W> max = Collections.max(Maps.viewSubMap(arc_attr_map, tags).entrySet(), (cmp == null)?
 		new Comparator<Map.Entry<T, W>>() {

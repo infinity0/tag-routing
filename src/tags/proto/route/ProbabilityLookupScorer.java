@@ -7,30 +7,11 @@ import tags.proto.Index.Lookup;
 import tags.util.Probability;
 import java.util.Comparator;
 import java.util.Map;
-import java.util.PriorityQueue;
 
 /**
 ** DOCUMENT.
 */
 public class ProbabilityLookupScorer implements LookupScorer<Probability, Probability> {
-
-	public <T, A> PriorityQueue<Lookup<T, A>> sortLookups(final Map<Lookup<T, A>, Probability> lookups) {
-		PriorityQueue<Lookup<T, A>> queue = new PriorityQueue<Lookup<T, A>>(lookups.size(),
-			new Comparator<Lookup<T, A>>() {
-				@Override public int compare(Lookup<T, A> l0, Lookup<T, A> l1) {
-					Probability p0 = lookups.get(l0);
-					Probability p1 = lookups.get(l1);
-					if (p0 == null || p1 == null) {
-						throw new IllegalArgumentException("unscored lookup");
-					}
-					// we want highest element first
-					return p1.compareTo(p0);
-				};
-			}
-		);
-		queue.addAll(lookups.keySet());
-		return queue;
-	}
 
 	/**
 	** {@inheritDoc}

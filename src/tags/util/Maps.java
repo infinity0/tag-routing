@@ -88,6 +88,18 @@ final public class Maps {
 	}
 
 	/**
+	** DOCUMENT.
+	*/
+	public static <K, V> void multiMapRemoveAll(Map<K, ? extends Set<V>> subject, Map<K, ? extends Set<V>> removal) {
+		for (Map.Entry<K, ? extends Set<V>> en: removal.entrySet()) {
+			if (en.getValue() == null) { continue; }
+			Set<V> set = subject.get(en.getKey());
+			if (set == null) { continue; }
+			set.removeAll(en.getValue());
+		}
+	}
+
+	/**
 	** Returns the nodes which the given arcmap refers to. DOCUMENT explain
 	** better.
 	**

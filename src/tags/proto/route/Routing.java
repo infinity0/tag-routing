@@ -4,10 +4,15 @@ package tags.proto.route;
 import tags.proto.LayerService;
 import tags.proto.Query;
 import tags.proto.QueryProcessor;
-import tags.util.exec.MessageReceiver;
-import tags.util.exec.MessageRejectedException;
 import tags.proto.LocalViewFactory;
 import tags.util.ScoreInferer;
+
+import tags.util.exec.MessageReceiver;
+import tags.util.exec.MessageRejectedException;
+import tags.util.exec.Tasks;
+import tags.util.exec.TaskResult;
+import tags.util.exec.TaskService;
+import java.io.IOException;
 
 import tags.proto.MultiParts;
 import tags.util.Maps;
@@ -45,7 +50,7 @@ implements MessageReceiver<Routing.MSG_I> {
 	final protected LookupScorer<W, S> mod_lku_scr;
 
 	final protected DataSources<A, LocalIndex<T, A, W>, S> source;
-	final protected Map<A, Set<T>> lookup;
+	final protected Map<A, Set<T>> completed;
 
 	protected FullIndex<T, A, W> index;
 	volatile protected Map<A, W> results;
@@ -64,7 +69,7 @@ implements MessageReceiver<Routing.MSG_I> {
 		this.mod_idx_cmp = mod_idx_cmp;
 		this.mod_lku_scr = mod_lku_scr;
 		this.source = new DataSources<A, LocalIndex<T, A, W>, S>(view_fac, score_inf);
-		this.lookup = new HashMap<A, Set<T>>();
+		this.completed = new HashMap<A, Set<T>>();
 	}
 
 	@Override public synchronized void recv(MSG_I msg) throws MessageRejectedException {
@@ -85,7 +90,6 @@ implements MessageReceiver<Routing.MSG_I> {
 
 			// init data structures etc. reset everything.
 			source.setSeeds(proc.contact.getSeedIndexes());
-			source.calculateScores();
 			//throw new UnsupportedOperationException("not implemented");
 
 			break;
@@ -93,12 +97,7 @@ implements MessageReceiver<Routing.MSG_I> {
 
 			// - update set of lookups
 			// OPT HIGH only update things that need to be updated
-			AddressScheme<T, A, W> scheme = proc.naming.getAddressScheme();
-			Map<A, Set<T>> lookups = getLookups(scheme);
 			//throw new UnsupportedOperationException("not implemented");
-
-			index = composeIndex();
-			results = makeResults(scheme);
 
 			break;
 		}
@@ -107,6 +106,45 @@ implements MessageReceiver<Routing.MSG_I> {
 
 	public Map<A, W> getResults() {
 		return results;
+	}
+
+	protected void getMoreData() {
+		// pass
+	}
+
+	protected void addDataSourceAndLookups(A addr, AddressScheme<T, A, W> scheme) {
+		LocalIndex<T, A, W> view = source.useSource(addr);
+
+		TaskService<Lookup<T, A>, U2Map<A, A, W>, IOException> srv = proc.newIndexService();
+
+		try {
+			for (T tag: getLookups(scheme, addr)) {
+				// submit...
+				throw new IOException();
+			}
+			// pass
+			throw new InterruptedException();
+
+		} catch (InterruptedException e) {
+			// FIXME HIGH
+		} catch (IOException e) {
+			// FIXME HIGH
+		} finally {
+			srv.close();
+		}
+	}
+
+	protected void addLookupsFromNewAddressScheme(AddressScheme<T, A, W> scheme) {
+		Map<A, Set<T>> lookups = getLookups(scheme);
+		Maps.multiMapRemoveAll(lookups, completed);
+
+
+	}
+
+	protected void updateResults(AddressScheme<T, A, W> scheme) {
+		source.calculateScores();
+		index = composeIndex();
+		results = makeResults(scheme);
 	}
 
 	/**
@@ -118,27 +156,26 @@ implements MessageReceiver<Routing.MSG_I> {
 	protected Map<A, Set<T>> getLookups(AddressScheme<T, A, W> scheme) {
 		Map<A, Set<T>> lookups = new HashMap<A, Set<T>>();
 		for (A idx: source.localMap().keySet()) {
-			if (source.seedMap().containsKey(idx)) {
-				// select all T in scheme
-				lookups.put(idx, scheme.tagSet());
-			} else {
-				Set<T> tags = new HashSet<T>();
-				for (A in_node: source.getIncoming(idx)) {
-					LocalIndex<T, A, W> view = source.localMap().get(in_node);
-					assert view.getIncomingHarcAttrMap(idx) != null;
-					// find Set<T> that we reached A by
-					for (T tag: view.getIncomingHarcAttrMap(idx).keySet()) {
-						// for all T in Set<T>, select all "short" paths in layer_lo.getAddressScheme()
-						tags.addAll(scheme.ancestorMap().K0Map().get(tag));
-					}
-				}
-				lookups.put(idx, tags);
-			}
+			lookups.put(idx, source.seedMap().containsKey(idx)? scheme.tagSet(): getLookups(scheme, idx));
 		}
 		return lookups;
 	}
 
-	protected PriorityQueue<Lookup<T, A>> sortLookups(AddressScheme<T, A, W> scheme, Map<A, Set<T>> lookups) {
+	protected Set<T> getLookups(AddressScheme<T, A, W> scheme, A idx) {
+		Set<T> tags = new HashSet<T>();
+		for (A in_node: source.getIncoming(idx)) {
+			LocalIndex<T, A, W> view = source.localMap().get(in_node);
+			assert view.getIncomingHarcAttrMap(idx) != null;
+			// find all tags that we reached A by
+			for (T tag: view.getIncomingHarcAttrMap(idx).keySet()) {
+				// for each tag, select all "short" paths to that tag in scheme
+				tags.addAll(scheme.ancestorMap().K0Map().get(tag));
+			}
+		}
+		return tags;
+	}
+
+	protected Map<Lookup<T, A>, W> scoreLookups(AddressScheme<T, A, W> scheme, Map<A, Set<T>> lookups) {
 		Map<Lookup<T, A>, W> lku_score = new HashMap<Lookup<T, A>, W>();
 
 		for (Map.Entry<A, Set<T>> en: lookups.entrySet()) {
@@ -151,7 +188,7 @@ implements MessageReceiver<Routing.MSG_I> {
 			}
 		}
 
-		return mod_lku_scr.sortLookups(lku_score);
+		return lku_score;
 	}
 
 	/**
@@ -181,16 +218,20 @@ implements MessageReceiver<Routing.MSG_I> {
 			Map<T, W> in_tag = index.getIncomingDarcAttrMap(dst);
 			assert in_tag != null && !in_tag.isEmpty();
 			T nearest = scheme.getMostRelevant(in_tag.keySet());
+			// FIXME HIGH nearest could be null if an update to the address scheme deleted all tags
 
 			W wgt = mod_lku_scr.getResultAttr(scheme.arcAttrMap().get(nearest), in_tag.get(nearest));
 			results.put(dst, wgt);
 		}
 
 		for (A dst: index.nodeSetH()) {
+			// TODO HIGH filter out indexes that are in-use as a data source
+
 			// get most relevant tag which points to it
 			Map<T, W> in_tag = index.getIncomingHarcAttrMap(dst);
 			assert in_tag != null && !in_tag.isEmpty();
 			T nearest = scheme.getMostRelevant(in_tag.keySet());
+			// FIXME HIGH nearest could be null if an update to the address scheme deleted all tags
 
 			W wgt = mod_lku_scr.getResultAttr(scheme.arcAttrMap().get(nearest), in_tag.get(nearest));
 			results.put(dst, wgt);

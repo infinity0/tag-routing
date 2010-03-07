@@ -3,7 +3,6 @@ package tags.proto.route;
 
 import tags.proto.Index.Lookup;
 import java.util.Map;
-import java.util.PriorityQueue;
 
 /**
 ** DOCUMENT.
@@ -12,11 +11,6 @@ import java.util.PriorityQueue;
 ** @param <S> Type of score
 */
 public interface LookupScorer<W, S> {
-
-	/**
-	** Returns a priority queue of lookups, given their scores.
-	*/
-	public <T, A> PriorityQueue<Lookup<T, A>> sortLookups(Map<Lookup<T, A>, W> lookups);
 
 	/**
 	** Returns a score for a lookup.

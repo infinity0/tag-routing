@@ -109,7 +109,12 @@ public class DataSources<R, L, S> {
 	}
 
 	public void setSeeds(Map<R, S> seed_score) {
-		throw new UnsupportedOperationException("not implemented");
+		this.seed_score.putAll(seed_score);
+		for (R src: seed_score.keySet()) {
+			setOutgoing(src, java.util.Collections.<R>emptySet());
+			useSource(src);
+		}
+		calculateScores();
 	}
 
 	/**
@@ -128,6 +133,7 @@ public class DataSources<R, L, S> {
 		L view = view_fac.createLocalView(src, this);
 		local.put(src, view);
 		// TODO HIGH bunch of other stuff needed too, probably
+		score.put(src, score_inf.inferScore(incoming, seed_score, src));
 		return view;
 	}
 
@@ -135,7 +141,7 @@ public class DataSources<R, L, S> {
 	** Calculates the score for each in-use remote source.
 	*/
 	public void calculateScores() {
-		// OPT NORM could somehow do this incrementally instead of re-calculating entire thing
+		// OPT NORM could do this incrementally instead of re-calculating entire thing
 		score.clear();
 		for (R addr: local.keySet()) {
 			score.put(addr, score_inf.inferScore(incoming, seed_score, addr));

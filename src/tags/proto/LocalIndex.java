@@ -81,14 +81,6 @@ public class LocalIndex<T, A, W> extends FullIndex<T, A, W> {
 		}
 	}
 
-	/**
-	** Register an index as a data source. The index must already be an
-	** outgoing target of some loaded tag.
-	*/
-	public void setDataSource(A index) {
-		throw new UnsupportedOperationException("not implemented");
-	}
-
 	private static LocalViewFactory stdFactory = new LocalViewFactory() {
 		@SuppressWarnings("unchecked")
 		@Override public Object createLocalView(Object addr, DataSources src) {

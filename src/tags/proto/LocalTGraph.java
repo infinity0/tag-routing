@@ -80,7 +80,7 @@ public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 	}
 
 	/**
-	** @see #setNodeAttr(U2, Object)
+	** @see #setNodeAttr(Union.U2, Object)
 	*/
 	public void setNodeAttrT(T subj, U wgt) throws IOException {
 		if (node_map.K0Map().containsKey(subj)) { throw new IllegalStateException("already loaded tag " + subj); }
@@ -93,7 +93,7 @@ public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 	}
 
 	/**
-	** @see #setNodeAttr(U2, Object)
+	** @see #setNodeAttr(Union.U2, Object)
 	*/
 	public void setNodeAttrG(A subj, U wgt) throws IOException {
 		if (node_map.K1Map().containsKey(subj)) { throw new IllegalStateException("already loaded tgraph " + subj); }
