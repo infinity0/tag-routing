@@ -3,6 +3,7 @@ package tags.proto;
 
 import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.Map;
@@ -32,6 +33,10 @@ public interface AddressScheme<T, A, W> {
 	** Return the seed tag.
 	*/
 	public T seedTag();
+
+	public Comparator<W> comparator();
+
+	public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map);
 
 	/**
 	** Returns the tag with the highest arc-attribute (ie. opposite of default

@@ -86,6 +86,10 @@ implements MapQueue<K, V> {
 		else { map.remove(key); return false; }
 	}
 
+	@Override public synchronized V peekValue() {
+		return map.get(queue.peek());
+	}
+
 	// Queue
 
 	@Override public boolean offer(K key) {

@@ -52,4 +52,9 @@ public interface MapQueue<K, V> extends Queue<K> {
 	*/
 	public boolean offer(K key, V val);
 
+	/**
+	** Peek at the value of the minimum element.
+	*/
+	public V peekValue();
+
 }

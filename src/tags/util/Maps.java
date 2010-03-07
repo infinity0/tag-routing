@@ -6,6 +6,7 @@ import java.util.Arrays;
 import tags.util.Union.U2;
 import tags.util.Tuple.X2;
 import java.util.Iterator;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -62,6 +63,25 @@ final public class Maps {
 			return (key == null? 0: key.hashCode()) ^ (getValue() == null? 0: getValue().hashCode());
 		}
 
+	}
+
+	/**
+	** Returns a comparator over the entries of a map, given a comparator for
+	** the values. If the comparator is {@code null}, natural ordering is used.
+	*/
+	public static <K, V> Comparator<Map.Entry<K, V>> entryValueComparator(final Comparator<V> cmp) {
+		return cmp == null?
+		new Comparator<Map.Entry<K, V>>() {
+			@SuppressWarnings("unchecked")
+			@Override public int compare(Map.Entry<K, V> en0, Map.Entry<K, V> en1) {
+				return ((Comparable<V>)en0.getValue()).compareTo(en1.getValue());
+			}
+		}:
+		new Comparator<Map.Entry<K, V>>() {
+			@Override public int compare(Map.Entry<K, V> en0, Map.Entry<K, V> en1) {
+				return cmp.compare(en0.getValue(), en1.getValue());
+			}
+		};
 	}
 
 	/**

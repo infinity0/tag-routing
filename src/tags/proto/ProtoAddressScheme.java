@@ -62,25 +62,21 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		incomplete = true;
 	}
 
+	@Override public Comparator<W> comparator() {
+		return cmp;
+	}
+
 	@Override public T seedTag() {
 		U2<T, A> zero = node_list.get(0);
 		return zero.getT0();
 	}
 
+	@Override public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map) {
+		return Collections.max(map.entrySet(), Maps.<K, W>entryValueComparator(cmp));
+	}
+
 	@Override public T getMostRelevant(Set<T> tags) {
-		Map.Entry<T, W> max = Collections.max(Maps.viewSubMap(arc_attr_map, tags).entrySet(), (cmp == null)?
-		new Comparator<Map.Entry<T, W>>() {
-			@SuppressWarnings("unchecked")
-			@Override public int compare(Map.Entry<T, W> en0, Map.Entry<T, W> en1) {
-				return ((Comparable<W>)en0.getValue()).compareTo(en1.getValue());
-			}
-		}:
-		new Comparator<Map.Entry<T, W>>() {
-			@Override public int compare(Map.Entry<T, W> en0, Map.Entry<T, W> en1) {
-				return cmp.compare(en0.getValue(), en1.getValue());
-			}
-		});
-		return max.getKey();
+		return Collections.max(Maps.viewSubMap(arc_attr_map, tags).entrySet(), Maps.<T, W>entryValueComparator(cmp)).getKey();
 	}
 
 	@Override public Set<T> tagSet() {

@@ -56,7 +56,7 @@ implements MessageReceiver<Routing.MRecv> {
 	final protected MapQueue<Lookup<T, A>, W> queue = new BaseMapQueue<Lookup<T, A>, W>(Collections.<W>reverseOrder(), true);
 
 	protected FullIndex<T, A, W> index;
-	volatile protected Map<A, W> results;
+	volatile protected U2Map<A, A, W> results;
 	protected boolean rcache_v; // accesses to this field need to be synchronized(Routing.this)
 
 	public Routing(
@@ -108,12 +108,27 @@ implements MessageReceiver<Routing.MRecv> {
 		assert false;
 	}
 
-	public Map<A, W> getResults() {
+	public U2Map<A, A, W> getResults() {
 		return results;
 	}
 
-	protected void getMoreData() {
-		// pass
+	protected void getMoreData(AddressScheme<T, A, W> scheme) {
+		// OPT NORM this is really really really wasteful
+		updateResults(scheme);
+		Map.Entry<A, W> idx_en = scheme.getMostRelevant(results.K1Map());
+
+		// TODO HIGH need to review this later; the algorithm decided ad-hoc and
+		// without any forethought
+
+		if (queue.isEmpty()) {
+			addDataSourceAndLookups(scheme, idx_en.getKey());
+
+		} else {
+			W lku_s = queue.peekValue();
+			if (scheme.comparator().compare(idx_en.getValue(), lku_s) > 0) {
+				addDataSourceAndLookups(scheme, idx_en.getKey());
+			}
+		}
 	}
 
 	protected void runLookups() {
@@ -159,7 +174,7 @@ implements MessageReceiver<Routing.MRecv> {
 		}
 	}
 
-	protected void addDataSourceAndLookups(A addr, AddressScheme<T, A, W> scheme) {
+	protected void addDataSourceAndLookups(AddressScheme<T, A, W> scheme, A addr) {
 		source.useSource(addr);
 		Map<Lookup<T, A>, W> lku_score = scoreLookups(scheme, Collections.singletonMap(addr, getLookups(scheme, addr)));
 		for (Map.Entry<Lookup<T, A>, W> en: lku_score.entrySet()) { queue.add(en.getKey(), en.getValue()); }
@@ -250,8 +265,9 @@ implements MessageReceiver<Routing.MRecv> {
 	** TODO NORM arguably this could be in a separate module instead of just
 	** "pick the most relevant tag".
 	*/
-	protected Map<A, W> makeResults(AddressScheme<T, A, W> scheme) {
-		Map<A, W> results = new HashMap<A, W>();
+	protected U2Map<A, A, W> makeResults(AddressScheme<T, A, W> scheme) {
+		Map<A, W> res_d = new HashMap<A, W>();
+		Map<A, W> res_h = new HashMap<A, W>();
 
 		for (A dst: index.nodeSetD()) {
 			// get most relevant tag which points to it
@@ -261,7 +277,7 @@ implements MessageReceiver<Routing.MRecv> {
 			// FIXME HIGH nearest could be null if an update to the address scheme deleted all tags
 
 			W wgt = mod_lku_scr.getResultAttr(scheme.arcAttrMap().get(nearest), in_tag.get(nearest));
-			results.put(dst, wgt);
+			res_d.put(dst, wgt);
 		}
 
 		for (A dst: index.nodeSetH()) {
@@ -274,10 +290,10 @@ implements MessageReceiver<Routing.MRecv> {
 			// FIXME HIGH nearest could be null if an update to the address scheme deleted all tags
 
 			W wgt = mod_lku_scr.getResultAttr(scheme.arcAttrMap().get(nearest), in_tag.get(nearest));
-			results.put(dst, wgt);
+			res_h.put(dst, wgt);
 		}
 
-		return results;
+		return Maps.uniteDisjoint(res_d, res_h);
 	}
 
 }
