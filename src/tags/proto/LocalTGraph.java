@@ -87,7 +87,7 @@ public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 		if (node_map.K0Map().containsKey(subj)) { throw new IllegalStateException("already loaded tag " + subj); }
 		if (wgt == null) {
 			if (incoming.K0Map().containsKey(subj)) { throw new IOException("corrupt remote data: node " + subj + " has defined incoming-arcs but undefined node-weight"); }
-			complete.put(subj); // non-existent tags are "complete" by definition
+			complete.add(subj); // non-existent tags are "complete" by definition
 			// TODO HIGH this needs to be put somewhere else too
 			return;
 		}
@@ -118,8 +118,10 @@ public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 	** @throws IOException if the remote data structure is inconsistent
 	*/
 	public void setOutgoingT(T subj, U2Map<T, A, W> out) throws IOException {
-		if (outgoing.containsKey(subj)) { throw new IllegalStateException("already loaded out-arcs for tag " + subj); }
-		if (false /* TODO HIGH node_weight is already loaded and ABSENT */) {
+		if (outgoing.containsKey(subj)) {
+			throw new IllegalStateException("already loaded out-arcs for tag " + subj);
+		} else if (complete.contains(subj)) {
+			// node_weight is already loaded and ABSENT
 			if (out != null) { throw new IOException("corrupt remote data: node " + subj + " has defined outgoing-arcs but undefined node-weight"); }
 		} else if (!node_map.K0Map().containsKey(subj)) {
 			throw new IllegalStateException("must first load node-weight for tag " + subj);

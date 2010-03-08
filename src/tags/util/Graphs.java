@@ -25,7 +25,7 @@ final public class Graphs {
 	** Populate the given empty data structures from the given node-set and
 	** arc-map. The arc-map must refer only to nodes in the set.
 	**
-	** TODO NORM make this use a Factory instead of just constructing HashMap
+	** TODO LOW make this use a Factory instead of just constructing HashMap
 	**
 	** @param node_src Set of source nodes
 	** @param node_dst_0 Set of target (0) nodes
@@ -107,7 +107,7 @@ final public class Graphs {
 	** Populate the given empty data structures from the given arc-map. The
 	** node-sets will be filled automatically.
 	**
-	** TODO NORM make this use a Factory instead of just constructing HashMap
+	** TODO LOW make this use a Factory instead of just constructing HashMap
 	**
 	** @param arc_map Map of arcs to their attributes
 	** @param outgoing [Output] Map of nodes to their outgoing neighbours

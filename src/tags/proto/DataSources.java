@@ -114,14 +114,11 @@ public class DataSources<R, L, S> {
 			setOutgoing(src, java.util.Collections.<R>emptySet());
 			useSource(src);
 		}
-		calculateScores();
 	}
 
 	/**
-	** Mark a data source as being in use, and return a blank local view for
-	** it.
-	**
-	** TODO HIGH maybe make this call score_inf.inferScore() or something.
+	** Marks a data source as being in use, and creates an empty local view and
+	** infers a score for it.
 	**
 	** @return The empty local view that was created
 	** @throws IllegalArgumentException if {@code src} is not a known source
@@ -136,7 +133,6 @@ public class DataSources<R, L, S> {
 		}
 		L view = view_fac.createLocalView(src, this);
 		local.put(src, view);
-		// TODO HIGH bunch of other stuff needed too, probably
 		score.put(src, score_inf.inferScore(incoming, seed_score, src));
 		return view;
 	}

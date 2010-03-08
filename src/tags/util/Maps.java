@@ -691,7 +691,7 @@ final public class Maps {
 	/**
 	** DOCUMENT.
 	**
-	** TODO LOW possibly make this also {@code extend U2Map<K0, K1, X2<V0, V1>, MapX2<K0, V0, V1>, MapX2<K1, V0, V1>>}
+	** TODO LOW possibly make this also {@code extend U2MMap<K0, K1, X2<V0, V1>, MapX2<K0, V0, V1>, MapX2<K1, V0, V1>>}
 	*/
 	public static interface U2MapX2<K0, K1, V0, V1> extends MMapX2<U2<K0, K1>, V0, V1, U2Map<K0, K1, V0>, U2Map<K0, K1, V1>> {
 		// for convience, like "typedef"

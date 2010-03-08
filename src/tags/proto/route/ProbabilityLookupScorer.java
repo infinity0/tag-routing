@@ -41,7 +41,7 @@ public class ProbabilityLookupScorer implements LookupScorer<Probability, Probab
 	** # = P(doc ∊ seed | doc ∊ subj) P(doc ∊ subj) [''chain rule'']
 	** # = P(seed|subj) P(doc ∊ subj)
 	**
-	** TODO HIGH we should actually return P(doc ∊ seed) according to the below
+	** TODO NORM we should actually return P(doc ∊ seed) according to the below
 	** formula, but then we will need extra inputs to this method.
 	**
 	** # P(doc ∊ seed)

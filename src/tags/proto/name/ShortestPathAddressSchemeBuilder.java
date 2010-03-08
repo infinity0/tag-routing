@@ -71,7 +71,6 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 		}
 
 		// 2. Loop
-		// TODO HIGH need to get rid of tgraph nodes already in use as a data source
 		while (!queue.isEmpty()) {
 			DijkstraNode cur = queue.poll();
 			U2<T, A> node = cur.node;

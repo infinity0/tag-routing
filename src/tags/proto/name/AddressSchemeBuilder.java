@@ -19,8 +19,6 @@ public interface AddressSchemeBuilder<T, A, U, W> {
 	/**
 	** Build a new {@link AddressScheme} from the given parameters.
 	**
-	** TODO HIGH decide whether {@code completed} is appropriate.
-	**
 	** @param graph The composite graph
 	** @param completed Set of completed tags
 	** @param seed The seed tag

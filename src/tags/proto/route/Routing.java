@@ -269,6 +269,8 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		// iterates through all arcs present in every source
 		U2Map<Arc<T, A>, Arc<T, A>, W> arc_map = Maps.uniteDisjoint(new HashMap<Arc<T, A>, W>(), new HashMap<Arc<T, A>, W>());
 		for (U2<Arc<T, A>, Arc<T, A>> arc: Maps.domain(MultiParts.iterIndexArcMaps(source.localMap().values()))) {
+			// filter out indexes that are already in-use as a data source
+			if (arc.isT1() && source.localMap().containsKey(arc.getT1().dst)) { continue; }
 			arc_map.put(arc, mod_idx_cmp.composeArc(source.localScoreMap(), arc));
 		}
 
@@ -298,9 +300,6 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		}
 
 		for (A dst: index.nodeSetH()) {
-			// filter out indexes that are in-use as a data source
-			if (source.localMap().containsKey(dst)) { continue; }
-
 			// get most relevant tag which points to it
 			Map<T, W> in_tag = index.getIncomingHarcAttrMap(dst);
 			assert in_tag != null && !in_tag.isEmpty();

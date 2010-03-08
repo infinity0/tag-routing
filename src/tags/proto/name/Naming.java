@@ -304,6 +304,8 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 		// iterates through all arcs present in every source
 		U2Map<Arc<T, T>, Arc<T, A>, W> arc_map = Maps.uniteDisjoint(new HashMap<Arc<T, T>, W>(), new HashMap<Arc<T, A>, W>());
 		for (U2<Arc<T, T>, Arc<T, A>> arc: Maps.domain(MultiParts.iterTGraphArcMaps(source.localMap().values()))) {
+			// filter out tgraphs that are already in-use as a data source
+			if (arc.isT1() && source.localMap().containsKey(arc.getT1().dst)) { continue; }
 			arc_map.put(arc, mod_tgr_cmp.composeArc(source.localScoreMap(), arc));
 		}
 
