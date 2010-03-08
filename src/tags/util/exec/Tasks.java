@@ -12,6 +12,10 @@ final public class Tasks {
 		return new BaseTaskResult<K, Object, Exception>(key);
 	}
 
+	public static <K, V, X extends Exception> TaskResult<K, V, X> newTaskResult(Task<K> task, V val, X err) {
+		return new BaseTaskResult<K, V, X>(task.getKey(), val, err);
+	}
+
 	public static class BaseTaskResult<K, V, X extends Exception> implements TaskResult<K, V, X> {
 
 		final public K key;
@@ -21,6 +25,15 @@ final public class Tasks {
 
 		public BaseTaskResult(K key) {
 			this.key = key;
+		}
+
+		public BaseTaskResult(K key, V val, X err) {
+			this(key);
+			if (err != null) {
+				setValue(val);
+			} else {
+				setError(err);
+			}
 		}
 
 		@Override public K getKey() {

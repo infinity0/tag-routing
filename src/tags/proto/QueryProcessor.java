@@ -5,6 +5,8 @@ import tags.store.StoreControl;
 import tags.proto.cont.Contact;
 import tags.proto.name.Naming;
 import tags.proto.route.Routing;
+import tags.util.exec.Task;
+import tags.util.exec.TaskResult;
 import tags.util.exec.TaskService;
 import java.util.concurrent.Executor;
 import java.io.IOException;
@@ -78,24 +80,64 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 	**
 	** TODO NORM this should really be a module in the Contact layer.
 	*/
-	public Map<I, Z> getTrustedIDs() {
-		throw new UnsupportedOperationException("not implemented");
+	public Map<I, Z> getTrustedIDs() throws IOException {
+		// TODO HIGH better implementation than this
+		return sctl.getFriends(query.seed_id);
 	}
 
 	public TaskService<I, PTable<A, S>, IOException> newPTableService() {
-		throw new UnsupportedOperationException("not implemented");
+		// TODO HIGH better implementation than this
+		return new tags.util.exec.UnthreadedTaskService<I, PTable<A, S>, IOException>() {
+			@Override protected TaskResult<I, PTable<A, S>, IOException> execute(Task<I> task) {
+				try {
+					return tags.util.exec.Tasks.newTaskResult(task, sctl.getPTable(task.getKey()), null);
+				} catch (IOException e) {
+					return tags.util.exec.Tasks.newTaskResult(task, null, e);
+				}
+			}
+		};
 	}
 
 	public TaskService<TGraph.Lookup<T, A>, U2Map<T, A, W>, IOException> newTGraphService() {
-		throw new UnsupportedOperationException("not implemented");
+		// TODO HIGH better implementation than this
+		return new tags.util.exec.UnthreadedTaskService<TGraph.Lookup<T, A>, U2Map<T, A, W>, IOException>() {
+			@Override protected TaskResult<TGraph.Lookup<T, A>, U2Map<T, A, W>, IOException> execute(Task<TGraph.Lookup<T, A>> task) {
+				TGraph.Lookup<T, A> lku = task.getKey();
+				try {
+					return tags.util.exec.Tasks.newTaskResult(task, sctl.getTGraphOutgoing(lku.tgr, lku.tag), null);
+				} catch (IOException e) {
+					return tags.util.exec.Tasks.newTaskResult(task, null, e);
+				}
+			}
+		};
 	}
 
 	public TaskService<TGraph.NodeLookup<T, A>, U, IOException> newTGraphNodeService() {
-		throw new UnsupportedOperationException("not implemented");
+		// TODO HIGH better implementation than this
+		return new tags.util.exec.UnthreadedTaskService<TGraph.NodeLookup<T, A>, U, IOException>() {
+			@Override protected TaskResult<TGraph.NodeLookup<T, A>, U, IOException> execute(Task<TGraph.NodeLookup<T, A>> task) {
+				TGraph.NodeLookup<T, A> lku = task.getKey();
+				try {
+					return tags.util.exec.Tasks.newTaskResult(task, sctl.getTGraphNodeAttr(lku.tgr, lku.node), null);
+				} catch (IOException e) {
+					return tags.util.exec.Tasks.newTaskResult(task, null, e);
+				}
+			}
+		};
 	}
 
 	public TaskService<Index.Lookup<T, A>, U2Map<A, A, W>, IOException> newIndexService() {
-		throw new UnsupportedOperationException("not implemented");
+		// TODO HIGH better implementation than this
+		return new tags.util.exec.UnthreadedTaskService<Index.Lookup<T, A>, U2Map<A, A, W>, IOException>() {
+			@Override protected TaskResult<Index.Lookup<T, A>, U2Map<A, A, W>, IOException> execute(Task<Index.Lookup<T, A>> task) {
+				Index.Lookup<T, A> lku = task.getKey();
+				try {
+					return tags.util.exec.Tasks.newTaskResult(task, sctl.getIndexOutgoing(lku.idx, lku.tag), null);
+				} catch (IOException e) {
+					return tags.util.exec.Tasks.newTaskResult(task, null, e);
+				}
+			}
+		};
 	}
 
 }

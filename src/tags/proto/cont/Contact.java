@@ -89,10 +89,10 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 	}
 
 	protected void makePTable() {
-		Map<I, Z> id_score = proc.getTrustedIDs();
-
 		TaskService<I, PTable<A, S>, IOException> srv = proc.newPTableService();
 		try {
+			Map<I, Z> id_score = proc.getTrustedIDs();
+
 			for (I id: id_score.keySet()) { srv.submit(Tasks.newTask(id)); }
 			do {
 				while (srv.hasComplete()) {
