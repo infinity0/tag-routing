@@ -125,10 +125,14 @@ public class DataSources<R, L, S> {
 	**
 	** @return The empty local view that was created
 	** @throws IllegalArgumentException if {@code src} is not a known source
+	** @throws IllegalStateException if {@code src} already has a local view
 	*/
 	public L useSource(R src) {
-		if (!incoming.containsKey(src)) { // FIXME HIGH and not in seeds
+		if (!incoming.containsKey(src)) {
 			throw new IllegalArgumentException("unknown source");
+		}
+		if (local.containsKey(src)) {
+			throw new IllegalStateException("local view already exists for " + src);
 		}
 		L view = view_fac.createLocalView(src, this);
 		local.put(src, view);

@@ -202,7 +202,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 			} while (srv.hasPending() || srv_node.hasPending());
 
 			assert outgoing.isEmpty();
-			assert getCompletedTags().equals(old_complete); // FIXME HIGH need to make LocalTGraph.getCompletedTags() return absent tags too
+			assert getCompletedTags().equals(old_complete);
 
 		} catch (InterruptedException e) {
 			throw new UnsupportedOperationException(e); // FIXME HIGH

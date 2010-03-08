@@ -2,6 +2,7 @@
 package tags.util.exec;
 
 import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutionException;
 
 /**
 ** A service that runs a maximum of one concurrent job.
@@ -13,6 +14,8 @@ public class UnitService<S> {
 	protected S state;
 	protected boolean active;
 	protected int completed;
+
+	protected RuntimeException last_ex;
 
 	public UnitService(S state, Executor exec) {
 		this.state = state;
@@ -37,16 +40,22 @@ public class UnitService<S> {
 	** @param run The job to run
 	** @param next The state to transition into after the job is complete
 	** @return An identifier for the job (increments for every job completed)
-	** @throws IllegalStateException if a job is already running
+	** @throws IllegalStateException if a job is already running, or if the
+	**         last job completed abruptly
 	*/
 	protected synchronized int execute(final Runnable run, final S next) {
-		if (active) { throw new IllegalStateException("already running a job"); }
+		if (active) {
+			throw new IllegalStateException("already running a job");
+		}
+		if (last_ex != null) {
+			throw new IllegalStateException("previous job completed abruptly", last_ex);
+		}
 		exec.execute(new Runnable() {
 			@Override public void run() {
 				try {
 					run.run();
 				} catch (RuntimeException e) {
-					// FIXME HIGH
+					last_ex = e; // TODO NORM make some better way of handling this
 				}
 				synchronized(UnitService.this) {
 					state = next;

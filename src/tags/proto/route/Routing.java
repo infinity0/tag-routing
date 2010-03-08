@@ -182,9 +182,9 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 			} while (true);
 
 		} catch (InterruptedException e) {
-			// FIXME HIGH
+			throw new UnsupportedOperationException(e); // FIXME HIGH
 		} catch (IOException e) {
-			// FIXME HIGH
+			throw new RuntimeException(e); // FIXME HIGH
 		} finally {
 			srv.close();
 		}
@@ -290,20 +290,23 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 			Map<T, W> in_tag = index.getIncomingDarcAttrMap(dst);
 			assert in_tag != null && !in_tag.isEmpty();
 			Map.Entry<T, W> nearest = scheme.getMostRelevant(in_tag.keySet());
-			// FIXME HIGH nearest could be null if an update to the address scheme deleted all tags
+			// eg. if an update to the address scheme deleted those tags
+			if (nearest == null) { continue; }
 
 			W wgt = mod_lku_scr.getResultAttr(nearest.getValue(), in_tag.get(nearest.getKey()));
 			res_d.put(dst, wgt);
 		}
 
 		for (A dst: index.nodeSetH()) {
-			// TODO HIGH filter out indexes that are in-use as a data source
+			// filter out indexes that are in-use as a data source
+			if (source.localMap().containsKey(dst)) { continue; }
 
 			// get most relevant tag which points to it
 			Map<T, W> in_tag = index.getIncomingHarcAttrMap(dst);
 			assert in_tag != null && !in_tag.isEmpty();
 			Map.Entry<T, W> nearest = scheme.getMostRelevant(in_tag.keySet());
-			// FIXME HIGH nearest could be null if an update to the address scheme deleted all tags
+			// eg. if an update to the address scheme deleted those tags
+			if (nearest == null) { continue; }
 
 			W wgt = mod_lku_scr.getResultAttr(nearest.getValue(), in_tag.get(nearest.getKey()));
 			res_h.put(dst, wgt);

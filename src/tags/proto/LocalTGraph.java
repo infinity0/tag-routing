@@ -53,11 +53,12 @@ public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 	}
 
 	/**
-	** Returns the set of tags for which itself, its out-arcs and its out-nodes
-	** have all been loaded.
+	** Returns all "complete" tags, ie. it, its out-arcs, and its out-nodes
+	** (and their arc- and node-attributes) have all been loaded. (This also
+	** includes tags that have been found to be non-existent in the remote
+	** structure.)
 	*/
 	public Set<T> getCompletedTags() {
-		// TODO HIGH this might need to contain tags that we have loaded, that are NOT part of the TGraph
 		return complete_immute;
 	}
 
@@ -86,6 +87,7 @@ public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 		if (node_map.K0Map().containsKey(subj)) { throw new IllegalStateException("already loaded tag " + subj); }
 		if (wgt == null) {
 			if (incoming.K0Map().containsKey(subj)) { throw new IOException("corrupt remote data: node " + subj + " has defined incoming-arcs but undefined node-weight"); }
+			complete.put(subj); // non-existent tags are "complete" by definition
 			// TODO HIGH this needs to be put somewhere else too
 			return;
 		}
