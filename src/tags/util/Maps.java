@@ -13,6 +13,7 @@ import java.util.Map.Entry;
 import java.util.AbstractSet;
 import java.util.AbstractMap;
 import java.util.HashSet;
+import java.util.HashMap;
 
 /**
 ** Utilities for {@link Map}s.
@@ -275,6 +276,39 @@ final public class Maps {
 			}
 
 		};
+	}
+
+	/**
+	** DOCUMENT.
+	*/
+	public static <K, V> MapBuilder<K, V> buildMap(final Map<K, V> map) {
+		return new MapBuilder<K, V>() {
+			@Override public MapBuilder<K, V> _(K key, V val) {
+				map.put(key, val);
+				return this;
+			}
+			@Override public Map<K, V> build() {
+				return map;
+			}
+		};
+	}
+
+	/**
+	** @see #buildMap(Map)
+	*/
+	public static <K, V> MapBuilder<K, V> buildHashMap() {
+		return buildMap(new HashMap<K, V>());
+	}
+
+	/**
+	** DOCUMENT.
+	*/
+	public static interface MapBuilder<K, V> {
+
+		public MapBuilder<K, V> _(K key, V val);
+
+		public Map<K, V> build();
+
 	}
 
 	/**

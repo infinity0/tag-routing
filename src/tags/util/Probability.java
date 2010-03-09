@@ -95,4 +95,8 @@ public class Probability /*extends Number TODO LOW*/ implements Comparable<Proba
 		return 1 + (int)(v^(v>>>32)); // 1 + Double.hashCode()
 	}
 
+	public static Probability p(double val) {
+		return new Probability(val);
+	}
+
 }

@@ -1,7 +1,4 @@
-- link everything together n' shiii
-- StoreControl should really be in the form of an asynchronous ObjectProcessor
-(3 days maybe)
-
+LocalIndex and LocalTGraph need to check for loops
 
 (cleanup)
 - review Maps.viewSubMap
