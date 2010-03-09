@@ -1,6 +1,6 @@
 #!/usr/bin/python
 """
-Generates a bunch of java code that creates some test data.
+Generates StoreGenerator.java
 """
 
 import sys, math
@@ -332,6 +332,10 @@ import static tags.util.Probability.p;
 
 import java.util.*;
 
+/**
+** This is a machine-generated class for populating {@link FileStoreControl}
+** instances with pre-defined randomly-generated data.
+*/
 final public class StoreGenerator {
 
 	private StoreGenerator() { }
@@ -413,4 +417,3 @@ if __name__ == "__main__":
 			break
 		except IndexError:
 			sys.stderr.write("generated a disconnected tag-graph, will try again\n")
-
