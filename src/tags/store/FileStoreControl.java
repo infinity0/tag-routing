@@ -74,7 +74,7 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 		Map<T, U2Map<T, A, W>> tgr;
 
 		tgr = map_tgr.get(addr);
-		if (tgr == null) { throw new IOException(); }
+		if (tgr == null) { throw new IOException("tgraph not available for: " + addr); }
 
 		//File fp = getFile(addr + ".tgr");
 		//throw new UnsupportedOperationException("not implemented");
@@ -86,7 +86,7 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 		U2Map<T, A, U> tgr_node;
 
 		tgr_node = map_tgr_node.get(addr);
-		if (tgr_node == null) { throw new IOException(); }
+		if (tgr_node == null) { throw new IOException("tgraph not available for: " + addr); }
 
 		//File fp = getFile(addr + ".tgr");
 		//throw new UnsupportedOperationException("not implemented");
@@ -98,7 +98,7 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 		Map<T, U2Map<A, A, W>> idx;
 
 		idx = map_idx.get(addr);
-		if (idx == null) { throw new IOException(); }
+		if (idx == null) { throw new IOException("index not available for: " + addr); }
 
 		//File fp = getFile(addr + ".idx");
 		//throw new UnsupportedOperationException("not implemented");

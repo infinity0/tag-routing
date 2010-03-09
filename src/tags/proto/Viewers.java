@@ -78,19 +78,19 @@ final public class Viewers {
 	}
 
 	@SuppressWarnings("unchecked") public static <T, A, U, W> MapViewer<LocalTGraph<T, A, U, W>, U2Map<T, A, U>> TGraphNodeMap() {
-		return (MapViewer<LocalTGraph<T, A, U, W>, U2Map<T, A, U>>)p_view_h;
+		return (MapViewer<LocalTGraph<T, A, U, W>, U2Map<T, A, U>>)g_view_n;
 	}
 
 	@SuppressWarnings("unchecked") public static <T, A, U, W> MapViewer<LocalTGraph<T, A, U, W>, U2Map<Arc<T, T>, Arc<T, A>, W>> TGraphArcMap() {
-		return (MapViewer<LocalTGraph<T, A, U, W>, U2Map<Arc<T, T>, Arc<T, A>, W>>)p_view_h;
+		return (MapViewer<LocalTGraph<T, A, U, W>, U2Map<Arc<T, T>, Arc<T, A>, W>>)g_view_a;
 	}
 
 	@SuppressWarnings("unchecked") public static <T, A, W> MapViewer<LocalIndex<T, A, W>, U2Map<Arc<T, A>, Arc<T, A>, W>> IndexArcMap() {
-		return (MapViewer<LocalIndex<T, A, W>, U2Map<Arc<T, A>, Arc<T, A>, W>>)p_view_h;
+		return (MapViewer<LocalIndex<T, A, W>, U2Map<Arc<T, A>, Arc<T, A>, W>>)h_view_a;
 	}
 
 	@SuppressWarnings("unchecked") public static <T, A> MapViewer<LocalTGraph<T, A, Probability, Probability>, U2Map<T, A, Entropy>> ProbabilityTGraphEntropyNodeMap() {
-		return (MapViewer<LocalTGraph<T, A, Probability, Probability>, U2Map<T, A, Entropy>>)p_view_h;
+		return (MapViewer<LocalTGraph<T, A, Probability, Probability>, U2Map<T, A, Entropy>>)pg_view_en;
 	}
 
 }

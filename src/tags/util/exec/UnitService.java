@@ -77,6 +77,10 @@ public class UnitService<S> {
 		return completed;
 	}
 
+	protected int execute(Runnable run, S next, DeferredMessage<?> ... dmsg) {
+		return execute(run, next, java.util.Arrays.asList(dmsg));
+	}
+
 	protected int execute(Runnable run, DeferredMessage<?> ... dmsg) {
 		return execute(run, this.state, java.util.Arrays.asList(dmsg));
 	}
@@ -86,7 +90,7 @@ public class UnitService<S> {
 	}
 
 	protected int execute(Runnable run, S next) {
-		return execute(run, next, null);
+		return execute(run, next, (Iterable<DeferredMessage<?>>)null);
 	}
 
 	protected int execute(Runnable run) {

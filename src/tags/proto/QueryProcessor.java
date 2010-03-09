@@ -78,6 +78,7 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 			routing.recv(Routing.MRecv.REQ_MORE_DATA);
 		} catch (MessageRejectedException e) {
 			// swallow it
+			System.out.println(e);
 		}
 	}
 

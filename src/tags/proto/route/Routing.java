@@ -44,7 +44,7 @@ import java.util.HashMap;
 public class Routing<T, A, W, S>
 extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.State, Routing.MRecv> {
 
-	public enum State { NEW, AWAIT_SEEDS, IDLE }
+	public enum State { NEW, AWAIT_SEEDS, AWAIT_ADDR_SCH, IDLE }
 	public enum MRecv { REQ_MORE_DATA, RECV_SEED_H, RECV_ADDR_SCH }
 
 	final protected IndexComposer<T, A, W, S> mod_idx_cmp;
@@ -77,7 +77,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 	}
 
 	@Override public synchronized void recv(MRecv msg) throws MessageRejectedException {
-		super.recv(msg);
+		//super.recv(msg);
 		switch (state) {
 		case NEW:
 			switch (msg) {
@@ -92,6 +92,14 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 			case RECV_SEED_H:
 				// init data structures etc. reset everything
 				source.setSeeds(proc.contact.getSeedIndexes());
+				state = State.AWAIT_ADDR_SCH;
+
+				return;
+			default: throw mismatchMsgRejEx(state, msg);
+			}
+		case AWAIT_ADDR_SCH:
+			switch (msg) {
+			case RECV_ADDR_SCH:
 				state = State.IDLE;
 
 				// TODO HIGH this is a hack
@@ -100,6 +108,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 						runLookups();
 					}
 				});
+
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
 			}

@@ -89,7 +89,13 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 			case RECV_SEED_G:
 				// init data structures etc. reset everything
 				source.setSeeds(proc.contact.getSeedTGraphs());
-				state = State.IDLE;
+
+				execute(new Runnable() {
+					@Override public void run() {
+						addSeedTag();
+						updateAddressScheme();
+					}
+				}, State.IDLE);
 
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
@@ -213,8 +219,8 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 		try {
 			// retrieve outgoing arcs of tag, in all sources
 			for (LocalTGraph<T, A, U, W> view: local.values()) {
-				assert view.nodeMap().K0Map().containsKey(tag);
 				srv.submit(Services.newTask(Lookup.make(view.addr, tag)));
+				assert view.nodeMap().K0Map().containsKey(tag);
 			}
 
 			do {
@@ -253,6 +259,38 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 			throw new RuntimeException(e); // FIXME HIGH
 		} finally {
 			srv.close();
+			srv_node.close();
+		}
+	}
+
+	protected void addSeedTag() {
+		Map<A, LocalTGraph<T, A, U, W>> local = source.localMap();
+		T tag = query.seed_tag;
+
+		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
+
+		try {
+			// retrieve outgoing arcs of tag, in all sources
+			for (LocalTGraph<T, A, U, W> view: local.values()) {
+				srv_node.submit(Services.newTask(NodeLookup.makeT(view.addr, tag)));
+			}
+
+			do {
+				// handle downloaded node-attributes
+				while (srv_node.hasComplete()) {
+					TaskResult<NodeLookup<T, A>, U, IOException> res = srv_node.reclaim();
+					LocalTGraph<T, A, U, W> view = local.get(res.getKey().tgr);
+					view.setNodeAttr(res.getKey().node, res.getValue());
+				}
+
+				Thread.sleep(proc.interval);
+			} while (srv_node.hasPending());
+
+		} catch (InterruptedException e) {
+			throw new UnsupportedOperationException(e); // FIXME HIGH
+		} catch (IOException e) {
+			throw new RuntimeException(e); // FIXME HIGH
+		} finally {
 			srv_node.close();
 		}
 	}

@@ -66,7 +66,9 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 				@Override public void run() {
 					makePTable();
 				}
-			}, Services.defer(proc.naming, Naming.MRecv.RECV_SEED_G), Services.defer(proc.routing, Routing.MRecv.RECV_SEED_H));
+			}, State.IDLE,
+			Services.defer(proc.routing, Routing.MRecv.RECV_SEED_H),
+			Services.defer(proc.naming, Naming.MRecv.RECV_SEED_G));
 
 			return;
 		case IDLE:
@@ -120,7 +122,7 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 			g.put(addr, mod_ptb_cmp.composePTableGNode(source, addr));
 		}
 		for (A addr: Maps.domain(MultiParts.iterIndexes(source.MapV0().values()))) {
-			g.put(addr, mod_ptb_cmp.composePTableHNode(source, addr));
+			h.put(addr, mod_ptb_cmp.composePTableHNode(source, addr));
 		}
 		return new PTable<A, S>(g, h);
 	}
