@@ -2,11 +2,11 @@
 package tags.util.exec;
 
 /**
-** Utilities for {@link Task}s.
+** Utilities for services, tasks, messages, etc.
 */
-final public class Tasks {
+final public class Services {
 
-	private Tasks() { }
+	private Services() { }
 
 	public static <M> DeferredMessage<M> defer(MessageReceiver<M> recv, M msg) {
 		return new DeferredMessage<M>(recv, msg);

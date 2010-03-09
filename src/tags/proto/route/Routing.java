@@ -9,7 +9,7 @@ import tags.util.ScoreInferer;
 
 import tags.util.exec.MessageReceiver;
 import tags.util.exec.MessageRejectedException;
-import tags.util.exec.Tasks;
+import tags.util.exec.Services;
 import tags.util.exec.TaskResult;
 import tags.util.exec.TaskService;
 import java.io.IOException;
@@ -82,7 +82,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		case NEW:
 			switch (msg) {
 			case REQ_MORE_DATA:
-				sendAtomic(State.AWAIT_SEEDS, Tasks.defer(proc.naming, tags.proto.name.Naming.MRecv.REQ_MORE_DATA));
+				sendAtomic(State.AWAIT_SEEDS, Services.defer(proc.naming, tags.proto.name.Naming.MRecv.REQ_MORE_DATA));
 
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
@@ -153,7 +153,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		try {
 			do {
 				while (pending < proc.parallel_idx_lku && !queue.isEmpty()) {
-					srv.submit(Tasks.newTask(queue.remove()));
+					srv.submit(Services.newTask(queue.remove()));
 					++pending;
 				}
 

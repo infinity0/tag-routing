@@ -103,9 +103,9 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 		return new tags.util.exec.UnthreadedTaskService<I, PTable<A, S>, IOException>() {
 			@Override protected TaskResult<I, PTable<A, S>, IOException> execute(Task<I> task) {
 				try {
-					return tags.util.exec.Tasks.newTaskResult(task, sctl.getPTable(task.getKey()), null);
+					return tags.util.exec.Services.newTaskResult(task, sctl.getPTable(task.getKey()), null);
 				} catch (IOException e) {
-					return tags.util.exec.Tasks.newTaskResult(task, null, e);
+					return tags.util.exec.Services.newTaskResult(task, null, e);
 				}
 			}
 		};
@@ -117,9 +117,9 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 			@Override protected TaskResult<TGraph.Lookup<T, A>, U2Map<T, A, W>, IOException> execute(Task<TGraph.Lookup<T, A>> task) {
 				TGraph.Lookup<T, A> lku = task.getKey();
 				try {
-					return tags.util.exec.Tasks.newTaskResult(task, sctl.getTGraphOutgoing(lku.tgr, lku.tag), null);
+					return tags.util.exec.Services.newTaskResult(task, sctl.getTGraphOutgoing(lku.tgr, lku.tag), null);
 				} catch (IOException e) {
-					return tags.util.exec.Tasks.newTaskResult(task, null, e);
+					return tags.util.exec.Services.newTaskResult(task, null, e);
 				}
 			}
 		};
@@ -131,9 +131,9 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 			@Override protected TaskResult<TGraph.NodeLookup<T, A>, U, IOException> execute(Task<TGraph.NodeLookup<T, A>> task) {
 				TGraph.NodeLookup<T, A> lku = task.getKey();
 				try {
-					return tags.util.exec.Tasks.newTaskResult(task, sctl.getTGraphNodeAttr(lku.tgr, lku.node), null);
+					return tags.util.exec.Services.newTaskResult(task, sctl.getTGraphNodeAttr(lku.tgr, lku.node), null);
 				} catch (IOException e) {
-					return tags.util.exec.Tasks.newTaskResult(task, null, e);
+					return tags.util.exec.Services.newTaskResult(task, null, e);
 				}
 			}
 		};
@@ -145,9 +145,9 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 			@Override protected TaskResult<Index.Lookup<T, A>, U2Map<A, A, W>, IOException> execute(Task<Index.Lookup<T, A>> task) {
 				Index.Lookup<T, A> lku = task.getKey();
 				try {
-					return tags.util.exec.Tasks.newTaskResult(task, sctl.getIndexOutgoing(lku.idx, lku.tag), null);
+					return tags.util.exec.Services.newTaskResult(task, sctl.getIndexOutgoing(lku.idx, lku.tag), null);
 				} catch (IOException e) {
-					return tags.util.exec.Tasks.newTaskResult(task, null, e);
+					return tags.util.exec.Services.newTaskResult(task, null, e);
 				}
 			}
 		};

@@ -15,7 +15,7 @@ public class UnitService<S> {
 	protected boolean active;
 	protected int completed;
 
-	protected Exception last_ex;
+	volatile protected Exception last_ex;
 
 	public UnitService(S state, Executor exec) {
 		this.state = state;
@@ -56,6 +56,7 @@ public class UnitService<S> {
 					run.run();
 				} catch (RuntimeException e) {
 					last_ex = e; // TODO NORM make some better way of handling this
+					throw e;
 				}
 				synchronized(UnitService.this) {
 					state = next;

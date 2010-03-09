@@ -9,7 +9,7 @@ import tags.proto.route.Routing;
 
 import tags.util.exec.MessageReceiver;
 import tags.util.exec.MessageRejectedException;
-import tags.util.exec.Tasks;
+import tags.util.exec.Services;
 import tags.util.exec.TaskResult;
 import tags.util.exec.TaskService;
 import java.io.IOException;
@@ -66,7 +66,7 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 				@Override public void run() {
 					makePTable();
 				}
-			}, Tasks.defer(proc.naming, Naming.MRecv.RECV_SEED_G), Tasks.defer(proc.routing, Routing.MRecv.RECV_SEED_H));
+			}, Services.defer(proc.naming, Naming.MRecv.RECV_SEED_G), Services.defer(proc.routing, Routing.MRecv.RECV_SEED_H));
 
 			return;
 		case IDLE:
@@ -87,7 +87,7 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 		try {
 			Map<I, Z> id_score = proc.getTrustedIDs();
 
-			for (I id: id_score.keySet()) { srv.submit(Tasks.newTask(id)); }
+			for (I id: id_score.keySet()) { srv.submit(Services.newTask(id)); }
 			do {
 				while (srv.hasComplete()) {
 					TaskResult<I, PTable<A, S>, IOException> res = srv.reclaim();

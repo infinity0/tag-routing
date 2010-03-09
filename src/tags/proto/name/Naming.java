@@ -9,7 +9,7 @@ import tags.util.ScoreInferer;
 
 import tags.util.exec.MessageReceiver;
 import tags.util.exec.MessageRejectedException;
-import tags.util.exec.Tasks;
+import tags.util.exec.Services;
 import tags.util.exec.TaskResult;
 import tags.util.exec.TaskService;
 import java.io.IOException;
@@ -79,7 +79,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 		case NEW:
 			switch (msg) {
 			case REQ_MORE_DATA:
-				sendAtomic(State.AWAIT_SEEDS, Tasks.defer(proc.contact, tags.proto.cont.Contact.MRecv.REQ_MORE_DATA));
+				sendAtomic(State.AWAIT_SEEDS, Services.defer(proc.contact, tags.proto.cont.Contact.MRecv.REQ_MORE_DATA));
 
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
@@ -104,7 +104,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 							addTagAndComplete(scheme.getIncomplete());
 							updateAddressScheme();
 						}
-					}, Tasks.defer(proc.routing, tags.proto.route.Routing.MRecv.RECV_ADDR_SCH));
+					}, Services.defer(proc.routing, tags.proto.route.Routing.MRecv.RECV_ADDR_SCH));
 
 				} else if (scheme.getNearestTGraph() != null) {
 					// add a tgraph as a data source
@@ -113,7 +113,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 							addDataSourceAndComplete(scheme.getNearestTGraph());
 							updateAddressScheme();
 						}
-					}, Tasks.defer(proc.routing, tags.proto.route.Routing.MRecv.RECV_ADDR_SCH));
+					}, Services.defer(proc.routing, tags.proto.route.Routing.MRecv.RECV_ADDR_SCH));
 
 				} else {
 					// nothing to do, pass request onto contact layer
@@ -140,9 +140,9 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 
 		try {
 			for (T tag: old_complete) {
-				srv.submit(Tasks.newTask(Lookup.make(addr, tag)));
+				srv.submit(Services.newTask(Lookup.make(addr, tag)));
 				NodeLookup<T, A> lku = NodeLookup.makeT(addr, tag);
-				srv_node.submit(Tasks.newTask(lku));
+				srv_node.submit(Services.newTask(lku));
 				submitted.add(lku.node);
 			}
 
@@ -183,7 +183,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 						// don't submit same node twice
 						if (submitted.contains(u2)) { continue; }
 						submitted.add(u2);
-						srv_node.submit(Tasks.newTask(NodeLookup.make(addr, u2)));
+						srv_node.submit(Services.newTask(NodeLookup.make(addr, u2)));
 					}
 				}
 
@@ -214,7 +214,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 			// retrieve outgoing arcs of tag, in all sources
 			for (LocalTGraph<T, A, U, W> view: local.values()) {
 				assert view.nodeMap().K0Map().containsKey(tag);
-				srv.submit(Tasks.newTask(Lookup.make(view.addr, tag)));
+				srv.submit(Services.newTask(Lookup.make(view.addr, tag)));
 			}
 
 			do {
@@ -240,7 +240,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 						// don't submit same node twice
 						if (submitted.contains(u2)) { continue; }
 						submitted.add(u2);
-						srv_node.submit(Tasks.newTask(NodeLookup.make(view.addr, u2)));
+						srv_node.submit(Services.newTask(NodeLookup.make(view.addr, u2)));
 					}
 				}
 
