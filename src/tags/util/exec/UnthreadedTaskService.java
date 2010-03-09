@@ -37,6 +37,17 @@ abstract public class UnthreadedTaskService<K, V, X extends Exception> implement
 		// TODO NORM have a "close state"
 	}
 
-	abstract protected TaskResult<K, V, X> execute(Task<K> task);
+	@SuppressWarnings("unchecked")
+	protected TaskResult<K, V, X> execute(Task<K> task) {
+		try {
+			return Services.newTaskResult(task, getResultFor(task.getKey()), null);
+		} catch (RuntimeException e) {
+			throw e;
+		} catch (Exception e) {
+			return Services.newTaskResult(task, null, (X)e);
+		}
+	}
+
+	abstract protected V getResultFor(K key) throws X;
 
 }

@@ -18,13 +18,19 @@ import tags.util.exec.MessageRejectedException;
 abstract public class LayerService<Q extends Query, P extends QueryProcessor, S, M>
 extends UnitService<S> implements MessageReceiver<M> {
 
+	final String name;
 	final protected Q query;
 	final protected P proc;
 
-	public LayerService(Q query, P proc, S state) {
+	public LayerService(String name, Q query, P proc, S state) {
 		super(state, proc.exec);
+		this.name = name;
 		this.query = query;
 		this.proc = proc;
+	}
+
+	public LayerService(Q query, P proc, S state) {
+		this("?", query, proc, state);
 	}
 
 	@Override public synchronized void recv(M msg) throws MessageRejectedException {
@@ -36,7 +42,7 @@ extends UnitService<S> implements MessageReceiver<M> {
 	}
 
 	public String getStatus() {
-		return (last_ex == null? (active?'A':'I'): 'E') + " | " + completed + " | " + state	;
+		return name + " || " + (last_ex == null? (active?'A':'I'): 'E') + " | " + completed + " | " + state	;
 	}
 
 }

@@ -101,12 +101,8 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 	public TaskService<I, PTable<A, S>, IOException> newPTableService() {
 		// TODO HIGH better implementation than this
 		return new tags.util.exec.UnthreadedTaskService<I, PTable<A, S>, IOException>() {
-			@Override protected TaskResult<I, PTable<A, S>, IOException> execute(Task<I> task) {
-				try {
-					return tags.util.exec.Services.newTaskResult(task, sctl.getPTable(task.getKey()), null);
-				} catch (IOException e) {
-					return tags.util.exec.Services.newTaskResult(task, null, e);
-				}
+			@Override protected PTable<A, S> getResultFor(I id) throws IOException {
+				return sctl.getPTable(id);
 			}
 		};
 	}
@@ -114,13 +110,8 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 	public TaskService<TGraph.Lookup<T, A>, U2Map<T, A, W>, IOException> newTGraphService() {
 		// TODO HIGH better implementation than this
 		return new tags.util.exec.UnthreadedTaskService<TGraph.Lookup<T, A>, U2Map<T, A, W>, IOException>() {
-			@Override protected TaskResult<TGraph.Lookup<T, A>, U2Map<T, A, W>, IOException> execute(Task<TGraph.Lookup<T, A>> task) {
-				TGraph.Lookup<T, A> lku = task.getKey();
-				try {
-					return tags.util.exec.Services.newTaskResult(task, sctl.getTGraphOutgoing(lku.tgr, lku.tag), null);
-				} catch (IOException e) {
-					return tags.util.exec.Services.newTaskResult(task, null, e);
-				}
+			@Override protected U2Map<T, A, W> getResultFor(TGraph.Lookup<T, A> lku) throws IOException {
+				return sctl.getTGraphOutgoing(lku.tgr, lku.tag);
 			}
 		};
 	}
@@ -128,13 +119,8 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 	public TaskService<TGraph.NodeLookup<T, A>, U, IOException> newTGraphNodeService() {
 		// TODO HIGH better implementation than this
 		return new tags.util.exec.UnthreadedTaskService<TGraph.NodeLookup<T, A>, U, IOException>() {
-			@Override protected TaskResult<TGraph.NodeLookup<T, A>, U, IOException> execute(Task<TGraph.NodeLookup<T, A>> task) {
-				TGraph.NodeLookup<T, A> lku = task.getKey();
-				try {
-					return tags.util.exec.Services.newTaskResult(task, sctl.getTGraphNodeAttr(lku.tgr, lku.node), null);
-				} catch (IOException e) {
-					return tags.util.exec.Services.newTaskResult(task, null, e);
-				}
+			@Override protected U getResultFor(TGraph.NodeLookup<T, A> lku) throws IOException {
+				return sctl.getTGraphNodeAttr(lku.tgr, lku.node);
 			}
 		};
 	}
@@ -142,13 +128,8 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 	public TaskService<Index.Lookup<T, A>, U2Map<A, A, W>, IOException> newIndexService() {
 		// TODO HIGH better implementation than this
 		return new tags.util.exec.UnthreadedTaskService<Index.Lookup<T, A>, U2Map<A, A, W>, IOException>() {
-			@Override protected TaskResult<Index.Lookup<T, A>, U2Map<A, A, W>, IOException> execute(Task<Index.Lookup<T, A>> task) {
-				Index.Lookup<T, A> lku = task.getKey();
-				try {
-					return tags.util.exec.Services.newTaskResult(task, sctl.getIndexOutgoing(lku.idx, lku.tag), null);
-				} catch (IOException e) {
-					return tags.util.exec.Services.newTaskResult(task, null, e);
-				}
+			@Override protected U2Map<A, A, W> getResultFor(Index.Lookup<T, A> lku) throws IOException {
+				return sctl.getIndexOutgoing(lku.idx, lku.tag);
 			}
 		};
 	}

@@ -52,7 +52,7 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 		QueryProcessor<I, ?, A, ?, ?, S, Z> proc,
 		PTableComposer<I, A, S, Z> mod_ptb_cmp
 	) {
-		super(query, proc, State.NEW);
+		super("C", query, proc, State.NEW);
 		if (mod_ptb_cmp == null) { throw new NullPointerException(); }
 		this.mod_ptb_cmp = mod_ptb_cmp;
 		this.source = Maps.convoluteStrict(new HashMap<I, PTable<A, S>>(), new HashMap<I, Z>(), Maps.BaseMapX2.Inclusion.EQUAL);
@@ -91,6 +91,7 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 			do {
 				while (srv.hasComplete()) {
 					TaskResult<I, PTable<A, S>, IOException> res = srv.reclaim();
+					if (res.getValue() == null) { throw new NullPointerException(); }
 					source.putX2(res.getKey(), res.getValue(), id_score.get(res.getKey()));
 				}
 
@@ -114,6 +115,7 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 	*/
 	protected PTable<A, S> composePTable() {
 		Map<A, S> g = new HashMap<A, S>(), h = new HashMap<A, S>();
+		// for (Map.Entry<I, PTable<A, S>> en: source.MapV0().entrySet()) { System.out.println(en); }
 		for (A addr: Maps.domain(MultiParts.iterTGraphs(source.MapV0().values()))) {
 			g.put(addr, mod_ptb_cmp.composePTableGNode(source, addr));
 		}

@@ -33,7 +33,7 @@ final public class Services {
 
 		public BaseTaskResult(K key, V val, X err) {
 			this(key);
-			if (err != null) {
+			if (err == null) {
 				setValue(val);
 			} else {
 				setError(err);

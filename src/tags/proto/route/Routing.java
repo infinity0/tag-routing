@@ -67,7 +67,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		LocalViewFactory<A, LocalIndex<T, A, W>> view_fac,
 		ScoreInferer<S> score_inf
 	) {
-		super(query, proc, State.NEW);
+		super("R", query, proc, State.NEW);
 		if (mod_idx_cmp == null) { throw new NullPointerException(); }
 		if (mod_lku_scr == null) { throw new NullPointerException(); }
 		this.mod_idx_cmp = mod_idx_cmp;

@@ -65,7 +65,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 		LocalViewFactory<A, LocalTGraph<T, A, U, W>> view_fac,
 		ScoreInferer<S> score_inf
 	) {
-		super(query, proc, State.NEW);
+		super("N", query, proc, State.NEW);
 		if (mod_tgr_cmp == null) { throw new NullPointerException(); }
 		if (mod_asc_bld == null) { throw new NullPointerException(); }
 		this.mod_tgr_cmp = mod_tgr_cmp;
