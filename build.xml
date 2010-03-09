@@ -45,6 +45,7 @@
 	</target>
 
 	<target name="build-test" depends="build" unless="skip_tests">
+		<!--<exec executable="./generate.py" outputproperty="sctl_gen.out" errorproperty="sctl_gen.err" />-->
 		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on">
 			<classpath>
 				<path refid="lib.path"/>
@@ -105,8 +106,7 @@
 	</target>
 
 	<target name="doc">
-		<exec executable="./build-doc.sh">
-		</exec>
+		<exec executable="./build-doc.sh" />
 	</target>
 
 	<target name="dist" depends="clean,jar">

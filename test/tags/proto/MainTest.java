@@ -57,22 +57,6 @@ public class MainTest extends TestCase {
 		};
 	}
 
-	public Maps.MapBuilder<Long, Probability> bHM() {
-		return Maps.<Long, Probability>buildHashMap();
-	}
-
-	public Maps.MapBuilder<String, Probability> bHS() {
-		return Maps.<String, Probability>buildHashMap();
-	}
-
-	public U2Map<Long, Long, Probability> uDH(Map<Long, Probability> m0, Map<Long, Probability> m1) {
-		return Maps.uniteDisjoint(m0, m1);
-	}
-
-	public U2Map<String, Long, Probability> uDG(Map<String, Probability> m0, Map<Long, Probability> m1) {
-		return Maps.uniteDisjoint(m0, m1);
-	}
-
 	public void testProbabilityQueryProcessor() {
 		Executor exec = new ThreadPoolExecutor(
 			0x40, 0x40, 1, TimeUnit.SECONDS,
@@ -82,6 +66,8 @@ public class MainTest extends TestCase {
 		Query<Long, String> query = new Query<Long, String>(0x0006L, "test");
 		FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl =
 		new FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability>(".");
+
+		StoreGenerator.sctl_gen_all(sctl);
 
 		DefaultQP proc = new DefaultQP(query, sctl,
 			new ProtoPTableComposer<Long, Long>(),

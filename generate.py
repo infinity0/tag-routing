@@ -281,37 +281,108 @@ def main(argv):
 	obj_idx = make_idx(256, item_tag, net_idx, item_doc)
 	obj_ptb, obj_frn = make_ptb(32, obj_tgr, obj_idx)
 
-	for (id, tgr) in obj_tgr.iteritems(): jprint_tgr(id, tgr, prob_tag, prob_tgr)
-	for (id, idx) in obj_idx.iteritems(): jprint_idx(id, idx)
-	for (id, ptb) in obj_ptb.iteritems(): jprint_ptb(id, ptb)
-	for (id, frn) in obj_frn.iteritems(): jprint_frn(id, frn)
+	print jclass(obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr),
 
 
-def jprint_tgr(id, tgr, prob_tag, prob_tgr):
-	print "sctl.map_tgr_node.put(%sL, uDG(bHS().%sbuild(), bHM().%sbuild()));" % (id,
+def jmethod_def(s):
+	return "public static void sctl_gen_%s(FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl)" % s
+
+def jmethod_chain(s, n):
+	return "		sctl_gen_%s%s(sctl);\n	}\n	%s {" % (s, n, jmethod_def("%s%s" % (s, n)))
+
+def jcode_tgr(id, tgr, prob_tag, prob_tgr):
+	return "		sctl.map_tgr_node.put(%sL, uDG(bHS().%sbuild(), bHM().%sbuild()));\
+\n		sctl.map_tgr.put(%sL, Maps.<String, U2Map<String, Long, Probability>>buildHashMap().%sbuild());\n" % (
+		id,
 		"".join(["_(\"%s\", p(%s))." % (k, prob_tag[k]) if type_match(TAG, k) else "" for k in tgr.keys()]),
-		"".join(["_(%sL, p(%s))." % (k, prob_tgr[k]) if type_match(TGR, k) else "" for k in tgr.keys()]))
-	print "sctl.map_tgr.put(%sL, Maps.<String, U2Map<String, Long, Probability>>buildHashMap().%sbuild());" % (id,
+		"".join(["_(%sL, p(%s))." % (k, prob_tgr[k]) if type_match(TGR, k) else "" for k in tgr.keys()]),
+		id,
 		"" .join(["_(\"%s\", uDG(bHS().%sbuild(), bHM().%sbuild()))." % (t,
 			"".join(["_(\"%s\", p(%s))." % (k, v) if type_match(TAG, k) else "" for k, v in out.iteritems()]),
-			"".join(["_(%sL, p(%s))." % (k, v) if type_match(TGR, k) else "" for k, v in out.iteritems()])
-		) for t, out in tgr.iteritems()]))
+			"".join(["_(%sL, p(%s))." % (k, v) if type_match(TGR, k) else "" for k, v in out.iteritems()]))
+			for t, out in tgr.iteritems()]
+		)
+	)
 
-def jprint_idx(id, idx):
-	print "sctl.map_idx.put(%sL, Maps.<String, U2Map<Long, Long, Probability>>buildHashMap().%sbuild());" % (id,
+def jcode_idx(id, idx):
+	return "		sctl.map_idx.put(%sL, Maps.<String, U2Map<Long, Long, Probability>>buildHashMap().%sbuild());\n" % (id,
 		"" .join(["_(\"%s\", uDH(bHM().%sbuild(), bHM().%sbuild()))." % (t,
 			"".join(["_(%sL, p(%s))." % (k, v) if type_match(DOC, k) else "" for k, v in out.iteritems()]),
 			"".join(["_(%sL, p(%s))." % (k, v) if type_match(IDX, k) else "" for k, v in out.iteritems()])
 		) for t, out in idx.iteritems()]))
 
-def jprint_ptb(id, ptb):
-	print "sctl.map_ptab.put(%sL, new PTable<Long, Probability>(bHM().%sbuild(), bHM().%sbuild()));" % (id,
+def jcode_ptb(id, ptb):
+	return "		sctl.map_ptab.put(%sL, new PTable<Long, Probability>(bHM().%sbuild(), bHM().%sbuild()));\n" % (id,
 		"".join(["_(%sL, p(%s))." % (k, v) if type_match(TGR, k) else "" for k, v in ptb.iteritems()]),
 		"".join(["_(%sL, p(%s))." % (k, v) if type_match(IDX, k) else "" for k, v in ptb.iteritems()]))
 
-def jprint_frn(id, frn):
-	print "sctl.map_fr.put(%sL, bHM().%sbuild());" % (id,
+def jcode_frn(id, frn):
+	return "		sctl.map_fr.put(%sL, bHM().%sbuild());\n" % (id,
 		"".join(["_(%sL, p(%s))." % (k, v) for k, v in frn.iteritems()]))
+
+
+def jclass(obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr):
+	return """// Released under GPLv2 or later. See http://www.gnu.org/ for details.
+package tags.store;
+
+import tags.proto.*;
+import tags.util.*;
+import tags.util.Maps.U2Map;
+import static tags.util.Probability.p;
+
+import java.util.*;
+
+final public class StoreGenerator {
+
+	private StoreGenerator() { }
+
+	public static Maps.MapBuilder<Long, Probability> bHM() {
+		return Maps.<Long, Probability>buildHashMap();
+	}
+
+	public static Maps.MapBuilder<String, Probability> bHS() {
+		return Maps.<String, Probability>buildHashMap();
+	}
+
+	public static U2Map<Long, Long, Probability> uDH(Map<Long, Probability> m0, Map<Long, Probability> m1) {
+		return Maps.uniteDisjoint(m0, m1);
+	}
+
+	public static U2Map<String, Long, Probability> uDG(Map<String, Probability> m0, Map<Long, Probability> m1) {
+		return Maps.uniteDisjoint(m0, m1);
+	}
+
+	%s {
+		sctl_gen_idx(sctl);
+		sctl_gen_tgr(sctl);
+		sctl_gen_ptb(sctl);
+		sctl_gen_frn(sctl);
+	}
+
+	%s {
+%s	}
+
+	%s {
+%s	}
+
+	%s {
+%s	}
+
+	%s {
+%s	}
+
+}
+""" % (
+	jmethod_def("all"),
+	jmethod_def("tgr"),
+	"".join([jcode_tgr(id, tgr, prob_tag, prob_tgr) for (id, tgr) in obj_tgr.iteritems()]),
+	jmethod_def("idx"),
+	"".join([jcode_idx(id, idx) + jmethod_chain("idx", i/16) if i%16==0 and i/16>0 else jcode_idx(id, idx) for (i, (id, idx)) in enumerate(obj_idx.iteritems())]),
+	jmethod_def("ptb"),
+	"".join([jcode_ptb(id, ptb) for (id, ptb) in obj_ptb.iteritems()]),
+	jmethod_def("frn"),
+	"".join([jcode_frn(id, frn) for (id, frn) in obj_frn.iteritems()])
+	)
 
 
 def print_tgr(id, tgr, prob_tag, prob_tgr, pre="    "):
