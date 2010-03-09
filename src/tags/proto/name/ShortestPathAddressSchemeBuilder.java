@@ -36,7 +36,7 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 	@Override public AddressScheme<T, A, W> buildAddressScheme(FullTGraph<T, A, U, W> graph, Set<T> completed, final T seed) {
 		ProtoAddressScheme<T, A, W> scheme = new ProtoAddressScheme<T, A, W>(seed, null);
 
-		U seedu = graph.nodeMap().get(seed);
+		U seedu = graph.nodeMap().K0Map().get(seed);
 		if (seedu == null) {
 			throw new IllegalArgumentException("seed " + seed + " is not in the given graph");
 		}
@@ -86,7 +86,9 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 
 			// tag is not fully loaded, set as incomplete
 			if (!completed.contains(tag)) {
-				scheme.pushNode(node, parent, null);
+				if (!tag.equals(seed)) {
+					scheme.pushNode(node, parent, null);
+				}
 				scheme.setIncomplete();
 				break;
 			}

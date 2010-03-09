@@ -95,7 +95,8 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 						addSeedTag();
 						updateAddressScheme();
 					}
-				}, State.IDLE);
+				}, State.IDLE,
+				Services.defer(proc.routing, tags.proto.route.Routing.MRecv.RECV_ADDR_SCH));
 
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
@@ -216,6 +217,8 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
 		Set<U2<T, A>> submitted = new HashSet<U2<T, A>>();
 
+		assert !getCompletedTags().contains(tag);
+
 		try {
 			// retrieve outgoing arcs of tag, in all sources
 			for (LocalTGraph<T, A, U, W> view: local.values()) {
@@ -252,6 +255,8 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 
 				Thread.sleep(proc.interval);
 			} while (srv.hasPending() || srv_node.hasPending());
+
+			assert getCompletedTags().contains(tag);
 
 		} catch (InterruptedException e) {
 			throw new UnsupportedOperationException(e); // FIXME HIGH

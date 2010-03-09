@@ -53,6 +53,10 @@ final public class Union {
 			return val.hashCode() + 1 + type;
 		}
 
+		@Override public String toString() {
+			return "<" + val + ">";
+		}
+
 	}
 
 	/**
