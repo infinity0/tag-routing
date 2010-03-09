@@ -36,7 +36,7 @@ extends UnitService<S> implements MessageReceiver<M> {
 	}
 
 	public String getStatus() {
-		return "active: " + (last_ex == null? (active?'T':'F'): 'E') + " | completed: " + completed + " | state: " + state	;
+		return (last_ex == null? (active?'A':'I'): 'E') + " | " + completed + " | " + state	;
 	}
 
 }

@@ -65,15 +65,9 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 			execute(new Runnable() {
 				@Override public void run() {
 					makePTable();
-					try {
-						proc.naming.recv(Naming.MRecv.RECV_SEED_G);
-						proc.routing.recv(Routing.MRecv.RECV_SEED_H);
-
-					} catch (MessageRejectedException e) {
-						throw new RuntimeException(e); // FIXME HIGH
-					}
 				}
-			}, State.IDLE);
+			}, Tasks.defer(proc.naming, Naming.MRecv.RECV_SEED_G), Tasks.defer(proc.routing, Routing.MRecv.RECV_SEED_H));
+
 			return;
 		case IDLE:
 			throw new MessageRejectedException("not implemented");
@@ -81,11 +75,11 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 	}
 
 	public Map<A, S> getSeedTGraphs() {
-		return table.getTGraphs();
+		return table == null? null: table.getTGraphs();
 	}
 
 	public Map<A, S> getSeedIndexes() {
-		return table.getIndexes();
+		return table == null? null: table.getIndexes();
 	}
 
 	protected void makePTable() {

@@ -79,8 +79,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 		case NEW:
 			switch (msg) {
 			case REQ_MORE_DATA:
-				proc.contact.recv(tags.proto.cont.Contact.MRecv.REQ_MORE_DATA);
-				state = State.AWAIT_SEEDS;
+				sendAtomic(State.AWAIT_SEEDS, Tasks.defer(proc.contact, tags.proto.cont.Contact.MRecv.REQ_MORE_DATA));
 
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
@@ -104,13 +103,8 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 						@Override public void run() {
 							addTagAndComplete(scheme.getIncomplete());
 							updateAddressScheme();
-							try {
-								proc.routing.recv(tags.proto.route.Routing.MRecv.RECV_ADDR_SCH);
-							} catch (MessageRejectedException e) {
-								throw new RuntimeException(e); // FIXME HIGH
-							}
 						}
-					}, State.IDLE);
+					}, Tasks.defer(proc.routing, tags.proto.route.Routing.MRecv.RECV_ADDR_SCH));
 
 				} else if (scheme.getNearestTGraph() != null) {
 					// add a tgraph as a data source
@@ -118,13 +112,8 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 						@Override public void run() {
 							addDataSourceAndComplete(scheme.getNearestTGraph());
 							updateAddressScheme();
-							try {
-								proc.routing.recv(tags.proto.route.Routing.MRecv.RECV_ADDR_SCH);
-							} catch (MessageRejectedException e) {
-								throw new RuntimeException(e); // FIXME HIGH
-							}
 						}
-					}, State.IDLE);
+					}, Tasks.defer(proc.routing, tags.proto.route.Routing.MRecv.RECV_ADDR_SCH));
 
 				} else {
 					// nothing to do, pass request onto contact layer

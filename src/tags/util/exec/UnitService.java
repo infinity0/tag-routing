@@ -15,7 +15,7 @@ public class UnitService<S> {
 	protected boolean active;
 	protected int completed;
 
-	protected RuntimeException last_ex;
+	protected Exception last_ex;
 
 	public UnitService(S state, Executor exec) {
 		this.state = state;
@@ -43,7 +43,7 @@ public class UnitService<S> {
 	** @throws IllegalStateException if a job is already running, or if the
 	**         last job completed abruptly
 	*/
-	protected synchronized int execute(final Runnable run, final S next) {
+	protected synchronized int execute(final Runnable run, final S next, final Iterable<DeferredMessage<?>> dmsg) {
 		if (active) {
 			throw new IllegalStateException("already running a job");
 		}
@@ -62,14 +62,49 @@ public class UnitService<S> {
 					++completed;
 					active = false;
 				}
+				if (dmsg == null) { return; }
+				for (DeferredMessage<?> d: dmsg) {
+					try {
+						d.send();
+					} catch (MessageRejectedException e) {
+						last_ex = e;
+					}
+				}
 			}
 		});
 		active = true;
 		return completed;
 	}
 
+	protected int execute(Runnable run, DeferredMessage<?> ... dmsg) {
+		return execute(run, this.state, java.util.Arrays.asList(dmsg));
+	}
+
+	protected int execute(Runnable run, Iterable<DeferredMessage<?>> dmsg) {
+		return execute(run, this.state, dmsg);
+	}
+
+	protected int execute(Runnable run, S next) {
+		return execute(run, next, null);
+	}
+
 	protected int execute(Runnable run) {
 		return execute(run, state);
+	}
+
+	/**
+	** Sets the next state and then sends the message, reverting the state
+	** if the send fails.
+	*/
+	protected synchronized void sendAtomic(S next, DeferredMessage<?> dmsg) throws MessageRejectedException {
+		S old = this.state;
+		this.state = next;
+		try {
+			dmsg.send();
+		} catch (MessageRejectedException e) {
+			this.state = old;
+			throw e;
+		}
 	}
 
 }

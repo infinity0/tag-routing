@@ -82,8 +82,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		case NEW:
 			switch (msg) {
 			case REQ_MORE_DATA:
-				proc.naming.recv(tags.proto.name.Naming.MRecv.REQ_MORE_DATA);
-				state = State.AWAIT_SEEDS;
+				sendAtomic(State.AWAIT_SEEDS, Tasks.defer(proc.naming, tags.proto.name.Naming.MRecv.REQ_MORE_DATA));
 
 				return;
 			default: throw mismatchMsgRejEx(state, msg);

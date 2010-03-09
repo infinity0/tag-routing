@@ -8,6 +8,10 @@ final public class Tasks {
 
 	private Tasks() { }
 
+	public static <M> DeferredMessage<M> defer(MessageReceiver<M> recv, M msg) {
+		return new DeferredMessage<M>(recv, msg);
+	}
+
 	public static <K> Task<K> newTask(K key) {
 		return new BaseTaskResult<K, Object, Exception>(key);
 	}
