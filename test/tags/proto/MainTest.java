@@ -9,13 +9,10 @@ import tags.proto.route.*;
 import tags.store.*;
 import tags.util.*;
 import tags.util.exec.*;
-import tags.util.Maps.U2Map;
 
 import java.util.concurrent.*;
 import java.util.*;
 import java.io.IOException;
-
-import static tags.util.Probability.p;
 
 public class MainTest extends TestCase {
 

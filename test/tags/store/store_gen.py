@@ -288,7 +288,7 @@ def jmethod_def(s):
 	return "public static void sctl_gen_%s(FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl)" % s
 
 def jmethod_chain(s, n):
-	return "		sctl_gen_%s%s(sctl);\n	}\n	%s {" % (s, n, jmethod_def("%s%s" % (s, n)))
+	return "		sctl_gen_%s%s(sctl);\n	}\n\n	%s {" % (s, n, jmethod_def("%s%s" % (s, n)))
 
 def jcode_tgr(id, tgr, prob_tag, prob_tgr):
 	return "		sctl.map_tgr_node.put(%sL, uDG(bHS().%sbuild(), bHM().%sbuild()));\
