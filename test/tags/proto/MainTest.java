@@ -60,11 +60,11 @@ public class MainTest extends TestCase {
 			new LinkedBlockingQueue<Runnable>(),
 			new ThreadPoolExecutor.CallerRunsPolicy()
 		);
-		Query<Long, String> query = new Query<Long, String>(0x0006L, "test");
 		FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl =
 		new FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability>(".");
-
 		StoreGenerator.sctl_gen_all(sctl);
+
+		Query<Long, String> query = new Query<Long, String>(8028L, "aacs");
 
 		DefaultQP proc = new DefaultQP(query, sctl,
 			new ProtoPTableComposer<Long, Long>(),

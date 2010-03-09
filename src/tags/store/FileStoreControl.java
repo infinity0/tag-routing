@@ -51,7 +51,7 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 		Map<I, Z> fr;
 
 		fr = map_fr.get(id);
-		if (fr == null) { throw new IOException(); }
+		if (fr == null) { throw new IOException("friend-list not available for: " + id); }
 
 		//File fp = getFile(id + ".fr");
 		//throw new UnsupportedOperationException("not implemented");
@@ -62,7 +62,7 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 		PTable<A, S> ptab;
 
 		ptab = map_ptab.get(id);
-		if (ptab == null) { throw new IOException(); }
+		if (ptab == null) { throw new IOException("ptable not available for: " + id); }
 
 		//File fp = getFile(id + ".ptab");
 		//throw new UnsupportedOperationException("not implemented");
