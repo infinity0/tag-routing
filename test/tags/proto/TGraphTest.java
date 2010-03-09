@@ -27,10 +27,9 @@ public class TGraphTest extends TestCase {
 			assertTrue(G.nodeMap().K0Map().size() == t);
 			assertTrue(G.nodeMap().K1Map().size() == g);
 
-			// FIXME NORM arcMap() not implemented yet
-			//assertTrue(G.arcMap().size() == tt+tg);
-			//assertTrue(G.arcMap().K0Map().size() == tt);
-			//assertTrue(G.arcMap().K1Map().size() == tg);
+			assertTrue(G.arcMap().size() == tt+tg);
+			assertTrue(G.arcMap().K0Map().size() == tt);
+			assertTrue(G.arcMap().K1Map().size() == tg);
 
 			int gtt = 0, gtg = 0;
 			for (String tag: G.nodeMap().K0Map().keySet()) {

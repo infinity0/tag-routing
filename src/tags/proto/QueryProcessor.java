@@ -8,6 +8,7 @@ import tags.proto.route.Routing;
 import tags.util.exec.Task;
 import tags.util.exec.TaskResult;
 import tags.util.exec.TaskService;
+import tags.util.exec.MessageRejectedException;
 import java.util.concurrent.Executor;
 import java.io.IOException;
 
@@ -70,6 +71,18 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 		this.contact = new Contact<I, A, S, Z>(query, this, mod_ptb_cmp);
 		this.naming = new Naming<T, A, U, W, S>(query, this, mod_tgr_cmp, mod_asc_bld, view_fac_g, score_inf_g);
 		this.routing = new Routing<T, A, W, S>(query, this, mod_idx_cmp, mod_lku_scr, view_fac_h, score_inf_h);
+	}
+
+	public void getMoreData() {
+		try {
+			routing.recv(Routing.MRecv.REQ_MORE_DATA);
+		} catch (MessageRejectedException e) {
+			// swallow it
+		}
+	}
+
+	public U2Map<A, A, W> getResults() {
+		return routing.getResults();
 	}
 
 	/**

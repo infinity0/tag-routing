@@ -31,8 +31,12 @@ extends UnitService<S> implements MessageReceiver<M> {
 		if (isActive()) { throw new MessageRejectedException("bad timing"); }
 	}
 
-	protected MessageRejectedException mismatchMsgRejEx(S state, M msg) {
+	protected static <S, M> MessageRejectedException mismatchMsgRejEx(S state, M msg) {
 		return new MessageRejectedException("invalid message " + msg + " for state " + state);
+	}
+
+	public String getStatus() {
+		return "active: " + (last_ex == null? (active?'T':'F'): 'E') + " | completed: " + completed + " | state: " + state	;
 	}
 
 }

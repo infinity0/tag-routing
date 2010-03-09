@@ -79,6 +79,15 @@ public class MainTest extends TestCase {
 			exec
 		);
 
+		while (proc.getResults() == null) {
+			proc.getMoreData();
+			System.out.println("------");
+			System.out.println(proc.contact.getStatus());
+			System.out.println(proc.naming.getStatus());
+			System.out.println(proc.routing.getStatus());
+			try { Thread.sleep(1000); } catch (InterruptedException e) { }
+		}
+
 		// TODO NOW do shit
 	}
 

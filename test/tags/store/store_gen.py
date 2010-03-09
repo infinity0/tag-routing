@@ -322,7 +322,7 @@ def jcode_frn(id, frn):
 
 
 def jclass(obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr):
-	return """// Released under GPLv2 or later. See http://www.gnu.org/ for details.
+	return '''// Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.store;
 
 import tags.proto.*;
@@ -376,7 +376,7 @@ final public class StoreGenerator {
 %s	}
 
 }
-""" % (
+''' % (
 	jmethod_def("all"),
 	jmethod_def("tgr"),
 	"".join([jcode_tgr(id, tgr, prob_tag, prob_tgr) for (id, tgr) in obj_tgr.iteritems()]),
