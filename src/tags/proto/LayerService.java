@@ -42,7 +42,7 @@ extends UnitService<S> implements MessageReceiver<M> {
 	}
 
 	public String getStatus() {
-		return name + " || " + (last_ex == null? (active?'A':'I'): 'E') + " | " + completed + " | " + state	;
+		return name + ": " + (last_ex == null? (active?'A':'I'): 'E') + " " + completed + " " + state;
 	}
 
 }

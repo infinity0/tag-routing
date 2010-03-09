@@ -142,7 +142,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 
 		TaskService<Lookup<T, A>, U2Map<T, A, W>, IOException> srv = proc.newTGraphService();
 		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
-		Set<U2<T, A>> submitted = new HashSet<U2<T, A>>();
+		Set<NodeLookup<T, A>> submitted = new HashSet<NodeLookup<T, A>>();
 		Map<T, U2Map<T, A, W>> outgoing = new HashMap<T, U2Map<T, A, W>>();
 
 		try {
@@ -150,7 +150,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 				srv.submit(Services.newTask(Lookup.make(addr, tag)));
 				NodeLookup<T, A> lku = NodeLookup.makeT(addr, tag);
 				srv_node.submit(Services.newTask(lku));
-				submitted.add(lku.node);
+				submitted.add(lku);
 			}
 
 			do {
@@ -187,10 +187,11 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 
 					// retrieve node-weights of all out-neighbours
 					for (U2<T, A> u2: out.keySet()) {
+						NodeLookup<T, A> lku = NodeLookup.make(view.addr, u2);
 						// don't submit same node twice
-						if (submitted.contains(u2)) { continue; }
-						submitted.add(u2);
-						srv_node.submit(Services.newTask(NodeLookup.make(addr, u2)));
+						if (submitted.contains(lku)) { continue; }
+						submitted.add(lku);
+						srv_node.submit(Services.newTask(lku));
 					}
 				}
 
@@ -215,15 +216,18 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 
 		TaskService<Lookup<T, A>, U2Map<T, A, W>, IOException> srv = proc.newTGraphService();
 		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
-		Set<U2<T, A>> submitted = new HashSet<U2<T, A>>();
+		Set<NodeLookup<T, A>> submitted = new HashSet<NodeLookup<T, A>>();
 
-		assert !getCompletedTags().contains(tag);
+		if (getCompletedTags().contains(tag)) { return; }
 
 		try {
 			// retrieve outgoing arcs of tag, in all sources
 			for (LocalTGraph<T, A, U, W> view: local.values()) {
-				srv.submit(Services.newTask(Lookup.make(view.addr, tag)));
-				assert view.nodeMap().K0Map().containsKey(tag);
+				if (view.nodeMap().K0Map().containsKey(tag)) {
+					srv.submit(Services.newTask(Lookup.make(view.addr, tag)));
+				} else {
+					assert view.getCompletedTags().contains(tag);
+				}
 			}
 
 			do {
@@ -246,17 +250,24 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 
 					// retrieve node-weights of all out-neighbours
 					for (U2<T, A> u2: out.keySet()) {
+						NodeLookup<T, A> lku = NodeLookup.make(view.addr, u2);
 						// don't submit same node twice
-						if (submitted.contains(u2)) { continue; }
-						submitted.add(u2);
-						srv_node.submit(Services.newTask(NodeLookup.make(view.addr, u2)));
+						if (submitted.contains(lku)) { continue; }
+						submitted.add(lku);
+						srv_node.submit(Services.newTask(lku));
 					}
 				}
 
 				Thread.sleep(proc.interval);
 			} while (srv.hasPending() || srv_node.hasPending());
 
-			assert getCompletedTags().contains(tag);
+			try{
+				assert getCompletedTags().contains(tag);
+			} catch (AssertionError e) {
+				for (LocalTGraph<T, A, U, W> view: local.values()) {
+					System.out.println(view.addr + " " + view.getCompletedTags() + " " + view.nodeMap() + "\n" + view.arcMap());
+				}
+			}
 
 		} catch (InterruptedException e) {
 			throw new UnsupportedOperationException(e); // FIXME HIGH

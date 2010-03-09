@@ -135,9 +135,7 @@ public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 			U2<T, A> node = en.getKey();
 			W wgt = en.getValue();
 			Map<T, W> inc = incoming.get(node);
-			if (inc == null) {
-				incoming.put(node, inc = new HashMap<T, W>());
-			}
+			if (inc == null) { incoming.put(node, inc = new HashMap<T, W>()); }
 			inc.put(subj, wgt);
 		}
 
@@ -155,11 +153,10 @@ public class LocalTGraph<T, A, U, W> extends FullTGraph<T, A, U, W> {
 		Map<T, W> incm = incoming.get(subj);
 		if (incm == null) {
 			incoming.put(subj, incm = new HashMap<T, W>());
+			return subj;
 		}
-		Set<T> inc = incm.keySet();
 
-		if (inc == null) { return subj; }
-		for (T tag: inc) {
+		for (T tag: incm.keySet()) {
 			Set<U2<T, A>> inp = incomplete.get(tag);
 			assert inp.contains(subj);
 			inp.remove(subj);

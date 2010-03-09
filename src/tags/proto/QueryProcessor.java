@@ -73,13 +73,8 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 		this.routing = new Routing<T, A, W, S>(query, this, mod_idx_cmp, mod_lku_scr, view_fac_h, score_inf_h);
 	}
 
-	public void getMoreData() {
-		try {
-			routing.recv(Routing.MRecv.REQ_MORE_DATA);
-		} catch (MessageRejectedException e) {
-			// swallow it
-			System.out.println(e);
-		}
+	public void getMoreData() throws MessageRejectedException {
+		routing.recv(Routing.MRecv.REQ_MORE_DATA);
 	}
 
 	public U2Map<A, A, W> getResults() {

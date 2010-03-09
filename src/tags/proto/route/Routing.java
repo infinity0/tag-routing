@@ -121,7 +121,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 				Map.Entry<A, W> idx_en = scheme.getMostRelevant(results.K1Map());
 
 				if (idx_en == null) {
-					if (!hasThingsToDo()) {
+					if (hasNothingToDo()) {
 						// nothing to do, pass request to naming layer
 						proc.naming.recv(tags.proto.name.Naming.MRecv.REQ_MORE_DATA);
 					}
@@ -129,11 +129,12 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 				} else {
 					// TODO HIGH need to review this later; the algorithm was decided ad-hoc and
 					// without any forethought. maybe if the difference is above some threshold.
-					if (!hasThingsToDo() || scheme.comparator().compare(idx_en.getValue(), queue.peekValue()) > 0) {
+					if (hasNothingToDo() || scheme.comparator().compare(idx_en.getValue(), queue.peekValue()) > 0) {
 						// add an index as a data source
 						addDataSourceAndLookups(scheme, idx_en.getKey());
 					}
 				}
+				System.out.println("got here");
 
 				return;
 			case RECV_ADDR_SCH:
@@ -152,7 +153,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 
 	// TODO HIGH this is a major hack...
 	volatile protected int pending = 0;
-	protected boolean hasThingsToDo() {
+	protected boolean hasNothingToDo() {
 		return queue.isEmpty() && pending == 0;
 	}
 

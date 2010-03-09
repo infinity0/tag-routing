@@ -79,12 +79,13 @@ public class MainTest extends TestCase {
 			exec
 		);
 
-		while (proc.getResults() == null) {
-			proc.getMoreData();
-			System.out.println("------");
-			System.out.println(proc.contact.getStatus());
-			System.out.println(proc.naming.getStatus());
-			System.out.println(proc.routing.getStatus());
+		while (proc.getResults() == null || proc.getResults().isEmpty()) {
+			try {
+				proc.getMoreData();
+			} catch (MessageRejectedException e) {
+				if (!e.getMessage().equals("bad timing")) { System.out.println(e); }
+			}
+			System.out.println("[ " + proc.contact.getStatus() + " | " + proc.naming.getStatus() + " | " + proc.routing.getStatus() + " ]");
 			try { Thread.sleep(250); } catch (InterruptedException e) { }
 		}
 
