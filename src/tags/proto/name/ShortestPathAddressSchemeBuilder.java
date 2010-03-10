@@ -1,6 +1,8 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.proto.name;
 
+import java.util.Collections;
+
 import tags.proto.AddressScheme;
 import tags.proto.ProtoAddressScheme;
 import tags.proto.FullTGraph;
@@ -41,6 +43,15 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 			throw new IllegalArgumentException("seed " + seed + " is not in the given graph");
 		}
 
+		if (!completed.contains(seed)) {
+			scheme.setIncomplete();
+			return scheme;
+		}
+
+		/*System.out.println(completed + " " + seed);
+		System.out.println(graph.nodeMap());
+		System.out.println(graph.arcMap());*/
+
 		// Dijkstra's algorithm
 		// OPT NORM use a FibonnacciHeap instead of PriorityQueue. JGraphT has an implementation.
 
@@ -79,16 +90,14 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 			dmap.remove(node);
 
 			if (node.isT1()) {
-				scheme.pushNode(node, parent, null);
+				scheme.pushNode(node, parent, Collections.<T>emptySet());
 				continue;
 			}
 			T tag = node.getT0();
 
 			// tag is not fully loaded, set as incomplete
 			if (!completed.contains(tag)) {
-				if (!tag.equals(seed)) {
-					scheme.pushNode(node, parent, null);
-				}
+				scheme.pushNode(node, parent, Collections.<T>singleton(parent));
 				scheme.setIncomplete();
 				break;
 			}

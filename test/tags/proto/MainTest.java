@@ -89,6 +89,9 @@ public class MainTest extends TestCase {
 			try { Thread.sleep(250); } catch (InterruptedException e) { }
 		}
 
+		System.out.println("Got " + proc.getResults().size() + " results for " + query + ":");
+		System.out.println(proc.getResults());
+
 		// TODO NOW do shit
 	}
 

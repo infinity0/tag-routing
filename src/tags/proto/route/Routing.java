@@ -129,12 +129,11 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 				} else {
 					// TODO HIGH need to review this later; the algorithm was decided ad-hoc and
 					// without any forethought. maybe if the difference is above some threshold.
-					if (hasNothingToDo() || scheme.comparator().compare(idx_en.getValue(), queue.peekValue()) > 0) {
+					if (hasNothingToDo() || scheme.compare(idx_en.getValue(), queue.peekValue()) > 0) {
 						// add an index as a data source
 						addDataSourceAndLookups(scheme, idx_en.getKey());
 					}
 				}
-				System.out.println("got here");
 
 				return;
 			case RECV_ADDR_SCH:

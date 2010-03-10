@@ -102,6 +102,11 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		return cmp;
 	}
 
+	@SuppressWarnings("unchecked")
+	@Override public int compare(W w0, W w1) {
+		return cmp == null? ((Comparable<W>)w0).compareTo(w1): cmp.compare(w0, w1);
+	}
+
 	@Override public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map) {
 		if (map.isEmpty()) { return null; }
 		return Collections.max(map.entrySet(), Maps.<K, W>entryValueComparator(cmp));
@@ -130,16 +135,16 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 
 	@Override public void pushNode(U2<T, A> node, T parent, Set<T> inc) {
 		if (node_map.containsKey(node)) {
-			throw new IllegalArgumentException("scheme already contains node: " + node);
+			throw new IllegalArgumentException("scheme already contains node " + node);
 		}
 		if (!node_map.K0Map().containsKey(parent)) {
-			throw new IllegalArgumentException("scheme does not already contain parent: " + parent);
+			throw new IllegalArgumentException("scheme does not already contain parent " + parent);
 		}
 		if (inc.contains(node)) {
-			throw new IllegalArgumentException("incoming set defines a loop for: " + node);
+			throw new IllegalArgumentException("incoming set for " + node + " defines a loop");
 		}
 		if (!inc.contains(parent)) {
-			throw new IllegalArgumentException("incoming set does not define: " + parent);
+			throw new IllegalArgumentException("incoming set for " + node + " does not define parent " + parent);
 		}
 		if (incomplete) {
 			throw new IllegalStateException("scheme set to incomplete");
@@ -151,9 +156,9 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		int i = node_list.size();
 		Set<T> tinc = new HashSet<T>();
 		Set<T> tpre = new HashSet<T>();
-		List<T> opth = path.get(parent);
+		List<T> opth = path.K0Map().get(parent);
 		Object[] optha = opth.toArray(new Object[opth.size()+1]);
-		optha[optha.length] = parent;
+		optha[optha.length-1] = parent;
 		@SuppressWarnings("unchecked") List<T> tpth = (List<T>)Arrays.asList(optha);
 
 		node_list.add(node);
@@ -163,7 +168,7 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		ancestor.put(node, tpre);
 		path.put(node, tpth);
 
-		if (inc == null || inc.isEmpty()) { return; }
+		if (inc.isEmpty()) { return; }
 		for (T t: inc) {
 			if (outgoing.containsKey(t)) {
 				outgoing.get(t).add(node);

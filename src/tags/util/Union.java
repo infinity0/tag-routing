@@ -54,7 +54,7 @@ final public class Union {
 		}
 
 		@Override public String toString() {
-			return "<" + val + ">";
+			return ":" + val + ":";
 		}
 
 	}

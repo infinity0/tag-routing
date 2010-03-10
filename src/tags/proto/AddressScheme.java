@@ -15,7 +15,7 @@ import java.util.Map;
 ** @param <A> Type of address
 ** @param <W> Type of arc-attribute
 */
-public interface AddressScheme<T, A, W> {
+public interface AddressScheme<T, A, W> extends Comparator<W> {
 
 	/**
 	** Return the seed tag.
@@ -64,6 +64,12 @@ public interface AddressScheme<T, A, W> {
 	public T getIncomplete();
 
 	public Comparator<W> comparator();
+
+	/**
+	** @throws ClassCastException if the comparator is {@code null} and the
+	**         elements have no natural ordering
+	*/
+	public int compare(W w0, W w1);
 
 	/**
 	** DOCUMENT. Returns {@code null} if {@code map} is empty

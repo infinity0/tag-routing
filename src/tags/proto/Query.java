@@ -18,4 +18,8 @@ public class Query<I, T> {
 		this.seed_tag = seed_tag;
 	}
 
+	public String toString() {
+		return "[" + seed_id + ":" + seed_tag + "]";
+	}
+
 }
