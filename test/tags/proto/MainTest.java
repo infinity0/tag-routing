@@ -9,6 +9,7 @@ import tags.proto.route.*;
 import tags.store.*;
 import tags.util.*;
 import tags.util.exec.*;
+import tags.util.Maps.U2Map;
 
 import java.util.concurrent.*;
 import java.util.*;
@@ -80,19 +81,42 @@ public class MainTest extends TestCase {
 		);
 
 		while (proc.getResults() == null || proc.getResults().isEmpty()) {
-			try {
-				proc.getMoreData();
-			} catch (MessageRejectedException e) {
-				if (!e.getMessage().equals("bad timing")) { System.out.println(e); }
-			}
-			System.out.println("[ " + proc.contact.getStatus() + " | " + proc.naming.getStatus() + " | " + proc.routing.getStatus() + " ]");
-			try { Thread.sleep(250); } catch (InterruptedException e) { }
+			nextStep(proc, true);
 		}
+		showResults(query, proc.getResults());
 
-		System.out.println("Got " + proc.getResults().size() + " results for " + query + ":");
-		System.out.println(proc.getResults());
+		for (int i=0; i<16; ++i) {
+			nextStep(proc, false);
+			showResults(query, proc.getResults());
+		}
+	}
 
-		// TODO NOW do shit
+	public void showResults(Query<Long, String> query, U2Map<Long, Long, Probability> res) {
+		System.out.println("Got " + res.size() + " results for " + query + ":");
+		System.out.println("doc: " + outputMap(res.K0Map()));
+		System.out.println("idx: " + outputMap(res.K1Map()));
+	}
+
+	public String outputMap(Map<Long, Probability> map) {
+		StringBuilder s = new StringBuilder();
+		s.append("{ ");
+		for (Map.Entry<Long, Probability> en: map.entrySet()) {
+			s.append("(").append(en.getKey()).append(':').append(en.getValue().toString().substring(0, 6)).append(") ");
+		}
+		s.append('}');
+		return s.toString();
+	}
+
+	public void nextStep(DefaultQP proc, boolean debug) {
+		try {
+			proc.getMoreData();
+		} catch (MessageRejectedException e) {
+			if (debug && !e.getMessage().equals("bad timing")) { System.out.println(e); }
+		}
+		if (debug) {
+			System.out.println("[ " + proc.contact.getStatus() + " | " + proc.naming.getStatus() + " | " + proc.routing.getStatus() + " ]");
+		}
+		try { Thread.sleep(250); } catch (InterruptedException e) { }
 	}
 
 }
