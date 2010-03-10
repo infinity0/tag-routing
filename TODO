@@ -1,4 +1,5 @@
 LocalIndex and LocalTGraph need to check for loops
+Probability needs to check for div/0 errors
 
 (cleanup)
 - review Maps.viewSubMap

@@ -45,9 +45,13 @@
 	</target>
 
 	<target name="build-test" depends="build" unless="skip_tests">
-		<exec executable="test/tags/store/store_gen.py"
-		  output="test/tags/store/StoreGenerator.java"
-		  errorproperty="sctl_gen.err" failonerror="true" />
+		<!--<exec executable="test/tags/store/store_gen.py"
+		  errorproperty="sctl_gen.err" failonerror="true">
+			<arg value="-j" />
+			<arg value="test/tags/store/StoreGenerator" />
+			<arg value="-p" />
+			<arg value="sample" />
+		</exec>-->
 		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on">
 			<classpath>
 				<path refid="lib.path"/>

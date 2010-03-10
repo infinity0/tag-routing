@@ -22,9 +22,7 @@ def print_err(s):
 
 
 def sort_by_val(map, reverse=False):
-	l = list(map.iteritems())
-	l.sort(cmp = lambda x, y: 0 if x[1] == y[1] else 1 if x[1] > y[1] else -1, reverse=reverse)
-	return l
+	return sorted(map.iteritems(), cmp = lambda x, y: 0 if x[1] == y[1] else 1 if x[1] > y[1] else -1, reverse=reverse)
 
 
 def breadth(g, s, n):
@@ -263,7 +261,7 @@ def make_ptb(n_ptb, obj_tgr, obj_idx):
 	return obj_ptb, obj_frn
 
 
-def main(argv):
+def main(prefix, jclass):
 
 	item_tag, item_doc, n_tag, n_doc = make_tag_doc_maps([
 		["aaaa"],
@@ -281,7 +279,8 @@ def main(argv):
 	obj_idx = make_idx(256, item_tag, net_idx, item_doc)
 	obj_ptb, obj_frn = make_ptb(32, obj_tgr, obj_idx)
 
-	print jclass(obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr, item_doc, item_tag),
+	plain(prefix, obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr, item_doc, item_tag),
+	print >>open('%s.java' % jclass, 'w'), javagen(obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr, item_doc, item_tag),
 
 
 def jmethod_def(s):
@@ -329,7 +328,7 @@ def jcode_tag(id, doc):
 		"".join(["_(%sL, p(0))." % d for d in doc]))
 
 
-def jclass(obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr, item_doc, item_tag):
+def javagen(obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr, item_doc, item_tag):
 	return '''// Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.store;
 
@@ -409,31 +408,57 @@ final public class StoreGenerator {
 	)
 
 
-def print_tgr(id, tgr, prob_tag, prob_tgr, pre="    "):
-	print id
+def plain(name, obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr, item_doc, item_tag):
+	print >>open('%s.tag.txt' % name, 'w'), "".join(["%s %s\n" % (id, tag) for (id, tag) in sorted(item_doc.iteritems())]),
+	print >>open('%s.doc.txt' % name, 'w'), "".join(["%s %s\n" % (id, doc) for (id, doc) in sorted(item_tag.iteritems())]),
+	print >>open('%s.tgr.txt' % name, 'w'), "".join([plain_tgr(id, tgr, prob_tag, prob_tgr) for (id, tgr) in sorted(obj_tgr.iteritems())]),
+	print >>open('%s.idx.txt' % name, 'w'), "".join([plain_idx(id, idx) for (id, idx) in sorted(obj_idx.iteritems())]),
+	print >>open('%s.ptb.txt' % name, 'w'), "".join([plain_ptb(id, ptb) for (id, ptb) in sorted(obj_ptb.iteritems())]),
+	print >>open('%s.frn.txt' % name, 'w'), "".join([plain_frn(id, frn) for (id, frn) in sorted(obj_frn.iteritems())]),
+
+def plain_tgr(id, tgr, prob_tag, prob_tgr, pre="    "):
 	prob = prob_tag.copy()
 	prob.update(prob_tgr)
-	for (k, out) in tgr.iteritems():
-		print pre + "%s:%.4f %s" % (k, prob[k], ["%s:%.4f" % (k2, v) for k2, v in out.iteritems()])
+	return "%s\n%s" % (id,
+		"".join([pre + "%s:%.4f { %s}\n" % (k, prob[k], "".join(["%s:%.4f " % (k2, v) for k2, v in sorted(out.iteritems())]))
+			for (k, out) in sorted(tgr.iteritems())]))
 
-def print_idx(id, idx, pre="    "):
-	print id
-	for (k, out) in idx.iteritems():
-		print pre + "%s %s" % (k, ["%s:%.4f" % (k2, v) for k2, v in out.iteritems()])
+def plain_idx(id, idx, pre="    "):
+	return "%s\n%s" % (id,
+		"".join([pre + "%s { %s}\n" % (k, "".join(["%s:%.4f " % (k2, v) for k2, v in sorted(out.iteritems())]))
+			for (k, out) in sorted(idx.iteritems())]))
 
-def print_ptb(id, ptb, pre="    "):
-	print id
-	for (k, v) in ptb.iteritems():
-		print pre + "%s %.4f" % (k, v)
+def plain_ptb(id, ptb, pre="    "):
+	return "%s\n%s" % (id,
+		"".join([pre + "%s %.4f\n" % (k, v)
+			for (k, v) in sorted(ptb.iteritems())]))
 
-def print_frn(id, frn, pre="    "):
-	print_ptb(id, frn, pre)
+def plain_frn(id, frn, pre="    "):
+	return plain_ptb(id, frn, pre)
 
 
 if __name__ == "__main__":
+	from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
+	config = OptionParser(
+	  usage = "Usage: %prog [OPTIONS]",
+	  description = "Generates random test data to a set of files all sharing a common prefix.",
+	  formatter = IndentedHelpFormatter(max_help_position=25)
+	)
+
+	config.add_option("-p", "--prefix", type="string", metavar="PREFIX",
+	  help = "Prefix for data files")
+	config.add_option("-j", "--jclass", type="string", metavar="CLASS",
+	  help = "Name and path of Java class to create")
+
+	(opts, args) = config.parse_args()
+
+	if not opts.prefix or not opts.jclass:
+		config.print_help()
+		sys.exit(2)
+
 	while True:
 		try:
-			main(sys.argv)
+			main(prefix=opts.prefix, jclass=opts.jclass)
 			break
 		except IndexError:
 			sys.stderr.write("generated a disconnected tag-graph, will try again\n")

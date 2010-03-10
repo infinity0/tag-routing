@@ -52,6 +52,10 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 		this(new File(basedir));
 	}
 
+	public String getSummary() {
+		return "" + map_doc.size() + " documents, " + map_tag.size() + " tags, " + map_frn.size() + " ids, " + map_tgr.size() + " tgraphs, " + map_idx.size() + " indexes.";
+	}
+
 	public Map<I, Z> getFriends(I id) throws IOException {
 		Map<I, Z> frn;
 

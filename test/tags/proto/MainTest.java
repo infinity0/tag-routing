@@ -67,52 +67,56 @@ public class MainTest extends TestCase {
 		new FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability>(".");
 		StoreGenerator.sctl_gen_all(sctl);
 
+		System.out.println("Test data initialised with " + sctl.getSummary());
+
 		for (long id: new long[]{8028L, 8032L, 8036L, 8040L, 8044L}) {
 
-		Query<Long, String> query = new Query<Long, String>(id, "aacs");
+			Query<Long, String> query = new Query<Long, String>(id, "aacs");
 
-		DefaultQP proc = new DefaultQP(query, sctl,
-			new ProtoPTableComposer<Long, Long>(),
-			new ProbabilityEntropyTGraphComposer<String, Long>(),
-			new ShortestPathAddressSchemeBuilder<String, Long, Probability, Probability, Probability>(new ProbabilityDistanceMetric()),
-			LocalTGraph.<String, Long, Probability, Probability>getFactory(),
-			new SPUProbabilityInferer(),
-			new ProbabilityIndexComposer<String, Long>(),
-			new ProbabilityLookupScorer(),
-			LocalIndex.<String, Long, Probability>getFactory(),
-			new SPUProbabilityInferer(),
-			exec
-		);
+			DefaultQP proc = new DefaultQP(query, sctl,
+				new ProtoPTableComposer<Long, Long>(),
+				new ProbabilityEntropyTGraphComposer<String, Long>(),
+				new ShortestPathAddressSchemeBuilder<String, Long, Probability, Probability, Probability>(new ProbabilityDistanceMetric()),
+				LocalTGraph.<String, Long, Probability, Probability>getFactory(),
+				new SPUProbabilityInferer(),
+				new ProbabilityIndexComposer<String, Long>(),
+				new ProbabilityLookupScorer(),
+				LocalIndex.<String, Long, Probability>getFactory(),
+				new SPUProbabilityInferer(),
+				exec
+			);
 
-		// get some results
+			System.out.println("Starting query " + query);
 
-		while (proc.getResults() == null || proc.getResults().isEmpty()) {
-			nextStep(proc, report);
-		}
-		showResults(query, proc.getResults());
+			// get some results
 
-		U2Map<Long, Long, Probability> res = proc.getResults();
-		for (int i=0; i<16; ++i) {
-			nextStep(proc, false);
-			if (proc.getResults() == res) { continue; }
-			System.out.println("Got " + res.K0Map().size() + "," + res.K1Map().size() + " results for " + query);
-			if (report) { System.out.println(showResults(query, proc.getResults())); }
-			res = proc.getResults();
-		}
+			while (proc.getResults() == null || proc.getResults().isEmpty()) {
+				nextStep(proc, report);
+			}
+			showResults(query, proc.getResults());
 
-		// test whether the results actually match
+			U2Map<Long, Long, Probability> res = proc.getResults();
+			for (int i=0; i<16; ++i) {
+				nextStep(proc, false);
+				if (proc.getResults() == res) { continue; }
+				System.out.println("Got " + res.K0Map().size() + "," + res.K1Map().size() + " results for " + query);
+				if (report) { System.out.println(showResults(query, proc.getResults())); }
+				res = proc.getResults();
+			}
 
-		int d = sctl.map_tag.get(query.tag).size();
-		int r = proc.getResults().K0Map().size();
+			// test whether the results actually match
 
-		Set<Long> doc = new HashSet<Long>(sctl.map_tag.get(query.tag));
-		doc.retainAll(proc.getResults().K0Map().keySet());
-		int x = doc.size();
+			int d = sctl.map_tag.get(query.tag).size();
+			int r = proc.getResults().K0Map().size();
 
-		System.out.println(r + " results, " + d + " real; intersection is " + x);
+			Set<Long> doc = new HashSet<Long>(sctl.map_tag.get(query.tag));
+			doc.retainAll(proc.getResults().K0Map().keySet());
+			int x = doc.size();
 
-		// fail if less than half the results actually match
-		assertTrue(x<<1 > r);
+			System.out.println(r + " results, " + d + " real; intersection is " + x);
+
+			// fail if less than half the results actually match
+			assertTrue(x<<1 > r);
 
 		}
 
