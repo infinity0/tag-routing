@@ -17,6 +17,8 @@ import java.io.IOException;
 
 public class MainTest extends TestCase {
 
+	protected boolean report = false;
+
 	public static class SimpleQP<I, T, S> extends QueryProcessor<I, T, I, S, S, S, S> {
 		public SimpleQP(
 			Query<I, T> query,
@@ -65,7 +67,9 @@ public class MainTest extends TestCase {
 		new FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability>(".");
 		StoreGenerator.sctl_gen_all(sctl);
 
-		Query<Long, String> query = new Query<Long, String>(8028L, "aacs");
+		for (long id: new long[]{8028L, 8032L, 8036L, 8040L, 8044L}) {
+
+		Query<Long, String> query = new Query<Long, String>(id, "aacs");
 
 		DefaultQP proc = new DefaultQP(query, sctl,
 			new ProtoPTableComposer<Long, Long>(),
@@ -83,16 +87,21 @@ public class MainTest extends TestCase {
 		// get some results
 
 		while (proc.getResults() == null || proc.getResults().isEmpty()) {
-			nextStep(proc, true);
+			nextStep(proc, report);
 		}
 		showResults(query, proc.getResults());
 
+		U2Map<Long, Long, Probability> res = proc.getResults();
 		for (int i=0; i<16; ++i) {
 			nextStep(proc, false);
-			showResults(query, proc.getResults());
+			if (proc.getResults() == res) { continue; }
+			System.out.println("Got " + res.K0Map().size() + "," + res.K1Map().size() + " results for " + query);
+			if (report) { System.out.println(showResults(query, proc.getResults())); }
+			res = proc.getResults();
 		}
 
 		// test whether the results actually match
+
 		int d = sctl.map_tag.get(query.tag).size();
 		int r = proc.getResults().K0Map().size();
 
@@ -100,14 +109,17 @@ public class MainTest extends TestCase {
 		doc.retainAll(proc.getResults().K0Map().keySet());
 		int x = doc.size();
 
-		System.out.println(r + " results, " + d + " documents; intersection is " + x);
+		System.out.println(r + " results, " + d + " real; intersection is " + x);
+
+		// fail if less than half the results actually match
+		assertTrue(x<<1 > r);
+
+		}
 
 	}
 
-	public void showResults(Query<Long, String> query, U2Map<Long, Long, Probability> res) {
-		System.out.println("Got " + res.size() + " results for " + query + ":");
-		System.out.println("doc: " + outputMap(res.K0Map()));
-		System.out.println("idx: " + outputMap(res.K1Map()));
+	public String showResults(Query<Long, String> query, U2Map<Long, Long, Probability> res) {
+		return "doc: " + outputMap(res.K0Map()) + "\nidx: " + outputMap(res.K1Map());
 	}
 
 	public String outputMap(Map<Long, Probability> map) {
@@ -120,13 +132,13 @@ public class MainTest extends TestCase {
 		return s.toString();
 	}
 
-	public void nextStep(DefaultQP proc, boolean debug) {
+	public void nextStep(DefaultQP proc, boolean stat) {
 		try {
 			proc.getMoreData();
 		} catch (MessageRejectedException e) {
-			if (debug && !e.getMessage().equals("bad timing")) { System.out.println(e); }
+			if (stat && !e.getMessage().equals("bad timing")) { System.out.println(e); }
 		}
-		if (debug) {
+		if (stat) {
 			System.out.println("[ " + proc.contact.getStatus() + " | " + proc.naming.getStatus() + " | " + proc.routing.getStatus() + " ]");
 		}
 		try { Thread.sleep(250); } catch (InterruptedException e) { }

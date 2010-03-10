@@ -90,7 +90,7 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 			dmap.remove(node);
 
 			if (node.isT1()) {
-				scheme.pushNode(node, parent, Collections.<T>emptySet());
+				scheme.pushNode(node, parent, graph.getIncomingG(node.getT1()).nodeAttrMap().K0Map().keySet());
 				continue;
 			}
 			T tag = node.getT0();
