@@ -281,7 +281,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 
 	protected void addSeedTag() {
 		Map<A, LocalTGraph<T, A, U, W>> local = source.localMap();
-		T tag = query.seed_tag;
+		T tag = query.tag;
 
 		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
 
@@ -360,7 +360,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 	** the latter changes, ie. after {@link #composeTGraph()}.
 	*/
 	protected AddressScheme<T, A, W> makeAddressScheme() {
-		return mod_asc_bld.buildAddressScheme(graph, getCompletedTags(), query.seed_tag);
+		return mod_asc_bld.buildAddressScheme(graph, getCompletedTags(), query.tag);
 	}
 
 }

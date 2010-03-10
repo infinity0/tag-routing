@@ -6,7 +6,9 @@ import tags.proto.TGraph;
 import tags.proto.Index;
 import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
+import java.util.Set;
 import java.util.Map;
+import java.util.HashSet;
 import java.util.HashMap;
 
 import java.io.File;
@@ -27,8 +29,11 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 
 	final public File basedir;
 
-	final public Map<I, Map<I, Z>> map_fr = new HashMap<I, Map<I, Z>>();
-	final public Map<I, PTable<A, S>> map_ptab = new HashMap<I, PTable<A, S>>();
+	final public Map<A, Set<T>> map_doc = new HashMap<A, Set<T>>();
+	final public Map<T, Set<A>> map_tag = new HashMap<T, Set<A>>();
+
+	final public Map<I, Map<I, Z>> map_frn = new HashMap<I, Map<I, Z>>();
+	final public Map<I, PTable<A, S>> map_ptb = new HashMap<I, PTable<A, S>>();
 	final public Map<A, Map<T, U2Map<T, A, W>>> map_tgr = new HashMap<A, Map<T, U2Map<T, A, W>>>();
 	final public Map<A, U2Map<T, A, U>> map_tgr_node = new HashMap<A, U2Map<T, A, U>>();
 	final public Map<A, Map<T, U2Map<A, A, W>>> map_idx = new HashMap<A, Map<T, U2Map<A, A, W>>>();
@@ -48,26 +53,26 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 	}
 
 	public Map<I, Z> getFriends(I id) throws IOException {
-		Map<I, Z> fr;
+		Map<I, Z> frn;
 
-		fr = map_fr.get(id);
-		if (fr == null) { throw new IOException("friend-list not available for: " + id); }
+		frn = map_frn.get(id);
+		if (frn == null) { throw new IOException("friend-list not available for: " + id); }
 
 		//File fp = getFile(id + ".fr");
 		//throw new UnsupportedOperationException("not implemented");
-		return fr;
+		return frn;
 	}
 
 	public PTable<A, S> getPTable(I id) throws IOException {
-		PTable<A, S> ptab;
+		PTable<A, S> ptb;
 
-		ptab = map_ptab.get(id);
-		if (ptab == null) { throw new IOException("ptable not available for: " + id); }
+		ptb = map_ptb.get(id);
+		if (ptb == null) { throw new IOException("ptable not available for: " + id); }
 
 		//File fp = getFile(id + ".ptab");
 		//throw new UnsupportedOperationException("not implemented");
 
-		return ptab;
+		return ptb;
 	}
 
 	public U2Map<T, A, W> getTGraphOutgoing(A addr, T src) throws IOException {

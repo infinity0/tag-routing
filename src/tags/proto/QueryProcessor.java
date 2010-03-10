@@ -91,7 +91,7 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 	*/
 	public Map<I, Z> getTrustedIDs() throws IOException {
 		// TODO HIGH better implementation than this
-		return sctl.getFriends(query.seed_id);
+		return sctl.getFriends(query.id);
 	}
 
 	public TaskService<I, PTable<A, S>, IOException> newPTableService() {

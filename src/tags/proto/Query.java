@@ -9,17 +9,17 @@ package tags.proto;
 */
 public class Query<I, T> {
 
-	final public I seed_id;
-	final public T seed_tag;
+	final public I id;
+	final public T tag;
 
-	public Query(I seed_id, T seed_tag) {
-		if (seed_id == null || seed_tag == null) { throw new NullPointerException(); }
-		this.seed_id = seed_id;
-		this.seed_tag = seed_tag;
+	public Query(I id, T tag) {
+		if (id == null || tag == null) { throw new NullPointerException(); }
+		this.id = id;
+		this.tag = tag;
 	}
 
 	public String toString() {
-		return "[" + seed_id + ":" + seed_tag + "]";
+		return "[" + id + ":" + tag + "]";
 	}
 
 }

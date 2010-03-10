@@ -230,13 +230,13 @@ def make_idx(n_idx, item_tag, net_idx, item_doc):
 	return obj_idx
 
 
-def make_ptb(n_ptab, obj_tgr, obj_idx):
+def make_ptb(n_ptb, obj_tgr, obj_idx):
 
 	obj_ptb = {}
 	ll_h = biased_list(obj_idx)
 	ll_g = biased_list(obj_tgr)
 
-	for x in xrange(16, 16+n_ptab):
+	for x in xrange(16, 16+n_ptb):
 		id = PTB + x
 		n_h = int(1024/float(x))+1
 		n_g = int(256/float(x))+1
@@ -281,7 +281,7 @@ def main(argv):
 	obj_idx = make_idx(256, item_tag, net_idx, item_doc)
 	obj_ptb, obj_frn = make_ptb(32, obj_tgr, obj_idx)
 
-	print jclass(obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr),
+	print jclass(obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr, item_doc, item_tag),
 
 
 def jmethod_def(s):
@@ -312,16 +312,24 @@ def jcode_idx(id, idx):
 		) for t, out in idx.iteritems()]))
 
 def jcode_ptb(id, ptb):
-	return "		sctl.map_ptab.put(%sL, new PTable<Long, Probability>(bHM().%sbuild(), bHM().%sbuild()));\n" % (id,
+	return "		sctl.map_ptb.put(%sL, new PTable<Long, Probability>(bHM().%sbuild(), bHM().%sbuild()));\n" % (id,
 		"".join(["_(%sL, p(%s))." % (k, v) if type_match(TGR, k) else "" for k, v in ptb.iteritems()]),
 		"".join(["_(%sL, p(%s))." % (k, v) if type_match(IDX, k) else "" for k, v in ptb.iteritems()]))
 
 def jcode_frn(id, frn):
-	return "		sctl.map_fr.put(%sL, bHM().%sbuild());\n" % (id,
+	return "		sctl.map_frn.put(%sL, bHM().%sbuild());\n" % (id,
 		"".join(["_(%sL, p(%s))." % (k, v) for k, v in frn.iteritems()]))
 
+def jcode_doc(id, tag):
+	return "		sctl.map_doc.put(%sL, bHS().%sbuild().keySet());\n" % (id,
+		"".join(["_(\"%s\", p(0))." % t for t in tag]))
 
-def jclass(obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr):
+def jcode_tag(id, doc):
+	return "		sctl.map_tag.put(\"%s\", bHM().%sbuild().keySet());\n" % (id,
+		"".join(["_(%sL, p(0))." % d for d in doc]))
+
+
+def jclass(obj_idx, obj_tgr, obj_ptb, obj_frn, prob_tag, prob_tgr, item_doc, item_tag):
 	return '''// Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.store;
 
@@ -361,7 +369,15 @@ final public class StoreGenerator {
 		sctl_gen_tgr(sctl);
 		sctl_gen_ptb(sctl);
 		sctl_gen_frn(sctl);
+		sctl_gen_doc(sctl);
+		sctl_gen_tag(sctl);
 	}
+
+	%s {
+%s	}
+
+	%s {
+%s	}
 
 	%s {
 %s	}
@@ -385,7 +401,11 @@ final public class StoreGenerator {
 	jmethod_def("ptb"),
 	"".join([jcode_ptb(id, ptb) for (id, ptb) in obj_ptb.iteritems()]),
 	jmethod_def("frn"),
-	"".join([jcode_frn(id, frn) for (id, frn) in obj_frn.iteritems()])
+	"".join([jcode_frn(id, frn) for (id, frn) in obj_frn.iteritems()]),
+	jmethod_def("doc"),
+	"".join([jcode_doc(id, tag) for (id, tag) in item_doc.iteritems()]),
+	jmethod_def("tag"),
+	"".join([jcode_tag(id, doc) for (id, doc) in item_tag.iteritems()]),
 	)
 
 

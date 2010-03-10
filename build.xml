@@ -45,7 +45,9 @@
 	</target>
 
 	<target name="build-test" depends="build" unless="skip_tests">
-		<exec executable="test/tags/store/store_gen.py" output="test/tags/store/StoreGenerator.java" errorproperty="sctl_gen.err" />
+		<exec executable="test/tags/store/store_gen.py"
+		  output="test/tags/store/StoreGenerator.java"
+		  errorproperty="sctl_gen.err" failonerror="true" />
 		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on">
 			<classpath>
 				<path refid="lib.path"/>
@@ -106,7 +108,7 @@
 	</target>
 
 	<target name="doc">
-		<exec executable="./build-doc.sh" />
+		<exec executable="./build-doc.sh" failonerror="true" />
 	</target>
 
 	<target name="dist" depends="clean,jar">

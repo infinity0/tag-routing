@@ -80,6 +80,8 @@ public class MainTest extends TestCase {
 			exec
 		);
 
+		// get some results
+
 		while (proc.getResults() == null || proc.getResults().isEmpty()) {
 			nextStep(proc, true);
 		}
@@ -89,6 +91,17 @@ public class MainTest extends TestCase {
 			nextStep(proc, false);
 			showResults(query, proc.getResults());
 		}
+
+		// test whether the results actually match
+		int d = sctl.map_tag.get(query.tag).size();
+		int r = proc.getResults().K0Map().size();
+
+		Set<Long> doc = new HashSet<Long>(sctl.map_tag.get(query.tag));
+		doc.retainAll(proc.getResults().K0Map().keySet());
+		int x = doc.size();
+
+		System.out.println(r + " results, " + d + " documents; intersection is " + x);
+
 	}
 
 	public void showResults(Query<Long, String> query, U2Map<Long, Long, Probability> res) {
