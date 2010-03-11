@@ -79,6 +79,11 @@
 	<!-- ================================================== -->
 	<property name="data.StoreGenerator" value="test/tags/store/StoreGenerator" />
 
+	<fileset dir="." id="data.path">
+		<include name="sample.*.txt"/>
+		<include name="${data.StoreGenerator}.java"/>
+	</fileset>
+
 	<target name="regen-data">
 		<exec executable="test/tags/store/store_gen.py"
 		  errorproperty="sctl_gen.err" failonerror="true">
@@ -91,16 +96,23 @@
 
 	<target name="clean-data">
 		<delete>
-			<fileset dir=".">
-				<include name="sample.*.txt"/>
-				<include name="${data.StoreGenerator}.java"/>
-			</fileset>
+			<fileset refid="data.path"/>
 		</delete>
 	</target>
 
 	<target name="check-data">
 		<available file="${data.StoreGenerator}.java" property="data.StoreGenerator.present" />
 		<fail message="Test data not generated; generate with `ant regen-data`." unless="data.StoreGenerator.present" />
+	</target>
+
+	<target name="stash-data" depends="check-data">
+		<tstamp>
+			<format property="STAMP" pattern="yyyyMMdd-HHmmss"/>
+		</tstamp>
+		<tar destfile="sample-data-${STAMP}.tar.bz2" compression="bzip2">
+			<fileset refid="data.path"/>
+		</tar>
+		<antcall target="clean-data"/>
 	</target>
 
 	<!-- ================================================== -->

@@ -6,3 +6,5 @@ lib
 tmp
 run-test
 test/tags/store/StoreGenerator.java
+sample.*.txt
+sample-data-*.tar.bz2
