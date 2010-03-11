@@ -58,7 +58,7 @@ public class SPUProbabilityInferer implements ScoreInferer<Probability> {
 
 			Set<A> inc = incoming.get(node);
 			for (A in: inc) {
-				if (s+1 < step.get(in)) {
+				if (s < step.get(in)-1) {
 					queue.remove(in);
 					step.put(in, s+1);
 					queue.add(in);
@@ -71,8 +71,13 @@ public class SPUProbabilityInferer implements ScoreInferer<Probability> {
 
 		double union = 1;
 		for (Map.Entry<A, Probability> en: seeds.entrySet()) {
-			union *= (1 - en.getValue().val * Math.pow(REDUCE, step.get(en.getKey())));
+			int s = step.get(en.getKey());
+			if (s == Integer.MAX_VALUE) { continue; }
+			//System.out.println(union + " " + en.getValue().val + " " + s);
+			union *= (1 - en.getValue().val * Math.pow(REDUCE, s));
 		}
+		//System.out.println(union);
+		//System.out.println("----");
 
 		return new Probability(1 - union);
 	}
