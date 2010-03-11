@@ -44,14 +44,7 @@
 		</javac>
 	</target>
 
-	<target name="build-test" depends="build" unless="skip_tests">
-		<!--<exec executable="test/tags/store/store_gen.py"
-		  errorproperty="sctl_gen.err" failonerror="true">
-			<arg value="-j" />
-			<arg value="test/tags/store/StoreGenerator" />
-			<arg value="-p" />
-			<arg value="sample" />
-		</exec>-->
+	<target name="build-test" depends="build,check-data" unless="skip_tests">
 		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on">
 			<classpath>
 				<path refid="lib.path"/>
@@ -81,6 +74,33 @@
 				</fileset>
 			</batchtest>
 		</junit>
+	</target>
+
+	<!-- ================================================== -->
+	<property name="data.StoreGenerator" value="test/tags/store/StoreGenerator" />
+
+	<target name="regen-data">
+		<exec executable="test/tags/store/store_gen.py"
+		  errorproperty="sctl_gen.err" failonerror="true">
+			<arg value="-j" />
+			<arg value="${data.StoreGenerator}" />
+			<arg value="-p" />
+			<arg value="sample" />
+		</exec>
+	</target>
+
+	<target name="clean-data">
+		<delete>
+			<fileset dir=".">
+				<include name="sample.*.txt"/>
+				<include name="${data.StoreGenerator}.java"/>
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="check-data">
+		<available file="${data.StoreGenerator}.java" property="data.StoreGenerator.present" />
+		<fail message="Test data not generated; generate with `ant regen-data`." unless="data.StoreGenerator.present" />
 	</target>
 
 	<!-- ================================================== -->
@@ -115,10 +135,10 @@
 		<exec executable="./build-doc.sh" failonerror="true" />
 	</target>
 
-	<target name="dist" depends="clean,jar">
+	<target name="dist" depends="clean,regen-data,jar">
 	</target>
 
-	<target name="clean">
+	<target name="clean" depends="clean-data">
 		<delete dir="${build}"/>
 		<delete dir="${build-test}"/>
 		<delete dir="${run-test}"/>
