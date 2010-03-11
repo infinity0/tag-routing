@@ -131,7 +131,11 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 					// without any forethought. maybe if the difference is above some threshold.
 					if (hasNothingToDo() || scheme.compare(idx_en.getValue(), queue.peekValue()) > 0) {
 						// add an index as a data source
-						addDataSourceAndLookups(scheme, idx_en.getKey());
+						A idx = idx_en.getKey();
+						results.K1Map().remove(idx);
+						// TODO HIGH probably limit the number of indexes that can be added before
+						// receiving data back from the network
+						addDataSourceAndLookups(scheme, idx);
 					}
 				}
 
@@ -199,6 +203,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 	}
 
 	protected void addDataSourceAndLookups(AddressScheme<T, A, W> scheme, A addr) {
+		// FIXME HIGH sync/race bug here, this method might be called twice with the same argument
 		source.useSource(addr);
 		Map<Lookup<T, A>, W> lku_score = scoreLookups(scheme, Collections.singletonMap(addr, getLookups(scheme, addr)));
 		for (Map.Entry<Lookup<T, A>, W> en: lku_score.entrySet()) { queue.add(en.getKey(), en.getValue()); }

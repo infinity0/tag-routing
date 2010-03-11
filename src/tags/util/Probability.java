@@ -45,6 +45,8 @@ public class Probability /*extends Number TODO LOW*/ implements Comparable<Proba
 	/**
 	** Returns this probability normalised with the given probability. It is
 	** assumed that the given event is a superset of this event.
+	**
+	** @throws IllegalArgumentException if P(evt) = 0
 	*/
 	public Probability normalise(Probability p) {
 		return new Probability(this.val / p.val);
@@ -64,6 +66,7 @@ public class Probability /*extends Number TODO LOW*/ implements Comparable<Proba
 	** @param given P(this|evt)
 	** @param p P(evt)
 	** @return P(evt|this)
+	** @throws IllegalArgumentException if this probability is 0
 	*/
 	public Probability conditionalInverse(Probability given, Probability p) {
 		return new Probability(given.val * p.val / this.val);
@@ -75,6 +78,8 @@ public class Probability /*extends Number TODO LOW*/ implements Comparable<Proba
 	** @param given P(this|evt)
 	** @param p P(evt)
 	** @return P(this|¬evt)
+	** @throws IllegalArgumentException if P(evt) = 1.0, or if P(this,evt) =
+	**         P(this|evt) P(evt) > P(this)
 	*/
 	public Probability conditionalComplement(Probability given, Probability p) {
 		return new Probability((this.val - given.val * p.val)/(1.0 - p.val));

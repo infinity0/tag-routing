@@ -17,7 +17,7 @@ import java.io.IOException;
 
 public class MainTest extends TestCase {
 
-	protected boolean report = false;
+	protected boolean report = true;
 
 	public static class SimpleQP<I, T, S> extends QueryProcessor<I, T, I, S, S, S, S> {
 		public SimpleQP(
@@ -69,8 +69,8 @@ public class MainTest extends TestCase {
 
 		System.out.println("Test data initialised with " + sctl.getSummary());
 
-		//for (long id: new long[]{8028L, 8032L, 8036L, 8040L, 8044L}) {
-		for (long id: new long[]{8044L}) {
+		for (long id: new long[]{8028L, 8032L, 8036L, 8040L, 8044L}) {
+		//for (long id: new long[]{8044L}) {
 
 			Query<Long, String> query = new Query<Long, String>(id, "aacs");
 
