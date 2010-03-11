@@ -40,6 +40,8 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 
 		U seedu = graph.nodeMap().K0Map().get(seed);
 		if (seedu == null) {
+			// FIXME NOW this needs to be handled elsewhere, it's actually a valid
+			// condition that can arise during normal operation
 			throw new IllegalArgumentException("seed " + seed + " is not in the given graph");
 		}
 

@@ -226,6 +226,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 				if (view.nodeMap().K0Map().containsKey(tag)) {
 					srv.submit(Services.newTask(Lookup.make(view.addr, tag)));
 				} else {
+					// FIXME NOW this assertion has been observed to fail
 					assert view.getCompletedTags().contains(tag);
 				}
 			}
