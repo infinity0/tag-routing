@@ -136,6 +136,14 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 		return scheme;
 	}
 
+	public int countSources() {
+		return source.localMap().size();
+	}
+
+	public int countTagsInScheme() {
+		return scheme.nodeList().size();
+	}
+
 	protected void addDataSourceAndComplete(A addr) {
 		LocalTGraph<T, A, U, W> view = source.useSource(addr);
 		Set<T> old_complete = getCompletedTags();

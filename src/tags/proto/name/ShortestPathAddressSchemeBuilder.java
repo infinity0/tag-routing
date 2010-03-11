@@ -38,15 +38,14 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 	@Override public AddressScheme<T, A, W> buildAddressScheme(FullTGraph<T, A, U, W> graph, Set<T> completed, final T seed) {
 		ProtoAddressScheme<T, A, W> scheme = new ProtoAddressScheme<T, A, W>(seed, null);
 
-		U seedu = graph.nodeMap().K0Map().get(seed);
-		if (seedu == null) {
-			// FIXME NOW this needs to be handled elsewhere, it's actually a valid
-			// condition that can arise during normal operation
-			throw new IllegalArgumentException("seed " + seed + " is not in the given graph");
-		}
-
 		if (!completed.contains(seed)) {
 			scheme.setIncomplete();
+			return scheme;
+		}
+
+		U seedu = graph.nodeMap().K0Map().get(seed);
+		if (seedu == null) {
+			// tag not in the composite tgraph, so return a complete scheme with only the seed tag
 			return scheme;
 		}
 

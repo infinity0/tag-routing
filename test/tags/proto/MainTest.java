@@ -17,7 +17,7 @@ import java.io.IOException;
 
 public class MainTest extends TestCase {
 
-	protected boolean report = false;
+	protected boolean report = true;
 
 	public static class SimpleQP<I, T, S> extends QueryProcessor<I, T, I, S, S, S, S> {
 		public SimpleQP(
@@ -114,7 +114,11 @@ public class MainTest extends TestCase {
 			doc.retainAll(proc.getResults().K0Map().keySet());
 			int x = doc.size();
 
-			System.out.println(r + " results, " + d + " real; intersection is " + x);
+			System.out.println(
+				proc.naming.countSources() + " tgr * " +
+				proc.naming.countTagsInScheme() + " tag, " +
+				proc.routing.countLookups() + " lku: " +
+				r + " res, " + d + " real (" + x + " match)");
 
 			// fail if less than half the results actually match
 			assertTrue(x<<1 > r);

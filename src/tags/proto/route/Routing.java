@@ -154,6 +154,14 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		return results;
 	}
 
+	public int countLookups() {
+		int s = 0;
+		for (Set<T> tag: completed.values()) {
+			s += tag.size();
+		}
+		return s;
+	}
+
 	// TODO HIGH this is a major hack...
 	volatile protected int pending = 0;
 	protected boolean hasNothingToDo() {
