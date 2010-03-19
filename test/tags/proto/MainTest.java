@@ -17,7 +17,7 @@ import java.io.IOException;
 
 public class MainTest extends TestCase {
 
-	protected boolean report = true;
+	protected boolean report = false;
 
 	public static class SimpleQP<I, T, S> extends QueryProcessor<I, T, I, S, S, S, S> {
 		public SimpleQP(

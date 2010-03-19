@@ -1,0 +1,60 @@
+% Scraping test data from flickr
+% Ximin Luo
+
+# flickr data structures
+
+each user has:
+
+--------------- -------------------------------------
+set             your own photos
+collection      sets of sets
+gallery         others' photos (structured)
+tag             [obv]
+people          ?
+archive         ?
+favorite        others' photos (unstructured)
+contact         friends
+group           ?
+testimonial     ?
+--------------- -------------------------------------
+
+# needed data structures
+
+## social
+
+1. get friends
+	- flickr.contacts.getPublicList
+
+## ptable
+
+1. get indexes / tgraphs
+
+2. more well-connected 
+
+## tgraph
+
+...
+
+## index
+
+1. from a user's photoset, add
+
+	- all photos in set
+	- all favourites relevant to set's "relevant" tags
+	- all galleries relevant to set's "relevant" tags
+	- leftovers get distributed randomly amongst user's indexes
+
+2. from a group pool, add
+
+	- all photos in pool
+	- related member photos
+	- link to all related groups
+		- get related tags
+		- flick.groups.search on those tags
+		- find "page" which contains self, and all groups from that page only
+
+3. from categories, add
+
+	- parent categories
+	- all groups in that category
+	- additional links that "jump" layers, etc
