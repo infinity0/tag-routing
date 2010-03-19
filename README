@@ -1,0 +1,48 @@
+% Tag-driven routing in a distributed storage network
+% Ximin Luo
+
+A system for decentralised search.
+
+## Build-depends
+
+### Main
+
+ant
+
+python
+
+git
+
+### Docs
+
+bliki-doclet
+:	http://github.com/infinity0/bliki-doclet
+:	Make sure the `.jar` exists at `doc/bliki-doclet.jar`
+
+pandoc
+:	http://johnmacfarlane.net/pandoc/
+:	Debian: install `pandoc`
+
+pdflatex
+:	Debian: install `texlive-latex-base`
+
+GNU coreutils
+:	Debian: install `coreutils`
+
+### Scraper
+
+graph-easy (CPAN)
+:	http://search.cpan.org/~tels/Graph-Easy/
+:	Debian: install `dh-make-perl`, then run `cpan2deb Graph::Easy` to create a
+	local `.deb` of `libgraph-easy-perl`, which you should then install.
+
+JUNG
+:	http://jung.sourceforge.net/
+
+pydot
+:	http://www.dkbza.org/pydot.html
+:	Debian: install `python-pydot`
+
+FlickrAPI
+:	http://stuvel.eu/flickrapi/
+:	Debian: install `python-flickrapi`
