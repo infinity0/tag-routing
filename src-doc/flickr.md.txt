@@ -18,6 +18,17 @@ group           ?
 testimonial     ?
 --------------- -------------------------------------
 
+# initial data scrape
+
+subgraph of n users, ? photos
+
+- pick a well-connected seed; breadth-search to obtain n sample users.
+- for each sample user,
+	- for each photo by them, 
+		- get photo's tag list, and save into database
+- hereafter, only consider these sample users and photos. references to items
+  not in our sample should be ignored.
+
 # needed data structures
 
 ## social
@@ -37,24 +48,27 @@ testimonial     ?
 
 ## index
 
-1. from a user's photoset, add
+### from user photosets
 
-	- all photos in set
-	- all favourites relevant to set's "relevant" tags
-	- all galleries relevant to set's "relevant" tags
-	- leftovers get distributed randomly amongst user's indexes
+link to documents
+:	- all photos in set
+	- all favourites tagged with set's "related" tags
+	- all gallery-photos tagged with set's "related" tags
 
-2. from a group pool, add
+aggregate related sets into one index
 
-	- all photos in pool
+### from a group pool
+
+link to documents
+:	- all photos in pool
 	- related member photos
-	- link to all related groups
-		- get related tags
-		- flick.groups.search on those tags
-		- find "page" which contains self, and all groups from that page only
 
-3. from categories, add
+link to indexes
+:	- get related tags
+	- flick.groups.search on those tags
+	- find the results "page" which contains self, and add groups from that page only
+	- add maybe a random half of those pages, using an algorithm that increases clustering
 
-	- parent categories
-	- all groups in that category
-	- additional links that "jump" layers, etc
+### large-scale structure
+
+need some way of generating "higher-level" indexes that cover more general tags etc...

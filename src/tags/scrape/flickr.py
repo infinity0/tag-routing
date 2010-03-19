@@ -4,7 +4,7 @@ import sys
 from flickrapi import FlickrAPI
 from xml.etree.ElementTree import dump
 
-def init(api_key, api_sec, token=None):
+def initAPI(api_key, api_sec, token=None):
 
 	if token:
 		ff = FlickrAPI(api_key, api_sec, token=token, store_token=False, cache=True)
@@ -17,12 +17,11 @@ def init(api_key, api_sec, token=None):
 			raw_input("Press ENTER when you have done so... ")
 		ff.get_token_part_two((token, frob))
 
+	return ff
+
+if __name__ == "__main__":
+	ff = initAPI(*sys.argv[1:])
+
 	a = ff.tags_getRelated(tag="dune")
 	dump(a)
 
-	a = ff.groups_browse()
-	dump(a)
-
-
-if __name__ == "__main__":
-	init(*sys.argv[1:])
