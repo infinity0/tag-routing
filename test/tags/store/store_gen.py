@@ -37,7 +37,7 @@ def breadth(g, s, n):
 	nodes = []
 	queue = [s]
 
-	for i in xrange(0, n):
+	while len(nodes) < n:
 		next(g, nodes, queue)
 
 	return nodes

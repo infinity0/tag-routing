@@ -1,6 +1,7 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
 import sys
+
 from pydot import Node, Edge, Graph, Dot
 
 
@@ -8,57 +9,62 @@ class StateError(Exception):
 	pass
 
 
-class Sample():
+class IDSample():
 
 	def __init__(self):
-		self.dangling = set()
 		self.node = {}
 		self.complete = False
+
+	def __contains__(self, id):
+		return id in self.node
+
+	def __len__(self):
+		return len(self.node)
 
 	def add_node(self, n):
 		"""
 		@param n: ID to add
 		"""
 		if self.complete:
-			raise StateError
+			raise StateError("sample not finalised")
 
 		if n.id in self.node:
 			raise KeyError
 
 		self.node[n.id] = n
-		self.dangling.discard(n.id)
-
-		d = set(n.out.keys())
-		d.difference_update(self.node.keys())
-		self.dangling.update(d)
 
 	def finalise(self):
+		"""
+		Finalises the sample by discarding edges to nodes not part of the sample.
+		@return: The discarded edges
+		"""
 		if self.complete: return
 
 		removed = []
 		for id in self.node.itervalues():
-			for rid in self.dangling:
-				if rid in id.out:
-					removed.append(Edge(str(id.id), str(rid), attr=str(id.out.pop(rid))))
+			for dst in id.out.keys(): ## make a copy since we want to remove
+				if dst not in self.node:
+					removed.append(Edge(str(id.id), str(dst), label=str(id.out.pop(dst))))
 
 		self.complete = True
 		return removed
 
-	def output_dot(self, fn):
+	def build_graph(self):
 		"""
 		Outputs the sample in .dot format
-		@param fn: filename to output
+		@return: string representation of graph in dot format
 		"""
 		if not self.complete:
-			raise StateError
+			raise StateError("sample not finalised")
 
 		g = Dot(graph_type='digraph')
 
 		for id in self.node.itervalues():
+			g.add_node(Node(str(id.id)))
 			for (dst, attr) in id.out.iteritems():
-				g.add_edge(Edge(str(id.id), str(dst), attr=str(attr)))
+				g.add_edge(Edge(str(id.id), str(dst), label=str(attr)))
 
-		print >>open(fn, 'w'), g.to_string()
+		return g
 
 
 class ID():
@@ -72,9 +78,8 @@ class ID():
 		self.out = out
 
 
-def run_tests(argv):
-	#return 0
-	ss = Sample()
+if __name__ == "__main__":
+	ss = IDSample()
 	ss.add_node(ID(1, {2:1, 4:2}))
 	ss.add_node(ID(2, {3:1, 1:2}))
 	ss.add_node(ID(3, {4:1, 2:2}))
@@ -82,8 +87,5 @@ def run_tests(argv):
 	#ss.add_node(ID(5, {1:1, 3:2}))
 	r = ss.finalise()
 	print " ".join([e.to_string() for e in r])
-	ss.output_dot("test.dot")
-	return 0
-
-if __name__ == "__main__":
-	sys.exit(run_tests(sys.argv))
+	print ss.build_graph().to_string()
+	sys.exit(0)
