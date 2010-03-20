@@ -122,7 +122,7 @@ def make_tgr(n_tgr, item_tag, net_tgr, n_doc):
 	obj_tgr = {} # map of ids to tgraphs
 
 	# generate entries
-	rel_tgr = dict([(t, set()) for t in item_tag.keys()]) # map of tags to tgraphs related to them
+	rel_tgr = dict([(t, set()) for t in item_tag.iterkeys()]) # map of tags to tgraphs related to them
 	seed_tgr = {}
 	for x in xrange(8, 8+n_tgr):
 		id = TGR + x
@@ -147,7 +147,7 @@ def make_tgr(n_tgr, item_tag, net_tgr, n_doc):
 	prob_tgr = {} # map of ids to tgraph probabilites
 	for (id, gg) in obj_tgr.iteritems():
 		dd = set()
-		for t in gg.keys():
+		for t in gg.iterkeys():
 			dd.update(item_tag[t])
 		item_tgr[id] = dd
 		prob_tgr[id] = len(dd) / float(n_doc)
@@ -177,7 +177,7 @@ def make_idx(n_idx, item_tag, net_idx, item_doc):
 	obj_idx = {} # map of ids to indexes
 
 	# generate entries
-	rel_idx = dict([(t, set()) for t in item_tag.keys()]) # map of tags to indexes related to them
+	rel_idx = dict([(t, set()) for t in item_tag.iterkeys()]) # map of tags to indexes related to them
 	prob_idx = {} # map of ids to {tag:prob}
 	seed_idx = {}
 	freq_idx = {}
@@ -294,8 +294,8 @@ def jcode_tgr(id, tgr, prob_tag, prob_tgr):
 	return "		sctl.map_tgr_node.put(%sL, uDG(bHS().%sbuild(), bHM().%sbuild()));\
 \n		sctl.map_tgr.put(%sL, Maps.<String, U2Map<String, Long, Probability>>buildHashMap().%sbuild());\n" % (
 		id,
-		"".join(["_(\"%s\", p(%s))." % (k, prob_tag[k]) if type_match(TAG, k) else "" for k in tgr.keys()]),
-		"".join(["_(%sL, p(%s))." % (k, prob_tgr[k]) if type_match(TGR, k) else "" for k in tgr.keys()]),
+		"".join(["_(\"%s\", p(%s))." % (k, prob_tag[k]) if type_match(TAG, k) else "" for k in tgr.iterkeys()]),
+		"".join(["_(%sL, p(%s))." % (k, prob_tgr[k]) if type_match(TGR, k) else "" for k in tgr.iterkeys()]),
 		id,
 		"" .join(["_(\"%s\", uDG(bHS().%sbuild(), bHM().%sbuild()))." % (t,
 			"".join(["_(\"%s\", p(%s))." % (k, v) if type_match(TAG, k) else "" for k, v in out.iteritems()]),
