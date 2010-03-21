@@ -7,7 +7,7 @@ DOC="site"
 RES="res"
 
 mkdir -p "$DOC"
-ln -s "../$SRC/$RES" "$DOC/$RES"
+cp -alT "$SRC/$RES" "$DOC/$RES"
 mkdir -p "$BLD"
 
 cd "$SRC"
@@ -39,5 +39,4 @@ for i in *.md.txt; do
 done
 
 cd ..
-
 rm -rf "$BLD"

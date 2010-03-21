@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="tag-routing" default="dist" basedir=".">
+<project name="tag-routing" default="help" basedir=".">
 
 	<property name="main.src" location="src"/>
 	<property name="main.make" location="build/main"/>
@@ -35,9 +35,20 @@
 		<delete dir="${tmp}"/>
 	</target>
 
-	<target name="dist" depends="clean-all, package, doc" />
+	<target name="all" depends="clean-all, package, doc" />
 
 	<target name="clean-all" depends="clean, clean-doc"/>
+
+	<target name="help">
+		<echo message="Main targets"/>
+		<echo message=""/>
+		<echo message="  all         clean-builds everything"/>
+		<echo message="  package     builds .jar packages in ${main.dst}"/>
+		<echo message="  doc         builds documentation in ${doc.dst}"/>
+		<echo message="  clean-all   cleans all build products"/>
+		<echo message=""/>
+		<echo message="See build.xml for more targets"/>
+	</target>
 
 	<!-- =================================================================== -->
 	<!-- Standard build                                                      -->
@@ -167,7 +178,6 @@
 	</target>
 
 	<target name="javadoc" depends="init-doc, dep">
-		<delete dir="${doc.api}"/>
 		<javadoc classpathref="lib.path" destdir="${doc.api}" author="true" version="true" use="true" private="true">
 			<doclet name="info.bliki.doclet.standard.Standard" path="${lib}/bliki-doclet.jar"/>
 			<fileset dir="${main.src}" defaultexcludes="yes">
@@ -182,8 +192,8 @@
 	</target>
 
 	<target name="clean-doc">
-		<delete dir="${doc.dst}"/>
 		<delete dir="${doc.api}"/>
+		<delete dir="${doc.dst}"/>
 	</target>
 
 </project>
