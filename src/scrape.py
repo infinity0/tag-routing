@@ -2,7 +2,7 @@
 
 import sys
 
-from tags.scrape.flickr import initAPI, getNSID, makeID, scrapeID
+from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.object import IDSample, ID
 from xml.etree.ElementTree import dump
 
@@ -14,8 +14,8 @@ def main(seed, size, **opts):
 
 	size = int(size)
 
-	ff = initAPI(**opts)
-	ss = scrapeID(ff, seed, size)
+	ff = SafeFlickrAPI(**opts)
+	ss = ff.scrapeIDs(seed, size)
 	gg = ss.build()
 
 	#gg.write_graphml(sys.stdout)
@@ -36,7 +36,7 @@ if __name__ == "__main__":
 
 	config.add_option("-k", "--api-key", type="string", metavar="APIKEY",
 	  help = "Flickr API key")
-	config.add_option("-s", "--api-sec", type="string", metavar="SECRET",
+	config.add_option("-s", "--secret", type="string", metavar="SECRET",
 	  help = "Flickr API secret")
 	config.add_option("-t", "--token", type="string", metavar="TOKEN",
 	  help = "Flickr API authentication token")
