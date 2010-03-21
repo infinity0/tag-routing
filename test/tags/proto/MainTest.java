@@ -18,6 +18,7 @@ import java.io.IOException;
 public class MainTest extends TestCase {
 
 	protected boolean report = false;
+	protected boolean run_extended = false;
 
 	public static class SimpleQP<I, T, S> extends QueryProcessor<I, T, I, S, S, S, S> {
 		public SimpleQP(
@@ -58,6 +59,8 @@ public class MainTest extends TestCase {
 	}
 
 	public void testProbabilityQueryProcessor() {
+		if (!run_extended) { return; }
+
 		Executor exec = new ThreadPoolExecutor(
 			0x40, 0x40, 1, TimeUnit.SECONDS,
 			new LinkedBlockingQueue<Runnable>(),

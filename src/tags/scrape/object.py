@@ -36,7 +36,7 @@ class IDSample():
 	def finalise(self):
 		"""
 		Finalises the sample by discarding edges to nodes not part of the sample.
-		@return: The discarded edges
+		@return: --The discarded edges-- This uses up too much memory; return empty list for now
 		"""
 		if self.complete: return
 
@@ -44,7 +44,8 @@ class IDSample():
 		for id in self.node.itervalues():
 			for dst in id.out.keys(): ## make a copy since we want to remove
 				if dst not in self.node:
-					removed.append(Edge(str(id.id), str(dst), label=str(id.out.pop(dst))))
+					attr = id.out.pop(dst)
+					#removed.append(Edge(str(id.id), str(dst), label=str(attr))) # uses up too muhc memory
 
 		self.complete = True
 		return removed

@@ -38,6 +38,8 @@ graph-easy (CPAN)
 
 JUNG
 :	http://jung.sourceforge.net/
+:	Make sure these jars are in lib/: collections-generic colt jung-algorithms
+	jung-api jung-graph-impl jung-io wstx-asl
 
 pydot
 :	http://www.dkbza.org/pydot.html
