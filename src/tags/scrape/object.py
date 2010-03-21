@@ -2,7 +2,7 @@
 
 import sys
 
-from pydot import Node, Edge, Graph, Dot
+from igraph import Graph
 
 
 class StateError(Exception):
@@ -13,7 +13,8 @@ class IDSample():
 
 	def __init__(self):
 		self.node = {}
-		self.complete = False
+		self.graph = None
+		self.idmap = {}
 
 	def __contains__(self, id):
 		return id in self.node
@@ -25,47 +26,41 @@ class IDSample():
 		"""
 		@param n: ID to add
 		"""
-		if self.complete:
-			raise StateError("sample not finalised")
+		if self.graph:
+			raise StateError("sample already finalised")
 
 		if n.id in self.node:
 			raise KeyError
 
 		self.node[n.id] = n
 
-	def finalise(self):
+	def build(self):
 		"""
 		Finalises the sample by discarding edges to nodes not part of the sample.
-		@return: --The discarded edges-- This uses up too much memory; return empty list for now
+		@return: The built graph
 		"""
-		if self.complete: return
+		if self.graph: return self.graph
 
-		removed = []
-		for id in self.node.itervalues():
-			for dst in id.out.keys(): ## make a copy since we want to remove
-				if dst not in self.node:
-					attr = id.out.pop(dst)
-					#removed.append(Edge(str(id.id), str(dst), label=str(attr))) # uses up too muhc memory
+		edges = []
+		v_id = []
+		e_label = []
 
-		self.complete = True
-		return removed
+		for (i, id) in enumerate(self.node.iterkeys()):
+			self.idmap[id] = i
+			assert len(v_id) == i
+			v_id.append(id)
 
-	def build_graph(self):
-		"""
-		Outputs the sample in .dot format
-		@return: string representation of graph in dot format
-		"""
-		if not self.complete:
-			raise StateError("sample not finalised")
+		for (i, node) in enumerate(self.node.itervalues()):
+			for (dst, attr) in node.out.items(): ## make a copy since we want to remove
+				if dst in self.node:
+					edges.append((i, self.idmap[dst]))
+					e_label.append(str(attr))
+					pass
+				else:
+					del node.out[dst]
 
-		g = Dot(graph_type='digraph')
-
-		for id in self.node.itervalues():
-			g.add_node(Node(str(id.id)))
-			for (dst, attr) in id.out.iteritems():
-				g.add_edge(Edge(str(id.id), str(dst), label=str(attr)))
-
-		return g
+		self.graph = Graph(n=len(self.node), edges=edges, directed=True, vertex_attrs={"id":v_id}, edge_attrs={"label":e_label})
+		return self.graph
 
 
 class ID():
@@ -78,15 +73,3 @@ class ID():
 		self.id = id
 		self.out = out
 
-
-if __name__ == "__main__":
-	ss = IDSample()
-	ss.add_node(ID(1, {2:1, 4:2}))
-	ss.add_node(ID(2, {3:1, 1:2}))
-	ss.add_node(ID(3, {4:1, 2:2}))
-	ss.add_node(ID(4, {1:1, 3:2, 5:3, 6:4}))
-	#ss.add_node(ID(5, {1:1, 3:2}))
-	r = ss.finalise()
-	print " ".join([e.to_string() for e in r])
-	print ss.build_graph().to_string()
-	sys.exit(0)

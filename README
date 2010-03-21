@@ -41,9 +41,9 @@ JUNG
 :	Make sure these jars are in lib/: collections-generic colt jung-algorithms
 	jung-api jung-graph-impl jung-io wstx-asl
 
-pydot
-:	http://www.dkbza.org/pydot.html
-:	Debian: install `python-pydot`
+igraph
+:	http://igraph.sourceforge.net/
+:	Debian: install `python-igraph` https://launchpad.net/~igraph/+archive/ppa
 
 FlickrAPI
 :	http://stuvel.eu/flickrapi/

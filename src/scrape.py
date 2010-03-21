@@ -16,9 +16,10 @@ def main(seed, size, **opts):
 
 	ff = initAPI(**opts)
 	ss = scrapeID(ff, seed, size)
-	gg = ss.build_graph()
+	gg = ss.build()
 
-	print gg.to_string()
+	#gg.write_graphml(sys.stdout)
+	gg.write_dot(sys.stdout)
 
 	return 0
 

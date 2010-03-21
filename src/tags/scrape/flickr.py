@@ -48,5 +48,5 @@ def scrapeID(ff, seed, size):
 		id = next(s, q)
 		if id is not None: print >>sys.stderr, "sample: %s/%s (added %s)" % (len(s), size, id)
 
-	s.finalise()
+	s.build()
 	return s
