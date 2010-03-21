@@ -1,41 +1,59 @@
 <?xml version="1.0"?>
 
 <project name="tag-routing" default="dist" basedir=".">
-	<property name="build" location="build/"/>
-	<property name="build-test" location="build-test/"/>
-	<property name="run-test" location="run-test/"/>
-	<property name="tmp" location="tmp/"/>
-	<property name="dist" location="dist/"/>
-	<property name="javadoc" location="javadoc/"/>
-	<property name="junit.location" value="/usr/share/java/junit.jar"/>
-	<property name="packagebase" value="tags" />
 
+	<property name="main.src" location="src"/>
+	<property name="main.make" location="build/main"/>
+	<property name="main.dst" location="dist"/>
+
+	<property name="test.src" location="test"/>
+	<property name="test.make" location="build/test"/>
+	<property name="test.dst" location="run"/>
+
+	<property name="doc.src" location="doc"/>
+	<property name="doc.dst" location="site"/>
+	<property name="doc.api" location="site/api"/>
+
+	<property name="tmp" location="tmp"/>
+	<property name="lib" location="lib"/>
 	<path id="lib.path">
-		<fileset dir="lib/">
+		<fileset dir="${lib}">
 			<include name="**/*.jar"/>
 		</fileset>
 	</path>
 
-	<target name="mkdir">
-		<mkdir dir="${build}"/>
-		<mkdir dir="${build-test}"/>
-		<mkdir dir="${run-test}"/>
-		<mkdir dir="${dist}"/>
-	</target>
+	<property name="junit.location" value="/usr/share/java/junit.jar"/>
+	<property name="packagebase" value="tags" />
 
-	<target name="build-dep">
-		<mkdir dir="lib/"/>
+	<!-- =================================================================== -->
+	<!-- Miscellaneoun                                                       -->
+	<!-- =================================================================== -->
+
+	<target name="dep">
 		<mkdir dir="${tmp}"/>
+		<!-- TODO NORM see README -->
 		<delete dir="${tmp}"/>
 	</target>
 
-	<target name="build" depends="mkdir,build-dep">
+	<target name="dist" depends="clean-all, package, doc" />
+
+	<target name="clean-all" depends="clean, clean-doc"/>
+
+	<!-- =================================================================== -->
+	<!-- Standard build                                                      -->
+	<!-- =================================================================== -->
+
+	<target name="init">
+		<mkdir dir="${main.make}"/>
+		<mkdir dir="${main.dst}"/>
+		<mkdir dir="${test.make}"/>
+		<mkdir dir="${test.dst}"/>
+	</target>
+
+	<target name="build" depends="init, dep">
 		<tstamp/>
-		<javac srcdir="src/" destdir="${build}" debug="on" optimize="on">
+		<javac srcdir="${main.src}" destdir="${main.make}" debug="on" optimize="on">
 			<compilerarg value="-Xlint"/>
-			<sourcepath>
-				<pathelement path="${build}"/>
-			</sourcepath>
 			<classpath>
 				<path refid="lib.path"/>
 			</classpath>
@@ -44,40 +62,64 @@
 		</javac>
 	</target>
 
-	<target name="build-test" depends="build,check-data" unless="skip_tests">
-		<javac srcdir="test/" destdir="${build-test}" debug="on" optimize="on">
+	<target name="build-test" depends="build, check-data" unless="skip_tests">
+		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on">
+			<compilerarg value="-Xlint"/>
 			<classpath>
 				<path refid="lib.path"/>
-				<pathelement path="${build}"/>
+				<pathelement path="${main.make}"/>
 				<pathelement location="${junit.location}"/>
 			</classpath>
-			<compilerarg value="-Xlint"/>
 			<include name="**/*.java"/>
 		</javac>
 	</target>
 
 	<target name="test" depends="build-test" unless="skip_tests">
-		<delete dir="${run-test}"/>
-		<mkdir dir="${run-test}"/>
-		<junit printsummary="yes" fork="yes" haltonfailure="yes" dir="${run-test}" showoutput="yes">
+		<junit printsummary="yes" fork="yes" haltonfailure="yes" dir="${test.dst}" showoutput="yes">
 			<classpath>
 				<path refid="lib.path"/>
-				<pathelement path="${build}"/>
-				<pathelement path="${build-test}"/>
+				<pathelement path="${main.make}"/>
+				<pathelement path="${test.make}"/>
 				<pathelement location="${junit.location}"/>
 			</classpath>
 			<assertions><enable/></assertions>
 			<formatter type="plain" usefile="false"/>
 			<batchtest fork="yes">
-				<fileset dir="${build-test}">
+				<fileset dir="${test.make}">
 					<include name="**/*Test.class"/>
 				</fileset>
 			</batchtest>
 		</junit>
 	</target>
 
-	<!-- ================================================== -->
-	<property name="data.StoreGenerator" value="test/tags/store/StoreGenerator" />
+	<target name="package" depends="build, test">
+		<jar jarfile="${main.dst}/tags.jar" duplicate="fail">
+			<manifest>
+				<!--<attribute name="Main-Class" value="${packagebase}.proto.Main"/>-->
+			</manifest>
+			<fileset dir="${main.src}" casesensitive="no">
+				<include name="**/*.txt"/>
+				<include name="**/*.properties"/>
+			</fileset>
+			<fileset dir="${main.make}/">
+				<exclude name="${version.src}"/>
+			</fileset>
+			<!--<zipgroupfileset dir="${lib}" includes="**/*.jar"/>-->
+		</jar>
+	</target>
+
+	<target name="clean">
+		<delete dir="${main.make}"/>
+		<delete dir="${main.dst}"/>
+		<delete dir="${test.make}"/>
+		<delete dir="${test.dst}"/>
+	</target>
+
+	<!-- =================================================================== -->
+	<!-- Test data generation                                                -->
+	<!-- =================================================================== -->
+
+	<property name="data.StoreGenerator" value="${test.src}/tags/store/StoreGenerator" />
 
 	<fileset dir="." id="data.path">
 		<include name="sample.*.txt"/>
@@ -115,46 +157,33 @@
 		<antcall target="clean-data"/>
 	</target>
 
-	<!-- ================================================== -->
-	<target name="jar" depends="build,test">
-		<jar jarfile="${dist}/tags.jar" duplicate="fail">
-			<manifest>
-				<!--<attribute name="Main-Class" value="${packagebase}.proto.Main"/>-->
-			</manifest>
-			<fileset dir="src/" casesensitive="no">
-				<include name="**/*.txt"/>
-				<include name="**/*.properties"/>
-			</fileset>
-			<fileset dir="${build}/">
-				<exclude name="${version.src}"/>
-			</fileset>
-			<zipgroupfileset dir="lib/" includes="**/*.jar"/>
-		</jar>
+	<!-- =================================================================== -->
+	<!-- Documentation                                                       -->
+	<!-- =================================================================== -->
+
+	<target name="init-doc">
+		<mkdir dir="${doc.dst}"/>
+		<mkdir dir="${doc.api}"/>
 	</target>
 
-	<target name="javadoc" depends="build-dep">
-		<delete dir="${javadoc}"/>
-		<javadoc classpathref="lib.path" destdir="${javadoc}" author="true" version="true" use="true" private="true">
-			<doclet name="info.bliki.doclet.standard.Standard" path="doc/bliki-doclet.jar"/>
-			<fileset dir="src/" defaultexcludes="yes">
+	<target name="javadoc" depends="init-doc, dep">
+		<delete dir="${doc.api}"/>
+		<javadoc classpathref="lib.path" destdir="${doc.api}" author="true" version="true" use="true" private="true">
+			<doclet name="info.bliki.doclet.standard.Standard" path="${lib}/bliki-doclet.jar"/>
+			<fileset dir="${main.src}" defaultexcludes="yes">
 				<include name="**/*.java"/>
 			</fileset>
 			<link href="http://java.sun.com/javase/6/docs/api"/>
 		</javadoc>
 	</target>
 
-	<target name="doc">
-		<exec executable="./build-doc.sh" failonerror="true" />
+	<target name="doc" depends="javadoc">
+		<exec executable="./build-doc.sh" failonerror="true"/>
 	</target>
 
-	<target name="dist" depends="clean,regen-data,jar">
-	</target>
-
-	<target name="clean" depends="clean-data">
-		<delete dir="${build}"/>
-		<delete dir="${build-test}"/>
-		<delete dir="${run-test}"/>
-		<delete dir="${dist}"/>
+	<target name="clean-doc">
+		<delete dir="${doc.dst}"/>
+		<delete dir="${doc.api}"/>
 	</target>
 
 </project>

@@ -1,10 +1,10 @@
 build
-build-test
 dist
-javadoc
-lib
+run
+site
 tmp
-run-test
+lib
+!lib/patches
 test/tags/store/StoreGenerator.java
 sample.*.txt
 sample-data-*.tar.bz2

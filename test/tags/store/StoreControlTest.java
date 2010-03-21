@@ -32,7 +32,7 @@ public class StoreControlTest extends TestCase {
 		GraphMLReader<DirectedGraph<Node, Arc>, Node, Arc>(fac_v, fac_e);
 
 		DirectedGraph<Node, Arc> g = new DirectedSparseGraph<Node, Arc>();
-		reader.load("../test.2.gml", g);
+		reader.load("../test.graphml", g);
 
 	}
 

@@ -1,12 +1,13 @@
 #!/bin/bash
 # Generate documents from source code
 
-SRC="src-doc"
-BLD="build-doc"
-DOC="doc"
+SRC="doc"
+BLD="build/doc"
+DOC="site"
 RES="res"
 
 mkdir -p "$DOC"
+ln -s "../$SRC/$RES" "$DOC/$RES"
 mkdir -p "$BLD"
 
 cd "$SRC"
