@@ -3,13 +3,17 @@ package tags;
 
 import tags.io.AttrGraphMLReader;
 import tags.io.AttrGraphMLMetadata;
+import edu.uci.ics.jung.io.GraphMLMetadata;
 
-import edu.uci.ics.jung.graph.*;
-import edu.uci.ics.jung.io.*;
-import org.apache.commons.collections15.*;
+import edu.uci.ics.jung.graph.DirectedGraph;
+import edu.uci.ics.jung.graph.DirectedSparseGraph;
+import org.apache.commons.collections15.Factory;
+import org.apache.commons.collections15.FactoryUtils;
 
-import java.util.*;
-import java.io.*;
+import java.util.Map;
+import java.io.IOException;
+import javax.xml.parsers.ParserConfigurationException;
+import org.xml.sax.SAXException;
 
 /**
 ** Entry point for the tag-routing suite.
@@ -22,6 +26,7 @@ public class Tags {
 		System.out.println("Hello, world!");
 		String fn = args.length == 0? "../test.graphml": args[0];
 		readGraphML(fn);
+		//for (String a: args) { System.out.println(a); }
 	}
 
 	public static class Vx {
@@ -32,7 +37,7 @@ public class Tags {
 		@Override public String toString() { return "->"; }
 	}
 
-	public static void readGraphML(String fn) throws IOException, javax.xml.parsers.ParserConfigurationException, org.xml.sax.SAXException {
+	public static void readGraphML(String fn) throws IOException, ParserConfigurationException, SAXException {
 
 		Factory<Vx> fac_v = FactoryUtils.instantiateFactory(Vx.class);
 		Factory<Ed> fac_e = FactoryUtils.instantiateFactory(Ed.class);

@@ -26,7 +26,7 @@
 	<property name="packagebase" value="tags" />
 
 	<!-- =================================================================== -->
-	<!-- Miscellaneoun                                                       -->
+	<!-- Miscellaneous                                                       -->
 	<!-- =================================================================== -->
 
 	<target name="dep">
@@ -78,7 +78,7 @@
 		</javac>
 	</target>
 
-	<target name="build-test" depends="build" unless="skip_tests">
+	<target name="build-test" depends="build" unless="test.skip">
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on">
 			<compilerarg value="-Xlint"/>
 			<classpath>
@@ -90,7 +90,7 @@
 		</javac>
 	</target>
 
-	<target name="test" depends="build-test" unless="skip_tests">
+	<target name="test" depends="build-test" unless="test.skip">
 		<junit printsummary="yes" fork="yes" haltonfailure="yes" dir="${test.dst}" showoutput="yes">
 			<classpath>
 				<path refid="lib.path"/>
@@ -126,6 +126,7 @@
 		</jar>
 	</target>
 
+	<property name="run.args" value="" />
 	<target name="run" depends="package">
 		<java classname="${packagebase}.Tags" fork="yes" dir="${test.dst}">
 			<classpath>
@@ -133,7 +134,7 @@
 				<pathelement location="${main.dst}/tags.jar"/>
 			</classpath>
 			<assertions><enable/></assertions>
-			<arg line="${run.args}" />
+			<arg line="${run.args}"/>
 			<sysproperty key="test.verbose" value="${test.verbose}"/>
 			<sysproperty key="test.extensive" value="${test.extensive}"/>
 		</java>
