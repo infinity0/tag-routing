@@ -2,20 +2,20 @@
 
 <project name="tag-routing" default="help" basedir=".">
 
-	<property name="main.src" location="src"/>
-	<property name="main.make" location="build/main"/>
-	<property name="main.dst" location="dist"/>
+	<property name="main.src" value="src"/>
+	<property name="main.make" value="build/main"/>
+	<property name="main.dst" value="dist"/>
 
-	<property name="test.src" location="test"/>
-	<property name="test.make" location="build/test"/>
-	<property name="test.dst" location="run"/>
+	<property name="test.src" value="test"/>
+	<property name="test.make" value="build/test"/>
+	<property name="test.dst" value="run"/>
 
-	<property name="doc.src" location="doc"/>
-	<property name="doc.dst" location="site"/>
-	<property name="doc.api" location="site/api"/>
+	<property name="doc.src" value="doc"/>
+	<property name="doc.dst" value="site"/>
+	<property name="doc.api" value="site/api"/>
 
-	<property name="tmp" location="tmp"/>
-	<property name="lib" location="lib"/>
+	<property name="tmp" value="tmp"/>
+	<property name="lib" value="lib"/>
 	<path id="lib.path">
 		<fileset dir="${lib}">
 			<include name="**/*.jar"/>
@@ -43,11 +43,16 @@
 		<echo message="Main targets"/>
 		<echo message=""/>
 		<echo message="  all         clean-builds everything"/>
-		<echo message="  package     builds .jar packages in ${main.dst}"/>
-		<echo message="  doc         builds documentation in ${doc.dst}"/>
+		<echo message="  package     builds .jar packages in ./${main.dst}/"/>
+		<echo message="  doc         builds documentation in ./${doc.dst}/"/>
 		<echo message="  clean-all   cleans all build products"/>
 		<echo message=""/>
-		<echo message="See build.xml for more targets"/>
+		<echo message="Test parameters (-Dtest.PARAM=true)"/>
+		<echo message=""/>
+		<echo message="  verbose     Report additional information"/>
+		<echo message="  extensive   Run extensive tests"/>
+		<echo message=""/>
+		<echo message="See build.xml for more details"/>
 	</target>
 
 	<!-- =================================================================== -->
@@ -73,7 +78,7 @@
 		</javac>
 	</target>
 
-	<target name="build-test" depends="build, check-data" unless="skip_tests">
+	<target name="build-test" depends="build" unless="skip_tests">
 		<javac srcdir="${test.src}" destdir="${test.make}" debug="on" optimize="on">
 			<compilerarg value="-Xlint"/>
 			<classpath>
@@ -100,6 +105,8 @@
 					<include name="**/*Test.class"/>
 				</fileset>
 			</batchtest>
+			<sysproperty key="test.verbose" value="${test.verbose}"/>
+			<sysproperty key="test.extensive" value="${test.extensive}"/>
 		</junit>
 	</target>
 
@@ -153,12 +160,9 @@
 		</delete>
 	</target>
 
-	<target name="check-data">
+	<target name="stash-data">
 		<available file="${data.StoreGenerator}.java" property="data.StoreGenerator.present" />
-		<fail message="Test data not generated; generate with `ant regen-data`." unless="data.StoreGenerator.present" />
-	</target>
-
-	<target name="stash-data" depends="check-data">
+		<fail message="No data to stash" unless="data.StoreGenerator.present" />
 		<tstamp>
 			<format property="STAMP" pattern="yyyyMMdd-HHmmss"/>
 		</tstamp>

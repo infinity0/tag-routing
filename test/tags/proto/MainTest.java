@@ -17,8 +17,8 @@ import java.io.IOException;
 
 public class MainTest extends TestCase {
 
-	protected boolean report = false;
-	protected boolean run_extended = false;
+	final protected boolean verbose = Boolean.getBoolean("test.verbose");
+	final protected boolean extensive = Boolean.getBoolean("test.extensive");
 
 	public static class SimpleQP<I, T, S> extends QueryProcessor<I, T, I, S, S, S, S> {
 		public SimpleQP(
@@ -58,8 +58,8 @@ public class MainTest extends TestCase {
 		};
 	}
 
-	public void testProbabilityQueryProcessor() {
-		if (!run_extended) { return; }
+	public void testProbabilityQueryProcessor() throws Throwable {
+		if (!extensive) { return; }
 
 		Executor exec = new ThreadPoolExecutor(
 			0x40, 0x40, 1, TimeUnit.SECONDS,
@@ -68,7 +68,19 @@ public class MainTest extends TestCase {
 		);
 		FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl =
 		new FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability>(".");
-		StoreGenerator.sctl_gen_all(sctl);
+
+		try {
+			Class<?> gen = Class.forName("tags.store.StoreGenerator");
+			java.lang.reflect.Method method = gen.getMethod("sctl_gen_all", FileStoreControl.class);
+			try {
+				method.invoke(null, sctl);
+			} catch (java.lang.reflect.InvocationTargetException e) {
+				throw e.getCause();
+			}
+		} catch (ClassNotFoundException e) {
+			fail("Test data not generated; generate with `ant regen-data`.");
+			return;
+		}
 
 		System.out.println("Test data initialised with " + sctl.getSummary());
 
@@ -95,7 +107,7 @@ public class MainTest extends TestCase {
 			// get some results
 
 			while (proc.getResults() == null || proc.getResults().isEmpty()) {
-				nextStep(proc, report);
+				nextStep(proc, verbose);
 			}
 			showResults(query, proc.getResults());
 
@@ -104,7 +116,7 @@ public class MainTest extends TestCase {
 				nextStep(proc, false);
 				if (proc.getResults() == res) { continue; }
 				System.out.println("Got " + res.K0Map().size() + "," + res.K1Map().size() + " results for " + query);
-				if (report) { System.out.println(showResults(query, proc.getResults())); }
+				if (verbose) { System.out.println(showResults(query, proc.getResults())); }
 				res = proc.getResults();
 			}
 

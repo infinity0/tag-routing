@@ -31,7 +31,7 @@ import java.util.EnumMap;
 ** Extension of {@link GraphMLReader} which has extra methods for exploring
 ** {@code <key>} elements (ie. attributes) of GraphML.
 **
-** @see http://graphml.graphdrawing.org/primer/graphml-primer.html#AttributesDefinition
+** @see <a href="http://graphml.graphdrawing.org/primer/graphml-primer.html#AttributesDefinition">2.4.2 Declaring GraphML-Attributes</a>
 */
 public class AttrGraphMLReader<G extends Hypergraph<V, E>, V, E> extends GraphMLReader<G, V, E> {
 
@@ -345,27 +345,27 @@ public class AttrGraphMLReader<G extends Hypergraph<V, E>, V, E> extends GraphML
 			super(type, default_value, description, new MapSettableTransformer<T, Object>(new HashMap<T, Object>()));
 		}
 
-		public SettableTransformer<T, Boolean> transformerBoolean() {
+		@Override public SettableTransformer<T, Boolean> transformerBoolean() {
 			return (SettableTransformer<T, Boolean>)super.transformerBoolean();
 		}
 
-		public SettableTransformer<T, Integer> transformerInteger() {
+		@Override public SettableTransformer<T, Integer> transformerInteger() {
 			return (SettableTransformer<T, Integer>)super.transformerInteger();
 		}
 
-		public SettableTransformer<T, Long> transformerLong() {
+		@Override public SettableTransformer<T, Long> transformerLong() {
 			return (SettableTransformer<T, Long>)super.transformerLong();
 		}
 
-		public SettableTransformer<T, Float> transformerFloat() {
+		@Override public SettableTransformer<T, Float> transformerFloat() {
 			return (SettableTransformer<T, Float>)super.transformerFloat();
 		}
 
-		public SettableTransformer<T, Double> transformerDouble() {
+		@Override public SettableTransformer<T, Double> transformerDouble() {
 			return (SettableTransformer<T, Double>)super.transformerDouble();
 		}
 
-		public SettableTransformer<T, String> transformerString() {
+		@Override public SettableTransformer<T, String> transformerString() {
 			return (SettableTransformer<T, String>)super.transformerString();
 		}
 

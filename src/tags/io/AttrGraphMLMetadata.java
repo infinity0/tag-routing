@@ -1,13 +1,16 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.io;
 
+import edu.uci.ics.jung.io.GraphMLMetadata;
+
 import org.apache.commons.collections15.Transformer;
 
 /**
-** Extension of {@link GraphMLMetadata} which has extra methods for casting
-** attribute-values to their correct attribute-types.
+** Reimplementation of {@link GraphMLMetadata} which has extra methods for
+** casting attribute-values to their correct attribute-types, and also uses
+** final fields.
 **
-** @see http://www.graphviz.org/doc/info/attrs.html
+** @see <a href="http://www.graphviz.org/doc/info/attrs.html">Node, Edge and Graph Attributes</a>
 */
 public class AttrGraphMLMetadata<T> {
 
