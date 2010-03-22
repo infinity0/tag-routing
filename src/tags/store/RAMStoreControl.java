@@ -2,8 +2,6 @@
 package tags.store;
 
 import tags.proto.PTable;
-import tags.proto.TGraph;
-import tags.proto.Index;
 import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
 import java.util.Set;
@@ -25,9 +23,7 @@ import java.io.IOException;
 ** @param <S> Type of score
 ** @param <Z> Type of identity-score
 */
-public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T, A, U, W, S, Z> {
-
-	final public File basedir;
+public class RAMStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T, A, U, W, S, Z> {
 
 	final public Map<A, Set<T>> map_doc = new HashMap<A, Set<T>>();
 	final public Map<T, Set<A>> map_tag = new HashMap<T, Set<A>>();
@@ -38,19 +34,7 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 	final public Map<A, U2Map<T, A, U>> map_tgr_node = new HashMap<A, U2Map<T, A, U>>();
 	final public Map<A, Map<T, U2Map<A, A, W>>> map_idx = new HashMap<A, Map<T, U2Map<A, A, W>>>();
 
-	/**
-	** @throws IllegalArgumentException if {@code basedir} is not a directory
-	*/
-	public FileStoreControl(File basedir) {
-		if (!basedir.isDirectory()) {
-			throw new IllegalArgumentException("not a directory: " + basedir);
-		}
-		this.basedir = basedir;
-	}
-
-	public FileStoreControl(String basedir) {
-		this(new File(basedir));
-	}
+	public RAMStoreControl() { }
 
 	public String getSummary() {
 		return "" + map_doc.size() + " documents, " + map_tag.size() + " tags, " + map_frn.size() + " ids, " + map_tgr.size() + " tgraphs, " + map_idx.size() + " indexes.";
@@ -61,9 +45,6 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 
 		frn = map_frn.get(id);
 		if (frn == null) { throw new IOException("friend-list not available for: " + id); }
-
-		//File fp = getFile(id + ".fr");
-		//throw new UnsupportedOperationException("not implemented");
 		return frn;
 	}
 
@@ -72,10 +53,6 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 
 		ptb = map_ptb.get(id);
 		if (ptb == null) { throw new IOException("ptable not available for: " + id); }
-
-		//File fp = getFile(id + ".ptab");
-		//throw new UnsupportedOperationException("not implemented");
-
 		return ptb;
 	}
 
@@ -84,10 +61,6 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 
 		tgr = map_tgr.get(addr);
 		if (tgr == null) { throw new IOException("tgraph not available for: " + addr); }
-
-		//File fp = getFile(addr + ".tgr");
-		//throw new UnsupportedOperationException("not implemented");
-
 		return tgr.get(src);
 	}
 
@@ -96,10 +69,6 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 
 		tgr_node = map_tgr_node.get(addr);
 		if (tgr_node == null) { throw new IOException("tgraph not available for: " + addr); }
-
-		//File fp = getFile(addr + ".tgr");
-		//throw new UnsupportedOperationException("not implemented");
-
 		return tgr_node.get(node);
 	}
 
@@ -108,15 +77,7 @@ public class FileStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T,
 
 		idx = map_idx.get(addr);
 		if (idx == null) { throw new IOException("index not available for: " + addr); }
-
-		//File fp = getFile(addr + ".idx");
-		//throw new UnsupportedOperationException("not implemented");
-
 		return idx.get(src);
-	}
-
-	protected File getFile(String s) {
-		return new File(basedir, s);
 	}
 
 }

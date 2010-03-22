@@ -126,6 +126,19 @@
 		</jar>
 	</target>
 
+	<target name="run" depends="package">
+		<java classname="${packagebase}.Tags" fork="yes" dir="${test.dst}">
+			<classpath>
+				<path refid="lib.path"/>
+				<pathelement location="${main.dst}/tags.jar"/>
+			</classpath>
+			<assertions><enable/></assertions>
+			<arg line="${run.args}" />
+			<sysproperty key="test.verbose" value="${test.verbose}"/>
+			<sysproperty key="test.extensive" value="${test.extensive}"/>
+		</java>
+	</target>
+
 	<target name="clean">
 		<delete dir="${main.make}"/>
 		<delete dir="${main.dst}"/>

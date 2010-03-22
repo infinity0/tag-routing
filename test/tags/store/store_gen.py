@@ -285,7 +285,7 @@ def main(prefix, jclass):
 
 
 def jmethod_def(s):
-	return "public static void sctl_gen_%s(FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl)" % s
+	return "public static void sctl_gen_%s(RAMStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl)" % s
 
 def jmethod_chain(s, n):
 	return "		sctl_gen_%s%s(sctl);\n	}\n\n	%s {" % (s, n, jmethod_def("%s%s" % (s, n)))
@@ -341,7 +341,7 @@ import static tags.util.Probability.p;
 import java.util.*;
 
 /**
-** This is a machine-generated class for populating {@link FileStoreControl}
+** This is a machine-generated class for populating {@link RAMStoreControl}
 ** instances with pre-defined randomly-generated data.
 */
 final public class StoreGenerator {

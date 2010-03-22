@@ -66,12 +66,12 @@ public class MainTest extends TestCase {
 			new LinkedBlockingQueue<Runnable>(),
 			new ThreadPoolExecutor.CallerRunsPolicy()
 		);
-		FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl =
-		new FileStoreControl<Long, String, Long, Probability, Probability, Probability, Probability>(".");
+		RAMStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl =
+		new RAMStoreControl<Long, String, Long, Probability, Probability, Probability, Probability>();
 
 		try {
 			Class<?> gen = Class.forName("tags.store.StoreGenerator");
-			java.lang.reflect.Method method = gen.getMethod("sctl_gen_all", FileStoreControl.class);
+			java.lang.reflect.Method method = gen.getMethod("sctl_gen_all", RAMStoreControl.class);
 			try {
 				method.invoke(null, sctl);
 			} catch (java.lang.reflect.InvocationTargetException e) {
