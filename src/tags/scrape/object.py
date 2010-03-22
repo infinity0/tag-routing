@@ -43,7 +43,7 @@ class IDSample():
 
 		edges = []
 		v_id = []
-		e_label = []
+		e_wgt = []
 
 		for (i, id) in enumerate(self.node.iterkeys()):
 			self.idmap[id] = i
@@ -54,12 +54,12 @@ class IDSample():
 			for (dst, attr) in node.out.items(): ## make a copy since we want to remove
 				if dst in self.node:
 					edges.append((i, self.idmap[dst]))
-					e_label.append(str(attr))
+					e_wgt.append(attr)
 					pass
 				else:
 					del node.out[dst]
 
-		self.graph = Graph(n=len(self.node), edges=edges, directed=True, vertex_attrs={"id":v_id}, edge_attrs={"label":e_label})
+		self.graph = Graph(n=len(self.node), edges=edges, directed=True, vertex_attrs={"id":v_id}, edge_attrs={"weight":e_wgt})
 		return self.graph
 
 

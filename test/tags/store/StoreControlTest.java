@@ -4,6 +4,7 @@ package tags.store;
 import junit.framework.TestCase;
 
 import tags.io.AttrGraphMLReader;
+import tags.io.AttrGraphMLMetadata;
 
 import edu.uci.ics.jung.graph.*;
 import edu.uci.ics.jung.io.*;
@@ -18,37 +19,45 @@ public class StoreControlTest extends TestCase {
 		// pass
 	}
 
-	public static class Node {
+	public static class Vx {
 		@Override public String toString() { return "o"; }
 	}
 
-	public static class Arc {
-		@Override public String toString() { return "--"; }
+	public static class Ed {
+		@Override public String toString() { return "->"; }
 	}
 
 	public void testJUNG() throws IOException, javax.xml.parsers.ParserConfigurationException, org.xml.sax.SAXException {
 
-		Factory<Node> fac_v = FactoryUtils.instantiateFactory(Node.class);
-		Factory<Arc> fac_e = FactoryUtils.instantiateFactory(Arc.class);
-		AttrGraphMLReader<DirectedGraph<Node, Arc>, Node, Arc> reader = new
-		AttrGraphMLReader<DirectedGraph<Node, Arc>, Node, Arc>(fac_v, fac_e);
+		Factory<Vx> fac_v = FactoryUtils.instantiateFactory(Vx.class);
+		Factory<Ed> fac_e = FactoryUtils.instantiateFactory(Ed.class);
+		AttrGraphMLReader<DirectedGraph<Vx, Ed>, Vx, Ed> reader = new
+		AttrGraphMLReader<DirectedGraph<Vx, Ed>, Vx, Ed>(fac_v, fac_e);
 
-		DirectedGraph<Node, Arc> g = new DirectedSparseGraph<Node, Arc>();
+		DirectedGraph<Vx, Ed> g = new DirectedSparseGraph<Vx, Ed>();
 		reader.load("../test.graphml", g);
 
-		for (Node n: reader.getVertexIDs().keySet()) {
+		for (Vx vx: g.getVertices()) {
 			StringBuilder s = new StringBuilder();
-			s.append(n).append(" ( ");
-			for (Map.Entry<String, GraphMLMetadata<Node>> en: reader.getVertexMetadata().entrySet()) {
-				s.append(reader.getKeyNames().get(en.getKey())).append(':');
-				s.append(en.getValue().transformer.transform(n)).append(' ');
+			s.append(vx).append(" ( ");
+			for (Map.Entry<String, GraphMLMetadata<Vx>> en: reader.getVertexMetadata().entrySet()) {
+				s.append(en.getKey()).append(':');
+				s.append(en.getValue().transformer.transform(vx)).append(' ');
 			}
 			s.append(')');
-			System.out.println(s);
+			//System.out.println(s);
 		}
 
-		System.out.println(reader.getVertexDescriptions());
-
+		for (Ed ed: g.getEdges()) {
+			StringBuilder s = new StringBuilder();
+			s.append(ed).append(" ( ");
+			for (Map.Entry<String, AttrGraphMLMetadata<Ed>> en: reader.getEdgeAttrMetadata().entrySet()) {
+				s.append(en.getKey()).append(':');
+				s.append(en.getValue().transformer().transform(ed)).append(' ');
+			}
+			s.append(')');
+			//System.out.println(s);
+		}
 
 	}
 
