@@ -2,12 +2,16 @@
 
 import sys
 
-from flickrapi import FlickrAPI
+from flickrapi import FlickrAPI, FlickrError
+from xml.etree.ElementTree import dump
+from futures import ThreadPoolExecutor
+from functools import partial
 from tags.scrape.object import ID, IDSample
 
 
 class SafeFlickrAPI(FlickrAPI):
 
+	verbose = 0
 
 	def __init__(self, api_key, secret=None, token=None, store_token=False, cache=True, **kwargs):
 		FlickrAPI.__init__(self, api_key, secret=secret, token=token, store_token=store_token, cache=cache, **kwargs)
@@ -49,11 +53,16 @@ class SafeFlickrAPI(FlickrAPI):
 				except URLError, e:
 					err = e
 
-				print >>sys.stderr, "retrying FlickrAPI call %s(%s) in %.4fs due to: %s" % (attrib, args, 1.2**i, err)
+				self.log("retrying FlickrAPI call %s(%s) in %.4fs due to: %s" % (attrib, args, 1.2**i, err), 2)
 				sleep(1.2**i)
 				i = i+1 if i < 40 else 0
 
 		return wrapper
+
+
+	def log(self, msg, lv):
+		if lv <= SafeFlickrAPI.verbose:
+			print >>sys.stderr, msg
 
 
 	def getNSID(self, n):
@@ -62,7 +71,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 	def makeID(self, nsid):
 		out = self.contacts_getPublicList(user_id=nsid).getchildren()[0].getchildren()
-		return ID(nsid, dict([(elem.get("nsid"), 0 if int(elem.get("ignored")) else 1) for elem in out]))
+		return ID(nsid, dict((elem.get("nsid"), 0 if int(elem.get("ignored")) else 1) for elem in out))
 
 
 	def scrapeIDs(self, seed, size):
@@ -83,7 +92,8 @@ class SafeFlickrAPI(FlickrAPI):
 
 		while len(s) < size:
 			id = next(s, q)
-			if id is not None: print >>sys.stderr, "sample: %s/%s (added %s)" % (len(s), size, id)
+			if id is not None:
+				self.log("sample: %s/%s (added %s)" % (len(s), size, id), 1)
 
 		s.build()
 		return s
@@ -91,23 +101,37 @@ class SafeFlickrAPI(FlickrAPI):
 
 	def scrapeSets(self, nsid):
 
+		sets = self.photosets_getList(user_id=nsid).getchildren()[0].getchildren()
+		phids = set()
 		tagmap = {}
 
-		sets = self.photosets_getList(user_id=nsid).getchildren()[0].getchildren()
-		for i, pset in enumerate(sets):
-			psid = pset.get("id")
+		with ThreadPoolExecutor(max_threads=16) as x:
 
-			photos = self.photosets_getPhotos(photoset_id=psid).getchildren()[0].getchildren()
-			for photo in photos:
-				phid = photo.get("id")
-				tags = []
+			# this API call uses per_page/page args but ignore for now, 500 is plenty
+			res = x.run_to_results(partial(self.photosets_getPhotos, photoset_id=pset.get("id")) for pset in sets)
 
-				for tag in self.tags_getListPhoto(photo_id=phid).getchildren()[0].getchildren()[0].getchildren():
-					tags.append(tag.get("raw"))
+			for r in res:
+				try:
+					photos = r.getchildren()[0].getchildren()
+					phids.update(set(p.get("id") for p in photos))
+				except FlickrError:
+					# FIXME HIGH handle this somehow...
+					raise
 
-				tagmap[phid] = tags
-				print >>sys.stderr, "got tags for photo %s" % phid
+			def wrap(photo_id=None):
+				r = self.tags_getListPhoto(photo_id=photo_id)
+				self.log("got tags for photo %s" % photo_id, 2)
+				return r, photo_id
 
-			print >>sys.stderr, "set: %s/%s (got %s photos for %s)" % (i+1, len(sets), len(photos), psid)
+			res = x.run_to_results(partial(wrap, photo_id=id) for id in phids)
 
+			for r, phid in res:
+				try:
+					tagmap[phid] = [tag.get("raw") for tag in r.getchildren()[0].getchildren()[0].getchildren()]
+				except FlickrError:
+					# FIXME HIGH handle this somehow...
+					raise
+
+		self.log("got photos for user %s" % nsid, 1)
 		return tagmap
+

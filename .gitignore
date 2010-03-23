@@ -5,6 +5,7 @@ site
 tmp
 lib
 !lib/patches
+src/futures
 test/tags/store/StoreGenerator.java
 sample.*.txt
 sample-data-*.tar.bz2

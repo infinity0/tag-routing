@@ -92,8 +92,8 @@ def pair_probs(item, num):
 			if (k, k2) not in itx2:
 				itx2[(k, k2)] = list(set(ss).intersection(set(ss2)))
 
-	prob = dict([(k, len(dd) / float(num)) for k, dd in item.iteritems()])
-	prx2 = dict([(k, len(dd) / float(num)) for k, dd in itx2.iteritems()])
+	prob = dict((k, len(dd) / float(num)) for k, dd in item.iteritems())
+	prx2 = dict((k, len(dd) / float(num)) for k, dd in itx2.iteritems())
 
 	return itx2, prob, prx2
 
@@ -122,7 +122,7 @@ def make_tgr(n_tgr, item_tag, net_tgr, n_doc):
 	obj_tgr = {} # map of ids to tgraphs
 
 	# generate entries
-	rel_tgr = dict([(t, set()) for t in item_tag.iterkeys()]) # map of tags to tgraphs related to them
+	rel_tgr = dict((t, set()) for t in item_tag.iterkeys()) # map of tags to tgraphs related to them
 	seed_tgr = {}
 	for x in xrange(8, 8+n_tgr):
 		id = TGR + x
@@ -135,7 +135,7 @@ def make_tgr(n_tgr, item_tag, net_tgr, n_doc):
 		gg = {}
 		for t in tt:
 			out = net_tgr[t]
-			gg[t] = dict([(k, out[k]) for k in tt.intersection(out)])
+			gg[t] = dict((k, out[k]) for k in tt.intersection(out))
 		obj_tgr[id] = gg
 
 		# this tgraph can be pointed to via the following tags
@@ -177,7 +177,7 @@ def make_idx(n_idx, item_tag, net_idx, item_doc):
 	obj_idx = {} # map of ids to indexes
 
 	# generate entries
-	rel_idx = dict([(t, set()) for t in item_tag.iterkeys()]) # map of tags to indexes related to them
+	rel_idx = dict((t, set()) for t in item_tag.iterkeys()) # map of tags to indexes related to them
 	prob_idx = {} # map of ids to {tag:prob}
 	seed_idx = {}
 	freq_idx = {}
@@ -207,7 +207,7 @@ def make_idx(n_idx, item_tag, net_idx, item_doc):
 			rel_idx[t].add(id)
 
 		# generate index probabilities
-		prob_idx[id] = dict([(k, float(v) / len(list_doc)) for k, v in freq_idx[id]])
+		prob_idx[id] = dict((k, float(v) / len(list_doc)) for k, v in freq_idx[id])
 
 	# add links to other indexes
 	for (id, hh) in obj_idx.iteritems():

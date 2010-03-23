@@ -49,6 +49,10 @@ FlickrAPI
 :	http://stuvel.eu/flickrapi/
 :	Debian: install `python-flickrapi`
 
+python-futures
+:	http://code.google.com/p/pythonfutures/source/list
+:	Get it from the SVN repo (r67) and put trunk/python2/futures into src/
+	(resulting in src/futures)
 
 ## Format
 

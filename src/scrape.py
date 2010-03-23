@@ -44,6 +44,8 @@ def fmt_pydoc(sss):
 
 def main(round, *args, **kwargs):
 
+	SafeFlickrAPI.verbose = kwargs.pop("verbose")
+
 	scr = Scraper(**kwargs)
 	f = getattr(scr, "scrape_%s" % round)
 
@@ -98,8 +100,7 @@ class Scraper():
 		ss = IDSample(socf)
 		gg = ss.graph;
 
-		import code
-		code.interact(local=locals())
+		self.ff.scrapeSets(gg.vs["id"][0])
 
 		#for nsid in gg.vs["id"]:
 		#	print nsid
@@ -115,14 +116,16 @@ if __name__ == "__main__":
 	  formatter = IndentedHelpFormatter(max_help_position=25)
 	)
 
+	config.add_option("-o", "--output", type="string", metavar="OUTPUT",
+	  help = "Output file prefix (extensions will be added to it)")
 	config.add_option("-k", "--api-key", type="string", metavar="APIKEY",
 	  help = "Flickr API key")
 	config.add_option("-s", "--secret", type="string", metavar="SECRET",
 	  help = "Flickr API secret")
 	config.add_option("-t", "--token", type="string", metavar="TOKEN",
 	  help = "Flickr API authentication token")
-	config.add_option("-o", "--output", type="string", metavar="OUTPUT",
-	  help = "Output file prefix (extensions will be added to it)")
+	config.add_option("-v", "--verbose", type="int", metavar="VERBOSE", default=0,
+	  help = "Verbosity level")
 
 	(opts, args) = config.parse_args()
 
