@@ -80,11 +80,18 @@ public class AttrGraphMLReader<G extends Hypergraph<V, E>, V, E> extends GraphML
 
 	@Override public void initializeData() {
 		super.initializeData();
+
 		this.keyname = new DualHashBidiMap<String, String>();
 		this.keytype = new HashMap<String, AttrType>();
 		this.graph_attr_metadata = new HashMap<String, SettableAttrGraphMLMetadata<G>>();
 		this.vertex_attr_metadata = new HashMap<String, SettableAttrGraphMLMetadata<V>>();
 		this.edge_attr_metadata = new HashMap<String, SettableAttrGraphMLMetadata<E>>();
+
+		this._keyname = null;
+		this._keytype = null;
+		this._graph_attr_metadata = null;
+		this._vertex_attr_metadata = null;
+		this._edge_attr_metadata = null;
 	}
 
 	@Override protected void createKey(Attributes atts) throws SAXNotSupportedException
