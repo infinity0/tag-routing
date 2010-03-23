@@ -88,3 +88,26 @@ class SafeFlickrAPI(FlickrAPI):
 		s.build()
 		return s
 
+
+	def scrapeSets(self, nsid):
+
+		tagmap = {}
+
+		sets = self.photosets_getList(user_id=nsid).getchildren()[0].getchildren()
+		for i, pset in enumerate(sets):
+			psid = pset.get("id")
+
+			photos = self.photosets_getPhotos(photoset_id=psid).getchildren()[0].getchildren()
+			for photo in photos:
+				phid = photo.get("id")
+				tags = []
+
+				for tag in self.tags_getListPhoto(photo_id=phid).getchildren()[0].getchildren()[0].getchildren():
+					tags.append(tag.get("raw"))
+
+				tagmap[phid] = tags
+				print >>sys.stderr, "got tags for photo %s" % phid
+
+			print >>sys.stderr, "set: %s/%s (got %s photos for %s)" % (i+1, len(sets), len(photos), psid)
+
+		return tagmap

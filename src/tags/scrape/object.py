@@ -79,3 +79,11 @@ class ID():
 		self.id = id
 		self.out = out
 
+
+class PhotoSample():
+	pass
+
+
+class Photo():
+	pass
+

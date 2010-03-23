@@ -98,7 +98,11 @@ class Scraper():
 		ss = IDSample(socf)
 		gg = ss.graph;
 
-		print gg.summary()
+		import code
+		code.interact(local=locals())
+
+		#for nsid in gg.vs["id"]:
+		#	print nsid
 
 
 if __name__ == "__main__":
