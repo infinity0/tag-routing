@@ -10,6 +10,7 @@ import org.apache.commons.collections15.Transformer;
 ** casting attribute-values to their correct attribute-types, and also uses
 ** final fields.
 **
+** @see <a href="http://graphml.graphdrawing.org/primer/graphml-primer.html#AttributesDefinition">2.4.2 Declaring GraphML-Attributes</a>
 ** @see <a href="http://www.graphviz.org/doc/info/attrs.html">Node, Edge and Graph Attributes</a>
 */
 public class AttrGraphMLMetadata<T> {

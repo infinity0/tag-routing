@@ -32,6 +32,7 @@ import java.util.EnumMap;
 ** {@code <key>} elements (ie. attributes) of GraphML.
 **
 ** @see <a href="http://graphml.graphdrawing.org/primer/graphml-primer.html#AttributesDefinition">2.4.2 Declaring GraphML-Attributes</a>
+** @see <a href="http://www.graphviz.org/doc/info/attrs.html">Node, Edge and Graph Attributes</a>
 */
 public class AttrGraphMLReader<G extends Hypergraph<V, E>, V, E> extends GraphMLReader<G, V, E> {
 

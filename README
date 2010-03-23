@@ -48,3 +48,12 @@ igraph
 FlickrAPI
 :	http://stuvel.eu/flickrapi/
 :	Debian: install `python-flickrapi`
+
+
+## Format
+
+2.4.2 Declaring GraphML-Attributes
+:	http://graphml.graphdrawing.org/primer/graphml-primer.html#AttributesDefinition">
+
+Node, Edge and Graph Attributes
+:	http://www.graphviz.org/doc/info/attrs.html

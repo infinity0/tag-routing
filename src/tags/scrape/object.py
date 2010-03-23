@@ -2,6 +2,7 @@
 
 import sys
 
+import igraph
 from igraph import Graph
 
 
@@ -11,10 +12,13 @@ class StateError(Exception):
 
 class IDSample():
 
-	def __init__(self):
+	def __init__(self, f=None):
 		self.node = {}
-		self.graph = None
-		self.idmap = {}
+		if not f:
+			self.graph = None
+			self.idmap = {}
+		else:
+			self.graph = igraph.read(f)
 
 	def __contains__(self, id):
 		return id in self.node
@@ -26,7 +30,7 @@ class IDSample():
 		"""
 		@param n: ID to add
 		"""
-		if self.graph:
+		if self.graph is not None:
 			raise StateError("sample already finalised")
 
 		if n.id in self.node:
@@ -36,10 +40,12 @@ class IDSample():
 
 	def build(self):
 		"""
-		Finalises the sample by discarding edges to nodes not part of the sample.
+		Finalises the sample by discarding edges to nodes not part of the
+		sample, and builds a graph out of it.
+
 		@return: The built graph
 		"""
-		if self.graph: return self.graph
+		if self.graph is not None: return self.graph
 
 		edges = []
 		v_id = []

@@ -9,8 +9,8 @@ from tags.scrape.object import ID, IDSample
 class SafeFlickrAPI(FlickrAPI):
 
 
-	def __init__(self, token=None, store_token=False, cache=True, *args, **kwargs):
-		FlickrAPI.__init__(self, token=token, store_token=store_token, cache=cache, *args, **kwargs)
+	def __init__(self, api_key, secret=None, token=None, store_token=False, cache=True, **kwargs):
+		FlickrAPI.__init__(self, api_key, secret=secret, token=token, store_token=store_token, cache=cache, **kwargs)
 		if token: return
 
 		(token, frob) = self.get_token_part_one(perms='read')
