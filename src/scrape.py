@@ -44,8 +44,8 @@ def fmt_pydoc(sss):
 
 def main(round, *args, **kwargs):
 
-	f = getattr(sys.modules[__name__], "scrape_%s" % round)
-	ff = SafeFlickrAPI(kwargs.pop("api_key"), kwargs.pop("secret"), token=kwargs.pop("token", None))
+	scr = Scraper(**kwargs)
+	f = getattr(scr, "scrape_%s" % round)
 
 	if (args[0].lower() == "help"):
 
@@ -54,39 +54,51 @@ def main(round, *args, **kwargs):
 
 	else:
 
-		print >>sys.stderr, "Scraping %s..." % ROUNDS[part][0]
-		return f(ff, *args, **kwargs)
+		print >>sys.stderr, "Scraping %s..." % ROUNDS[round][0]
+		return f(*args)
 
 
-def scrape_soc(ff, seed, size, output="scrape"):
-	"""
-	Scrape the social network using breadth-search.
-
-	@param seed: Seed identity
-	@param size: Number of identities to scrape
-	"""
-
-	size = int(size)
-
-	ss = ff.scrapeIDs(seed, size)
-	gg = ss.build()
-
-	gg.write_graphml(open("%s.soc.graphml" % output, 'w') if output else sys.stdout)
-	gg.write_dot(open("%s.soc.dot" % output, 'w') if output else sys.stdout)
-
-	return 0
+class Scraper():
 
 
-def scrape_photo(ff, socf, output="scrape"):
-	"""
-	Scrape photos and collect their tags
+	def __init__(self, api_key, secret, token, output="scrape"):
+		self.ff = SafeFlickrAPI(api_key, secret, token)
+		self.out = output
 
-	@param socf: GraphML file describing the social network to get photos of.
-	"""
-	ss = IDSample(socf)
-	gg = ss.graph;
 
-	print gg.summary()
+	def outfp(self, suffix):
+		return open("%s.%s" % (self.out, suffix), 'w') if self.out else sys.stdout
+
+
+	def scrape_soc(self, seed, size):
+		"""
+		Scrape the social network using breadth-search.
+
+		@param seed: Seed identity
+		@param size: Number of identities to scrape
+		"""
+
+		size = int(size)
+
+		ss = self.ff.scrapeIDs(seed, size)
+		gg = ss.build()
+
+		gg.write_graphml(self.outfp("soc.graphml"))
+		gg.write_dot(self.outfp("soc.dot"))
+
+		return 0
+
+
+	def scrape_photo(self, socf):
+		"""
+		Scrape photos and collect their tags
+
+		@param socf: GraphML file describing the social network to get photos of.
+		"""
+		ss = IDSample(socf)
+		gg = ss.graph;
+
+		print gg.summary()
 
 
 if __name__ == "__main__":
