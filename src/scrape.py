@@ -11,6 +11,8 @@ NAME = "scrape.py"
 VERSION = 0.01
 
 ROUNDS = {
+"interact":
+	(None, []),
 "soc":
 	("social network", [".soc.graphml", ".soc.dot"]),
 "photo":
@@ -46,17 +48,18 @@ def fmt_pydoc(sss):
 def main(round, *args, **kwargs):
 
 	SafeFlickrAPI.verbose = kwargs.pop("verbose")
-
 	scr = Scraper(**kwargs)
+
+	if (round == "interact"):
+		return scr.interact()
+
 	f = getattr(scr, "scrape_%s" % round)
 
 	if (args[0].lower() == "help"):
-
 		print >>sys.stderr, fmt_pydoc(f.__doc__)
 		return 0
 
 	else:
-
 		t = time()
 		print >>sys.stderr, "Scraping %s at %s" % (ROUNDS[round][0], ctime())
 		ret = f(*args)
@@ -111,12 +114,20 @@ class Scraper():
 		gg.write_dot(self.outfp("doc.dot"))
 
 
+	def interact(self):
+		"""
+		Start up a python interpret with access to this Scraper
+		"""
+		import code
+		code.interact(banner="[Scraper interactive console]\n>>> self\n%s" % self, local=locals())
+
+
 if __name__ == "__main__":
 
 	from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
 	config = OptionParser(
 	  usage = "Usage: %prog [OPTIONS] [ROUND] [ARGS|help]",
-	  description = "Scrapes data from flickr. ROUND is one of: soc photo",
+	  description = "Scrapes data from flickr. ROUND is one of: %s" % ROUNDS.keys(),
 	  version = VERSION,
 	  formatter = IndentedHelpFormatter(max_help_position=25)
 	)
