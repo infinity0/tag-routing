@@ -105,8 +105,10 @@ class Scraper():
 		g0 = s0.graph;
 
 		ss = NodeSample()
-		for nsid in g0.vs["id"]:
-			n = ss.add_nodes(Node(id, out) for id, out in self.ff.scrapeSets(nsid).iteritems())
+		for i, nsid in enumerate(g0.vs["id"]):
+			ptmap = self.ff.scrapeSets(nsid)
+			self.ff.log("photo sample: %s/%s (added user %s)" % (i+1, len(g0.vs), nsid), 1)
+			n = ss.add_nodes(Node(id, out) for id, out in ptmap.iteritems())
 			if n == 0:
 				# FIXME HIGH do something about the fact that this user doesn't have any photos...
 				pass

@@ -95,7 +95,7 @@ class SafeFlickrAPI(FlickrAPI):
 		while len(s) < size:
 			id = next(s, q)
 			if id is not None:
-				self.log("sample: %s/%s (added %s)" % (len(s), size, id), 1)
+				self.log("id sample: %s/%s (added %s)" % (len(s), size, id), 1)
 
 		s.build(False)
 		return s
@@ -130,6 +130,5 @@ class SafeFlickrAPI(FlickrAPI):
 				# TODO NOW shorten geo tags to nearest degree, eg. "geo:lon=132.453516" -> "geo:lon=132"
 				tagmap[phid] = dict((tag.get("raw"), 1) for tag in r.getchildren()[0].getchildren()[0].getchildren())
 
-		self.log("got photos for user %s" % nsid, 1)
 		return tagmap
 
