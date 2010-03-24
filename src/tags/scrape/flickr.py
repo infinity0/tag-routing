@@ -20,7 +20,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 	verbose = 0
 
-	def __init__(self, api_key, secret=None, token=None, store_token=False, cache=True, **kwargs):
+	def __init__(self, api_key, secret=None, token=None, store_token=False, cache=False, **kwargs):
 		FlickrAPI.__init__(self, api_key, secret=secret, token=token, store_token=store_token, cache=cache, **kwargs)
 
 		# Thread-local HTTPConnection, see __flickr_call
