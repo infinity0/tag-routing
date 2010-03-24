@@ -1,13 +1,14 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
 import sys
+from time import time
 
 from flickrapi import FlickrAPI, FlickrError
 from xml.etree.ElementTree import dump
 
 from threading import local as ThreadLocal
-from socket import gethostbyname
 from httplib import HTTPConnection, ImproperConnectionState, HTTPException
+import socket
 
 from futures import ThreadPoolExecutor
 from functools import partial
@@ -61,9 +62,9 @@ class SafeFlickrAPI(FlickrAPI):
 				except (URLError, IOError, ImproperConnectionState, HTTPException), e:
 					err = e
 
-				self.log("retrying FlickrAPI call %s(%s) in %.4fs due to: %s" % (attrib, args, 1.2**i, err), 2)
+				self.log("FlickrAPI: wait %.4fs to retry %s(%s) due to %s" % (1.2**i, attrib, args, repr(err)), 2)
 				sleep(1.2**i)
-				i = i+1 if i < 40 else 0
+				i = i+1 if i < 20 else 0
 
 		return wrapper
 
@@ -84,14 +85,14 @@ class SafeFlickrAPI(FlickrAPI):
 		try:
 			if "conn" not in self.thr.__dict__:
 				self.thr.conn = HTTPConnection(FlickrAPI.flickr_host)
-				self.log("connection opened to %s" % FlickrAPI.flickr_host, 3)
+				self.log("connection opened: %s" % FlickrAPI.flickr_host, 3)
 
 			self.thr.conn.request("POST", FlickrAPI.flickr_rest_form, post_data,
 				{"Content-Type": "application/x-www-form-urlencoded"})
 			reply = self.thr.conn.getresponse().read()
 
-		except ImproperConnectionState, e:
-			self.log("connection error: %s" % e, 3)
+		except (ImproperConnectionState, socket.error), e:
+			self.log("connection error: %s" % repr(e), 3)
 			self.thr.conn.close()
 			del self.thr.conn
 			raise
@@ -105,7 +106,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 	def log(self, msg, lv):
 		if lv <= SafeFlickrAPI.verbose:
-			print >>sys.stderr, msg
+			print >>sys.stderr, "%.4f | %s" % (time(), msg)
 
 
 	def getNSID(self, n):
@@ -173,15 +174,16 @@ class SafeFlickrAPI(FlickrAPI):
 		return ptmap
 
 
-	def scrapeUserPhotos(self, users):
+	def scrapeUserPhotos(self, users, conc_m=16, conc_w=0):
 
 		ss = NodeSample()
+		if not conc_w: conc_w = conc_m*3
 
 		# managers need to be handled by a different executor from the workers
 		# otherwise it deadlocks when the executor fills up with manager tasks
 		# since worker tasks don't get a chance to run
-		with ThreadPoolExecutor(max_threads=16) as x:
-			with ThreadPoolExecutor(max_threads=64) as x2:
+		with ThreadPoolExecutor(max_threads=conc_m) as x:
+			with ThreadPoolExecutor(max_threads=conc_w) as x2:
 
 				def run(x2, nsid, i):
 					ptmap = self.scrapeSets(nsid, x2)
@@ -214,3 +216,5 @@ def intern_force(sss):
 # because it doesn't have self.thr
 FlickrAPI._FlickrAPI__flickr_call = SafeFlickrAPI._SafeFlickrAPI__flickr_call
 
+# Don't bother looking up host every time
+#FlickrAPI.flickr_host = socket.gethostbyname(FlickrAPI.flickr_host)

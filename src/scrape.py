@@ -104,7 +104,7 @@ class Scraper():
 		s0 = NodeSample(socf)
 		g0 = s0.graph;
 
-		ss = self.ff.scrapeUserPhotos(g0.vs["id"])
+		ss = self.ff.scrapeUserPhotos(g0.vs["id"], 12)
 		gg = ss.graph
 
 		gg.write_graphml(self.outfp("doc.graphml"))
