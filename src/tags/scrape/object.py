@@ -99,6 +99,10 @@ class NodeSample():
 		va = {"id": v_id}
 		ea = {"weight": e_attr}
 
+		for (i, id) in enumerate(v_id):
+			if type(id) == unicode:
+				v_id[i] = id.encode("utf-8")
+
 		if any(a is not None for a in v_attr):
 			va["height"] = v_attr
 

@@ -127,6 +127,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 			for r, phid in res:
 				# TODO NOW generate {tag:attr} instead of [tag]
+				# TODO NOW shorten geo tags to nearest degree, eg. "geo:lon=132.453516" -> "geo:lon=132"
 				tagmap[phid] = dict((tag.get("raw"), 1) for tag in r.getchildren()[0].getchildren()[0].getchildren())
 
 		self.log("got photos for user %s" % nsid, 1)
