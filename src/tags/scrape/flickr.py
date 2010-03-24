@@ -4,8 +4,14 @@ import sys
 
 from flickrapi import FlickrAPI, FlickrError
 from xml.etree.ElementTree import dump
+
+from threading import local as ThreadLocal
+from socket import gethostbyname
+from httplib import HTTPConnection, ImproperConnectionState, HTTPException
+
 from futures import ThreadPoolExecutor
 from functools import partial
+
 from tags.scrape.object import Node, NodeSample
 
 
@@ -15,13 +21,15 @@ class SafeFlickrAPI(FlickrAPI):
 
 	def __init__(self, api_key, secret=None, token=None, store_token=False, cache=True, **kwargs):
 		FlickrAPI.__init__(self, api_key, secret=secret, token=token, store_token=store_token, cache=cache, **kwargs)
-		if token: return
 
+		# Thread-local HTTPConnection, see __flickr_call
+		self.thr = ThreadLocal()
+
+		if token: return
 		(token, frob) = self.get_token_part_one(perms='read')
 		if not token:
 			print "A browser window should have opened asking you to authorise this program."
 			raw_input("Press ENTER when you have done so... ")
-
 		self.get_token_part_two((token, frob))
 
 
@@ -50,9 +58,7 @@ class SafeFlickrAPI(FlickrAPI):
 							raise
 					else:
 						raise
-				except URLError, e:
-					err = e
-				except IOError, e:
+				except (URLError, IOError, ImproperConnectionState, HTTPException), e:
 					err = e
 
 				self.log("retrying FlickrAPI call %s(%s) in %.4fs due to: %s" % (attrib, args, 1.2**i, err), 2)
@@ -60,6 +66,41 @@ class SafeFlickrAPI(FlickrAPI):
 				i = i+1 if i < 40 else 0
 
 		return wrapper
+
+
+	def __flickr_call(self, **kwargs):
+		# Use persistent HTTP connections through a thread-local socket
+		from flickrapi import LOG
+
+		LOG.debug("Calling %s" % kwargs)
+
+		post_data = self.encode_and_sign(kwargs)
+
+		# Return value from cache if available
+		if self.cache and self.cache.get(post_data):
+			return self.cache.get(post_data)
+
+		# Thread-local persistent connection
+		try:
+			if "conn" not in self.thr.__dict__:
+				self.thr.conn = HTTPConnection(FlickrAPI.flickr_host)
+				self.log("connection opened to %s" % FlickrAPI.flickr_host, 3)
+
+			self.thr.conn.request("POST", FlickrAPI.flickr_rest_form, post_data,
+				{"Content-Type": "application/x-www-form-urlencoded"})
+			reply = self.thr.conn.getresponse().read()
+
+		except ImproperConnectionState, e:
+			self.log("connection error: %s" % e, 3)
+			self.thr.conn.close()
+			del self.thr.conn
+			raise
+
+		# Store in cache, if we have one
+		if self.cache is not None:
+			self.cache.set(post_data, reply)
+
+		return reply
 
 
 	def log(self, msg, lv):
@@ -101,34 +142,75 @@ class SafeFlickrAPI(FlickrAPI):
 		return s
 
 
-	def scrapeSets(self, nsid):
+	def scrapeSets(self, nsid, x):
 
 		sets = self.photosets_getList(user_id=nsid).getchildren()[0].getchildren()
 		phids = set()
-		tagmap = {}
+		ptmap = {}
 
+		# TODO LOW this API call uses per_page/page args but ignore for now, 500 is plenty
+		# FIXME NORM handle FlickrErrors
+		res = x.run_to_results(partial(self.photosets_getPhotos, photoset_id=pset.get("id")) for pset in sets)
+
+		for r in res:
+			photos = r.getchildren()[0].getchildren()
+			phids.update(set(p.get("id") for p in photos))
+
+		def run(photo_id=None):
+			r = self.tags_getListPhoto(photo_id=photo_id)
+			return r, photo_id
+
+		# FIXME NORM handle FlickrErrors
+		res = x.run_to_results(partial(run, photo_id=id) for id in phids)
+
+		for r, phid in res:
+			tags = r.getchildren()[0].getchildren()[0].getchildren()
+			self.log("photo: got %s tags (%s)" % (len(tags), phid), 4)
+			# TODO NOW generate {tag:attr} instead of [tag]
+			# TODO NOW shorten geo tags to nearest degree, eg. "geo:lon=132.453516" -> "geo:lon=132"
+			ptmap[phid] = dict((intern_force(tag.get("raw")), 1) for tag in tags)
+
+		return ptmap
+
+
+	def scrapeUserPhotos(self, users):
+
+		ss = NodeSample()
+
+		# managers need to be handled by a different executor from the workers
+		# otherwise it deadlocks when the executor fills up with manager tasks
+		# since worker tasks don't get a chance to run
 		with ThreadPoolExecutor(max_threads=16) as x:
+			with ThreadPoolExecutor(max_threads=64) as x2:
 
-			# TODO LOW this API call uses per_page/page args but ignore for now, 500 is plenty
-			# FIXME NORM handle FlickrErrors
-			res = x.run_to_results(partial(self.photosets_getPhotos, photoset_id=pset.get("id")) for pset in sets)
+				def run(x2, nsid, i):
+					ptmap = self.scrapeSets(nsid, x2)
+					return ptmap, nsid, i
 
-			for r in res:
-				photos = r.getchildren()[0].getchildren()
-				phids.update(set(p.get("id") for p in photos))
+				res = x.run_to_results(partial(run, x2, nsid, i) for i, nsid in enumerate(users))
 
-			def wrap(photo_id=None):
-				r = self.tags_getListPhoto(photo_id=photo_id)
-				self.log("got tags for photo %s" % photo_id, 4)
-				return r, photo_id
+				for ptmap, nsid, i in res:
+					self.log("photo sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
+					n = ss.add_nodes(Node(id, out) for id, out in ptmap.iteritems())
+					if n == 0:
+						# FIXME HIGH do something about the fact that this user doesn't have any photos...
+						pass
 
-			# FIXME NORM handle FlickrErrors
-			res = x.run_to_results(partial(wrap, photo_id=id) for id in phids)
+		ss.build(True)
+		return ss
 
-			for r, phid in res:
-				# TODO NOW generate {tag:attr} instead of [tag]
-				# TODO NOW shorten geo tags to nearest degree, eg. "geo:lon=132.453516" -> "geo:lon=132"
-				tagmap[phid] = dict((tag.get("raw"), 1) for tag in r.getchildren()[0].getchildren()[0].getchildren())
 
-		return tagmap
+def intern_force(sss):
+	if type(sss) == str:
+		return sss
+	elif type(sss) == unicode:
+		return sss.encode("utf-8")
+	else:
+		raise TypeError("%s not unicode or string" % sss)
+
+
+# Overwrite private method
+# FIXME LOW This is technically a hack since it leaves FlickrAPI unusable
+# because it doesn't have self.thr
+FlickrAPI._FlickrAPI__flickr_call = SafeFlickrAPI._SafeFlickrAPI__flickr_call
 

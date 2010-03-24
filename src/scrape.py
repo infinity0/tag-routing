@@ -5,7 +5,7 @@ import sys
 from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.object import NodeSample, Node
 from xml.etree.ElementTree import dump
-from time import time
+from time import time, ctime
 
 NAME = "scrape.py"
 VERSION = 0.01
@@ -58,7 +58,7 @@ def main(round, *args, **kwargs):
 	else:
 
 		t = time()
-		print >>sys.stderr, "Scraping %s..." % ROUNDS[round][0]
+		print >>sys.stderr, "Scraping %s at %s" % (ROUNDS[round][0], ctime())
 		ret = f(*args)
 		print >>sys.stderr, "completed in %.4fs" % (time()-t)
 		return ret
@@ -104,16 +104,7 @@ class Scraper():
 		s0 = NodeSample(socf)
 		g0 = s0.graph;
 
-		ss = NodeSample()
-		for i, nsid in enumerate(g0.vs["id"]):
-			ptmap = self.ff.scrapeSets(nsid)
-			self.ff.log("photo sample: %s/%s (added user %s)" % (i+1, len(g0.vs), nsid), 1)
-			n = ss.add_nodes(Node(id, out) for id, out in ptmap.iteritems())
-			if n == 0:
-				# FIXME HIGH do something about the fact that this user doesn't have any photos...
-				pass
-
-		ss.build(True)
+		ss = self.ff.scrapeUserPhotos(g0.vs["id"])
 		gg = ss.graph
 
 		gg.write_graphml(self.outfp("doc.graphml"))
