@@ -6,7 +6,7 @@ from flickrapi import FlickrAPI, FlickrError
 from xml.etree.ElementTree import dump
 from futures import ThreadPoolExecutor
 from functools import partial
-from tags.scrape.object import ID, IDSample
+from tags.scrape.object import Node, NodeSample
 
 
 class SafeFlickrAPI(FlickrAPI):
@@ -52,6 +52,8 @@ class SafeFlickrAPI(FlickrAPI):
 						raise
 				except URLError, e:
 					err = e
+				except IOError, e:
+					err = e
 
 				self.log("retrying FlickrAPI call %s(%s) in %.4fs due to: %s" % (attrib, args, 1.2**i, err), 2)
 				sleep(1.2**i)
@@ -71,7 +73,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 	def makeID(self, nsid):
 		out = self.contacts_getPublicList(user_id=nsid).getchildren()[0].getchildren()
-		return ID(nsid, dict((elem.get("nsid"), 0 if int(elem.get("ignored")) else 1) for elem in out))
+		return Node(nsid, dict((elem.get("nsid"), 0 if int(elem.get("ignored")) else 1) for elem in out))
 
 
 	def scrapeIDs(self, seed, size):
@@ -87,7 +89,7 @@ class SafeFlickrAPI(FlickrAPI):
 			ss.add_node(node)
 			return id
 
-		s = IDSample()
+		s = NodeSample()
 		q = [self.getNSID(seed)]
 
 		while len(s) < size:
@@ -95,7 +97,7 @@ class SafeFlickrAPI(FlickrAPI):
 			if id is not None:
 				self.log("sample: %s/%s (added %s)" % (len(s), size, id), 1)
 
-		s.build()
+		s.build(False)
 		return s
 
 
@@ -107,30 +109,25 @@ class SafeFlickrAPI(FlickrAPI):
 
 		with ThreadPoolExecutor(max_threads=16) as x:
 
-			# this API call uses per_page/page args but ignore for now, 500 is plenty
+			# TODO LOW this API call uses per_page/page args but ignore for now, 500 is plenty
+			# FIXME NORM handle FlickrErrors
 			res = x.run_to_results(partial(self.photosets_getPhotos, photoset_id=pset.get("id")) for pset in sets)
 
 			for r in res:
-				try:
-					photos = r.getchildren()[0].getchildren()
-					phids.update(set(p.get("id") for p in photos))
-				except FlickrError:
-					# FIXME HIGH handle this somehow...
-					raise
+				photos = r.getchildren()[0].getchildren()
+				phids.update(set(p.get("id") for p in photos))
 
 			def wrap(photo_id=None):
 				r = self.tags_getListPhoto(photo_id=photo_id)
-				self.log("got tags for photo %s" % photo_id, 2)
+				self.log("got tags for photo %s" % photo_id, 4)
 				return r, photo_id
 
+			# FIXME NORM handle FlickrErrors
 			res = x.run_to_results(partial(wrap, photo_id=id) for id in phids)
 
 			for r, phid in res:
-				try:
-					tagmap[phid] = [tag.get("raw") for tag in r.getchildren()[0].getchildren()[0].getchildren()]
-				except FlickrError:
-					# FIXME HIGH handle this somehow...
-					raise
+				# TODO NOW generate {tag:attr} instead of [tag]
+				tagmap[phid] = dict((tag.get("raw"), 1) for tag in r.getchildren()[0].getchildren()[0].getchildren())
 
 		self.log("got photos for user %s" % nsid, 1)
 		return tagmap

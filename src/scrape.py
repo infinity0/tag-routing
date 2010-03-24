@@ -3,8 +3,9 @@
 import sys
 
 from tags.scrape.flickr import SafeFlickrAPI
-from tags.scrape.object import IDSample, ID
+from tags.scrape.object import NodeSample, Node
 from xml.etree.ElementTree import dump
+from time import time
 
 NAME = "scrape.py"
 VERSION = 0.01
@@ -56,8 +57,11 @@ def main(round, *args, **kwargs):
 
 	else:
 
+		t = time()
 		print >>sys.stderr, "Scraping %s..." % ROUNDS[round][0]
-		return f(*args)
+		ret = f(*args)
+		print >>sys.stderr, "completed in %.4fs" % (time()-t)
+		return ret
 
 
 class Scraper():
@@ -83,7 +87,7 @@ class Scraper():
 		size = int(size)
 
 		ss = self.ff.scrapeIDs(seed, size)
-		gg = ss.build()
+		gg = ss.graph
 
 		gg.write_graphml(self.outfp("soc.graphml"))
 		gg.write_dot(self.outfp("soc.dot"))
@@ -97,13 +101,21 @@ class Scraper():
 
 		@param socf: GraphML file describing the social network to get photos of.
 		"""
-		ss = IDSample(socf)
-		gg = ss.graph;
+		s0 = NodeSample(socf)
+		g0 = s0.graph;
 
-		self.ff.scrapeSets(gg.vs["id"][0])
+		ss = NodeSample()
+		for nsid in g0.vs["id"]:
+			n = ss.add_nodes(Node(id, out) for id, out in self.ff.scrapeSets(nsid).iteritems())
+			if n == 0:
+				# FIXME HIGH do something about the fact that this user doesn't have any photos...
+				pass
 
-		#for nsid in gg.vs["id"]:
-		#	print nsid
+		ss.build(True)
+		gg = ss.graph
+
+		gg.write_graphml(self.outfp("doc.graphml"))
+		gg.write_dot(self.outfp("doc.dot"))
 
 
 if __name__ == "__main__":
@@ -116,7 +128,7 @@ if __name__ == "__main__":
 	  formatter = IndentedHelpFormatter(max_help_position=25)
 	)
 
-	config.add_option("-o", "--output", type="string", metavar="OUTPUT",
+	config.add_option("-o", "--output", type="string", metavar="OUTPUT", default="scrape",
 	  help = "Output file prefix (extensions will be added to it)")
 	config.add_option("-k", "--api-key", type="string", metavar="APIKEY",
 	  help = "Flickr API key")

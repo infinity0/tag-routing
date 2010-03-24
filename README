@@ -3,6 +3,7 @@
 
 A system for decentralised search.
 
+
 ## Build-depends
 
 ### Main
@@ -17,7 +18,7 @@ git
 
 bliki-doclet
 :	http://github.com/infinity0/bliki-doclet
-:	Make sure the `.jar` exists at `doc/bliki-doclet.jar`
+:	Make sure the `.jar` exists at `lib/bliki-doclet.jar`
 
 pandoc
 :	http://johnmacfarlane.net/pandoc/
@@ -30,11 +31,6 @@ GNU coreutils
 :	Debian: install `coreutils`
 
 ### Scraper
-
-graph-easy (CPAN)
-:	http://search.cpan.org/~tels/Graph-Easy/
-:	Debian: install `dh-make-perl`, then run `cpan2deb Graph::Easy` to create a
-	local `.deb` of `libgraph-easy-perl`, which you should then install.
 
 JUNG
 :	http://jung.sourceforge.net/
@@ -53,6 +49,7 @@ python-futures
 :	http://code.google.com/p/pythonfutures/source/list
 :	Get it from the SVN repo (r67) and put trunk/python2/futures into src/
 	(resulting in src/futures)
+
 
 ## Format
 

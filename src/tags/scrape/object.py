@@ -6,84 +6,115 @@ import igraph
 from igraph import Graph
 
 
-class StateError(Exception):
+class StateError(RuntimeError):
 	pass
 
 
-class IDSample():
+class NodeSample():
 
 	def __init__(self, f=None):
-		self.node = {}
+		self._node = {}
+		self._idmap = {}
 		if not f:
 			self.graph = None
-			self.idmap = {}
 		else:
 			self.graph = igraph.read(f)
 
 	def __contains__(self, id):
-		return id in self.node
+		return id in self._node
 
 	def __len__(self):
-		return len(self.node)
+		return len(self._node)
 
-	def add_node(self, n):
+	def add_node(self, node):
 		"""
-		@param n: ID to add
+		@param node: Node to add
 		"""
 		if self.graph is not None:
 			raise StateError("sample already finalised")
 
-		if n.id in self.node:
+		if node.__class__ != Node:
+			print node
+			raise TypeError
+
+		if node.id in self._node:
 			raise KeyError
 
-		self.node[n.id] = n
+		self._node[node.id] = node
 
-	def build(self):
+	def add_nodes(self, nodes):
+		i = 0
+		for node in nodes:
+			self.add_node(node)
+			i += 1
+		return i
+
+	def build(self, keep, node_attr=None):
 		"""
-		Finalises the sample by discarding edges to nodes not part of the
-		sample, and builds a graph out of it.
+		Build a graph out of the sample
 
+		@param keep: Whether to keep or discard dangling nodes (referenced by
+		       other nodes, but not explicitly added to this sample).
+		@param node_attr: If keep is True, this will be set as the attribute
+		       for the dangling nodes.
 		@return: The built graph
 		"""
 		if self.graph is not None: return self.graph
 
 		edges = []
 		v_id = []
-		e_wgt = []
+		v_attr = []
+		e_attr = []
 
-		for (i, id) in enumerate(self.node.iterkeys()):
-			self.idmap[id] = i
+		for (i, node) in enumerate(self._node.itervalues()):
+			self._idmap[node.id] = i
 			assert len(v_id) == i
-			v_id.append(id)
+			v_id.append(node.id)
+			v_attr.append(node.attr)
 
-		for (i, node) in enumerate(self.node.itervalues()):
-			for (dst, attr) in node.out.items(): ## make a copy since we want to remove
-				if dst in self.node:
-					edges.append((i, self.idmap[dst]))
-					e_wgt.append(attr)
-					pass
+		j = len(self._node)
+
+		for (i, node) in enumerate(self._node.itervalues()):
+			for (dst, attr) in node.out.iteritems():
+				if dst in self._node:
+					edges.append((i, self._idmap[dst]))
+					e_attr.append(attr)
+				elif keep:
+					if dst in self._idmap:
+						x = self._idmap[dst]
+					else:
+						x = self._idmap[dst] = j
+						v_id.append(dst)
+						v_attr.append(node_attr)
+						j += 1
+
+					edges.append((i, x))
+					e_attr.append(attr)
 				else:
-					del node.out[dst]
+					pass
 
-		self.graph = Graph(n=len(self.node), edges=edges, directed=True, vertex_attrs={"id":v_id}, edge_attrs={"weight":e_wgt})
+		assert j == len(self._idmap) == len(v_id) == len(v_attr)
+		del self._node
+
+		va = {"id": v_id}
+		ea = {"weight": e_attr}
+
+		if any(a is not None for a in v_attr):
+			va["height"] = v_attr
+
+		self.graph = Graph(n=j, edges=edges, directed=True, vertex_attrs=va, edge_attrs=ea)
 		return self.graph
 
 
-class ID():
+class Node():
 
-	def __init__(self, id, out):
+	def __init__(self, id, out, attr=None):
 		"""
 		@param id: Unique identifier
-		@param out: { id: weight } of friends
+		@param out: { id: arc-attribute } of out-neighbours
+		@param attr: Node-attribute
 		"""
 		self.id = id
 		self.out = out
-
-
-class PhotoSample():
-	pass
-
-
-class Photo():
-	pass
+		self.attr = attr
 
