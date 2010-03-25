@@ -107,6 +107,7 @@ class SafeFlickrAPI(FlickrAPI):
 	def log(self, msg, lv):
 		if lv <= SafeFlickrAPI.verbose:
 			print >>sys.stderr, "%.4f | %s" % (time(), msg)
+			sys.stderr.flush()
 
 
 	def getNSID(self, n):

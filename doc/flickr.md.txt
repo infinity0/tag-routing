@@ -1,7 +1,7 @@
 % Scraping test data from flickr
 % Ximin Luo
 
-# flickr data structures
+# Flickr data structures
 
 each user has:
 
@@ -18,57 +18,63 @@ group           ?
 testimonial     ?
 --------------- -------------------------------------
 
-# initial data scrape
+# Model
+
+We base our model upon the notion of a "producer". This is a node that produces
+content. Each producer has:
+
+* a content-set of "their own" documents
+* social links to other producers
+* content links to other producers' bags, which are generated from the social
+  links
+
+When we create a `tgraph` or `index` from a producer's content-set, these use
+content links, rather than social links, to point to other objects. I believe
+this model more closely resembles reality, where (at least in my experience),
+friends don't always have what we want, and people that do, aren't always our
+friends. However, we often look for them by traversing the social network.
+
+## Flickr
+
+For flickr data, we will treat users and groups as producers. User-producers
+have their sets initialised with their own photos, and group-producers have
+their sets initialised with the photos from the group pool.
+
+As for social links, user-user links and user-group links already exist in the
+flickr data model. We therefore need a model for inferring group-group links.
+
+Once we have a complete social network of producers, we need to infer content
+links. For user-producers, their favourites can be used as a starting point.
+For group-producers, they will need to be inferred from scratch.
+
+# Scraping
 
 subgraph of n users, ? photos
 
 - pick a well-connected seed; breadth-search to obtain n sample users.
 - for each sample user,
-	- for each photo by them, 
+	- for each photo by them,
 		- get photo's tag list, and save into database
 - hereafter, only consider these sample users and photos. references to items
   not in our sample should be ignored.
 
-# needed data structures
+# Generation
 
-## social
+Generating the social network is trivial; use flickr's, directly.
 
-1. get friends
-	- flickr.contacts.getPublicList
+Generating a `ptable` for each user is also trivial; link to each `tgraph` and
+`index` created by a producer we are social-linked (not content-linked) to.
 
-## ptable
+`tgraph` - TODO
 
-1. get indexes / tgraphs
+`index` - TODO
 
-2. more well-connected 
 
-## tgraph
+# Large-scale structure
 
-...
+maybe need some way of generating "higher-level" indexes that cover more general
+tags etc...
 
-## index
+we can do this by using a clustering algorithms on producers, to create larger
+super-producers, then infering social/content links between these again.
 
-### from user photosets
-
-link to documents
-:	- all photos in set
-	- all favourites tagged with set's "related" tags
-	- all gallery-photos tagged with set's "related" tags
-
-aggregate related sets into one index
-
-### from a group pool
-
-link to documents
-:	- all photos in pool
-	- related member photos
-
-link to indexes
-:	- get related tags
-	- flick.groups.search on those tags
-	- find the results "page" which contains self, and add groups from that page only
-	- add maybe a random half of those pages, using an algorithm that increases clustering
-
-### large-scale structure
-
-need some way of generating "higher-level" indexes that cover more general tags etc...

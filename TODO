@@ -32,35 +32,48 @@ scraper
 OPT HIGH need to make photo-scraper use less memory, probably don't need to
 build a graph and just write each photo to disk as we scrape it, probably.
 
+
 scrapeGroups(user_sample, photo_sample)
 	Scrape groups, given a user-sample and a photo-sample
 	- scrape all groups from all users in our sample
 	- for each group, get its users and photos, and retain only those belonging
 	  to user-sample and photo-sample
 
-inferArcsForGroups(group_sample)
+
+inferArcsForGroups(group_sample):
 	Given a sample of groups, infer arcs between them.
 	- get users intersection and photos intersection; keep arc only if both of
 	  these are (significantly?) better than independent intersections
 	- calculate arc weight based on photos intersection only
 
-generateSuperGroup(group_graph, seed, size)
+
+generateSuperGroup(group_graph, seed, size):
 	Given a graph of groups, generate a supergroup from the seed group and
 	the given size, based on clustering analysis.
 
-generateSuperGroups(group_graph)
+
+generateSuperGroups(group_graph):
 	Given a graph of groups, generate supergroups following a power-law
 	distribution
 
 	- then make arcs between these supergroups and the normal groups
 	- TODO HOW??
+	- maybe partition into 2 communities (groups to be made into tgraphs/indexes) first?
 
-makeTgraphsAndIndexes(super_group_graph)
+
+makeTgraphsAndIndexes(super_group_graph):
 	Given a graph of groups (that includes supergroups), generate tgraphs from
 	the narrow peak, and indexes from the fat tail.
 
 	ie. 80-20 rule, but actually decide a precise way of doing these.
 	- half of area-under-graph?
+
+
+invertIndex(group):
+	Given a group, generate tag->photo arcs and their attributes, and a subset
+	of these for which it's appropriate to "point to" the group with (ie.
+	attribute greater than some threshold)
+
 
 TODO do a version of the above without supergroups, to compare with
 

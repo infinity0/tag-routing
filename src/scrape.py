@@ -4,6 +4,7 @@ import sys
 
 from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.object import NodeSample, Node
+from tags.scrape.util import signal_dump
 from xml.etree.ElementTree import dump
 from time import time, ctime
 
@@ -46,6 +47,8 @@ def fmt_pydoc(sss):
 
 
 def main(round, *args, **kwargs):
+
+	signal_dump()
 
 	SafeFlickrAPI.verbose = kwargs.pop("verbose")
 	scr = Scraper(**kwargs)
