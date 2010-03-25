@@ -49,14 +49,8 @@ class SafeFlickrAPI(FlickrAPI):
 				try:
 					return handler(**args)
 				except FlickrError, e:
-					if e.message[:6] == "Error:":
-						code = int(e.message.split(':', 2)[1].strip())
-
-						if code == 0:
-							err = e
-
-						else:
-							raise
+					if FlickrError_code(e) == 0:
+						err = e
 					else:
 						raise
 				except (URLError, IOError, ImproperConnectionState, HTTPException), e:
@@ -106,7 +100,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 	def log(self, msg, lv):
 		if lv <= SafeFlickrAPI.verbose:
-			print >>sys.stderr, "%.4f | %s" % (time(), msg)
+			print >>sys.stderr, "%.4f | %s | %s" % (time(), lv, msg)
 			sys.stderr.flush()
 
 
@@ -144,17 +138,17 @@ class SafeFlickrAPI(FlickrAPI):
 		return s
 
 
-	def scrapeSets(self, nsid, x):
+	def scrapeUserSets(self, nsid, x):
 
 		sets = self.photosets_getList(user_id=nsid).getchildren()[0].getchildren()
 		phids = set()
 		ptmap = {}
 
 		# TODO LOW this API call uses per_page/page args but ignore for now, 500 is plenty
-		# FIXME NORM handle FlickrErrors
-		res = x.run_to_results(partial(self.photosets_getPhotos, photoset_id=pset.get("id")) for pset in sets)
+		# TODO HIGH have a limit on the number of photos scraped. some people have >9000 photos
 
-		for r in res:
+		# FIXME NORM handle FlickrErrors
+		for r in x.run_to_results(partial(self.photosets_getPhotos, photoset_id=pset.get("id")) for pset in sets):
 			photos = r.getchildren()[0].getchildren()
 			phids.update(set(p.get("id") for p in photos))
 
@@ -163,9 +157,7 @@ class SafeFlickrAPI(FlickrAPI):
 			return r, photo_id
 
 		# FIXME NORM handle FlickrErrors
-		res = x.run_to_results(partial(run, photo_id=id) for id in phids)
-
-		for r, phid in res:
+		for r, phid in x.run_to_results(partial(run, photo_id=id) for id in phids):
 			tags = r.getchildren()[0].getchildren()[0].getchildren()
 			self.log("photo: got %s tags (%s)" % (len(tags), phid), 4)
 			# TODO NOW generate {tag:attr} instead of [tag]
@@ -175,12 +167,18 @@ class SafeFlickrAPI(FlickrAPI):
 		return ptmap
 
 
-	def scrapeUserPhotos(self, users, conc_m=16, conc_w=0):
+	def scrapePhotos(self, users, conc_m=16, conc_w=0):
+		"""
+		Scrape photos of the given users.
+
+		@return ({user:[photo]}, {photo:[tag]})
+		"""
+		if not conc_w: conc_w = conc_m*3
 
 		upmap = {} # user: [photo]
 		ptmap = {} # photo: [tag]
 
-		if not conc_w: conc_w = conc_m*3
+		# TODO HIGH re-write this to use people_getPublicPhotos
 
 		# managers need to be handled by a different executor from the workers
 		# otherwise it deadlocks when the executor fills up with manager tasks
@@ -189,17 +187,72 @@ class SafeFlickrAPI(FlickrAPI):
 			with ThreadPoolExecutor(max_threads=conc_w) as x2:
 
 				def run(x2, nsid, i):
-					ptmap = self.scrapeSets(nsid, x2)
+					ptmap = self.scrapeUserSets(nsid, x2)
 					return ptmap, nsid, i
 
-				res = x.run_to_results(partial(run, x2, nsid, i) for i, nsid in enumerate(users))
-
-				for ptm, nsid, i in res:
-					self.log("photo sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
+				for ptm, nsid, i in x.run_to_results(partial(run, x2, nsid, i) for i, nsid in enumerate(users)):
 					upmap[nsid] = ptm.keys()
 					ptmap.update(ptm)
+					self.log("photo sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
 
 		return upmap, ptmap
+
+
+	def scrapeUserPools(self, nsid, x):
+		"""
+		Scrapes photos in group pools of the given user
+
+		@return {group:[photo]}
+		"""
+		gpmap = {}
+
+		def run(gid):
+			try:
+				r = self.groups_pools_getPhotos(group_id=gid, user_id=nsid)
+			except FlickrError, e:
+				if FlickrError_code(e) == 2:
+					r = None
+				else:
+					raise
+			return r, gid
+
+		gs = self.people_getPublicGroups(user_id=nsid).getchildren()[0].getchildren()
+		for r, gid in x.run_to_results(partial(run, g.get("nsid")) for g in gs):
+			if r is None: continue
+			photos = r.getchildren()[0].getchildren()
+			gpmap[gid] = [p.get("id") for p in photos]
+			self.log("group: got %s photos (%s)" % (len(photos), gid), 4)
+
+		return gpmap
+
+
+	def scrapeGroups(self, users, conc_m=16, conc_w=0):
+		"""
+		Scrapes all groups of the given users.
+
+		@return {group:([users],[photos])}
+		"""
+		g2map = {}
+
+		if not conc_w: conc_w = conc_m*3
+
+		with ThreadPoolExecutor(max_threads=conc_m) as x:
+			with ThreadPoolExecutor(max_threads=conc_m) as x2:
+
+				def run(x2, nsid, i):
+					gpmap = self.scrapeUserPools(nsid, x2)
+					return gpmap, nsid, i
+
+				for gpm, nsid, i in x.run_to_results(partial(run, x2, nsid, i) for i, nsid in enumerate(users)):
+					for gid, ps in gpm.iteritems():
+						if gid not in g2map:
+							g2map[gid] = ([nsid], ps)
+						else:
+							g2map[gid][0].append(nsid)
+							g2map[gid][1].extend(ps)
+					self.log("group sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
+
+		return g2map
 
 
 def intern_force(sss):
@@ -209,6 +262,13 @@ def intern_force(sss):
 		return sss.encode("utf-8")
 	else:
 		raise TypeError("%s not unicode or string" % sss)
+
+
+def FlickrError_code(e):
+	if e.args[0][:6] == "Error:":
+		return int(e.args[0].split(':', 2)[1].strip())
+	else:
+		return None
 
 
 # Overwrite private method

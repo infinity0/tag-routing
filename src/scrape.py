@@ -17,15 +17,18 @@ ROUNDS = {
 "soc":
 	("social network", [".soc.graphml", ".soc.dot"]),
 "photo":
-	("photos", [".doc.graphml"]),
+	("photos", [".up.dict", ".pt.dict"]),
+"group":
+	("groups", [".g2.dict"]),
 }
 
 
 def first_nonwhite(line):
 	i = 0
-	for i, c in enumerate(line):
+	for c in line:
 		if c != ' ':
 			break
+		i += 1
 	return i
 
 
@@ -110,10 +113,24 @@ class Scraper():
 		s0 = NodeSample(socf)
 		g0 = s0.graph;
 
-		(upmap, ptmap) = self.ff.scrapeUserPhotos(g0.vs["id"], 12)
+		(upmap, ptmap) = self.ff.scrapePhotos(g0.vs["id"], 12)
 
 		dict_save(upmap, self.outfp("up.dict"))
 		dict_save(ptmap, self.outfp("pt.dict"))
+
+
+	def scrape_group(self, socf):
+		"""
+		Scrape groups and collect their photos
+
+		@param socf: GraphML file describing the social network to get photos of.
+		"""
+		s0 = NodeSample(socf)
+		g0 = s0.graph;
+
+		g2map = self.ff.scrapeGroups(g0.vs["id"], 12)
+
+		dict_save(g2map, self.outfp("g2.dict"))
 
 
 	def interact(self):

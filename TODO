@@ -35,13 +35,6 @@ build a graph and just write each photo to disk as we scrape it, probably.
 
 
 
-scrapeGroups(user_sample, photo_sample)
-	Scrape groups, given a user-sample and a photo-sample
-	- scrape all groups from all users in our sample
-	- for each group, get its users and photos, and retain only those belonging
-	  to user-sample and photo-sample
-
-
 inferGroupArcs(group_sample):
 	Given a sample of groups, infer arcs between them.
 	- get users intersection; keep arc only if (significantly?) better than
