@@ -3,7 +3,7 @@
 import sys, traceback, signal, os
 from random import random
 from math import log, exp
-
+from ast import literal_eval
 
 def choice_dist(dist, total=None):
 	"""
@@ -80,4 +80,26 @@ def signal_dump(sig=signal.SIGUSR1, fp=sys.stderr):
 		fp.flush()
 
 	signal.signal(sig, handle)
+
+
+def dict_save(d, fp=sys.stdout):
+	"""
+	Saves a dictionary to disk. Format: "k: v\n"* where k, v are data literals
+
+	Uses repr() to do the hard work.
+	"""
+	for k, v in d.iteritems():
+		fp.write("%r: %r\n" % (k, v))
+
+
+def dict_load(fp=sys.stdin):
+	"""
+	Loads a dictionary to disk. Format: "k: v\n"* where k, v are data literals
+
+	Uses ast.literal_eval to do the hard work.
+	"""
+	def parse_pair(line):
+		p = line.split(':', 1)
+		return literal_eval(p[0]), literal_eval(p[1].strip())
+	return dict(parse_pair(l) for l in fp.readlines())
 

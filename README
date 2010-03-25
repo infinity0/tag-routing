@@ -10,7 +10,7 @@ A system for decentralised search.
 
 ant
 
-python
+python2.6
 
 git
 

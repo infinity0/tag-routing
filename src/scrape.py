@@ -4,7 +4,7 @@ import sys
 
 from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.object import NodeSample, Node
-from tags.scrape.util import signal_dump
+from tags.scrape.util import signal_dump, dict_load, dict_save
 from xml.etree.ElementTree import dump
 from time import time, ctime
 
@@ -110,19 +110,18 @@ class Scraper():
 		s0 = NodeSample(socf)
 		g0 = s0.graph;
 
-		ss = self.ff.scrapeUserPhotos(g0.vs["id"], 12)
-		gg = ss.graph
+		(upmap, ptmap) = self.ff.scrapeUserPhotos(g0.vs["id"], 12)
 
-		gg.write_graphml(self.outfp("doc.graphml"))
-		gg.write_dot(self.outfp("doc.dot"))
+		dict_save(upmap, self.outfp("up.dict"))
+		dict_save(ptmap, self.outfp("pt.dict"))
 
 
 	def interact(self):
 		"""
-		Start up a python interpret with access to this Scraper
+		Start up a python interpreter with access to this Scraper
 		"""
 		import code
-		code.interact(banner="[Scraper interactive console]\n>>> self\n%s" % self, local=locals())
+		code.interact(banner="[Scraper interactive console]\n>>> self\n%r" % self, local=locals())
 
 
 if __name__ == "__main__":

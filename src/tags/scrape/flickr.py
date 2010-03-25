@@ -177,7 +177,9 @@ class SafeFlickrAPI(FlickrAPI):
 
 	def scrapeUserPhotos(self, users, conc_m=16, conc_w=0):
 
-		ss = NodeSample()
+		upmap = {} # user: [photo]
+		ptmap = {} # photo: [tag]
+
 		if not conc_w: conc_w = conc_m*3
 
 		# managers need to be handled by a different executor from the workers
@@ -192,15 +194,12 @@ class SafeFlickrAPI(FlickrAPI):
 
 				res = x.run_to_results(partial(run, x2, nsid, i) for i, nsid in enumerate(users))
 
-				for ptmap, nsid, i in res:
+				for ptm, nsid, i in res:
 					self.log("photo sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
-					n = ss.add_nodes(Node(id, out) for id, out in ptmap.iteritems())
-					if n == 0:
-						# FIXME HIGH do something about the fact that this user doesn't have any photos...
-						pass
+					upmap[nsid] = ptm.keys()
+					ptmap.update(ptm)
 
-		ss.build(True)
-		return ss
+		return upmap, ptmap
 
 
 def intern_force(sss):
