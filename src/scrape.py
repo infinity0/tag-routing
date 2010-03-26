@@ -1,12 +1,13 @@
 #!/usr/bin/python
 
 import sys, shelve
+from time import time, ctime
+from itertools import chain
 
 from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.object import NodeSample, Node
 from tags.scrape.util import signal_dump, dict_load, dict_save
 from xml.etree.ElementTree import dump
-from time import time, ctime
 
 NAME = "scrape.py"
 VERSION = 0.01
@@ -114,10 +115,13 @@ class Scraper():
 		@param ptdbf: filename of the {photo:[tag]} database
 		"""
 		s0 = NodeSample(self.infp("soc.graphml"))
-		ptdb = shelve.open(ptdbf)
 
-		upmap = self.ff.scrapePhotos(s0.graph.vs["id"], ptdb, conc_m=12)
+		upmap = self.ff.scrapePhotos(s0.graph.vs["id"])
 		dict_save(upmap, self.outfp("up.dict"))
+
+		photos = set(i for i in chain(*upmap.itervalues()))
+		del upmap
+		self.ff.commitPhotoTags(photos, shelve.open(ptdbf))
 
 
 	def scrape_group(self, ptdbf):
@@ -130,11 +134,14 @@ class Scraper():
 		"""
 		s0 = NodeSample(self.infp("soc.graphml"))
 		upmap = dict_load(self.infp("up.dict"))
-		ptdb = shelve.open(ptdbf)
 
-		g2map = self.ff.scrapeGroups(s0.graph.vs["id"], ptdb, upmap, conc_m=12)
+		g2map = self.ff.scrapeGroups(s0.graph.vs["id"], upmap)
 		dict_save(g2map, self.outfp("g2.dict"))
 		dict_save(upmap, self.outfp("up.dict"))
+
+		photos = set(i for i in chain(*(p for u, p in g2map.itervalues())))
+		del g2map, upmap
+		self.ff.commitPhotoTags(photos, shelve.open(ptdbf))
 
 
 	def interact(self):

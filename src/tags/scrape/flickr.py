@@ -105,6 +105,13 @@ class SafeFlickrAPI(FlickrAPI):
 			sys.stderr.flush()
 
 
+	def log2(self, msg, lv):
+		# TODO HIGH use the logging module
+		if lv <= SafeFlickrAPI.verbose:
+			print >>sys.stderr, "%.4f | %s | %s                  \r" % (time(), lv, msg),
+			sys.stderr.flush()
+
+
 	def getNSID(self, n):
 		return self.people_findByUsername(username=n).getchildren()[0].get("nsid")
 
@@ -159,54 +166,51 @@ class SafeFlickrAPI(FlickrAPI):
 		return spmap
 
 
-	def getPhotoTags(self, photos, x):
+	def commitPhotoTags(self, photos, ptdb, conc_m=36):
 		"""
-		Gets photos of a given user and all its tags
+		Gets the tags of all the given photos and saves these to a database
 
 		@param photos: an iterable of photo ids
+		@param ptdb: an open database of {photo:[tag]}
 		@param x: an executor to execute calls in parallel
-		@return {photo:[tags]}
 		"""
-		ptmap = {}
+		def run(phid, i):
+			r = None if phid in ptdb else self.tags_getListPhoto(photo_id=phid)
+			return r, phid, i
 
-		for r in x.run_to_results(partial(self.tags_getListPhoto, photo_id=pid) for pid in photos):
-			photo = r.getchildren()[0]
-			phid = photo.get("id")
-			# TODO NOW shorten geo tags to nearest degree, eg. "geo:lon=132.453516" -> "geo:lon=132"
-			ptmap[phid] = [intern_force(tag.get("raw")) for tag in photo.getchildren()[0].getchildren()]
-			self.log("photo: got %s tags (%s)" % (len(photo.getchildren()[0]), phid), 4)
+		with ThreadPoolExecutor(max_threads=conc_m) as x:
+			for r, phid, i in x.run_to_results(partial(run, phid, i) for i, phid in enumerate(photos)):
+				if r is None: continue
+				photo = r.getchildren()[0]
+				# TODO NOW shorten geo tags to nearest degree, eg. "geo:lon=132.453516" -> "geo:lon=132"
+				ptdb[phid] = [intern_force(tag.get("raw")) for tag in photo.getchildren()[0].getchildren()]
+				self.log2("photo db: %s/%s (added %s tags for %s)" % (i+1, len(photos), len(photo.getchildren()[0]), phid), 2)
 
-		return ptmap
+		self.log("photo db: %s photos added" % (len(photos)), 1)
 
 
-	def scrapePhotos(self, users, ptdb, conc_m=16, conc_w=0):
+	def scrapePhotos(self, users, conc_m=36):
 		"""
 		Scrape photos of the given users.
 
-		@param ptdb: an open database of {photo:[tag]}
 		@return {user:[photo]}
 		"""
-		if not conc_w: conc_w = conc_m*3
+		upmap = {}
 
-		upmap = {} # user: [photo]
+		def run(nsid, i):
+			# TODO NORM uses per_page/page args; set a sensible default limit
+			photos = self.people_getPublicPhotos(user_id=nsid, per_page=256).getchildren()[0].getchildren()
+			return photos, nsid, i
 
 		# managers need to be handled by a different executor from the workers
 		# otherwise it deadlocks when the executor fills up with manager tasks
 		# since worker tasks don't get a chance to run
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			with ThreadPoolExecutor(max_threads=conc_w) as x2:
+			for photos, nsid, i in x.run_to_results(partial(run, nsid, i) for i, nsid in enumerate(users)):
+				upmap[nsid] = [p.get("id") for p in photos]
+				self.log2("photo sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
 
-				def run(x2, nsid, i):
-					# TODO NORM uses per_page/page args; set a sensible default limit
-					photos = self.people_getPublicPhotos(user_id=nsid, per_page=256).getchildren()[0].getchildren()
-					ptm = self.getPhotoTags((p.get("id") for p in photos), x2)
-					return ptm, nsid, i
-
-				for ptm, nsid, i in x.run_to_results(partial(run, x2, nsid, i) for i, nsid in enumerate(users)):
-					upmap[nsid] = ptm.keys()
-					ptdb.update(ptm)
-					self.log("photo sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
-
+		self.log("photo sample: %s users added" % (len(users)), 1)
 		return upmap
 
 
@@ -233,26 +237,25 @@ class SafeFlickrAPI(FlickrAPI):
 			if r is None: continue
 			photos = r.getchildren()[0].getchildren()
 			gpmap[gid] = [p.get("id") for p in photos]
-			self.log("group: got %s photos (%s)" % (len(photos), gid), 4)
+			#self.log("group: got %s photos (%s)" % (len(photos), gid), 4)
 
 		return gpmap
 
 
-	def scrapeGroups(self, users, ptdb, upmap, conc_m=16, conc_w=0):
+	def scrapeGroups(self, users, upmap, conc_m=8, conc_w=0):
 		"""
 		Scrapes all groups of the given users.
 
-		@param ptdb: an open database of {photo:[tags]}
 		@param upmap: dict of {user:[photos]} - this will be updated if new photos are found
 		@return {group:([users],[photos])}
 		"""
 		g2map = {}
-		ppp = [] # list of photos to retrieve tags for
+		ppp = set() # list of photos to retrieve tags for
 
 		if not conc_w: conc_w = conc_m*3
 
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			with ThreadPoolExecutor(max_threads=conc_m) as x2:
+			with ThreadPoolExecutor(max_threads=conc_w) as x2:
 
 				def run(x2, nsid, i):
 					gs = self.people_getPublicGroups(user_id=nsid, per_page=256).getchildren()[0].getchildren()
@@ -267,17 +270,9 @@ class SafeFlickrAPI(FlickrAPI):
 							g2map[gid][0].append(nsid)
 							g2map[gid][1].extend(ps)
 
-						# for all photos not in ptdb, schedule to get their tags
-						for pid in ps:
-							if pid not in ptdb:
-								ppp.append(pid)
-								upmap[nsid].append(pid)
+					self.log2("group sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
 
-					self.log("group sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
-
-				self.log("group sample: getting %s photos" % (len(ppp)), 2)
-				ptdb.update(self.getPhotoTags(ppp, x2))
-
+		self.log("group sample: added %s users" % (len(users)), 1)
 		return g2map
 
 
