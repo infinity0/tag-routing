@@ -1,19 +1,18 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
-import sys
+import sys, socket
 from time import time
-
-from flickrapi import FlickrAPI, FlickrError
-from xml.etree.ElementTree import dump
-
+from functools import partial
 from threading import local as ThreadLocal
 from httplib import HTTPConnection, ImproperConnectionState, HTTPException
-import socket
+from xml.etree.ElementTree import dump
 
+from flickrapi import FlickrAPI, FlickrError
 from futures import ThreadPoolExecutor
-from functools import partial
+from igraph import Graph
 
 from tags.scrape.object import Node, NodeSample, Producer
+from tags.scrape.util import intern_force
 
 
 class SafeFlickrAPI(FlickrAPI):
@@ -152,7 +151,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 		@param sets: an iterable of set ids
 		@param x: an executor to execute calls in parallel
-		@return {set:[photos]}
+		@return: {set:[photos]}
 		"""
 		spmap = {}
 
@@ -193,7 +192,7 @@ class SafeFlickrAPI(FlickrAPI):
 		"""
 		Scrape photos of the given users.
 
-		@return {user:[photo]}
+		@return: {user:[photo]}
 		"""
 		upmap = {}
 
@@ -219,7 +218,7 @@ class SafeFlickrAPI(FlickrAPI):
 		Gets photos in group pools of the given user
 
 		@param groups: an iterable of group ids
-		@return {group:[photo]}
+		@return: {group:[photo]}
 		"""
 		gpmap = {}
 
@@ -247,7 +246,7 @@ class SafeFlickrAPI(FlickrAPI):
 		Scrapes all groups of the given users.
 
 		@param upmap: dict of {user:[photos]} - this will be updated if new photos are found
-		@return {group:([users],[photos])}
+		@return: {group:([users],[photos])}
 		"""
 		g2map = {}
 		ppp = set() # list of photos to retrieve tags for
@@ -338,15 +337,6 @@ class FlickrSample():
 		#- then make social links between these supergroups and the normal groups
 		#- TODO HOW??
 		raise NotImplemented()
-
-
-def intern_force(sss):
-	if type(sss) == str:
-		return sss
-	elif type(sss) == unicode:
-		return sss.encode("utf-8")
-	else:
-		raise TypeError("%s not unicode or string" % sss)
 
 
 def FlickrError_code(e):

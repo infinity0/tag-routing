@@ -5,6 +5,8 @@ import sys
 import igraph
 from igraph import Graph
 
+from tags.scrape.util import sort_v
+
 
 class StateError(RuntimeError):
 	pass
@@ -131,17 +133,40 @@ class Producer():
 		self.arc_s = arc_s # social links
 		self.arc_d = arc_d # content links
 
-	def createTGraph(net_g):
+
+	def createTGraph(self, net_g):
 		raise NotImplemented()
 
-	def createIndex(net_h):
+
+	def createIndex(self, net_h):
 		raise NotImplemented()
 
 
-def invertIndex(docset):
-	# TODO NOW
-	#Given a docset, generate tag->doc arcs and their attributes, and a subset
-	#of these for which it's appropriate to "point to" the set with (ie.
-	#attribute greater than some threshold)
-	raise NotImplemented()
+	def invertMap(self, ptdb):
+		"""
+		Given a photo:[tag] database, generate an inverse index and a cover set
+		for this producer.
+
+		@return: ({tag:{photo:attr}}, [tag])
+		"""
+		inv = {} # {tag:{photo:attr}}
+
+		for d in self.dset:
+			ts = ptdb[d]
+			attr = len(ts)**-0.5 # formula pulled out of my ass
+			# however it follows the principle of "more tags there are, less important each one is"
+			for t in ts:
+				if t not in inv:
+					inv[t] = {d:attr}
+				else:
+					inv[t][d] = attr
+
+		left = set(self.dset)
+		cover = []
+		for t, a in sort_v(((t, sum(dm.itervalues())) for t, dm in inv.iteritems()), reverse=True):
+			left.difference_update(inv[t])
+			cover.append(t)
+			if len(left) == 0: break
+
+		return inv, cover
 

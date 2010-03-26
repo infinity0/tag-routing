@@ -92,3 +92,22 @@ def dict_load(fp=sys.stdin):
 		return literal_eval(p[0]), literal_eval(p[1].strip())
 	return dict(parse_pair(l) for l in fp.readlines())
 
+
+def intern_force(sss):
+	"""
+	Interns the given string, or its UTF-8 encoding if it's a unicde string.
+	"""
+	if type(sss) == str:
+		return sss
+	elif type(sss) == unicode:
+		return sss.encode("utf-8")
+	else:
+		raise TypeError("%s not unicode or string" % sss)
+
+
+def sort_v(kvit, reverse=False):
+	"""
+	Returns a list of (k, v) tuples, sorted by v.
+	"""
+	return ((k, v) for (v, k) in sorted(((v, k) for k, v in kvit), reverse=reverse))
+
