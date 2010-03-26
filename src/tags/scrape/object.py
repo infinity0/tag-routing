@@ -155,6 +155,7 @@ class Producer():
 			ts = ptdb[d]
 			attr = len(ts)**-0.5 # formula pulled out of my ass
 			# however it follows the principle of "more tags there are, less important each one is"
+			# TODO HIGH decide whether this is actually a good idea, or just use a constant 1
 			for t in ts:
 				if t not in inv:
 					inv[t] = {d:attr}

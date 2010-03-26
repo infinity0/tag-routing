@@ -271,6 +271,12 @@ class SafeFlickrAPI(FlickrAPI):
 
 					self.log2("group sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
 
+		# ignore groups with 1 user, 0 photos
+		for gid in g2map.keys():
+			users, photos = g2map[gid]
+			if len(users) <= 1 and len(photos) <= 0:
+				del g2map[gid]
+
 		self.log("group sample: added %s users" % (len(users)), 1)
 		return g2map
 
@@ -291,18 +297,38 @@ class FlickrProducer(Producer):
 class FlickrSample():
 
 
-	def __init__(self, ss, ptdb, upmap, g2map):
+	def __init__(self, graph, ptdb, upmap, g2map):
 		"""
 		Create a new FlickrSample from the given arguments
 
-		@param ss: social network NodeSample
+		@param graph: [input] social network graph
 		@param ptdb: an open database of {photo:[tag]}
 		@param upmap: {user:[photo]}
 		@param g2map: {group:([user],[photo])}
 		"""
-		self.prod_u = {} # user-producers
-		self.prod_g = {} # group-producers
-		raise NotImplemented()
+
+		if len(upmap) != len(graph.vs):
+			raise ValueError
+
+		for v in graph.vs:
+			v["isgroup"] = False
+
+		graph.add_vertices(len(g2map))
+
+		for (i, (gnsid, (users, photos))) in enumerate(g2map.iteritems()):
+			gid = i + len(upmap)
+			graph.vs[gid]["id"] = gnsid
+			graph.vs[gid]["isgroup"] = True
+
+			for nsid in users:
+				# OPT HIGH this could probably be optimised, depending on if igraph does this efficiently
+				uid = graph.vs.select(id=nsid)[0].index
+				graph.add_edges((uid, gid))
+				graph.add_edges((gid, uid))
+
+		self.graph = graph
+		self.prod_u = upmap # user-producers
+		self.prod_g = dict((gid, gr[1]) for gid, gr in g2map) # group-producers
 
 
 	def inferGroupArcs(self):

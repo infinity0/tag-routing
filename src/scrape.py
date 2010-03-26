@@ -4,7 +4,7 @@ import sys, shelve
 from time import time, ctime
 from itertools import chain
 
-from tags.scrape.flickr import SafeFlickrAPI
+from tags.scrape.flickr import SafeFlickrAPI, FlickrSample
 from tags.scrape.object import NodeSample, Node
 from tags.scrape.util import signal_dump, dict_load, dict_save
 from xml.etree.ElementTree import dump
@@ -15,12 +15,14 @@ VERSION = 0.01
 ROUNDS = {
 "interact":
 	(None, []),
-"soc":
+"social":
 	("social network", [".soc.graphml", ".soc.dot"]),
 "photo":
 	("photos", [".up.dict", ".pt.dict"]),
 "group":
 	("groups", [".g2.dict"]),
+"generate":
+	(None, []),
 }
 
 
@@ -60,6 +62,9 @@ def main(round, *args, **kwargs):
 	if (round == "interact"):
 		return scr.interact()
 
+	if (round == "generate"):
+		return scr.generate(args[0])
+
 	f = getattr(scr, "scrape_%s" % round)
 
 	if len(args) > 0 and args[0].lower() == "help":
@@ -90,7 +95,7 @@ class Scraper():
 		return open("%s.%s" % (self.out, suffix)) if self.out else sys.stdin
 
 
-	def scrape_soc(self, seed, size):
+	def scrape_social(self, seed, size):
 		"""
 		Scrape the social network using breadth-search.
 
@@ -142,6 +147,21 @@ class Scraper():
 		photos = set(i for i in chain(*(p for u, p in g2map.itervalues())))
 		del g2map, upmap
 		self.ff.commitPhotoTags(photos, shelve.open(ptdbf))
+
+
+	def generate(self, ptdbf):
+		"""
+		Generate objects from the scraped data
+
+		@param ptdbf: filename of the {photo:[tag]} database
+		"""
+		graph = NodeSample(self.infp("soc.graphml")).graph
+		ptdb = shelve.open(ptdbf)
+		upmap = dict_load(self.infp("up.dict"))
+		g2map = dict_load(self.infp("g2.dict"))
+
+		#ss = FlickrSample(graph, ptdb, upmap, g2map)
+		import code; code.interact(local=locals())
 
 
 	def interact(self):
