@@ -99,6 +99,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 
 	def log(self, msg, lv):
+		# TODO HIGH use the logging module
 		if lv <= SafeFlickrAPI.verbose:
 			print >>sys.stderr, "%.4f | %s | %s" % (time(), lv, msg)
 			sys.stderr.flush()
@@ -138,31 +139,42 @@ class SafeFlickrAPI(FlickrAPI):
 		return s
 
 
-	def scrapeUserSets(self, nsid, x):
+	def getSetPhotos(self, sets, x):
+		"""
+		Gets sets of a given user and all photos belonging to it
 
-		sets = self.photosets_getList(user_id=nsid).getchildren()[0].getchildren()
-		phids = set()
+		@param sets: an iterable of set ids
+		@param x: An executor to execute calls in parallel
+		@return {set:[photos]}
+		"""
+		spmap = {}
+
+		#[s.get("id") for s in self.photosets_getList(user_id=nsid).getchildren()[0].getchildren()]
+		for r in x.run_to_results(partial(self.photosets_getPhotos, photoset_id=sid) for sid in sets):
+			pset = r.getchildren()[0]
+			sid = pset.get("id")
+			spmap[sid] = [p.get("id") for p in pset.getchildren()]
+			self.log("set: got %s photos (%s)" % (len(pset), sid), 4)
+
+		return spmap
+
+
+	def getPhotoTags(self, photos, x):
+		"""
+		Gets photos of a given user and all its tags
+
+		@param photos: an iterable of photo ids
+		@param x: An executor to execute calls in parallel
+		@return {photo:[tags]}
+		"""
 		ptmap = {}
 
-		# TODO LOW this API call uses per_page/page args but ignore for now, 500 is plenty
-		# TODO HIGH have a limit on the number of photos scraped. some people have >9000 photos
-
-		# FIXME NORM handle FlickrErrors
-		for r in x.run_to_results(partial(self.photosets_getPhotos, photoset_id=pset.get("id")) for pset in sets):
-			photos = r.getchildren()[0].getchildren()
-			phids.update(set(p.get("id") for p in photos))
-
-		def run(photo_id=None):
-			r = self.tags_getListPhoto(photo_id=photo_id)
-			return r, photo_id
-
-		# FIXME NORM handle FlickrErrors
-		for r, phid in x.run_to_results(partial(run, photo_id=id) for id in phids):
-			tags = r.getchildren()[0].getchildren()[0].getchildren()
-			self.log("photo: got %s tags (%s)" % (len(tags), phid), 4)
-			# TODO NOW generate {tag:attr} instead of [tag]
+		for r in x.run_to_results(partial(self.tags_getListPhoto, photo_id=pid) for pid in photos):
+			photo = r.getchildren()[0]
+			phid = photo.get("id")
 			# TODO NOW shorten geo tags to nearest degree, eg. "geo:lon=132.453516" -> "geo:lon=132"
-			ptmap[phid] = dict((intern_force(tag.get("raw")), 1) for tag in tags)
+			ptmap[phid] = [intern_force(tag.get("raw")) for tag in photo.getchildren()[0].getchildren()]
+			self.log("photo: got %s tags (%s)" % (len(photo.getchildren()[0]), phid), 4)
 
 		return ptmap
 
@@ -178,8 +190,6 @@ class SafeFlickrAPI(FlickrAPI):
 		upmap = {} # user: [photo]
 		ptmap = {} # photo: [tag]
 
-		# TODO HIGH re-write this to use people_getPublicPhotos
-
 		# managers need to be handled by a different executor from the workers
 		# otherwise it deadlocks when the executor fills up with manager tasks
 		# since worker tasks don't get a chance to run
@@ -187,8 +197,10 @@ class SafeFlickrAPI(FlickrAPI):
 			with ThreadPoolExecutor(max_threads=conc_w) as x2:
 
 				def run(x2, nsid, i):
-					ptmap = self.scrapeUserSets(nsid, x2)
-					return ptmap, nsid, i
+					# TODO NORM uses per_page/page args; set a sensible default limit
+					photos = self.people_getPublicPhotos(user_id=nsid, per_page=256).getchildren()[0].getchildren()
+					ptm = self.getPhotoTags((p.get("id") for p in photos), x2)
+					return ptm, nsid, i
 
 				for ptm, nsid, i in x.run_to_results(partial(run, x2, nsid, i) for i, nsid in enumerate(users)):
 					upmap[nsid] = ptm.keys()
@@ -198,17 +210,18 @@ class SafeFlickrAPI(FlickrAPI):
 		return upmap, ptmap
 
 
-	def scrapeUserPools(self, nsid, x):
+	def getGroupPools(self, groups, nsid, x):
 		"""
-		Scrapes photos in group pools of the given user
+		Gets photos in group pools of the given user
 
+		@param groups: an iterable of group ids
 		@return {group:[photo]}
 		"""
 		gpmap = {}
 
 		def run(gid):
 			try:
-				r = self.groups_pools_getPhotos(group_id=gid, user_id=nsid)
+				r = self.groups_pools_getPhotos(group_id=gid, user_id=nsid, per_page=256)
 			except FlickrError, e:
 				if FlickrError_code(e) == 2:
 					r = None
@@ -216,8 +229,7 @@ class SafeFlickrAPI(FlickrAPI):
 					raise
 			return r, gid
 
-		gs = self.people_getPublicGroups(user_id=nsid).getchildren()[0].getchildren()
-		for r, gid in x.run_to_results(partial(run, g.get("nsid")) for g in gs):
+		for r, gid in x.run_to_results(partial(run, gid) for gid in groups):
 			if r is None: continue
 			photos = r.getchildren()[0].getchildren()
 			gpmap[gid] = [p.get("id") for p in photos]
@@ -226,13 +238,16 @@ class SafeFlickrAPI(FlickrAPI):
 		return gpmap
 
 
-	def scrapeGroups(self, users, conc_m=16, conc_w=0):
+	def scrapeGroups(self, users, upmap, ptmap, conc_m=16, conc_w=0):
 		"""
 		Scrapes all groups of the given users.
 
+		@param upmap: user->photos map; this will be updated if new photos are found
+		@param ptmap: photo->tags map; this will be updated if new photos are found
 		@return {group:([users],[photos])}
 		"""
 		g2map = {}
+		ppp = [] # list of photos to retrieve tags for
 
 		if not conc_w: conc_w = conc_m*3
 
@@ -240,7 +255,8 @@ class SafeFlickrAPI(FlickrAPI):
 			with ThreadPoolExecutor(max_threads=conc_m) as x2:
 
 				def run(x2, nsid, i):
-					gpmap = self.scrapeUserPools(nsid, x2)
+					gs = self.people_getPublicGroups(user_id=nsid, per_page=256).getchildren()[0].getchildren()
+					gpmap = self.getGroupPools((g.get("nsid") for g in gs), nsid, x2)
 					return gpmap, nsid, i
 
 				for gpm, nsid, i in x.run_to_results(partial(run, x2, nsid, i) for i, nsid in enumerate(users)):
@@ -250,7 +266,16 @@ class SafeFlickrAPI(FlickrAPI):
 						else:
 							g2map[gid][0].append(nsid)
 							g2map[gid][1].extend(ps)
+
+						# for all photos not in ptmap, schedule to get their tags
+						for pid in ps:
+							if pid not in ptmap:
+								ppp.append(pid)
+								upmap[nsid].append(pid)
+
 					self.log("group sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
+
+				ptmap.update(self.getPhotoTags(ppp, x2))
 
 		return g2map
 

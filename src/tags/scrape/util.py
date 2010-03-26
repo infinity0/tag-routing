@@ -56,17 +56,6 @@ def thread_dump():
 
 	return "\n".join(code)
 
-#from pygments import highlight
-#from pygments.lexers import PythonLexer
-#from pygments.formatters import HtmlFormatter
-
-#def colour_stack_trace(trace):
-#	return highlight(trace, PythonLexer(), HtmlFormatter(
-#	  full=False,
-#	  # style="native",
-#	  noclasses=True,
-#	))
-
 
 def signal_dump(sig=signal.SIGUSR1, fp=sys.stderr):
 	"""

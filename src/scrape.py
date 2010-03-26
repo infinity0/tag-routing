@@ -61,7 +61,7 @@ def main(round, *args, **kwargs):
 
 	f = getattr(scr, "scrape_%s" % round)
 
-	if (args[0].lower() == "help"):
+	if len(args) > 0 and args[0].lower() == "help":
 		print >>sys.stderr, fmt_pydoc(f.__doc__)
 		return 0
 
@@ -85,6 +85,10 @@ class Scraper():
 		return open("%s.%s" % (self.out, suffix), 'w') if self.out else sys.stdout
 
 
+	def infp(self, suffix):
+		return open("%s.%s" % (self.out, suffix)) if self.out else sys.stdin
+
+
 	def scrape_soc(self, seed, size):
 		"""
 		Scrape the social network using breadth-search.
@@ -97,40 +101,39 @@ class Scraper():
 
 		ss = self.ff.scrapeIDs(seed, size)
 		gg = ss.graph
-
 		gg.write_graphml(self.outfp("soc.graphml"))
 		gg.write_dot(self.outfp("soc.dot"))
 
-		return 0
 
-
-	def scrape_photo(self, socf):
+	def scrape_photo(self):
 		"""
-		Scrape photos and collect their tags
+		Scrape photos and collect their tags.
 
-		@param socf: GraphML file describing the social network to get photos of.
+		Round "soc" must already have been executed
 		"""
-		s0 = NodeSample(socf)
+		s0 = NodeSample(self.infp("soc.graphml"))
 		g0 = s0.graph;
 
-		(upmap, ptmap) = self.ff.scrapePhotos(g0.vs["id"], 12)
-
+		(upmap, ptmap) = self.ff.scrapePhotos(g0.vs["id"], conc_m=12)
 		dict_save(upmap, self.outfp("up.dict"))
 		dict_save(ptmap, self.outfp("pt.dict"))
 
 
-	def scrape_group(self, socf):
+	def scrape_group(self):
 		"""
-		Scrape groups and collect their photos
+		Scrape groups and collect their photos.
 
-		@param socf: GraphML file describing the social network to get photos of.
+		Round "photo" must already have been executed
 		"""
-		s0 = NodeSample(socf)
+		s0 = NodeSample(self.infp("soc.graphml"))
 		g0 = s0.graph;
+		upmap = dict_load(self.infp("up.dict"))
+		ptmap = dict_load(self.infp("pt.dict"))
 
-		g2map = self.ff.scrapeGroups(g0.vs["id"], 12)
-
+		g2map = self.ff.scrapeGroups(g0.vs["id"], upmap, ptmap, conc_m=12)
 		dict_save(g2map, self.outfp("g2.dict"))
+		dict_save(upmap, self.outfp("up.dict"))
+		dict_save(ptmap, self.outfp("pt.dict"))
 
 
 	def interact(self):
