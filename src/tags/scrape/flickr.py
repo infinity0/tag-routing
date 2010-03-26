@@ -144,7 +144,7 @@ class SafeFlickrAPI(FlickrAPI):
 		Gets sets of a given user and all photos belonging to it
 
 		@param sets: an iterable of set ids
-		@param x: An executor to execute calls in parallel
+		@param x: an executor to execute calls in parallel
 		@return {set:[photos]}
 		"""
 		spmap = {}
@@ -164,7 +164,7 @@ class SafeFlickrAPI(FlickrAPI):
 		Gets photos of a given user and all its tags
 
 		@param photos: an iterable of photo ids
-		@param x: An executor to execute calls in parallel
+		@param x: an executor to execute calls in parallel
 		@return {photo:[tags]}
 		"""
 		ptmap = {}
@@ -179,16 +179,16 @@ class SafeFlickrAPI(FlickrAPI):
 		return ptmap
 
 
-	def scrapePhotos(self, users, conc_m=16, conc_w=0):
+	def scrapePhotos(self, users, ptdb, conc_m=16, conc_w=0):
 		"""
 		Scrape photos of the given users.
 
-		@return ({user:[photo]}, {photo:[tag]})
+		@param ptdb: an open database of {photo:[tag]}
+		@return {user:[photo]}
 		"""
 		if not conc_w: conc_w = conc_m*3
 
 		upmap = {} # user: [photo]
-		ptmap = {} # photo: [tag]
 
 		# managers need to be handled by a different executor from the workers
 		# otherwise it deadlocks when the executor fills up with manager tasks
@@ -204,10 +204,10 @@ class SafeFlickrAPI(FlickrAPI):
 
 				for ptm, nsid, i in x.run_to_results(partial(run, x2, nsid, i) for i, nsid in enumerate(users)):
 					upmap[nsid] = ptm.keys()
-					ptmap.update(ptm)
+					ptdb.update(ptm)
 					self.log("photo sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
 
-		return upmap, ptmap
+		return upmap
 
 
 	def getGroupPools(self, groups, nsid, x):
@@ -238,12 +238,12 @@ class SafeFlickrAPI(FlickrAPI):
 		return gpmap
 
 
-	def scrapeGroups(self, users, upmap, ptmap, conc_m=16, conc_w=0):
+	def scrapeGroups(self, users, upmap, ptdb, conc_m=16, conc_w=0):
 		"""
 		Scrapes all groups of the given users.
 
-		@param upmap: user->photos map; this will be updated if new photos are found
-		@param ptmap: photo->tags map; this will be updated if new photos are found
+		@param upmap: dict of {user:[photos]} - this will be updated if new photos are found
+		@param ptdb: an open database of {photo:[tags]}
 		@return {group:([users],[photos])}
 		"""
 		g2map = {}
@@ -267,15 +267,16 @@ class SafeFlickrAPI(FlickrAPI):
 							g2map[gid][0].append(nsid)
 							g2map[gid][1].extend(ps)
 
-						# for all photos not in ptmap, schedule to get their tags
+						# for all photos not in ptdb, schedule to get their tags
 						for pid in ps:
-							if pid not in ptmap:
+							if pid not in ptdb:
 								ppp.append(pid)
 								upmap[nsid].append(pid)
 
 					self.log("group sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
 
-				ptmap.update(self.getPhotoTags(ppp, x2))
+				self.log("group sample: getting %s photos" % (len(ppp)), 2)
+				ptdb.update(self.getPhotoTags(ppp, x2))
 
 		return g2map
 

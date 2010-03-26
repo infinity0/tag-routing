@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys
+import sys, shelve
 
 from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.object import NodeSample, Node
@@ -105,35 +105,36 @@ class Scraper():
 		gg.write_dot(self.outfp("soc.dot"))
 
 
-	def scrape_photo(self):
+	def scrape_photo(self, ptdbf):
 		"""
 		Scrape photos and collect their tags.
 
 		Round "soc" must already have been executed
+
+		@param ptdbf: filename of the {photo:[tag]} database
 		"""
 		s0 = NodeSample(self.infp("soc.graphml"))
-		g0 = s0.graph;
+		ptdb = shelve.open(ptdbf)
 
-		(upmap, ptmap) = self.ff.scrapePhotos(g0.vs["id"], conc_m=12)
+		upmap = self.ff.scrapePhotos(s0.graph.vs["id"], ptdb, conc_m=12)
 		dict_save(upmap, self.outfp("up.dict"))
-		dict_save(ptmap, self.outfp("pt.dict"))
 
 
-	def scrape_group(self):
+	def scrape_group(self, ptdbf):
 		"""
 		Scrape groups and collect their photos.
 
 		Round "photo" must already have been executed
+
+		@param ptdbf: filename of the {photo:[tag]} database
 		"""
 		s0 = NodeSample(self.infp("soc.graphml"))
-		g0 = s0.graph;
 		upmap = dict_load(self.infp("up.dict"))
-		ptmap = dict_load(self.infp("pt.dict"))
+		ptdb = shelve.open(ptdbf)
 
-		g2map = self.ff.scrapeGroups(g0.vs["id"], upmap, ptmap, conc_m=12)
+		g2map = self.ff.scrapeGroups(s0.graph.vs["id"], upmap, ptmap, conc_m=12)
 		dict_save(g2map, self.outfp("g2.dict"))
 		dict_save(upmap, self.outfp("up.dict"))
-		dict_save(ptmap, self.outfp("pt.dict"))
 
 
 	def interact(self):
