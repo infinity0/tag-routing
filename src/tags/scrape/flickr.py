@@ -13,7 +13,7 @@ import socket
 from futures import ThreadPoolExecutor
 from functools import partial
 
-from tags.scrape.object import Node, NodeSample
+from tags.scrape.object import Node, NodeSample, Producer
 
 
 class SafeFlickrAPI(FlickrAPI):
@@ -274,6 +274,70 @@ class SafeFlickrAPI(FlickrAPI):
 
 		self.log("group sample: added %s users" % (len(users)), 1)
 		return g2map
+
+
+class FlickrProducer(Producer):
+
+	def __init__(self, id, user, photos):
+		"""
+		Creates a new Producer from a flickr entity
+
+		@param id: identity string
+		@param user: whether this is a user-producer or a group-producer
+		"""
+		Producer.__init__(self, id, set(photos))
+		self.user = True if user else False
+
+
+class FlickrSample():
+
+
+	def __init__(self, ss, ptdb, upmap, g2map):
+		"""
+		Create a new FlickrSample from the given arguments
+
+		@param ss: social network NodeSample
+		@param ptdb: an open database of {photo:[tag]}
+		@param upmap: {user:[photo]}
+		@param g2map: {group:([user],[photo])}
+		"""
+		self.prod_u = {} # user-producers
+		self.prod_g = {} # group-producers
+		raise NotImplemented()
+
+
+	def inferGroupArcs(self):
+		# TODO NOW
+		#Given a sample of groups, infer arcs between them.
+		#- get users intersection; keep arc only if (significantly?) better than
+		#  independent intersections
+		raise NotImplemented()
+
+
+	def createAllObjects(self): #producer_graph
+		# TODO NOW
+		#Given a graph of producers, generate tgraphs from the narrow peak, and
+		#indexes from the fat tail.
+
+		#ie. 80-20 rule, but actually decide a precise way of doing these.
+		#- half of area-under-graph for each?
+		raise NotImplemented()
+
+
+	def generateSuperProducer(self): #producer_graph, seed, size
+		# TODO NORM optional, possibly this is necessary for good tgraph generation
+		#Given a graph of producers, generate a superproducer from the seed group
+		#and the given size, based on clustering analysis
+		raise NotImplemented()
+
+
+	def generateSuperProducers(self): #producer_graph
+		# TODO NORM
+		#Given a graph of producers, generate superproducers following a power-law
+		#distribution
+		#- then make social links between these supergroups and the normal groups
+		#- TODO HOW??
+		raise NotImplemented()
 
 
 def intern_force(sss):

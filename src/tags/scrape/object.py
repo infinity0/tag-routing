@@ -122,3 +122,26 @@ class Node():
 		self.out = out
 		self.attr = attr
 
+
+class Producer():
+
+	def __init__(self, id, dset=set(), arc_s={}, arc_d={}):
+		self.id = id # own identity
+		self.dset = dset # own document set
+		self.arc_s = arc_s # social links
+		self.arc_d = arc_d # content links
+
+	def createTGraph(net_g):
+		raise NotImplemented()
+
+	def createIndex(net_h):
+		raise NotImplemented()
+
+
+def invertIndex(docset):
+	# TODO NOW
+	#Given a docset, generate tag->doc arcs and their attributes, and a subset
+	#of these for which it's appropriate to "point to" the set with (ie.
+	#attribute greater than some threshold)
+	raise NotImplemented()
+
