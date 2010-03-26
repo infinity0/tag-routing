@@ -132,7 +132,7 @@ class Scraper():
 		upmap = dict_load(self.infp("up.dict"))
 		ptdb = shelve.open(ptdbf)
 
-		g2map = self.ff.scrapeGroups(s0.graph.vs["id"], upmap, ptmap, conc_m=12)
+		g2map = self.ff.scrapeGroups(s0.graph.vs["id"], ptdb, upmap, conc_m=12)
 		dict_save(g2map, self.outfp("g2.dict"))
 		dict_save(upmap, self.outfp("up.dict"))
 

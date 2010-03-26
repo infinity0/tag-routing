@@ -238,12 +238,12 @@ class SafeFlickrAPI(FlickrAPI):
 		return gpmap
 
 
-	def scrapeGroups(self, users, upmap, ptdb, conc_m=16, conc_w=0):
+	def scrapeGroups(self, users, ptdb, upmap, conc_m=16, conc_w=0):
 		"""
 		Scrapes all groups of the given users.
 
-		@param upmap: dict of {user:[photos]} - this will be updated if new photos are found
 		@param ptdb: an open database of {photo:[tags]}
+		@param upmap: dict of {user:[photos]} - this will be updated if new photos are found
 		@return {group:([users],[photos])}
 		"""
 		g2map = {}
