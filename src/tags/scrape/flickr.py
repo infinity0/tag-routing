@@ -338,6 +338,7 @@ class FlickrSample():
 			for nsid in users:
 				uid = self.id_u[nsid]
 				graph.add_edges([(uid, gid), (gid, uid)])
+				# TODO HIGH weights for these
 
 		# graph of social links between producers
 		self.gs = graph
@@ -350,13 +351,48 @@ class FlickrSample():
 			chain(((nsid, self.id_u[nsid], pset) for nsid, pset in upmap.iteritems()),
 				  ((nsid, self.id_g[nsid], gr[1]) for nsid, gr in g2map.iteritems())))
 
+		#print self.gs.summary()
+		self.inferGroupArcs()
+
 
 	def inferGroupArcs(self):
-		# TODO NOW
-		#Given a sample of groups, infer arcs between them.
-		#- get users intersection; keep arc only if (significantly?) better than
-		#  independent intersections
-		raise NotImplemented()
+		"""
+		Given a sample of groups, infer arcs between them.
+		"""
+		# FIXME HIGH make sure this can only be run at the appropriate time
+
+		gidbase = len(self.id_u)
+		gidsize = len(self.id_g)
+
+		r = len(self.id_u)**0.5
+		edges = []
+
+		for sgid in xrange(gidbase, gidbase+gidsize):
+			sgnsid = self.gs.vs[sgid]["id"]
+			smem = self.gs.successors(sgid)
+
+			for tgid in xrange(sgid+1, gidbase+gidsize):
+				tgnsid = self.gs.vs[tgid]["id"]
+				tmem = self.gs.successors(tgid)
+				imem = set(smem) & set(tmem)
+
+				# keep arc only if (significantly?) better than independent intersections
+				# we use directed rather than undirected arcs since we want to be able to
+				# consider asymmetric relationships
+
+				if r * len(imem) > len(smem):
+					edges.append((sgid, tgid))
+
+				if r * len(imem) > len(tmem):
+					edges.append((tgid, sgid))
+
+		# add all edges at once, since we need successors() to remain free of group-producers
+		# this is also a lot faster for igraph
+		self.gs.add_edges(edges)
+
+		poss = gidsize*gidsize
+		print "%s group-group arcs added (/%s, ~%.4f) between %s groups, fuzz = %.4f = 1/sqrt(users)" % (
+			len(edges), poss, float(len(edges))/poss, gidsize, 1/r)
 
 
 	def createAllObjects(self): #producer_graph
