@@ -127,11 +127,22 @@ class Node():
 
 class Producer():
 
-	def __init__(self, id, dset=set(), arc_s={}, arc_d={}):
-		self.id = id # own identity
-		self.dset = dset # own document set
-		self.arc_s = arc_s # social links
-		self.arc_d = arc_d # content links
+
+	def __init__(self, dset=set(), gs=None, gd=None, vid=None):
+		"""
+		Creates a new producer attached to the given graphs. The graphs must
+		contain the given vertex id.
+
+		@param dset: own document set
+		@param gs: social graph
+		@param gd: content graph
+		@param vid: vertex id of node
+		"""
+		self.gs = gs
+		self.gd = gd
+		self.vid = vid
+		self.nsid = gs.vs[vid]["id"]
+		self.dset = dset
 
 
 	def createTGraph(self, net_g):

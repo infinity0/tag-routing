@@ -3,6 +3,7 @@
 import sys, socket
 from time import time
 from functools import partial
+from itertools import chain
 from threading import local as ThreadLocal
 from httplib import HTTPConnection, ImproperConnectionState, HTTPException
 from xml.etree.ElementTree import dump
@@ -308,31 +309,46 @@ class FlickrSample():
 		"""
 
 		if len(upmap) != len(graph.vs):
-			raise ValueError
+			raise ValueError("graph / upmap size not same")
+			# don't need to check nsids are the same since we do that implicitly
+			# when we create self.ps
 
-		self.uidmap = {} # map of nsid:graphid
-		self.gidmap = {} # map of nsid:graphid
+		if not hasattr(ptdb, "sync"): # we don't actually use sync(), we just want a type-check that works most of the type
+			raise TypeError("not a database")
+
+		self.ptdb = ptdb
+
+		self.id_u = {} # map of nsid:graphid
+		self.id_g = {} # map of nsid:graphid
+
+		# add existing social links between users and groups
 
 		for (i, v) in enumerate(graph.vs):
+			self.id_u[v["id"]] = i
 			v["isgroup"] = False
-			self.uidmap[v["id"]] = i
 
 		graph.add_vertices(len(g2map))
 
 		for (i, (gnsid, (users, photos))) in enumerate(g2map.iteritems()):
 			gid = i + len(upmap)
-			self.gidmap[gnsid] = gid
+			self.id_g[gnsid] = gid
 			graph.vs[gid]["id"] = gnsid
 			graph.vs[gid]["isgroup"] = True
 
 			for nsid in users:
-				uid = self.uidmap[nsid]
-				graph.add_edges((uid, gid))
-				graph.add_edges((gid, uid))
+				uid = self.id_u[nsid]
+				graph.add_edges([(uid, gid), (gid, uid)])
 
-		self.graph = graph
-		self.prod_u = upmap # user-producers
-		self.prod_g = dict((gid, gr[1]) for gid, gr in g2map.iteritems()) # group-producers
+		# graph of social links between producers
+		self.gs = graph
+
+		# graph of content links between producers
+		self.gd = Graph(len(self.gs.vs), directed=True)
+
+		# {nsid:Producer}
+		self.ps = dict((nsid, Producer(dset, self.gs, self.gd, vid)) for nsid, vid, dset in
+			chain(((nsid, self.id_u[nsid], pset) for nsid, pset in upmap.iteritems()),
+				  ((nsid, self.id_g[nsid], gr[1]) for nsid, gr in g2map.iteritems())))
 
 
 	def inferGroupArcs(self):

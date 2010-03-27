@@ -13,16 +13,14 @@ NAME = "scrape.py"
 VERSION = 0.01
 
 ROUNDS = {
-"interact":
-	(None, []),
 "social":
-	("social network", [".soc.graphml", ".soc.dot"]),
+	("Scraping social network", [".soc.graphml", ".soc.dot"]),
 "photo":
-	("photos", [".up.dict", ".pt.dict"]),
+	("Scraping photos", [".up.dict"]),
 "group":
-	("groups", [".g2.dict"]),
+	("Scraping groups", [".g2.dict"]),
 "generate":
-	(None, []),
+	("Generating data", []),
 }
 
 
@@ -62,10 +60,7 @@ def main(round, *args, **kwargs):
 	if (round == "interact"):
 		return scr.interact()
 
-	if (round == "generate"):
-		return scr.generate(args[0])
-
-	f = getattr(scr, "scrape_%s" % round)
+	f = getattr(scr, "round_%s" % round)
 
 	if len(args) > 0 and args[0].lower() == "help":
 		print >>sys.stderr, fmt_pydoc(f.__doc__)
@@ -73,7 +68,7 @@ def main(round, *args, **kwargs):
 
 	else:
 		t = time()
-		print >>sys.stderr, "Scraping %s at %s" % (ROUNDS[round][0], ctime())
+		print >>sys.stderr, "%s at %s" % (ROUNDS[round][0], ctime())
 		ret = f(*args)
 		print >>sys.stderr, "completed in %.4fs" % (time()-t)
 		return ret
@@ -82,20 +77,29 @@ def main(round, *args, **kwargs):
 class Scraper():
 
 
-	def __init__(self, api_key, secret, token, output="scrape"):
+	def __init__(self, api_key, secret, token, output="scrape", database="."):
 		self.ff = SafeFlickrAPI(api_key, secret, token)
 		self.out = output
+		self.dbp = database
+		self.ptdb = None
 
 
 	def outfp(self, suffix):
-		return open("%s.%s" % (self.out, suffix), 'w') if self.out else sys.stdout
+		return open("%s.%s" % (self.out, suffix), 'w')
 
 
 	def infp(self, suffix):
-		return open("%s.%s" % (self.out, suffix)) if self.out else sys.stdin
+		return open("%s.%s" % (self.out, suffix))
 
 
-	def scrape_social(self, seed, size):
+	def db(self):
+		if self.ptdb is None:
+			self.ptdb = shelve.open("%s/%s.pt.db" % (self.dbp, self.out))
+			print >>sys.stderr, "%s/%s.pt.db opened" % (self.dbp, self.out)
+		return self.ptdb
+
+
+	def round_social(self, seed, size):
 		"""
 		Scrape the social network using breadth-search.
 
@@ -111,13 +115,11 @@ class Scraper():
 		gg.write_dot(self.outfp("soc.dot"))
 
 
-	def scrape_photo(self, ptdbf):
+	def round_photo(self):
 		"""
 		Scrape photos and collect their tags.
 
-		Round "soc" must already have been executed
-
-		@param ptdbf: filename of the {photo:[tag]} database
+		Round "social" must already have been executed
 		"""
 		s0 = NodeSample(self.infp("soc.graphml"))
 
@@ -126,16 +128,14 @@ class Scraper():
 
 		photos = set(i for i in chain(*upmap.itervalues()))
 		del upmap
-		self.ff.commitPhotoTags(photos, shelve.open(ptdbf))
+		self.ff.commitPhotoTags(photos, self.db())
 
 
-	def scrape_group(self, ptdbf):
+	def round_group(self):
 		"""
 		Scrape groups and collect their photos.
 
 		Round "photo" must already have been executed
-
-		@param ptdbf: filename of the {photo:[tag]} database
 		"""
 		s0 = NodeSample(self.infp("soc.graphml"))
 		upmap = dict_load(self.infp("up.dict"))
@@ -146,22 +146,21 @@ class Scraper():
 
 		photos = set(i for i in chain(*(p for u, p in g2map.itervalues())))
 		del g2map, upmap
-		self.ff.commitPhotoTags(photos, shelve.open(ptdbf))
+		self.ff.commitPhotoTags(photos, self.db())
 
 
-	def generate(self, ptdbf):
+	def round_generate(self):
 		"""
-		Generate objects from the scraped data
+		Generate objects from the scraped data.
 
-		@param ptdbf: filename of the {photo:[tag]} database
+		Round "group" must already have been executed.
 		"""
 		graph = NodeSample(self.infp("soc.graphml")).graph
-		ptdb = shelve.open(ptdbf)
 		upmap = dict_load(self.infp("up.dict"))
 		g2map = dict_load(self.infp("g2.dict"))
 
-		ss = FlickrSample(graph, ptdb, upmap, g2map)
-		#import code; code.interact(local=locals())
+		ss = FlickrSample(graph, self.db(), upmap, g2map)
+		import code; code.interact(local=locals())
 
 
 	def interact(self):
@@ -184,6 +183,8 @@ if __name__ == "__main__":
 
 	config.add_option("-o", "--output", type="string", metavar="OUTPUT", default="scrape",
 	  help = "Output file prefix (extensions will be added to it)")
+	config.add_option("-b", "--database", type="string", metavar="DATABASE", default=".",
+	  help = "Path to the photo-tag database (default .)")
 	config.add_option("-k", "--api-key", type="string", metavar="APIKEY",
 	  help = "Flickr API key")
 	config.add_option("-s", "--secret", type="string", metavar="SECRET",
