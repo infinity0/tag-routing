@@ -175,11 +175,11 @@ class SafeFlickrAPI(FlickrAPI):
 		@param x: an executor to execute calls in parallel
 		"""
 		def run(phid, i):
-			r = None if phid in ptdb else self.tags_getListPhoto(photo_id=phid)
+			r = None if phid is None else self.tags_getListPhoto(photo_id=phid)
 			return r, phid, i
 
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			for r, phid, i in x.run_to_results(partial(run, phid, i) for i, phid in enumerate(photos)):
+			for r, phid, i in x.run_to_results(partial(run, None if phid in ptdb else phid, i) for i, phid in enumerate(photos)):
 				if r is None: continue
 				photo = r.getchildren()[0]
 				# TODO NOW shorten geo tags to nearest degree, eg. "geo:lon=132.453516" -> "geo:lon=132"

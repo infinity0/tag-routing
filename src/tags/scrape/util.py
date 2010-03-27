@@ -5,6 +5,7 @@ from random import random
 from math import log, exp
 from ast import literal_eval
 
+
 def choice_dist(dist, total=None):
 	"""
 	Pick a random key from the map according to the distribution defined by it
@@ -17,6 +18,7 @@ def choice_dist(dist, total=None):
 	rand = random() * total
 	running = 0.0
 
+	# OPT NORM use some combo of binary search and caching the cumulative list
 	for k, w in dist.iteritems():
 		running += w
 		if running > rand:
@@ -117,4 +119,60 @@ def union_ind(*args):
 	Returns the union of some probabilities, assuming they are all independent.
 	"""
 	return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in args))
+
+
+def futures_patch_nonblocking(verbose=False):
+	"""
+	Prevents certain python-futures features from blocking signal handling.
+	ONLY USE IF NO THREADS (except main) EVER WRITE TO DISK, ETC.
+
+	Stuff patched so far:
+	- Future.result() blocking process signals
+	- thread._python_exit being registered as a handler, which blocks exit
+
+	@param verbose: be verbose
+	"""
+	# prevent futures.thread from setting _python_exit
+	# this is safe only if threads aren't writing to files
+	import atexit
+	old = atexit.register
+	def lol(i):
+		from futures.thread import _python_exit
+		if i == _python_exit:
+			if verbose: print >>sys.stderr, "futures_patch_nonblocking: DENIED atexit.register(%r)" % i
+		else:
+			if verbose: print >>sys.stderr, "futures_patch_nonblocking: allowed atexit.register(%r)" % i
+			old(i)
+		#import traceback
+		#traceback.print_stack()
+	atexit.register = lol
+	from futures import ThreadPoolExecutor
+	atexit.register = old
+
+	# rewrite future.Future.result() to periodically wakeup when waiting for a result
+	import futures._base
+	from futures._base import CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, CancelledError, TimeoutError, Future
+	def result(self, timeout=None):
+		self._condition.acquire()
+		try:
+			if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
+				raise CancelledError()
+			elif self._state == FINISHED:
+				return Future._Future__get_result(self)
+
+			if timeout is None:
+				while self._state != FINISHED:
+					self._condition.wait(0.01)
+			else:
+				self._condition.wait(timeout)
+
+			if self._state in [CANCELLED, CANCELLED_AND_NOTIFIED]:
+				raise CancelledError()
+			elif self._state == FINISHED:
+				return Future._Future__get_result(self)
+			else:
+				raise TimeoutError()
+		finally:
+			self._condition.release()
+	futures._base.Future.result = result
 

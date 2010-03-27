@@ -1,8 +1,11 @@
 #!/usr/bin/python
 
-import sys, shelve, code
+import sys, code
 from time import time, ctime
 from itertools import chain
+
+from tags.scrape.util import futures_patch_nonblocking
+futures_patch_nonblocking()
 
 from tags.scrape.flickr import SafeFlickrAPI, FlickrSample
 from tags.scrape.object import NodeSample, Node
@@ -55,19 +58,20 @@ def main(round, *args, **kwargs):
 	signal_dump()
 
 	SafeFlickrAPI.verbose = kwargs.pop("verbose")
-	scr = Scraper(**kwargs)
-	f = getattr(scr, "round_%s" % round)
+	with Scraper(**kwargs) as scr:
 
-	if len(args) > 0 and args[0].lower() == "help":
-		print >>sys.stderr, fmt_pydoc(f.__doc__)
-		return 0
+		f = getattr(scr, "round_%s" % round)
 
-	else:
-		t = time()
-		print >>sys.stderr, "%s at %s" % (ROUNDS[round][0], ctime())
-		ret = f(*args)
-		print >>sys.stderr, "completed in %.4fs" % (time()-t)
-		return ret
+		if len(args) > 0 and args[0].lower() == "help":
+			print >>sys.stderr, fmt_pydoc(f.__doc__)
+			return 0
+
+		else:
+			t = time()
+			print >>sys.stderr, "%s at %s" % (ROUNDS[round][0], ctime())
+			ret = f(*args)
+			print >>sys.stderr, "completed in %.4fs" % (time()-t)
+			return ret
 
 
 class Scraper():
@@ -75,6 +79,7 @@ class Scraper():
 
 	def __init__(self, api_key, secret, token, output="scrape", database=".", interact=False):
 		self.ff = SafeFlickrAPI(api_key, secret, token)
+		self.fp = []
 		self.out = output
 		self.dbp = database
 		self.ptdb = None
@@ -82,18 +87,40 @@ class Scraper():
 		self.banner = "[Scraper interactive console]\n>>> self\n%r" % self
 
 
+	def __enter__(self):
+		return self
+
+
+	def __exit__(self, type, value, traceback):
+		if self.ptdb:
+			self.ptdb.close()
+		for fp in self.fp:
+			fp.close()
+
+
 	def outfp(self, suffix):
-		return open("%s.%s" % (self.out, suffix), 'w')
+		fp = open("%s.%s" % (self.out, suffix), 'w')
+		self.fp.append(fp)
+		return fp
 
 
 	def infp(self, suffix):
-		return open("%s.%s" % (self.out, suffix))
+		fp = open("%s.%s" % (self.out, suffix))
+		self.fp.append(fp)
+		return fp
 
 
 	def db(self):
 		if self.ptdb is None:
-			self.ptdb = shelve.open("%s/%s.pt.db" % (self.dbp, self.out))
-			print >>sys.stderr, "%s/%s.pt.db opened" % (self.dbp, self.out)
+			dbf = "%s/%s.pt.db" % (self.dbp, self.out)
+			try:
+				from shelve import BsdDbShelf
+				from bsddb import btopen
+				self.ptdb = BsdDbShelf(btopen(dbf))
+			except Exception:
+				import shelve
+				self.ptdb = shelve.open(dbf)
+			print >>sys.stderr, "%s opened" % dbf
 		return self.ptdb
 
 
