@@ -111,3 +111,10 @@ def sort_v(kvit, reverse=False):
 	"""
 	return ((k, v) for (v, k) in sorted(((v, k) for k, v in kvit), reverse=reverse))
 
+
+def union_ind(*args):
+	"""
+	Returns the union of some probabilities, assuming they are all independent.
+	"""
+	return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in args))
+

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import sys, shelve
+import sys, shelve, code
 from time import time, ctime
 from itertools import chain
 
@@ -56,10 +56,6 @@ def main(round, *args, **kwargs):
 
 	SafeFlickrAPI.verbose = kwargs.pop("verbose")
 	scr = Scraper(**kwargs)
-
-	if (round == "interact"):
-		return scr.interact()
-
 	f = getattr(scr, "round_%s" % round)
 
 	if len(args) > 0 and args[0].lower() == "help":
@@ -77,11 +73,13 @@ def main(round, *args, **kwargs):
 class Scraper():
 
 
-	def __init__(self, api_key, secret, token, output="scrape", database="."):
+	def __init__(self, api_key, secret, token, output="scrape", database=".", interact=False):
 		self.ff = SafeFlickrAPI(api_key, secret, token)
 		self.out = output
 		self.dbp = database
 		self.ptdb = None
+		self.interact = interact
+		self.banner = "[Scraper interactive console]\n>>> self\n%r" % self
 
 
 	def outfp(self, suffix):
@@ -114,6 +112,8 @@ class Scraper():
 		gg.write_graphml(self.outfp("soc.graphml"))
 		gg.write_dot(self.outfp("soc.dot"))
 
+		if self.interact: code.interact(banner=self.banner, local=locals())
+
 
 	def round_photo(self):
 		"""
@@ -129,6 +129,8 @@ class Scraper():
 		photos = set(i for i in chain(*upmap.itervalues()))
 		del upmap
 		self.ff.commitPhotoTags(photos, self.db())
+
+		if self.interact: code.interact(banner=self.banner, local=locals())
 
 
 	def round_group(self):
@@ -148,6 +150,8 @@ class Scraper():
 		del g2map, upmap
 		self.ff.commitPhotoTags(photos, self.db())
 
+		if self.interact: code.interact(banner=self.banner, local=locals())
+
 
 	def round_generate(self):
 		"""
@@ -160,15 +164,8 @@ class Scraper():
 		g2map = dict_load(self.infp("g2.dict"))
 
 		ss = FlickrSample(graph, self.db(), upmap, g2map)
-		import code; code.interact(local=locals())
 
-
-	def interact(self):
-		"""
-		Start up a python interpreter with access to this Scraper
-		"""
-		import code
-		code.interact(banner="[Scraper interactive console]\n>>> self\n%r" % self, local=locals())
+		if self.interact: code.interact(banner=self.banner, local=locals())
 
 
 if __name__ == "__main__":
@@ -185,6 +182,8 @@ if __name__ == "__main__":
 	  help = "Output file prefix (extensions will be added to it)")
 	config.add_option("-b", "--database", type="string", metavar="DATABASE", default=".",
 	  help = "Path to the photo-tag database (default .)")
+	config.add_option("-i", "--interact", action="store_true", dest="interact",
+	  help = "Go into interactive mode after performing a round, to examine the objects created")
 	config.add_option("-k", "--api-key", type="string", metavar="APIKEY",
 	  help = "Flickr API key")
 	config.add_option("-s", "--secret", type="string", metavar="SECRET",

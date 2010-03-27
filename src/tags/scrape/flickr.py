@@ -328,7 +328,7 @@ class FlickrSample():
 			v["isgroup"] = False
 
 		graph.add_vertices(len(g2map))
-
+		edges = []
 		for (i, (gnsid, (users, photos))) in enumerate(g2map.iteritems()):
 			gid = i + len(upmap)
 			self.id_g[gnsid] = gid
@@ -337,8 +337,10 @@ class FlickrSample():
 
 			for nsid in users:
 				uid = self.id_u[nsid]
-				graph.add_edges([(uid, gid), (gid, uid)])
+				edges.extend([(uid, gid), (gid, uid)])
 				# TODO HIGH weights for these
+		graph.add_edges(edges)
+		del edges
 
 		# graph of social links between producers
 		self.gs = graph
@@ -376,15 +378,17 @@ class FlickrSample():
 				tmem = self.gs.successors(tgid)
 				imem = set(smem) & set(tmem)
 
-				# keep arc only if (significantly?) better than independent intersections
+				# keep arc only if (significantly) better than independent intersections
 				# we use directed rather than undirected arcs since we want to be able to
 				# consider asymmetric relationships
 
 				if r * len(imem) > len(smem):
 					edges.append((sgid, tgid))
+					# TODO HIGH weights for these
 
 				if r * len(imem) > len(tmem):
 					edges.append((tgid, sgid))
+					# TODO HIGH weights for these
 
 		# add all edges at once, since we need successors() to remain free of group-producers
 		# this is also a lot faster for igraph
@@ -393,16 +397,6 @@ class FlickrSample():
 		poss = gidsize*gidsize
 		print "%s group-group arcs added (/%s, ~%.4f) between %s groups, fuzz = %.4f = 1/sqrt(users)" % (
 			len(edges), poss, float(len(edges))/poss, gidsize, 1/r)
-
-
-	def createAllObjects(self): #producer_graph
-		# TODO NOW
-		#Given a graph of producers, generate tgraphs from the narrow peak, and
-		#indexes from the fat tail.
-
-		#ie. 80-20 rule, but actually decide a precise way of doing these.
-		#- half of area-under-graph for each?
-		raise NotImplemented()
 
 
 	def generateSuperProducer(self): #producer_graph, seed, size
@@ -418,6 +412,22 @@ class FlickrSample():
 		#distribution
 		#- then make social links between these supergroups and the normal groups
 		#- TODO HOW??
+		raise NotImplemented()
+
+
+	def generateContentArcs(self):
+		"""
+		Generate content arcs between producers
+		"""
+		raise NotImplemented()
+
+	def createAllObjects(self): #producer_graph
+		# TODO NOW
+		#Given a graph of producers, generate tgraphs from the narrow peak, and
+		#indexes from the fat tail.
+
+		#ie. 80-20 rule, but actually decide a precise way of doing these.
+		#- half of area-under-graph for each?
 		raise NotImplemented()
 
 

@@ -5,7 +5,7 @@ import sys
 import igraph
 from igraph import Graph
 
-from tags.scrape.util import sort_v
+from tags.scrape.util import sort_v, union_ind
 
 
 class StateError(RuntimeError):
@@ -143,6 +143,9 @@ class Producer():
 		self.vid = vid
 		self.nsid = gs.vs[vid]["id"]
 		self.dset = dset
+		self.inv = {} # {tag:[doc]}
+		self.tag = {} # {tag:attr}
+		self.cover = []
 
 
 	def createTGraph(self, net_g):
@@ -158,27 +161,33 @@ class Producer():
 		Given a photo:[tag] database, generate an inverse index and a cover set
 		for this producer.
 
-		@return: ({tag:{photo:attr}}, [tag])
+		@return: proportion of tags it took to cover all documents, or 0 if
+		         there are no tags. (lower is better)
 		"""
-		inv = {} # {tag:{photo:attr}}
+		self.inv = {}
 
 		for d in self.dset:
 			ts = ptdb[d]
+			if not ts: continue
 			attr = len(ts)**-0.5 # formula pulled out of my ass
 			# however it follows the principle of "more tags there are, less important each one is"
 			# TODO HIGH decide whether this is actually a good idea, or just use a constant 1
 			for t in ts:
-				if t not in inv:
-					inv[t] = {d:attr}
+				if t not in self.inv:
+					self.inv[t] = {d:attr}
 				else:
-					inv[t][d] = attr
+					self.inv[t][d] = attr
+
+		# use union_ind to weigh tags - roughly, 1 match out of any is satisfactory
+		self.tag = dict((t, union_ind(*dm.itervalues())) for t, dm in self.inv.iteritems())
+		#self.tag = dict((t, sum(dm.itervalues())) for t, dm in self.inv.iteritems())
 
 		left = set(self.dset)
-		cover = []
-		for t, a in sort_v(((t, sum(dm.itervalues())) for t, dm in inv.iteritems()), reverse=True):
-			left.difference_update(inv[t])
-			cover.append(t)
+		self.cover = []
+		for t, a in sort_v(self.tag.iteritems(), reverse=True):
+			left.difference_update(self.inv[t])
+			self.cover.append(t)
 			if len(left) == 0: break
 
-		return inv, cover
+		return len(self.cover) / float(len(self.inv)) if len(self.inv) > 0 else 0
 
