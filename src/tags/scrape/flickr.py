@@ -310,25 +310,29 @@ class FlickrSample():
 		if len(upmap) != len(graph.vs):
 			raise ValueError
 
-		for v in graph.vs:
+		self.uidmap = {} # map of nsid:graphid
+		self.gidmap = {} # map of nsid:graphid
+
+		for (i, v) in enumerate(graph.vs):
 			v["isgroup"] = False
+			self.uidmap[v["id"]] = i
 
 		graph.add_vertices(len(g2map))
 
 		for (i, (gnsid, (users, photos))) in enumerate(g2map.iteritems()):
 			gid = i + len(upmap)
+			self.gidmap[gnsid] = gid
 			graph.vs[gid]["id"] = gnsid
 			graph.vs[gid]["isgroup"] = True
 
 			for nsid in users:
-				# OPT HIGH this could probably be optimised, depending on if igraph does this efficiently
-				uid = graph.vs.select(id=nsid)[0].index
+				uid = self.uidmap[nsid]
 				graph.add_edges((uid, gid))
 				graph.add_edges((gid, uid))
 
 		self.graph = graph
 		self.prod_u = upmap # user-producers
-		self.prod_g = dict((gid, gr[1]) for gid, gr in g2map) # group-producers
+		self.prod_g = dict((gid, gr[1]) for gid, gr in g2map.iteritems()) # group-producers
 
 
 	def inferGroupArcs(self):

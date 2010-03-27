@@ -160,8 +160,8 @@ class Scraper():
 		upmap = dict_load(self.infp("up.dict"))
 		g2map = dict_load(self.infp("g2.dict"))
 
-		#ss = FlickrSample(graph, ptdb, upmap, g2map)
-		import code; code.interact(local=locals())
+		ss = FlickrSample(graph, ptdb, upmap, g2map)
+		#import code; code.interact(local=locals())
 
 
 	def interact(self):
