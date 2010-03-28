@@ -2,6 +2,9 @@
 
 import sys
 
+from array import array
+from itertools import izip
+
 import igraph
 from igraph import Graph
 
@@ -63,10 +66,11 @@ class NodeSample():
 		"""
 		if self.graph is not None: return self.graph
 
-		edges = []
+		arc_s = array('H') if len(self._node) < 65536 else array('i')
+		arc_t = array('H') if len(self._node) < 65536 else array('i')
 		v_id = []
 		v_attr = []
-		e_attr = []
+		e_attr = array('d')
 
 		for (i, node) in enumerate(self._node.itervalues()):
 			self._idmap[node.id] = i
@@ -79,7 +83,8 @@ class NodeSample():
 		for (i, node) in enumerate(self._node.itervalues()):
 			for (dst, attr) in node.out.iteritems():
 				if dst in self._node:
-					edges.append((i, self._idmap[dst]))
+					arc_s.append(i)
+					arc_t.append(self._idmap[dst])
 					e_attr.append(attr)
 				elif keep:
 					if dst in self._idmap:
@@ -90,7 +95,8 @@ class NodeSample():
 						v_attr.append(node_attr)
 						j += 1
 
-					edges.append((i, x))
+					arc_s.append(i)
+					arc_t.append(x)
 					e_attr.append(attr)
 				else:
 					pass
@@ -108,8 +114,8 @@ class NodeSample():
 		if any(a is not None for a in v_attr):
 			va["height"] = v_attr
 
-		self.graph = Graph(n=j, edges=edges, directed=True, vertex_attrs=va, edge_attrs=ea)
-		return self.graph
+		self.graph = Graph(n=j, edges=[], directed=True, vertex_attrs=va, edge_attrs=ea)
+		return self.graph.add_edges(izip(arc_s, arc_t))
 
 
 class Node():

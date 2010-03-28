@@ -2,8 +2,9 @@
 
 import sys, socket
 from time import time
+from array import array
 from functools import partial
-from itertools import chain
+from itertools import chain, izip
 from threading import local as ThreadLocal
 from httplib import HTTPConnection, ImproperConnectionState, HTTPException
 from xml.etree.ElementTree import dump
@@ -52,11 +53,12 @@ class SafeFlickrAPI(FlickrAPI):
 					if FlickrError_code(e) == 0:
 						err = e
 					else:
+						self.log("FlickrAPI: aborting %s(%s) due to %r" % (attrib, args, e), 2)
 						raise
 				except (URLError, IOError, ImproperConnectionState, HTTPException), e:
 					err = e
 
-				self.log("FlickrAPI: wait %.4fs to retry %s(%s) due to %s" % (1.2**i, attrib, args, repr(err)), 2)
+				self.log("FlickrAPI: wait %.4fs to retry %s(%s) due to %r" % (1.2**i, attrib, args, err), 2)
 				sleep(1.2**i)
 				i = i+1 if i < 20 else 0
 
@@ -367,36 +369,54 @@ class FlickrSample():
 		gidsize = len(self.id_g)
 
 		r = len(self.id_u)**0.5
-		edges = []
 
-		for sgid in xrange(gidbase, gidbase+gidsize):
-			sgnsid = self.gs.vs[sgid]["id"]
-			smem = self.gs.successors(sgid)
+		arc_s = array('H') if gidbase+gidsize < 65536 else array('i')
+		arc_t = array('H') if gidbase+gidsize < 65536 else array('i')
+		mem = []
 
-			for tgid in xrange(sgid+1, gidbase+gidsize):
-				tgnsid = self.gs.vs[tgid]["id"]
-				tmem = self.gs.successors(tgid)
+		for ogid in xrange(0, gidsize):
+			#sgnsid = vsid[sgid]
+			mem.append(self.gs.successors(gidbase+ogid))
+
+		for sogid in xrange(0, gidsize):
+			#sgnsid = vsid[sgid]
+			smem = mem[sogid]
+			slen = len(smem)
+			sgid = gidbase+sogid
+
+			for togid in xrange(sogid+1, gidsize):
+				#tgnsid = vsid[tgid]
+				tmem = mem[togid]
+				tlen = len(tmem)
+				tgid = gidbase+togid
+
 				imem = set(smem) & set(tmem)
+				rilen = r * len(imem)
 
 				# keep arc only if (significantly) better than independent intersections
 				# we use directed rather than undirected arcs since we want to be able to
 				# consider asymmetric relationships
 
-				if r * len(imem) > len(smem):
-					edges.append((sgid, tgid))
+				if rilen > slen:
+					#edges.append((sgid, tgid))
+					arc_s.append(sgid)
+					arc_t.append(tgid)
 					# TODO HIGH weights for these
 
-				if r * len(imem) > len(tmem):
-					edges.append((tgid, sgid))
+				if rilen > tlen:
+					#edges.append((tgid, sgid))
+					arc_s.append(tgid)
+					arc_t.append(sgid)
 					# TODO HIGH weights for these
 
 		# add all edges at once, since we need successors() to remain free of group-producers
 		# this is also a lot faster for igraph
-		self.gs.add_edges(edges)
+		self.gs.add_edges(izip(arc_s, arc_t))
 
+		added = len(arc_s)
 		poss = gidsize*gidsize
 		print "%s group-group arcs added (/%s, ~%.4f) between %s groups, fuzz = %.4f = 1/sqrt(users)" % (
-			len(edges), poss, float(len(edges))/poss, gidsize, 1/r)
+			added, poss, float(added)/poss, gidsize, 1/r)
 
 
 	def generateSuperProducer(self): #producer_graph, seed, size
