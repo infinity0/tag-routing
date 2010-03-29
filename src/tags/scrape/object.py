@@ -1,14 +1,12 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
 import sys
-
 from array import array
-from itertools import izip
 
 import igraph
 from igraph import Graph
 
-from tags.scrape.util import sort_v, union_ind
+from tags.scrape.util import intern_force, sort_v, union_ind, edge_array, infer_arcs
 
 
 class StateError(RuntimeError):
@@ -66,8 +64,7 @@ class NodeSample():
 		"""
 		if self.graph is not None: return self.graph
 
-		arc_s = array('H') if len(self._node) < 65536 else array('i')
-		arc_t = array('H') if len(self._node) < 65536 else array('i')
+		arc_s, arc_t, edges = edge_array(len(self._node))
 		v_id = []
 		v_attr = []
 		e_attr = array('d')
@@ -105,7 +102,6 @@ class NodeSample():
 		del self._node
 
 		va = {"id": v_id}
-		ea = {"weight": e_attr}
 
 		for (i, id) in enumerate(v_id):
 			if type(id) == unicode:
@@ -114,8 +110,10 @@ class NodeSample():
 		if any(a is not None for a in v_attr):
 			va["height"] = v_attr
 
-		self.graph = Graph(n=j, edges=[], directed=True, vertex_attrs=va, edge_attrs=ea)
-		return self.graph.add_edges(izip(arc_s, arc_t))
+		self.graph = Graph(n=j, directed=True, vertex_attrs=va)
+		self.graph.add_edges(edges)
+		self.graph.es["weight"] = e_attr
+		return self.graph
 
 
 class Node():
@@ -134,7 +132,7 @@ class Node():
 class Producer():
 
 
-	def __init__(self, dset=set(), gs=None, gd=None, vid=None):
+	def __init__(self, dset=[], gs=None, gd=None, vid=None):
 		"""
 		Creates a new producer attached to the given graphs. The graphs must
 		contain the given vertex id.
@@ -148,10 +146,12 @@ class Producer():
 		self.gd = gd
 		self.vid = vid
 		self.nsid = gs.vs[vid]["id"]
-		self.dset = dset
-		self.inv = {} # {tag:[doc]}
-		self.tag = {} # {tag:attr}
-		self.cover = []
+		self.dset = [intern_force(d) for d in dset]
+		# OPT HIGH move all of these into a "graph" instance
+		self.inv = None # {tag:[doc]}
+		self.tag = None # {tag:attr}
+		self.cover = None
+		self.arcs = None
 
 
 	def createTGraph(self, net_g):
@@ -170,7 +170,7 @@ class Producer():
 		@return: proportion of tags it took to cover all documents, or 0 if
 		         there are no tags. (lower is better)
 		"""
-		self.inv = {}
+		inv = {}
 
 		for d in self.dset:
 			ts = ptdb[d]
@@ -179,21 +179,45 @@ class Producer():
 			# however it follows the principle of "more tags there are, less important each one is"
 			# TODO HIGH decide whether this is actually a good idea, or just use a constant 1
 			for t in ts:
-				if t not in self.inv:
-					self.inv[t] = {d:attr}
+				t = intern_force(t)
+				if t not in inv:
+					inv[t] = {d:attr}
 				else:
-					self.inv[t][d] = attr
+					inv[t][d] = attr
 
 		# use union_ind to weigh tags - roughly, 1 match out of any is satisfactory
-		self.tag = dict((t, union_ind(*dm.itervalues())) for t, dm in self.inv.iteritems())
-		#self.tag = dict((t, sum(dm.itervalues())) for t, dm in self.inv.iteritems())
+		tag = dict((t, union_ind(*dm.itervalues())) for t, dm in inv.iteritems())
+		#tag = dict((t, sum(dm.itervalues())) for t, dm in inv.iteritems())
 
 		left = set(self.dset)
-		self.cover = []
-		for t, a in sort_v(self.tag.iteritems(), reverse=True):
-			left.difference_update(self.inv[t])
-			self.cover.append(t)
+		cover = []
+		for t, a in sort_v(tag.iteritems(), reverse=True):
+			left.difference_update(inv[t])
+			cover.append(t)
 			if len(left) == 0: break
 
+		self.inv = inv
+		self.tag = tag
+		self.cover = cover
 		return len(self.cover) / float(len(self.inv)) if len(self.inv) > 0 else 0
+
+
+	def inferTagArcs(self):
+		key = self.inv.keys()
+		val = self.inv.values()
+		items = len(self.dset)
+
+		edges, arc_a = infer_arcs(val, items, inverse=True)
+
+		arcs = {}
+		for i, (s, t) in enumerate(edges):
+			sk = key[s]
+			tk = key[t]
+			if sk not in arcs:
+				arcs[sk] = {tk:arc_a[i]}
+			else:
+				arcs[sk][tk] = arc_a[i]
+
+		self.arcs = arcs
+		return len(edges), len(self.inv)**2
 

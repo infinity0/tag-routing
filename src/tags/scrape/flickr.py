@@ -4,7 +4,7 @@ import sys, socket
 from time import time
 from array import array
 from functools import partial
-from itertools import chain, izip
+from itertools import chain
 from threading import local as ThreadLocal
 from httplib import HTTPConnection, ImproperConnectionState, HTTPException
 from xml.etree.ElementTree import dump
@@ -14,7 +14,7 @@ from futures import ThreadPoolExecutor
 from igraph import Graph
 
 from tags.scrape.object import Node, NodeSample, Producer
-from tags.scrape.util import intern_force
+from tags.scrape.util import intern_force, infer_arcs
 
 
 class SafeFlickrAPI(FlickrAPI):
@@ -50,7 +50,8 @@ class SafeFlickrAPI(FlickrAPI):
 				try:
 					return handler(**args)
 				except FlickrError, e:
-					if FlickrError_code(e) == 0:
+					code = FlickrError_code(e)
+					if code == 0 or code == 112:
 						err = e
 					else:
 						self.log("FlickrAPI: aborting %s(%s) due to %r" % (attrib, args, e), 2)
@@ -184,8 +185,9 @@ class SafeFlickrAPI(FlickrAPI):
 			for r, phid, i in x.run_to_results(partial(run, None if phid in ptdb else phid, i) for i, phid in enumerate(photos)):
 				if r is None: continue
 				photo = r.getchildren()[0]
-				# TODO NOW shorten geo tags to nearest degree, eg. "geo:lon=132.453516" -> "geo:lon=132"
-				ptdb[phid] = [intern_force(tag.get("raw")) for tag in photo.getchildren()[0].getchildren()]
+				# filter out "machine-tags"
+				ftag = filter(lambda x: ':' not in x, (tag.text.strip() for tag in photo.getchildren()[0].getchildren()))
+				ptdb[phid] = [intern_force(tag) for tag in ftag]
 				self.log2("photo db: %s/%s (added %s tags for %s)" % (i+1, len(photos), len(photo.getchildren()[0]), phid), 2)
 
 		self.log("photo db: %s photos added" % (len(photos)), 1)
@@ -274,27 +276,14 @@ class SafeFlickrAPI(FlickrAPI):
 
 					self.log2("group sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
 
-		# ignore groups with 1 user, 0 photos
+		# ignore groups with <=1 user, <=1 photos
 		for gid in g2map.keys():
 			users, photos = g2map[gid]
-			if len(users) <= 1 and len(photos) <= 0:
+			if len(users) <= 1 and len(photos) <= 1:
 				del g2map[gid]
 
 		self.log("group sample: added %s users" % (len(users)), 1)
 		return g2map
-
-
-class FlickrProducer(Producer):
-
-	def __init__(self, id, user, photos):
-		"""
-		Creates a new Producer from a flickr entity
-
-		@param id: identity string
-		@param user: whether this is a user-producer or a group-producer
-		"""
-		Producer.__init__(self, id, set(photos))
-		self.user = True if user else False
 
 
 class FlickrSample():
@@ -357,6 +346,9 @@ class FlickrSample():
 
 		#print self.gs.summary()
 		self.inferGroupArcs()
+		for p in self.ps.itervalues():
+			p.invertMap(self.ptdb)
+			p.inferTagArcs()
 
 
 	def inferGroupArcs(self):
@@ -368,55 +360,16 @@ class FlickrSample():
 		gidbase = len(self.id_u)
 		gidsize = len(self.id_g)
 
-		r = len(self.id_u)**0.5
-
-		arc_s = array('H') if gidbase+gidsize < 65536 else array('i')
-		arc_t = array('H') if gidbase+gidsize < 65536 else array('i')
-		mem = []
-
-		for ogid in xrange(0, gidsize):
-			#sgnsid = vsid[sgid]
-			mem.append(self.gs.successors(gidbase+ogid))
-
-		for sogid in xrange(0, gidsize):
-			#sgnsid = vsid[sgid]
-			smem = mem[sogid]
-			slen = len(smem)
-			sgid = gidbase+sogid
-
-			for togid in xrange(sogid+1, gidsize):
-				#tgnsid = vsid[tgid]
-				tmem = mem[togid]
-				tlen = len(tmem)
-				tgid = gidbase+togid
-
-				imem = set(smem) & set(tmem)
-				rilen = r * len(imem)
-
-				# keep arc only if (significantly) better than independent intersections
-				# we use directed rather than undirected arcs since we want to be able to
-				# consider asymmetric relationships
-
-				if rilen > slen:
-					#edges.append((sgid, tgid))
-					arc_s.append(sgid)
-					arc_t.append(tgid)
-					# TODO HIGH weights for these
-
-				if rilen > tlen:
-					#edges.append((tgid, sgid))
-					arc_s.append(tgid)
-					arc_t.append(sgid)
-					# TODO HIGH weights for these
+		mem = [self.gs.successors(gidbase+ogid) for ogid in xrange(0, gidsize)]
+		edges, arc_a = infer_arcs(mem, gidbase)
 
 		# add all edges at once, since we need successors() to remain free of group-producers
 		# this is also a lot faster for igraph
-		self.gs.add_edges(izip(arc_s, arc_t))
+		self.gs.add_edges((s+gidbase, t+gidbase) for s, t in edges)
 
-		added = len(arc_s)
+		added = len(arc_a)
 		poss = gidsize*gidsize
-		print "%s group-group arcs added (/%s, ~%.4f) between %s groups, fuzz = %.4f = 1/sqrt(users)" % (
-			added, poss, float(added)/poss, gidsize, 1/r)
+		print "%s group-group arcs added (/%s, ~%.4f) between %s groups" % (added, poss, float(added)/poss, gidsize)
 
 
 	def generateSuperProducer(self): #producer_graph, seed, size
@@ -440,6 +393,7 @@ class FlickrSample():
 		Generate content arcs between producers
 		"""
 		raise NotImplemented()
+
 
 	def createAllObjects(self): #producer_graph
 		# TODO NOW
