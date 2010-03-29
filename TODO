@@ -25,3 +25,20 @@ to do this we first need to extend MessageReceiver.recv() to accept a "sender"
 argument, or something.
 
 
+----
+
+make Producer use a igraph.Graph to store tag arcs
+
+generateContentArcs:
+	user-* arcs: favorites_getPublicList
+		for each photo
+			get producers from photos_getAllContexts (groups) and photos_getInfo (owner)
+			for each producer in our sample
+				for each tag of the photo
+					for each cluster of the tag
+						if producer's cover set significantly intersects with the cluster
+							link to the producer using the top several tags of the cluster
+
+	group-group arcs:
+		--- TBD
+

@@ -178,6 +178,7 @@ def infer_arcs(mem, items, inverse=False):
 
 			imem = set(smem) & set(tmem)
 			ilen = len(imem)
+			if ilen == 0: continue
 			rilen = r*ilen
 
 			# keep arc only if (significantly) better than independent intersections

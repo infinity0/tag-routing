@@ -345,10 +345,11 @@ class FlickrSample():
 				  ((nsid, self.id_g[nsid], gr[1]) for nsid, gr in g2map.iteritems())))
 
 		#print self.gs.summary()
-		self.inferGroupArcs()
 		for p in self.ps.itervalues():
 			p.invertMap(self.ptdb)
 			p.inferTagArcs()
+
+		self.inferGroupArcs()
 
 
 	def inferGroupArcs(self):
@@ -360,7 +361,9 @@ class FlickrSample():
 		gidbase = len(self.id_u)
 		gidsize = len(self.id_g)
 
-		mem = [self.gs.successors(gidbase+ogid) for ogid in xrange(0, gidsize)]
+		#mem = [self.gs.successors(gidbase+ogid) for ogid in xrange(0, gidsize)] # users
+		#mem = [self.ps[self.gs.vs["id"][gidbase+ogid]].dset for ogid in xrange(0, gidsize)] # photos
+		mem = [self.ps[self.gs.vs["id"][gidbase+ogid]].tag.values() for ogid in xrange(0, gidsize)] # tags
 		edges, arc_a = infer_arcs(mem, gidbase)
 
 		# add all edges at once, since we need successors() to remain free of group-producers
