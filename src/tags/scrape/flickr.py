@@ -82,14 +82,14 @@ class SafeFlickrAPI(FlickrAPI):
 		try:
 			if "conn" not in self.thr.__dict__:
 				self.thr.conn = HTTPConnection(FlickrAPI.flickr_host)
-				self.log("connection opened: %s" % FlickrAPI.flickr_host, 3)
+				self.log("connection opened: %s" % FlickrAPI.flickr_host, 4)
 
 			self.thr.conn.request("POST", FlickrAPI.flickr_rest_form, post_data,
 				{"Content-Type": "application/x-www-form-urlencoded"})
 			reply = self.thr.conn.getresponse().read()
 
 		except (ImproperConnectionState, socket.error), e:
-			self.log("connection error: %s" % repr(e), 3)
+			self.log("connection error: %s" % repr(e), 4)
 			self.thr.conn.close()
 			del self.thr.conn
 			raise
@@ -100,6 +100,8 @@ class SafeFlickrAPI(FlickrAPI):
 
 		return reply
 
+	# Make private method visible
+	data_walker = FlickrAPI._FlickrAPI__data_walker
 
 	def log(self, msg, lv):
 		# TODO HIGH use the logging module
@@ -164,7 +166,7 @@ class SafeFlickrAPI(FlickrAPI):
 			pset = r.getchildren()[0]
 			sid = pset.get("id")
 			spmap[sid] = [p.get("id") for p in pset.getchildren()]
-			self.log("set: got %s photos (%s)" % (len(pset), sid), 4)
+			self.log("set: got %s photos (%s)" % (len(pset), sid), 6)
 
 		return spmap
 
@@ -202,8 +204,13 @@ class SafeFlickrAPI(FlickrAPI):
 		upmap = {}
 
 		def run(nsid, i):
-			# TODO NORM uses per_page/page args; set a sensible default limit
-			photos = self.people_getPublicPhotos(user_id=nsid, per_page=256).getchildren()[0].getchildren()
+			photos = [p.get("id") for p in chain(
+				# OPT HIGH decide whether we want this many, or whether "faves" only will do
+				self.data_walker(self.people_getPublicPhotos, user_id=nsid, per_page=500),
+				self.data_walker(self.favorites_getPublicList, user_id=nsid, per_page=500)
+			)]
+			if len(photos) >= 1024:
+				self.log("photo sample: got %s photos for user %s" % (len(photos), nsid), 3)
 			return photos, nsid, i
 
 		# managers need to be handled by a different executor from the workers
@@ -211,7 +218,7 @@ class SafeFlickrAPI(FlickrAPI):
 		# since worker tasks don't get a chance to run
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
 			for photos, nsid, i in x.run_to_results(partial(run, nsid, i) for i, nsid in enumerate(users)):
-				upmap[nsid] = [p.get("id") for p in photos]
+				upmap[nsid] = photos
 				self.log2("photo sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
 
 		self.log("photo sample: %s users added" % (len(users)), 1)
@@ -229,6 +236,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 		def run(gid):
 			try:
+				# TODO NOW make this use data_walker
 				r = self.groups_pools_getPhotos(group_id=gid, user_id=nsid, per_page=256)
 			except FlickrError, e:
 				if FlickrError_code(e) == 2:
@@ -241,7 +249,7 @@ class SafeFlickrAPI(FlickrAPI):
 			if r is None: continue
 			photos = r.getchildren()[0].getchildren()
 			gpmap[gid] = [p.get("id") for p in photos]
-			#self.log("group: got %s photos (%s)" % (len(photos), gid), 4)
+			#self.log("group: got %s photos (%s)" % (len(photos), gid), 6)
 
 		return gpmap
 

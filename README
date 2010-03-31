@@ -43,7 +43,7 @@ igraph
 
 FlickrAPI
 :	http://stuvel.eu/flickrapi/
-:	Debian: install `python-flickrapi`
+:	Debian: install `python-flickrapi` (>= 1.4.2) or put flickrapi/ into src/
 
 python-futures
 :	http://code.google.com/p/pythonfutures/source/list
