@@ -361,9 +361,9 @@ class FlickrSample():
 		gidbase = len(self.id_u)
 		gidsize = len(self.id_g)
 
-		#mem = [self.gs.successors(gidbase+ogid) for ogid in xrange(0, gidsize)] # users
+		mem = [self.gs.successors(gidbase+ogid) for ogid in xrange(0, gidsize)] # users
 		#mem = [self.ps[self.gs.vs["id"][gidbase+ogid]].dset for ogid in xrange(0, gidsize)] # photos
-		mem = [self.ps[self.gs.vs["id"][gidbase+ogid]].tag.values() for ogid in xrange(0, gidsize)] # tags
+		#mem = [self.ps[self.gs.vs["id"][gidbase+ogid]].tag.values() for ogid in xrange(0, gidsize)] # tags
 		edges, arc_a = infer_arcs(mem, gidbase)
 
 		# add all edges at once, since we need successors() to remain free of group-producers

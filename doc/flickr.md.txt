@@ -24,28 +24,30 @@ We base our model upon the notion of a "producer". This is a node that produces
 content. Each producer has:
 
 * a content-set of "their own" documents
-* social links to other producers
-* content links to other producers' bags, which are generated from the social
-  links
+* arcs to other producers; each arc has an associated source tag and weight
 
-When we create a `tgraph` or `index` from a producer's content-set, these use
-content links, rather than social links, to point to other objects. I believe
-this model more closely resembles reality, where (at least in my experience),
-friends don't always have what we want, and people that do, aren't always our
-friends. However, we often look for them by traversing the social network.
+Each producer can generate a `tgraph` or `index`; the content-set is used to
+generate internal nodes and arcs between nodes, and the producer-arcs are used
+to generate arcs to other objects.
+
+The producer network is separate from the social network; this is intended to
+more closely resemble reality: friends don't always have what we want, and
+people that do, aren't always our friends. However, we often look for them by
+traversing the social network.
 
 ## Flickr
 
-For flickr data, we will treat users and groups as producers. User-producers
-have their sets initialised with their own photos, and group-producers have
+We treat users and groups as producers. User-producers have their sets
+initialised with their own photos and favourites, and group-producers have
 their sets initialised with the photos from the group pool.
 
-As for social links, user-user links and user-group links already exist in the
-flickr data model. We therefore need a model for inferring group-group links.
+For each producer, we generate arcs as follows.
 
-Once we have a complete social network of producers, we need to infer content
-links. For user-producers, their favourites can be used as a starting point.
-For group-producers, they will need to be inferred from scratch.
+1. a set of "representative" photos are selected from the content set
+2. each photo can belong to multiple group pools or photo sets, and each of
+   these has an associated producer. we select our "related" producers from
+   ones that hold any of our "representative" photos.
+3. for each "related" producer, we infer some tags to link to it with.
 
 # Scraping
 
