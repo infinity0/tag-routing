@@ -213,9 +213,6 @@ class SafeFlickrAPI(FlickrAPI):
 				self.log("photo sample: got %s photos for user %s" % (len(photos), nsid), 3)
 			return photos, nsid, i
 
-		# managers need to be handled by a different executor from the workers
-		# otherwise it deadlocks when the executor fills up with manager tasks
-		# since worker tasks don't get a chance to run
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
 			for photos, nsid, i in x.run_to_results(partial(run, nsid, i) for i, nsid in enumerate(users)):
 				upmap[nsid] = photos
@@ -236,19 +233,20 @@ class SafeFlickrAPI(FlickrAPI):
 
 		def run(gid):
 			try:
-				# TODO NOW make this use data_walker
-				r = self.groups_pools_getPhotos(group_id=gid, user_id=nsid, per_page=256)
+				# OPT HIGH decide whether we want this many
+				photos = [p.get("id") for p in
+					self.data_walker(self.groups_pools_getPhotos, group_id=gid, user_id=nsid, per_page=500)
+				]
 			except FlickrError, e:
 				if FlickrError_code(e) == 2:
-					r = None
+					photos = None
 				else:
 					raise
-			return r, gid
+			return photos, gid
 
-		for r, gid in x.run_to_results(partial(run, gid) for gid in groups):
-			if r is None: continue
-			photos = r.getchildren()[0].getchildren()
-			gpmap[gid] = [p.get("id") for p in photos]
+		for photos, gid in x.run_to_results(partial(run, gid) for gid in groups):
+			if photos is None: continue
+			gpmap[gid] = photos
 			#self.log("group: got %s photos (%s)" % (len(photos), gid), 6)
 
 		return gpmap
@@ -266,6 +264,9 @@ class SafeFlickrAPI(FlickrAPI):
 
 		if not conc_w: conc_w = conc_m*3
 
+		# managers need to be handled by a different executor from the workers
+		# otherwise it deadlocks when the executor fills up with manager tasks
+		# since worker tasks don't get a chance to run
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
 			with ThreadPoolExecutor(max_threads=conc_w) as x2:
 
