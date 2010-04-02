@@ -1,6 +1,6 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
-import sys, socket
+import sys, socket, logging
 from time import time
 from array import array
 from functools import partial
@@ -14,12 +14,14 @@ from futures import ThreadPoolExecutor
 from igraph import Graph
 
 from tags.scrape.object import Node, NodeSample, Producer
-from tags.scrape.util import intern_force, infer_arcs
+from tags.scrape.util import intern_force, infer_arcs, repr_call, enumerate_log
+
+
+LOG = logging.getLogger(__name__)
+LOG.setLevel(1)
 
 
 class SafeFlickrAPI(FlickrAPI):
-
-	verbose = 0
 
 	def __init__(self, api_key, secret=None, token=None, store_token=False, cache=False, **kwargs):
 		FlickrAPI.__init__(self, api_key, secret=secret, token=token, store_token=store_token, cache=cache, **kwargs)
@@ -51,15 +53,15 @@ class SafeFlickrAPI(FlickrAPI):
 					return handler(**args)
 				except FlickrError, e:
 					code = FlickrError_code(e)
-					if code == 0 or code == 112:
+					if code == 0 or code == 112: # FIXME LOW only when "unknown" is returned as the method called
 						err = e
 					else:
-						self.log("FlickrAPI: aborting %s(%s) due to %r" % (attrib, args, e), 2)
+						LOG.warning("SafeFlickrAPI: ABORT %s due to %r" % (repr_call(attrib, **args), e))
 						raise
 				except (URLError, IOError, ImproperConnectionState, HTTPException), e:
 					err = e
 
-				self.log("FlickrAPI: wait %.4fs to retry %s(%s) due to %r" % (1.2**i, attrib, args, err), 2)
+				LOG.warning("SafeFlickrAPI: wait %.4fs to retry %s due to %r" % (1.2**i, repr_call(attrib, **args), err))
 				sleep(1.2**i)
 				i = i+1 if i < 20 else 0
 
@@ -82,14 +84,14 @@ class SafeFlickrAPI(FlickrAPI):
 		try:
 			if "conn" not in self.thr.__dict__:
 				self.thr.conn = HTTPConnection(FlickrAPI.flickr_host)
-				self.log("connection opened: %s" % FlickrAPI.flickr_host, 4)
+				LOG.debug("connection opened: %s" % FlickrAPI.flickr_host)
 
 			self.thr.conn.request("POST", FlickrAPI.flickr_rest_form, post_data,
 				{"Content-Type": "application/x-www-form-urlencoded"})
 			reply = self.thr.conn.getresponse().read()
 
 		except (ImproperConnectionState, socket.error), e:
-			self.log("connection error: %s" % repr(e), 4)
+			LOG.debug("connection error: %s" % repr(e))
 			self.thr.conn.close()
 			del self.thr.conn
 			raise
@@ -103,18 +105,11 @@ class SafeFlickrAPI(FlickrAPI):
 	# Make private method visible
 	data_walker = FlickrAPI._FlickrAPI__data_walker
 
-	def log(self, msg, lv):
-		# TODO HIGH use the logging module
-		if lv <= SafeFlickrAPI.verbose:
-			print >>sys.stderr, "%.4f | %s | %s" % (time(), lv, msg)
-			sys.stderr.flush()
-
 
 	def log2(self, msg, lv):
 		# TODO HIGH use the logging module
-		if lv <= SafeFlickrAPI.verbose:
-			print >>sys.stderr, "%.4f | %s | %s                  \r" % (time(), lv, msg),
-			sys.stderr.flush()
+		print >>sys.stderr, "%.4f | %s | %s                  \r" % (time(), lv, msg),
+		sys.stderr.flush()
 
 
 	def getNSID(self, n):
@@ -145,7 +140,7 @@ class SafeFlickrAPI(FlickrAPI):
 		while len(s) < size:
 			id = next(s, q)
 			if id is not None:
-				self.log("id sample: %s/%s (added %s)" % (len(s), size, id), 1)
+				LOG.info("id sample: %s/%s (added %s)" % (len(s), size, id))
 
 		s.build(False)
 		return s
@@ -166,7 +161,7 @@ class SafeFlickrAPI(FlickrAPI):
 			pset = r.getchildren()[0]
 			sid = pset.get("id")
 			spmap[sid] = [p.get("id") for p in pset.getchildren()]
-			self.log("set: got %s photos (%s)" % (len(pset), sid), 6)
+			LOG.debug("set: got %s photos (%s)" % (len(pset), sid), 6)
 
 		return spmap
 
@@ -175,24 +170,25 @@ class SafeFlickrAPI(FlickrAPI):
 		"""
 		Gets the tags of all the given photos and saves these to a database
 
-		@param photos: an iterable of photo ids
+		@param photos: a list of photo ids
 		@param ptdb: an open database of {photo:[tag]}
 		@param x: an executor to execute calls in parallel
 		"""
-		def run(phid, i):
-			r = None if phid is None else self.tags_getListPhoto(photo_id=phid)
-			return r, phid, i
+		def run(phid):
+			r = self.tags_getListPhoto(photo_id=phid)
+			return r, phid
+		tasks = (partial(run, phid) for phid in filter(lambda phid: phid not in ptdb, photos))
 
+		i = -1
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			for r, phid, i in x.run_to_results(partial(run, None if phid in ptdb else phid, i) for i, phid in enumerate(photos)):
-				if r is None: continue
-				photo = r.getchildren()[0]
+			for i, (r, phid) in enumerate_log(x.run_to_results(tasks),
+			  LOG.info, "photo db: %%(i1)s/%s %%(it)s" % len(photos), expected_length=len(photos)):
+				photo = r.getchildren()[0].getchildren()[0]
 				# filter out "machine-tags"
-				ftag = filter(lambda x: ':' not in x, (tag.text.strip() for tag in photo.getchildren()[0].getchildren()))
+				ftag = filter(lambda x: ':' not in x, (tag.text.strip() for tag in photo.getchildren()))
 				ptdb[phid] = [intern_force(tag) for tag in ftag]
-				self.log2("photo db: %s/%s (added %s tags for %s)" % (i+1, len(photos), len(photo.getchildren()[0]), phid), 2)
 
-		self.log("photo db: %s photos added" % (len(photos)), 1)
+		LOG.info("photo db: %s photos processed; %s added" % (len(photos), (i+1)))
 
 
 	def scrapePhotos(self, users, conc_m=36):
@@ -203,22 +199,23 @@ class SafeFlickrAPI(FlickrAPI):
 		"""
 		upmap = {}
 
-		def run(nsid, i):
+		def run(nsid):
 			photos = [p.get("id") for p in chain(
 				# OPT HIGH decide whether we want this many, or whether "faves" only will do
 				self.data_walker(self.people_getPublicPhotos, user_id=nsid, per_page=500),
 				self.data_walker(self.favorites_getPublicList, user_id=nsid, per_page=500)
 			)]
 			if len(photos) >= 1024:
-				self.log("photo sample: got %s photos for user %s" % (len(photos), nsid), 3)
-			return photos, nsid, i
+				LOG.info("photo sample: got %s photos for user %s" % (len(photos), nsid))
+			return photos, nsid
+		tasks = (partial(run, nsid) for nsid in users)
 
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			for photos, nsid, i in x.run_to_results(partial(run, nsid, i) for i, nsid in enumerate(users)):
+			for i, (photos, nsid) in enumerate_log(x.run_to_results(tasks),
+			  LOG.info, "photo sample: %%(i1)s/%s %%(it)s" % len(users), expected_length=len(users)):
 				upmap[nsid] = photos
-				self.log2("photo sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
 
-		self.log("photo sample: %s users added" % (len(users)), 1)
+		LOG.info("photo sample: %s users added" % (len(users)))
 		return upmap
 
 
@@ -226,7 +223,7 @@ class SafeFlickrAPI(FlickrAPI):
 		"""
 		Gets photos in group pools of the given user
 
-		@param groups: an iterable of group ids
+		@param groups: a list of group ids
 		@return: {group:[photo]}
 		"""
 		gpmap = {}
@@ -244,10 +241,10 @@ class SafeFlickrAPI(FlickrAPI):
 					raise
 			return photos, gid
 
-		for photos, gid in x.run_to_results(partial(run, gid) for gid in groups):
+		for i, (photos, gid) in enumerate(x.run_to_results(partial(run, gid) for gid in groups)):
 			if photos is None: continue
 			gpmap[gid] = photos
-			#self.log("group: got %s photos (%s)" % (len(photos), gid), 6)
+			LOG.debug("group pools: %s/%s (got %s photos in %s)" % ((i+1), len(groups), len(photos), gid))
 
 		return gpmap
 
@@ -264,18 +261,23 @@ class SafeFlickrAPI(FlickrAPI):
 
 		if not conc_w: conc_w = conc_m*3
 
+		def run(x2, nsid):
+			try:
+				gs = self.people_getPublicGroups(user_id=nsid).getchildren()[0].getchildren()
+				gpmap = self.getGroupPools([g.get("nsid") for g in gs], nsid, x2)
+			except Exception, e:
+				from traceback import print_exc
+				print_exc(e)
+			return gpmap, nsid
+		tasks = (partial(run, x2, nsid) for nsid in users)
+
 		# managers need to be handled by a different executor from the workers
 		# otherwise it deadlocks when the executor fills up with manager tasks
 		# since worker tasks don't get a chance to run
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
 			with ThreadPoolExecutor(max_threads=conc_w) as x2:
-
-				def run(x2, nsid, i):
-					gs = self.people_getPublicGroups(user_id=nsid, per_page=256).getchildren()[0].getchildren()
-					gpmap = self.getGroupPools((g.get("nsid") for g in gs), nsid, x2)
-					return gpmap, nsid, i
-
-				for gpm, nsid, i in x.run_to_results(partial(run, x2, nsid, i) for i, nsid in enumerate(users)):
+				for i, (gpm, nsid) in enumerate_log(x.run_to_results(tasks),
+				  LOG.info, "group sample: %%(i1)s/%s %%(it)s" % len(users), expected_length=len(users)):
 					for gid, ps in gpm.iteritems():
 						if gid not in g2map:
 							g2map[gid] = ([nsid], ps)
@@ -283,15 +285,13 @@ class SafeFlickrAPI(FlickrAPI):
 							g2map[gid][0].append(nsid)
 							g2map[gid][1].extend(ps)
 
-					self.log2("group sample: %s/%s (added user %s)" % (i+1, len(users), nsid), 1)
-
 		# ignore groups with <=1 user, <=1 photos
 		for gid in g2map.keys():
-			users, photos = g2map[gid]
-			if len(users) <= 1 and len(photos) <= 1:
+			u, p = g2map[gid]
+			if len(u) <= 1 and len(p) <= 1:
 				del g2map[gid]
 
-		self.log("group sample: added %s users" % (len(users)), 1)
+		LOG.info("group sample: added %s users" % (len(users)))
 		return g2map
 
 
@@ -358,7 +358,7 @@ class FlickrSample():
 			p.invertMap(self.ptdb)
 			p.inferTagArcs()
 
-		self.inferGroupArcs()
+		#self.inferGroupArcs()
 
 
 	def inferGroupArcs(self):

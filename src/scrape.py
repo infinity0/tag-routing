@@ -1,11 +1,12 @@
 #!/usr/bin/python
 
-import sys, code
+import sys, logging, code
 from time import time, ctime
 from itertools import chain
 
 from tags.scrape.util import futures_patch_nonblocking
 futures_patch_nonblocking()
+logging.basicConfig(format="%(asctime)s.%(msecs)03d | %(levelno)02d | %(message)s", datefmt="%s")
 
 from tags.scrape.flickr import SafeFlickrAPI, FlickrSample
 from tags.scrape.object import NodeSample, Node
@@ -25,6 +26,7 @@ ROUNDS = {
 "generate":
 	("Generating data", []),
 }
+
 
 
 def first_nonwhite(line):
@@ -55,9 +57,11 @@ def fmt_pydoc(sss):
 
 def main(round, *args, **kwargs):
 
-	signal_dump()
+	import tags.scrape.flickr
 
-	SafeFlickrAPI.verbose = kwargs.pop("verbose")
+	signal_dump()
+	tags.scrape.flickr.LOG.setLevel(kwargs.pop("verbose"))
+
 	with Scraper(**kwargs) as scr:
 
 		f = getattr(scr, "round_%s" % round)
@@ -79,10 +83,9 @@ class Scraper():
 
 	def __init__(self, api_key, secret, token, output="scrape", database=".", interact=False):
 		self.ff = SafeFlickrAPI(api_key, secret, token)
-		self.fp = []
+		self.res = []
 		self.out = output
 		self.dbp = database
-		self.ptdb = None
 		self.interact = interact
 		self.banner = "[Scraper interactive console]\n>>> self\n%r" % self
 
@@ -92,36 +95,34 @@ class Scraper():
 
 
 	def __exit__(self, type, value, traceback):
-		if self.ptdb:
-			self.ptdb.close()
-		for fp in self.fp:
-			fp.close()
+		for res in self.res:
+			res.close()
 
 
 	def outfp(self, suffix):
 		fp = open("%s.%s" % (self.out, suffix), 'w')
-		self.fp.append(fp)
+		self.res.append(fp)
 		return fp
 
 
 	def infp(self, suffix):
 		fp = open("%s.%s" % (self.out, suffix))
-		self.fp.append(fp)
+		self.res.append(fp)
 		return fp
 
 
-	def db(self):
-		if self.ptdb is None:
-			dbf = "%s/%s.pt.db" % (self.dbp, self.out)
-			try:
-				from shelve import BsdDbShelf
-				from bsddb import btopen
-				self.ptdb = BsdDbShelf(btopen(dbf))
-			except Exception:
-				import shelve
-				self.ptdb = shelve.open(dbf)
-			print >>sys.stderr, "%s opened" % dbf
-		return self.ptdb
+	def db(self, suffix):
+		dbf = "%s/%s.%s.db" % (self.dbp, self.out, suffix)
+		try:
+			from shelve import BsdDbShelf
+			from bsddb import btopen
+			db = BsdDbShelf(btopen(dbf))
+		except Exception:
+			import shelve
+			db = shelve.open(dbf)
+		print >>sys.stderr, "%s opened" % dbf
+		self.res.append(db)
+		return db
 
 
 	def round_social(self, seed, size):
@@ -155,7 +156,7 @@ class Scraper():
 
 		photos = set(i for i in chain(*upmap.itervalues()))
 		del upmap
-		self.ff.commitPhotoTags(photos, self.db())
+		self.ff.commitPhotoTags(photos, self.db("pt"))
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
@@ -175,7 +176,7 @@ class Scraper():
 
 		photos = set(i for i in chain(*(p for u, p in g2map.itervalues())))
 		del g2map, upmap
-		self.ff.commitPhotoTags(photos, self.db())
+		self.ff.commitPhotoTags(photos, self.db("pt"))
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
@@ -190,7 +191,7 @@ class Scraper():
 		upmap = dict_load(self.infp("up.dict"))
 		g2map = dict_load(self.infp("g2.dict"))
 
-		ss = FlickrSample(graph, self.db(), upmap, g2map)
+		ss = FlickrSample(graph, self.db("pt"), upmap, g2map)
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
@@ -218,7 +219,7 @@ if __name__ == "__main__":
 	config.add_option("-t", "--token", type="string", metavar="TOKEN",
 	  help = "Flickr API authentication token")
 	config.add_option("-v", "--verbose", type="int", metavar="VERBOSE", default=0,
-	  help = "Verbosity level")
+	  help = "Verbosity level (1 to 50)")
 
 	(opts, args) = config.parse_args()
 

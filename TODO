@@ -34,11 +34,7 @@ Dynamic following of hyperlinks...
 ----
 
 make Producer use a igraph.Graph to store tag arcs
-don't cap photos-per-user
 
-
-user producers
-- record faves too: favorites_getPublicList
 
 generateContentArcs:
 	user-* arcs:

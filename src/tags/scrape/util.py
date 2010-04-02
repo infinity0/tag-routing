@@ -4,8 +4,12 @@ import sys, traceback, signal, os
 from random import random
 from math import log, exp
 from array import array
-from itertools import izip
+from itertools import izip, chain
 from ast import literal_eval
+
+
+def repr_call(fname, *args, **kwargs):
+	return "%s(%s)" % (fname, ", ".join(chain((repr(arg) for arg in args), ("%s=%r" % (k,v) for k, v in kwargs.iteritems()))))
 
 
 def choice_dist(dist, total=None):
@@ -121,6 +125,44 @@ def union_ind(*args):
 	Returns the union of some probabilities, assuming they are all independent.
 	"""
 	return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in args))
+
+
+def enumerate_log(iterable, callback, message=None, steps=256, every=None, expected_length=None):
+	"""
+	Enumerates an iterable, with a callback for every n iterations (default 1).
+
+	@param iterable: the iterable to enumerate
+	@param callback: the callback. this should take a single string input if
+	       [message] is non-empty, otherwise a (i, item) tuple
+	@param steps: the number of callbacks to make, distributed evenly amongst
+	       the items ([iterable] must also override __len__ in this case, or
+	       else [expected_length] must be set); however, if [every] is set, all
+	       of this will be ignored
+	@param every: interval at which to call the callback
+	@param message: callback message; a string which will have %(i), %(i1),
+	       %(it), %(item), respectively substituted with the count, the count
+	       plus 1, a short representation of the item, the item.
+	"""
+	from repr import repr
+
+	if every is None:
+		if hasattr(iterable, "__len__"):
+			every = len(iterable)/float(steps)
+		else:
+			every = float(expected_length)/steps
+
+	if every <=0 :
+		raise ValueError("[every] must be greater than 0")
+
+	current = 0.0
+	for i, item in enumerate(iterable):
+		if i >= current:
+			if message:
+				callback(message % {'i':i, 'i1':i+1, 'it':repr(item), 'item':item})
+			else:
+				callback(i, item)
+			current += every
+		yield i, item
 
 
 class azip():
