@@ -166,29 +166,48 @@ class SafeFlickrAPI(FlickrAPI):
 		return spmap
 
 
+	def commitJobsToDB(self, items, db, db_name, run, post, conc_m=36):
+		"""
+		Gets the tags of all the given photos and saves these to a database
+
+		@param items: a list of items
+		@param db: an open database of {item:res}
+		@param db_name: name of the database, used in logging messages
+		@param run: job for worker threads to run; takes (item) parameter
+		@param post: job for main thread to run; takes (i, res) parameters
+		@param conc_m: max concurrent worker threads to run
+		"""
+		tasks = (partial(run, it) for it in filter(lambda it: it not in db, items))
+		total = len(items)
+
+		i = -1
+		with ThreadPoolExecutor(max_threads=conc_m) as x:
+			for i, res in enumerate_log(x.run_to_results(tasks),
+			  LOG.info, "%s db: %%(i1)s/%s %%(it)s" % (db_name, total), expected_length=total):
+				post(i, res)
+
+		LOG.info("%s db: %s items processed; %s added" % (db_name, total, (i+1)))
+
+
 	def commitPhotoTags(self, photos, ptdb, conc_m=36):
 		"""
 		Gets the tags of all the given photos and saves these to a database
 
 		@param photos: a list of photo ids
 		@param ptdb: an open database of {photo:[tag]}
-		@param x: an executor to execute calls in parallel
+		@param conc_m: max concurrent threads to run
 		"""
 		def run(phid):
 			r = self.tags_getListPhoto(photo_id=phid)
 			return r, phid
-		tasks = (partial(run, phid) for phid in filter(lambda phid: phid not in ptdb, photos))
 
-		i = -1
-		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			for i, (r, phid) in enumerate_log(x.run_to_results(tasks),
-			  LOG.info, "photo db: %%(i1)s/%s %%(it)s" % len(photos), expected_length=len(photos)):
-				photo = r.getchildren()[0].getchildren()[0]
-				# filter out "machine-tags"
-				ftag = filter(lambda x: ':' not in x, (tag.text.strip() for tag in photo.getchildren()))
-				ptdb[phid] = [intern_force(tag) for tag in ftag]
+		def post(i, (r, phid)):
+			photo = r.getchildren()[0].getchildren()[0]
+			# filter out "machine-tags"
+			ftag = filter(lambda x: ':' not in x, (tag.text.strip() for tag in photo.getchildren()))
+			ptdb[phid] = [intern_force(tag) for tag in ftag]
 
-		LOG.info("photo db: %s photos processed; %s added" % (len(photos), (i+1)))
+		self.commitJobsToDB(photos, ptdb, "photo-tag", run, post, conc_m)
 
 
 	def scrapePhotos(self, users, conc_m=36):
@@ -293,6 +312,38 @@ class SafeFlickrAPI(FlickrAPI):
 
 		LOG.info("group sample: added %s users" % (len(users)))
 		return g2map
+
+
+	def commitPhotoContexts(self, photos, pcdb, conc_m=36):
+		"""
+		Gets the contexts of all the given photos and saves these to a database
+
+		@param photos: a list of photo ids
+		@param pcdb: an open database of {photo:([set],[pool])}
+		@param conc_m: max concurrent threads to run
+		"""
+		def run(phid):
+			r = self.photos_getAllContexts(photo_id=phid)
+			return r, phid
+
+		def post(i, (r, phid)):
+			sets = [s.get("id") for s in r.findall("set")]
+			pool = [p.get("id") for p in r.findall("pool")]
+			# TODO NOW filter out to producers we already have in our sample
+			pcdb[phid] = (sets, pool)
+
+		self.commitJobsToDB(photos, pcdb, "photo-ctx", run, post, conc_m)
+
+
+	def commitTagClusters(self, tags, tcdb, conc_m=36):
+		"""
+		Gets the clusters of all the given tags and saves these to a database
+
+		@param tags: a list of tags
+		@param tcdb: an open database of {tag:[cluster]}
+		@param conc_m: max concurrent threads to run
+		"""
+		raise NotImplemented()
 
 
 class FlickrSample():

@@ -191,6 +191,8 @@ class Scraper():
 		upmap = dict_load(self.infp("up.dict"))
 		g2map = dict_load(self.infp("g2.dict"))
 
+		if self.interact: code.interact(banner=self.banner, local=locals())
+
 		ss = FlickrSample(graph, self.db("pt"), upmap, g2map)
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
@@ -219,7 +221,7 @@ if __name__ == "__main__":
 	config.add_option("-t", "--token", type="string", metavar="TOKEN",
 	  help = "Flickr API authentication token")
 	config.add_option("-v", "--verbose", type="int", metavar="VERBOSE", default=0,
-	  help = "Verbosity level (1 to 50)")
+	  help = "Verbosity level (1 to 50, 1 most verbose)")
 
 	(opts, args) = config.parse_args()
 

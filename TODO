@@ -35,6 +35,9 @@ Dynamic following of hyperlinks...
 
 make Producer use a igraph.Graph to store tag arcs
 
+get tag clusters round
+get photo contexts round
+
 
 generateContentArcs:
 	user-* arcs:
