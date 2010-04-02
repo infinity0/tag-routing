@@ -77,19 +77,21 @@ class Round():
 
 class Scraper():
 
-	rounds = {
-		"social": Round("Scraping social network", [], [".soc.graphml", ".soc.dot"]),
-		"group": Round("Scraping groups", ["social"], [".gu.dict"]),
-		"photo": Round("Scraping photos", ["group"], [".pp.db"]),
-		"tag": Round("Scraping tags", ["photo"], [".pt.db"]),
-		"invert": Round("Inverting producer mapping", ["photo"], [".pc.db"]),
-		"cluster": Round("Scraping clusters", ["tag"], [".tc.db"]),
-		"generate": Round("Generating data", []),
-	}
+	_rounds = [
+		("social", Round("Scraping social network", [], [".soc.graphml", ".soc.dot"])),
+		("group", Round("Scraping groups", ["social"], [".gu.dict"])),
+		("photo", Round("Scraping photos", ["group"], [".pp.db"])),
+		("invert", Round("Inverting producer mapping", ["photo"], [".pc.db"])),
+		("tag", Round("Scraping tags", ["photo"], [".pt.db"])),
+		("cluster", Round("Scraping clusters", ["tag"], [".tc.db"])),
+		("generate", Round("Generating data", [])),
+	]
+	rounds = dict(_rounds)
+	roundlist = [k for k, r in _rounds]
 
 	def __init__(self, api_key, secret, token, output="scrape", database=".", interact=False):
 		self.ff = SafeFlickrAPI(api_key, secret, token)
-		self.res = []
+		self.res = {}
 		self.out = output
 		self.dbp = database
 		self.interact = interact
@@ -101,34 +103,44 @@ class Scraper():
 
 
 	def __exit__(self, type, value, traceback):
-		for res in self.res:
+		for path, res in self.res.iteritems():
 			res.close()
+			print >>sys.stderr, "%s closed" % (path)
 
 
 	def outfp(self, suffix):
-		fp = open("%s.%s" % (self.out, suffix), 'w')
-		self.res.append(fp)
+		fn = "%s.%s" % (self.out, suffix)
+		fp = open(fn, 'w')
+		self.respush(fn, fp, 'w')
 		return fp
 
 
 	def infp(self, suffix):
-		fp = open("%s.%s" % (self.out, suffix))
-		self.res.append(fp)
+		fn = "%s.%s" % (self.out, suffix)
+		fp = open(fn)
+		self.respush(fn, fp, 'r')
 		return fp
 
 
-	def db(self, suffix):
+	def db(self, suffix, writeback=False):
 		dbf = "%s/%s.%s.db" % (self.dbp, self.out, suffix)
 		try:
 			from shelve import BsdDbShelf
 			from bsddb import btopen
-			db = BsdDbShelf(btopen(dbf))
+			db = BsdDbShelf(btopen(dbf), writeback=writeback)
 		except Exception:
 			import shelve
-			db = shelve.open(dbf)
-		print >>sys.stderr, "%s opened" % dbf
-		self.res.append(db)
+			db = shelve.open(dbf, writeback=writeback)
+		self.respush(dbf, db, 'rw')
 		return db
+
+
+	def respush(self, path, res, mode):
+		if path in self.res:
+			self.res.pop(path).close()
+			print >>sys.stderr, "%s closed" % (path)
+		self.res[path] = res
+		print >>sys.stderr, "%s opened (%s)" % (path, mode)
 
 
 	def round_social(self, seed, size):
@@ -182,6 +194,20 @@ class Scraper():
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
 
+	def round_invert(self):
+		"""
+		Invert the producer-photo mapping.
+
+		Round "photo" must already have been executed.
+		"""
+		ppdb = self.db("pp")
+		pcdb = self.db("pc", writeback=True)
+
+		self.ff.invertProducerMap(ppdb, pcdb)
+
+		if self.interact: code.interact(banner=self.banner, local=locals())
+
+
 	def round_tag(self):
 		"""
 		Scrape tags of the collected photos.
@@ -193,20 +219,6 @@ class Scraper():
 
 		photos = chain(*ppdb.itervalues())
 		self.ff.commitPhotoTags(photos, ptdb)
-
-		if self.interact: code.interact(banner=self.banner, local=locals())
-
-
-	def round_invert(self):
-		"""
-		Invert the producer-photo mapping.
-
-		Round "photo" must already have been executed.
-		"""
-		ppdb = self.db("pp")
-		pcdb = self.db("pc")
-
-		self.ff.invertProducerMap(ppdb, pcdb)
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
@@ -245,7 +257,7 @@ if __name__ == "__main__":
 	from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
 	config = OptionParser(
 	  usage = "Usage: %prog [OPTIONS] [ROUND] [ARGS|help]",
-	  description = "Scrapes data from flickr. ROUND is one of: %s" % Scraper.rounds.keys(),
+	  description = "Scrapes data from flickr. ROUND is one of: %s" % Scraper.roundlist,
 	  version = VERSION,
 	  formatter = IndentedHelpFormatter(max_help_position=25)
 	)

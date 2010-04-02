@@ -127,7 +127,7 @@ def union_ind(*args):
 	return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in args))
 
 
-def enumerate_log(iterable, callback, message=None, steps=256, every=None, expected_length=None):
+def enumerate_cb(iterable, callback, message=None, steps=0x100, every=None, expected_length=None):
 	"""
 	Enumerates an iterable, with a callback for every n iterations (default 1).
 

@@ -14,7 +14,7 @@ from futures import ThreadPoolExecutor
 from igraph import Graph
 
 from tags.scrape.object import Node, NodeSample, Producer
-from tags.scrape.util import intern_force, infer_arcs, repr_call, enumerate_log
+from tags.scrape.util import intern_force, infer_arcs, repr_call, enumerate_cb
 
 
 LOG = logging.getLogger(__name__)
@@ -210,7 +210,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 		i = -1
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			for i, (it, res) in enumerate_log(x.run_to_results(tasks),
+			for i, (it, res) in enumerate_cb(x.run_to_results(tasks),
 			  LOG.info, "%s: %%(i1)s/%s %%(it)s" % (name, total), expected_length=total):
 				post(it, i, res)
 
@@ -328,9 +328,24 @@ class SafeFlickrAPI(FlickrAPI):
 		Calculates an inverse map from the given producer-photo database.
 
 		@param ppdb: an open database of {producer:[photo]}
-		@param pcdb: an open database of {photo:[producer]}
+		@param pcdb: an open database of {photo:[producer]} - this must have
+		       been opened with writeback=True (see shelve docs for details)
 		"""
-		raise NotImplementedError()
+		if pcdb.writeback is not True:
+			raise ValueError("[pcdb] must have writeback=True")
+
+		def syncer(i, (prod, photos)):
+			pcdb.sync()
+
+		for i, (prod, photos) in enumerate_cb(ppdb.iteritems(), syncer, every=0x10000):
+			for phid in photos:
+				if phid not in pcdb:
+					pcdb[phid] = [prod]
+				else:
+					pcdb[phid].append(prod)
+		pcdb.sync()
+
+		LOG.info("context db: inverted %s producers to %s photos" % (len(ppdb), len(pcdb)))
 
 
 	def commitTagClusters(self, tags, tcdb, conc_m=36):
