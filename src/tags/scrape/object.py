@@ -155,11 +155,11 @@ class Producer():
 
 
 	def createTGraph(self, net_g):
-		raise NotImplemented()
+		raise NotImplementedError()
 
 
 	def createIndex(self, net_h):
-		raise NotImplemented()
+		raise NotImplementedError()
 
 
 	def invertMap(self, ptdb):

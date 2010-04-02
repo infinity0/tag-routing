@@ -17,22 +17,6 @@ from xml.etree.ElementTree import dump
 NAME = "scrape.py"
 VERSION = 0.01
 
-ROUNDS = {
-"social":
-	("Scraping social network", [".soc.graphml", ".soc.dot"]),
-"group":
-	("Scraping groups", [".gu.dict"]),
-"photo":
-	("Scraping photos", [".pp.db"]),
-"tag":
-	("Scraping tags", [".pt.db"]),
-"cluster":
-	("Scraping clusters", [".tc.db"]),
-"generate":
-	("Generating data", []),
-}
-
-
 
 def first_nonwhite(line):
 	i = 0
@@ -77,14 +61,31 @@ def main(round, *args, **kwargs):
 
 		else:
 			t = time()
-			print >>sys.stderr, "%s at %s" % (ROUNDS[round][0], ctime())
+			print >>sys.stderr, "%s at %s" % (Scraper.rounds[round].desc, ctime())
 			ret = f(*args)
 			print >>sys.stderr, "completed in %.4fs" % (time()-t)
 			return ret
 
 
+class Round():
+
+	def __init__(self, desc, dep=[], out=[]):
+		self.desc = desc
+		self.dep = dep
+		self.out = out
+
+
 class Scraper():
 
+	rounds = {
+		"social": Round("Scraping social network", [], [".soc.graphml", ".soc.dot"]),
+		"group": Round("Scraping groups", ["social"], [".gu.dict"]),
+		"photo": Round("Scraping photos", ["group"], [".pp.db"]),
+		"tag": Round("Scraping tags", ["photo"], [".pt.db"]),
+		"invert": Round("Inverting producer mapping", ["photo"], [".pc.db"]),
+		"cluster": Round("Scraping clusters", ["tag"], [".tc.db"]),
+		"generate": Round("Generating data", []),
+	}
 
 	def __init__(self, api_key, secret, token, output="scrape", database=".", interact=False):
 		self.ff = SafeFlickrAPI(api_key, secret, token)
@@ -196,6 +197,35 @@ class Scraper():
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
 
+	def round_invert(self):
+		"""
+		Invert the producer-photo mapping.
+
+		Round "photo" must already have been executed.
+		"""
+		ppdb = self.db("pp")
+		pcdb = self.db("pc")
+
+		self.ff.invertProducerMap(ppdb, pcdb)
+
+		if self.interact: code.interact(banner=self.banner, local=locals())
+
+
+	def round_cluster(self):
+		"""
+		Scrape clusters of the collected tags.
+
+		Round "tag" must already have been executed.
+		"""
+		ptdb = self.db("pt")
+		tcdb = self.db("tc")
+
+		tags = chain(*ptdb.itervalues())
+		self.ff.commitTagClusters(tags, tcdb)
+
+		if self.interact: code.interact(banner=self.banner, local=locals())
+
+
 	def round_generate(self):
 		"""
 		Generate objects from the scraped data.
@@ -215,7 +245,7 @@ if __name__ == "__main__":
 	from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
 	config = OptionParser(
 	  usage = "Usage: %prog [OPTIONS] [ROUND] [ARGS|help]",
-	  description = "Scrapes data from flickr. ROUND is one of: %s" % ROUNDS.keys(),
+	  description = "Scrapes data from flickr. ROUND is one of: %s" % Scraper.rounds.keys(),
 	  version = VERSION,
 	  formatter = IndentedHelpFormatter(max_help_position=25)
 	)

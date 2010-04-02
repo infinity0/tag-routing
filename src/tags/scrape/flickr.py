@@ -330,7 +330,7 @@ class SafeFlickrAPI(FlickrAPI):
 		@param ppdb: an open database of {producer:[photo]}
 		@param pcdb: an open database of {photo:[producer]}
 		"""
-		raise NotImplemented()
+		raise NotImplementedError()
 
 
 	def commitTagClusters(self, tags, tcdb, conc_m=36):
@@ -341,7 +341,7 @@ class SafeFlickrAPI(FlickrAPI):
 		@param tcdb: an open database of {tag:[cluster]}
 		@param conc_m: max concurrent threads to run
 		"""
-		raise NotImplemented()
+		raise NotImplementedError()
 
 
 class FlickrSample():
@@ -437,7 +437,7 @@ class FlickrSample():
 		# TODO NORM optional, possibly this is necessary for good tgraph generation
 		#Given a graph of producers, generate a superproducer from the seed group
 		#and the given size, based on clustering analysis
-		raise NotImplemented()
+		raise NotImplementedError()
 
 
 	def generateSuperProducers(self): #producer_graph
@@ -446,14 +446,14 @@ class FlickrSample():
 		#distribution
 		#- then make social links between these supergroups and the normal groups
 		#- TODO HOW??
-		raise NotImplemented()
+		raise NotImplementedError()
 
 
 	def generateContentArcs(self):
 		"""
 		Generate content arcs between producers
 		"""
-		raise NotImplemented()
+		raise NotImplementedError()
 
 
 	def createAllObjects(self): #producer_graph
@@ -463,7 +463,7 @@ class FlickrSample():
 
 		#ie. 80-20 rule, but actually decide a precise way of doing these.
 		#- half of area-under-graph for each?
-		raise NotImplemented()
+		raise NotImplementedError()
 
 
 def FlickrError_code(e):
