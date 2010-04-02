@@ -167,11 +167,11 @@ class Scraper():
 		Round "group" must already have been executed.
 		"""
 		users = NodeSample(self.infp("soc.graphml")).graph.vs["id"]
-		groups = dict_load(self.infp("gu.dict")).iterkeys()
+		gumap = dict_load(self.infp("gu.dict"))
 
 		ppdb = self.db("pp")
 		self.ff.commitUserPhotos(users, ppdb)
-		self.ff.commitGroupPhotos(groups, ppdb)
+		self.ff.commitGroupPhotos(gumap, ppdb)
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
@@ -197,9 +197,6 @@ class Scraper():
 
 		Round "group" must already have been executed.
 		"""
-		graph = NodeSample(self.infp("soc.graphml")).graph
-		upmap = dict_load(self.infp("up.dict"))
-		g2map = dict_load(self.infp("g2.dict"))
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 

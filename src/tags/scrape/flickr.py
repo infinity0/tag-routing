@@ -156,9 +156,9 @@ class SafeFlickrAPI(FlickrAPI):
 
 		def run(nsid):
 			groups = self.people_getPublicGroups(user_id=nsid).getchildren()[0].getchildren()
-			return groups, nsid
+			return groups
 
-		def post(i, (groups, nsid)):
+		def post(nsid, i, groups):
 			for g in groups:
 				gid = g.get("nsid")
 				if gid not in gumap:
@@ -197,29 +197,29 @@ class SafeFlickrAPI(FlickrAPI):
 		@param items: a list of items
 		@param done: a collection of done items (can be a database or dict)
 		@param name: name of the batch, used in logging messages
-		@param run: job for worker threads to run; takes (item) parameter
-		@param post: job for main thread to run; takes (i, res) parameters
+		@param run: job for worker threads; takes (item) parameter
+		@param post: job for main thread; takes (item, i, res) parameters
 		@param conc_m: max concurrent worker threads to run
 		@param assume_unique: whether to assume [items] is unique
 		"""
-		if not assume_unique and type(items) != set:
+		if not assume_unique and type(items) != set and type(items) != dict:
 			items = set(items)
-		tasks = [partial(run, it) for it in filter(lambda it: it not in done, items)]
+		tasks = [partial(lambda it: (it, run(it)), it) for it in items if it not in done]
 		total = len(tasks)
 		LOG.info("%s: %s submitted, %s accepted" % (name, len(items), total))
 
 		i = -1
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			for i, res in enumerate_log(x.run_to_results(tasks),
+			for i, (it, res) in enumerate_log(x.run_to_results(tasks),
 			  LOG.info, "%s: %%(i1)s/%s %%(it)s" % (name, total), expected_length=total):
-				post(i, res)
+				post(it, i, res)
 
 		LOG.info("%s: %s submitted, %s accepted, %s completed" % (name, len(items), total, (i+1)))
 
 
 	def commitPhotoTags(self, photos, ptdb, conc_m=36):
 		"""
-		Gets the tags of all the given photos and saves these to a database
+		Gets the tags of the given photos and saves these to a database
 
 		@param photos: a list of photo ids
 		@param ptdb: an open database of {photo:[tag]}
@@ -227,66 +227,65 @@ class SafeFlickrAPI(FlickrAPI):
 		"""
 		def run(phid):
 			r = self.tags_getListPhoto(photo_id=phid)
-			return r, phid
+			return r
 
-		def post(i, (r, phid)):
-			photo = r.getchildren()[0].getchildren()[0]
+		def post(phid, i, r):
+			tags = (tag.text.strip() for tag in r.getchildren()[0].getchildren()[0].getchildren())
 			# filter out "machine-tags"
-			ftag = filter(lambda x: ':' not in x, (tag.text.strip() for tag in photo.getchildren()))
-			ptdb[phid] = [intern_force(tag) for tag in ftag]
+			ptdb[phid] = [intern_force(tag) for tag in tags if ":" not in tag]
 
 		self.execAllUnique(photos, ptdb, "photo-tag db", run, post, conc_m)
 
 
 	def commitUserPhotos(self, users, ppdb, conc_m=36):
 		"""
-		Gets the photos of all the given users and saves these to a database
+		Gets the photos of the given users and saves these to a database
 
 		@param users: a list of user ids
 		@param ppdb: an open database of {producer:[photo]}
 		@param conc_m: max concurrent threads to run
 		"""
+		if type(users) != set and len(users) > 16: users = set(users) # efficient membership test
 		def run(nsid):
 			# OPT HIGH decide whether we want this many, or whether "faves" only will do
 			stream = list(self.data_walker(self.people_getPublicPhotos, user_id=nsid, per_page=500))
-			# TODO NOW filter: if photo.get("owner") in users
-			faves = list(self.data_walker(self.favorites_getPublicList, user_id=nsid, per_page=500))
-			total = len(stream) + len(faves)
-			if total >= 4096:
-				LOG.info("producer db (user): got %s photos for user %s" % (total, nsid))
-			return stream, faves, nsid
+			faves = list(p for p in self.data_walker(self.favorites_getPublicList, user_id=nsid, per_page=500) if p.get("owner") in users)
+			return stream, faves
 
-		def post(i, (stream, faves, nsid)):
+		def post(nsid, i, (stream, faves)):
 			photos = [p.get("id") for p in chain(stream, faves)]
+			if len(photos) >= 4096:
+				LOG.info("producer db (user): got %s photos for user %s" % (len(photos), nsid))
 			ppdb[nsid] = photos
 
 		self.execAllUnique(users, ppdb, "producer db (user)", run, post, conc_m)
 
 
-	def commitGroupPhotos(self, groups, ppdb, conc_m=36):
+	def commitGroupPhotos(self, gumap, ppdb, conc_m=36):
 		"""
-		Gets the photos of all the given pools and saves these to a database
+		Gets the photos of the given pools and saves these to a database
 
-		@param groups: a list of group ids
+		@param gumap: a map of {group:[user]}
 		@param ppdb: an open database of {producer:[photo]}
 		@param conc_m: max concurrent threads to run
 		"""
 		def run(gid):
 			try:
-				# TODO NOW filter: if photo.get("owner") in users
-				photos = list(self.data_walker(self.groups_pools_getPhotos, group_id=gid, per_page=500))
+				photos = list(chain(*(self.data_walker(self.groups_pools_getPhotos, group_id=gid, user_id=nsid, per_page=500) for nsid in gumap[gid])))
 			except FlickrError, e:
 				if FlickrError_code(e) == 2:
 					photos = None
 				else:
 					raise
-			return photos, gid
+			return photos
 
-		def post(i, (photos, gid)):
+		def post(gid, i, photos):
 			if photos is None: return
+			if len(photos) >= 4096:
+				LOG.info("producer db (group): got %s photos for group %s" % (len(photos), gid))
 			ppdb[gid] = [p.get("id") for p in photos]
 
-		self.execAllUnique(groups, ppdb, "producer db (group)", run, post, conc_m)
+		self.execAllUnique(gumap, ppdb, "producer db (group)", run, post, conc_m)
 
 
 	def pruneContentlessProducers(self, users, groups, ppdb):
