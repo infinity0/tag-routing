@@ -151,7 +151,7 @@ def enumerate_log(iterable, callback, message=None, steps=256, every=None, expec
 		else:
 			every = float(expected_length)/steps
 
-	if every <=0 :
+	elif every <= 0:
 		raise ValueError("[every] must be greater than 0")
 
 	current = 0.0

@@ -146,6 +146,30 @@ class SafeFlickrAPI(FlickrAPI):
 		return s
 
 
+	def scrapeGroups(self, users, conc_m=36):
+		"""
+		Scrapes all groups of the given users.
+
+		@return: {group:[users]}
+		"""
+		gumap = {}
+
+		def run(nsid):
+			groups = self.people_getPublicGroups(user_id=nsid).getchildren()[0].getchildren()
+			return groups, nsid
+
+		def post(i, (groups, nsid)):
+			for g in groups:
+				gid = g.get("nsid")
+				if gid not in gumap:
+					gumap[gid] = [nsid]
+				else:
+					gumap[gid].append(nsid)
+
+		self.execAllUnique(users, gumap, "gid sample db", run, post, conc_m)
+		return gumap
+
+
 	def getSetPhotos(self, sets, x):
 		"""
 		Gets sets of a given user and all photos belonging to it
@@ -166,27 +190,31 @@ class SafeFlickrAPI(FlickrAPI):
 		return spmap
 
 
-	def commitJobsToDB(self, items, db, db_name, run, post, conc_m=36):
+	def execAllUnique(self, items, done, name, run, post, conc_m=36, assume_unique=False):
 		"""
 		Gets the tags of all the given photos and saves these to a database
 
 		@param items: a list of items
-		@param db: an open database of {item:res}
-		@param db_name: name of the database, used in logging messages
+		@param done: a collection of done items (can be a database or dict)
+		@param name: name of the batch, used in logging messages
 		@param run: job for worker threads to run; takes (item) parameter
 		@param post: job for main thread to run; takes (i, res) parameters
 		@param conc_m: max concurrent worker threads to run
+		@param assume_unique: whether to assume [items] is unique
 		"""
-		tasks = (partial(run, it) for it in filter(lambda it: it not in db, items))
-		total = len(items)
+		if not assume_unique and type(items) != set:
+			items = set(items)
+		tasks = [partial(run, it) for it in filter(lambda it: it not in done, items)]
+		total = len(tasks)
+		LOG.info("%s: %s submitted, %s accepted" % (name, len(items), total))
 
 		i = -1
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
 			for i, res in enumerate_log(x.run_to_results(tasks),
-			  LOG.info, "%s db: %%(i1)s/%s %%(it)s" % (db_name, total), expected_length=total):
+			  LOG.info, "%s: %%(i1)s/%s %%(it)s" % (name, total), expected_length=total):
 				post(i, res)
 
-		LOG.info("%s db: %s items processed; %s added" % (db_name, total, (i+1)))
+		LOG.info("%s: %s submitted, %s accepted, %s completed" % (name, len(items), total, (i+1)))
 
 
 	def commitPhotoTags(self, photos, ptdb, conc_m=36):
@@ -207,52 +235,46 @@ class SafeFlickrAPI(FlickrAPI):
 			ftag = filter(lambda x: ':' not in x, (tag.text.strip() for tag in photo.getchildren()))
 			ptdb[phid] = [intern_force(tag) for tag in ftag]
 
-		self.commitJobsToDB(photos, ptdb, "photo-tag", run, post, conc_m)
+		self.execAllUnique(photos, ptdb, "photo-tag db", run, post, conc_m)
 
 
-	def scrapePhotos(self, users, conc_m=36):
+	def commitUserPhotos(self, users, ppdb, conc_m=36):
 		"""
-		Scrape photos of the given users.
+		Gets the photos of all the given users and saves these to a database
 
-		@return: {user:[photo]}
+		@param users: a list of user ids
+		@param ppdb: an open database of {producer:[photo]}
+		@param conc_m: max concurrent threads to run
 		"""
-		upmap = {}
-
 		def run(nsid):
-			photos = [p.get("id") for p in chain(
-				# OPT HIGH decide whether we want this many, or whether "faves" only will do
-				self.data_walker(self.people_getPublicPhotos, user_id=nsid, per_page=500),
-				self.data_walker(self.favorites_getPublicList, user_id=nsid, per_page=500)
-			)]
-			if len(photos) >= 1024:
-				LOG.info("photo sample: got %s photos for user %s" % (len(photos), nsid))
-			return photos, nsid
-		tasks = (partial(run, nsid) for nsid in users)
+			# OPT HIGH decide whether we want this many, or whether "faves" only will do
+			stream = list(self.data_walker(self.people_getPublicPhotos, user_id=nsid, per_page=500))
+			# TODO NOW filter: if photo.get("owner") in users
+			faves = list(self.data_walker(self.favorites_getPublicList, user_id=nsid, per_page=500))
+			total = len(stream) + len(faves)
+			if total >= 4096:
+				LOG.info("producer db (user): got %s photos for user %s" % (total, nsid))
+			return stream, faves, nsid
 
-		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			for i, (photos, nsid) in enumerate_log(x.run_to_results(tasks),
-			  LOG.info, "photo sample: %%(i1)s/%s %%(it)s" % len(users), expected_length=len(users)):
-				upmap[nsid] = photos
+		def post(i, (stream, faves, nsid)):
+			photos = [p.get("id") for p in chain(stream, faves)]
+			ppdb[nsid] = photos
 
-		LOG.info("photo sample: %s users added" % (len(users)))
-		return upmap
+		self.execAllUnique(users, ppdb, "producer db (user)", run, post, conc_m)
 
 
-	def getGroupPools(self, groups, nsid, x):
+	def commitGroupPhotos(self, groups, ppdb, conc_m=36):
 		"""
-		Gets photos in group pools of the given user
+		Gets the photos of all the given pools and saves these to a database
 
 		@param groups: a list of group ids
-		@return: {group:[photo]}
+		@param ppdb: an open database of {producer:[photo]}
+		@param conc_m: max concurrent threads to run
 		"""
-		gpmap = {}
-
 		def run(gid):
 			try:
-				# OPT HIGH decide whether we want this many
-				photos = [p.get("id") for p in
-					self.data_walker(self.groups_pools_getPhotos, group_id=gid, user_id=nsid, per_page=500)
-				]
+				# TODO NOW filter: if photo.get("owner") in users
+				photos = list(self.data_walker(self.groups_pools_getPhotos, group_id=gid, per_page=500))
 			except FlickrError, e:
 				if FlickrError_code(e) == 2:
 					photos = None
@@ -260,79 +282,33 @@ class SafeFlickrAPI(FlickrAPI):
 					raise
 			return photos, gid
 
-		for i, (photos, gid) in enumerate(x.run_to_results(partial(run, gid) for gid in groups)):
-			if photos is None: continue
-			gpmap[gid] = photos
-			LOG.debug("group pools: %s/%s (got %s photos in %s)" % ((i+1), len(groups), len(photos), gid))
+		def post(i, (photos, gid)):
+			if photos is None: return
+			ppdb[gid] = [p.get("id") for p in photos]
 
-		return gpmap
+		self.execAllUnique(groups, ppdb, "producer db (group)", run, post, conc_m)
 
 
-	def scrapeGroups(self, users, upmap, conc_m=8, conc_w=0):
+	def pruneContentlessProducers(self, users, groups, ppdb):
 		"""
-		Scrapes all groups of the given users.
+		Removes producers with 1 photo or less.
 
-		@param upmap: dict of {user:[photos]} - this will be updated if new photos are found
-		@return: {group:([users],[photos])}
+		@param users: list of users
+		@param groups: list of groups
+		@param ppdb: an open database of {producer:[photo]}
+		@return: pruned (users, groups)
 		"""
-		g2map = {}
-		ppp = set() # list of photos to retrieve tags for
-
-		if not conc_w: conc_w = conc_m*3
-
-		def run(x2, nsid):
-			try:
-				gs = self.people_getPublicGroups(user_id=nsid).getchildren()[0].getchildren()
-				gpmap = self.getGroupPools([g.get("nsid") for g in gs], nsid, x2)
-			except Exception, e:
-				from traceback import print_exc
-				print_exc(e)
-			return gpmap, nsid
-		tasks = (partial(run, x2, nsid) for nsid in users)
-
-		# managers need to be handled by a different executor from the workers
-		# otherwise it deadlocks when the executor fills up with manager tasks
-		# since worker tasks don't get a chance to run
-		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			with ThreadPoolExecutor(max_threads=conc_w) as x2:
-				for i, (gpm, nsid) in enumerate_log(x.run_to_results(tasks),
-				  LOG.info, "group sample: %%(i1)s/%s %%(it)s" % len(users), expected_length=len(users)):
-					for gid, ps in gpm.iteritems():
-						if gid not in g2map:
-							g2map[gid] = ([nsid], ps)
-						else:
-							g2map[gid][0].append(nsid)
-							g2map[gid][1].extend(ps)
-
-		# ignore groups with <=1 user, <=1 photos
-		for gid in g2map.keys():
-			u, p = g2map[gid]
-			if len(u) <= 1 and len(p) <= 1:
-				del g2map[gid]
-
-		LOG.info("group sample: added %s users" % (len(users)))
-		return g2map
+		raise NotImplemented()
 
 
-	def commitPhotoContexts(self, photos, pcdb, conc_m=36):
+	def invertProducerMap(self, ppdb, pcdb, conc_m=36):
 		"""
-		Gets the contexts of all the given photos and saves these to a database
+		Calculates an inverse map from the given producer-photo database.
 
-		@param photos: a list of photo ids
-		@param pcdb: an open database of {photo:([set],[pool])}
-		@param conc_m: max concurrent threads to run
+		@param ppdb: an open database of {producer:[photo]}
+		@param pcdb: an open database of {photo:[producer]}
 		"""
-		def run(phid):
-			r = self.photos_getAllContexts(photo_id=phid)
-			return r, phid
-
-		def post(i, (r, phid)):
-			sets = [s.get("id") for s in r.findall("set")]
-			pool = [p.get("id") for p in r.findall("pool")]
-			# TODO NOW filter out to producers we already have in our sample
-			pcdb[phid] = (sets, pool)
-
-		self.commitJobsToDB(photos, pcdb, "photo-ctx", run, post, conc_m)
+		raise NotImplemented()
 
 
 	def commitTagClusters(self, tags, tcdb, conc_m=36):

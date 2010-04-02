@@ -19,10 +19,14 @@ VERSION = 0.01
 ROUNDS = {
 "social":
 	("Scraping social network", [".soc.graphml", ".soc.dot"]),
-"photo":
-	("Scraping photos", [".up.dict"]),
 "group":
-	("Scraping groups", [".g2.dict"]),
+	("Scraping groups", [".gu.dict"]),
+"photo":
+	("Scraping photos", [".pp.db"]),
+"tag":
+	("Scraping tags", [".pt.db"]),
+"cluster":
+	("Scraping clusters", [".tc.db"]),
 "generate":
 	("Generating data", []),
 }
@@ -132,7 +136,6 @@ class Scraper():
 		@param seed: Seed identity
 		@param size: Number of identities to scrape
 		"""
-
 		size = int(size)
 
 		ss = self.ff.scrapeIDs(seed, size)
@@ -143,40 +146,47 @@ class Scraper():
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
 
-	def round_photo(self):
+	def round_group(self):
 		"""
-		Scrape photos and collect their tags.
+		Scrape the group network from the social network.
 
-		Round "social" must already have been executed
+		Round "social" must already have been executed.
 		"""
-		s0 = NodeSample(self.infp("soc.graphml"))
+		users = NodeSample(self.infp("soc.graphml")).graph.vs["id"]
 
-		upmap = self.ff.scrapePhotos(s0.graph.vs["id"])
-		dict_save(upmap, self.outfp("up.dict"))
-
-		photos = set(i for i in chain(*upmap.itervalues()))
-		del upmap
-		self.ff.commitPhotoTags(photos, self.db("pt"))
+		gumap = self.ff.scrapeGroups(users)
+		dict_save(gumap, self.outfp("gu.dict"))
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
 
-	def round_group(self):
+	def round_photo(self):
 		"""
-		Scrape groups and collect their photos.
+		Scrape photos of the collected producers.
 
-		Round "photo" must already have been executed
+		Round "group" must already have been executed.
 		"""
-		s0 = NodeSample(self.infp("soc.graphml"))
-		upmap = dict_load(self.infp("up.dict"))
+		users = NodeSample(self.infp("soc.graphml")).graph.vs["id"]
+		groups = dict_load(self.infp("gu.dict")).iterkeys()
 
-		g2map = self.ff.scrapeGroups(s0.graph.vs["id"], upmap)
-		dict_save(g2map, self.outfp("g2.dict"))
-		dict_save(upmap, self.outfp("up.dict"))
+		ppdb = self.db("pp")
+		self.ff.commitUserPhotos(users, ppdb)
+		self.ff.commitGroupPhotos(groups, ppdb)
 
-		photos = set(i for i in chain(*(p for u, p in g2map.itervalues())))
-		del g2map, upmap
-		self.ff.commitPhotoTags(photos, self.db("pt"))
+		if self.interact: code.interact(banner=self.banner, local=locals())
+
+
+	def round_tag(self):
+		"""
+		Scrape tags of the collected photos.
+
+		Round "photo" must already have been executed.
+		"""
+		ppdb = self.db("pp")
+		ptdb = self.db("pt")
+
+		photos = chain(*ppdb.itervalues())
+		self.ff.commitPhotoTags(photos, ptdb)
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
