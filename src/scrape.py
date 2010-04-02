@@ -8,6 +8,7 @@ from tags.scrape.util import futures_patch_nonblocking
 futures_patch_nonblocking()
 logging.basicConfig(format="%(asctime)s.%(msecs)03d | %(levelno)02d | %(message)s", datefmt="%s")
 
+from igraph import Graph
 from tags.scrape.flickr import SafeFlickrAPI, FlickrSample
 from tags.scrape.object import NodeSample, Node
 from tags.scrape.util import signal_dump, dict_load, dict_save
@@ -138,10 +139,9 @@ class Scraper():
 		"""
 		size = int(size)
 
-		ss = self.ff.scrapeIDs(seed, size)
-		gg = ss.graph
-		gg.write_graphml(self.outfp("soc.graphml"))
-		gg.write_dot(self.outfp("soc.dot"))
+		socgr = self.ff.scrapeIDs(seed, size).graph
+		socgr.write_graphml(self.outfp("soc.graphml"))
+		socgr.write_dot(self.outfp("soc.dot"))
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
@@ -152,7 +152,7 @@ class Scraper():
 
 		Round "social" must already have been executed.
 		"""
-		users = NodeSample(self.infp("soc.graphml")).graph.vs["id"]
+		users = Graph.Read(self.infp("soc.graphml")).vs["id"]
 
 		gumap = self.ff.scrapeGroups(users)
 		dict_save(gumap, self.outfp("gu.dict"))
@@ -166,12 +166,17 @@ class Scraper():
 
 		Round "group" must already have been executed.
 		"""
-		users = NodeSample(self.infp("soc.graphml")).graph.vs["id"]
+		socgr = Graph.Read(self.infp("soc.graphml"))
 		gumap = dict_load(self.infp("gu.dict"))
 
 		ppdb = self.db("pp")
-		self.ff.commitUserPhotos(users, ppdb)
+		self.ff.commitUserPhotos(socgr.vs["id"], ppdb)
 		self.ff.commitGroupPhotos(gumap, ppdb)
+
+		self.ff.pruneProducers(socgr, gumap, ppdb)
+		socgr.write_graphml(self.outfp("soc.graphml"))
+		socgr.write_dot(self.outfp("soc.dot"))
+		dict_save(gumap, self.outfp("gu.dict"))
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 

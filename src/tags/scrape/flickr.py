@@ -274,13 +274,12 @@ class SafeFlickrAPI(FlickrAPI):
 				photos = list(chain(*(self.data_walker(self.groups_pools_getPhotos, group_id=gid, user_id=nsid, per_page=500) for nsid in gumap[gid])))
 			except FlickrError, e:
 				if FlickrError_code(e) == 2:
-					photos = None
+					photos = []
 				else:
 					raise
 			return photos
 
 		def post(gid, i, photos):
-			if photos is None: return
 			if len(photos) >= 4096:
 				LOG.info("producer db (group): got %s photos for group %s" % (len(photos), gid))
 			ppdb[gid] = [p.get("id") for p in photos]
@@ -288,16 +287,40 @@ class SafeFlickrAPI(FlickrAPI):
 		self.execAllUnique(gumap, ppdb, "producer db (group)", run, post, conc_m)
 
 
-	def pruneContentlessProducers(self, users, groups, ppdb):
+	def pruneProducers(self, socgr, gumap, ppdb, cutoff=1):
 		"""
-		Removes producers with 1 photo or less.
+		Removes producers with less than the given number of photos.
 
-		@param users: list of users
+		@param socgr: graph of users
 		@param groups: list of groups
 		@param ppdb: an open database of {producer:[photo]}
-		@return: pruned (users, groups)
+		@param cutoff: producers with this many photos or less will be pruned
+		       (default 1)
 		"""
-		raise NotImplemented()
+		# TODO NORM maybe also prune groups with >n users
+
+		#FIXME HIGH if we prune users, then we also need to prune groups that
+		#point to this user
+		delu = []
+		#for u in socgr.vs["id"]:
+		#	if u in ppdb:
+		#		if len(ppdb[u]) > cutoff:
+		#			continue
+		#		del ppdb[u]
+		#	delu.append(u)
+
+		delg = []
+		for g in gumap:
+			if g in ppdb:
+				if len(ppdb[g]) > cutoff:
+					continue
+				del ppdb[g]
+			delg.append(g)
+
+		#socgr.delete_vertices([v.index for v in socgr.vs.select(id_in=set(delu))])
+		for g in delg: del gumap[g]
+
+		LOG.info("producer db: pruned %s users, %s groups" % (len(delu), len(delg)))
 
 
 	def invertProducerMap(self, ppdb, pcdb, conc_m=36):
