@@ -56,7 +56,8 @@ class SafeFlickrAPI(FlickrAPI):
 					if code == 0 or code == 112: # FIXME LOW only when "unknown" is returned as the method called
 						err = e
 					else:
-						LOG.warning("SafeFlickrAPI: ABORT %s due to %r" % (repr_call(attrib, **args), e))
+						log = LOG.warning if code > 99 else LOG.debug
+						log("SafeFlickrAPI: ABORT %s due to %r" % (repr_call(attrib, **args), e))
 						raise
 				except (URLError, IOError, ImproperConnectionState, HTTPException), e:
 					err = e
@@ -226,13 +227,12 @@ class SafeFlickrAPI(FlickrAPI):
 		@param conc_m: max concurrent threads to run
 		"""
 		def run(phid):
-			r = self.tags_getListPhoto(photo_id=phid)
-			return r
+			tags = self.tags_getListPhoto(photo_id=phid).getchildren()[0].getchildren()[0].getchildren()
+			return tags
 
-		def post(phid, i, r):
-			tags = (tag.text.strip() for tag in r.getchildren()[0].getchildren()[0].getchildren())
+		def post(phid, i, tags):
 			# filter out "machine-tags"
-			ptdb[phid] = [intern_force(tag) for tag in tags if ":" not in tag]
+			ptdb[phid] = [intern_force(tag.text) for tag in tags if ":" not in tag.text]
 
 		self.execAllUnique(photos, ptdb, "photo-tag db", run, post, conc_m)
 
@@ -356,7 +356,22 @@ class SafeFlickrAPI(FlickrAPI):
 		@param tcdb: an open database of {tag:[cluster]}
 		@param conc_m: max concurrent threads to run
 		"""
-		raise NotImplementedError()
+		def run(tag):
+			try:
+				# FIXME HIGH verify that this does the right thing for unicode tags
+				# atm all evidence points to flickr not doing clustering anaylses for them...
+				clusters = self.tags_getClusters(tag=tag).getchildren()[0].getchildren()
+			except FlickrError, e:
+				if FlickrError_code(e) == 1:
+					clusters = []
+				else:
+					raise
+			return clusters
+
+		def post(tag, i, clusters):
+			tcdb[tag] = [[intern_force(t.text) for t in cluster.getchildren()] for cluster in clusters]
+
+		self.execAllUnique(tags, tcdb, "cluster db", run, post, conc_m)
 
 
 class FlickrSample():

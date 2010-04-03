@@ -89,13 +89,14 @@ class Scraper():
 	rounds = dict(_rounds)
 	roundlist = [k for k, r in _rounds]
 
+
 	def __init__(self, api_key, secret, token, output="scrape", database=".", interact=False):
 		self.ff = SafeFlickrAPI(api_key, secret, token)
 		self.res = {}
 		self.out = output
 		self.dbp = database
 		self.interact = interact
-		self.banner = "[Scraper interactive console]\n>>> self\n%r" % self
+		self.banner = "[Scraper interactive console]\n>>> self\n%r\n>>> self.ff\n%r" % (self, self.ff)
 
 
 	def __enter__(self):
