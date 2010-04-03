@@ -1,11 +1,27 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
-import sys, traceback, signal, os
+import sys, os, time
 from random import random
 from math import log, exp
 from array import array
 from itertools import izip, chain
 from ast import literal_eval
+from traceback import format_stack
+from repr import Repr
+
+
+repr_s = Repr()
+repr_s.maxlevel = 3
+repr_s.maxdict = 2
+repr_s.maxlist = 2
+repr_s.maxtuple = 2
+repr_s.maxset = 2
+repr_s.maxfrozenset = 2
+repr_s.maxdeque = 2
+repr_s.maxarray = 2
+repr_s.maxlong = 20
+repr_s.maxstring = 20
+repr_s.maxother = 15
 
 
 def repr_call(fname, *args, **kwargs):
@@ -48,35 +64,43 @@ def geo_mean(a, b):
 	return (a*b)**0.5
 
 
-def thread_dump():
+def thread_dump(hash=False):
 	"""
 	Generates a thread dump.
 
-	from http://bzimmer.ziclix.com/2008/12/17/python-thread-dumps/
+	@param hash: Output a hash of the stack trace.
 	"""
-	code = []
-	for threadId, stack in sys._current_frames().items():
-		code.append("\n# ThreadID: %s" % threadId)
-		for filename, lineno, name, line in traceback.extract_stack(stack):
-			code.append('File: "%s", line %d, in %s' % (filename, lineno, name))
-			if line:
-				code.append("  %s" % (line.strip()))
+	from hashlib import md5
+	from binascii import crc32
+	code = ["# Thread dump @ %.4f\n" % time.time()]
+	for thid, stack in sys._current_frames().iteritems():
+		lines = format_stack(stack)
+		if hash:
+			code.append("%08x | %s | %s\n" % (thid,
+			    md5("".join(lines)).hexdigest()[8:24],
+			    #"%08x" % (crc32("".join(lines))&0xffffffff),
+			    lines[-1].split("\n", 1)[0].strip()))
+		else:
+			code.append("# thread %08x:\n" % thid)
+			code.extend(lines)
+			code.append("\n")
+	return "".join(code)
 
-	return "\n".join(code)
 
-
-def signal_dump(sig=signal.SIGUSR1, fp=sys.stderr):
+def signal_dump(fp=sys.stderr):
 	"""
 	Registers a signal-handler which thread dumps to the given stream.
 
 	@param sig: Signal to trap, default USR1
 	@param fp: File object, default sys.stderr
 	"""
+	from signal import signal, SIGUSR1, SIGUSR2
 	def handle(signum, frame):
-		print >>fp, thread_dump()
+		print >>fp, thread_dump(True if signum == SIGUSR2 else False)
 		fp.flush()
 
-	signal.signal(sig, handle)
+	signal(SIGUSR1, handle)
+	signal(SIGUSR2, handle)
 
 
 def dict_save(d, fp=sys.stdout):
@@ -143,8 +167,6 @@ def enumerate_cb(iterable, callback, message=None, steps=0x100, every=None, expe
 	       %(it), %(item), respectively substituted with the count, the count
 	       plus 1, a short representation of the item, the item.
 	"""
-	from repr import repr
-
 	if every is None:
 		if hasattr(iterable, "__len__"):
 			every = len(iterable)/float(steps)
@@ -158,7 +180,7 @@ def enumerate_cb(iterable, callback, message=None, steps=0x100, every=None, expe
 	for i, item in enumerate(iterable):
 		if i >= current:
 			if message:
-				callback(message % {'i':i, 'i1':i+1, 'it':repr(item), 'item':item})
+				callback(message % {'i':i, 'i1':i+1, 'it':repr_s.repr(item), 'item':item})
 			else:
 				callback(i, item)
 			current += every
