@@ -16,13 +16,13 @@ public interface DistanceMetric<D, U, W> extends Comparator<D> {
 	/**
 	** Returns the distance between a node and itself.
 	*/
-	public D getMinElement();
+	public D identity();
 
 	/**
 	** Returns the distance between a node and another node unreachable from
 	** it.
 	*/
-	public D getMaxElement();
+	public D infinity();
 
 	/**
 	** Returns the distance between two nodes.

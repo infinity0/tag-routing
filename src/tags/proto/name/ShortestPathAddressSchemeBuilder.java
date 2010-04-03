@@ -64,7 +64,7 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 
 			public DijkstraNode(U2<T, A> node) {
 				this.node = node;
-				this.dist = (seed.equals(node.val))? dmetric.getMinElement(): dmetric.getMaxElement();
+				this.dist = (seed.equals(node.val))? dmetric.identity(): dmetric.infinity();
 			}
 
 		}

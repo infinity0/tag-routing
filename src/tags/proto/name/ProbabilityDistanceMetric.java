@@ -28,11 +28,11 @@ import java.util.Comparator;
 */
 public class ProbabilityDistanceMetric implements DistanceMetric<Probability, Probability, Probability> {
 
-	@Override public Probability getMinElement() {
+	@Override public Probability identity() {
 		return Probability.MAX_VALUE;
 	}
 
-	@Override public Probability getMaxElement() {
+	@Override public Probability infinity() {
 		return Probability.MIN_VALUE;
 	}
 
