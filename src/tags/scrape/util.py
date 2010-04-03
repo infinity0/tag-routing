@@ -4,6 +4,7 @@ import sys, os, time
 from random import random
 from math import log, exp
 from array import array
+from functools import partial
 from itertools import izip, chain
 from ast import literal_eval
 from traceback import format_stack
@@ -73,7 +74,7 @@ def thread_dump(hash=False):
 	from hashlib import md5
 	from binascii import crc32
 	code = ["# Thread dump @ %.4f\n" % time.time()]
-	for thid, stack in sys._current_frames().iteritems():
+	for thid, stack in sorted(sys._current_frames().items()):
 		lines = format_stack(stack)
 		if hash:
 			code.append("%08x | %s | %s\n" % (thid,
@@ -87,9 +88,16 @@ def thread_dump(hash=False):
 	return "".join(code)
 
 
-def signal_dump(fp=sys.stderr):
+try:
+	THREAD_DUMP_FILE = open(os.environ["THREAD_DUMP_FILE"], 'a')
+except (KeyError, IOError):
+	THREAD_DUMP_FILE = sys.stderr
+
+def signal_dump(fp=THREAD_DUMP_FILE):
 	"""
-	Registers a signal-handler which thread dumps to the given stream.
+	Registers a signal-handler which thread dumps to the given stream. If no
+	stream is given, the environment variable THREAD_DUMP_FILE is used, or
+	stderr if that is not given.
 
 	@param sig: Signal to trap, default USR1
 	@param fp: File object, default sys.stderr
@@ -99,6 +107,7 @@ def signal_dump(fp=sys.stderr):
 		print >>fp, thread_dump(True if signum == SIGUSR2 else False)
 		fp.flush()
 
+	print >>fp, "\n## Thread dump session started at %.4f by %s (pid %s)\n" % (time.time(), sys.argv[0], os.getpid())
 	signal(SIGUSR1, handle)
 	signal(SIGUSR2, handle)
 
@@ -266,15 +275,27 @@ def infer_arcs(mem, items, inverse=False):
 	return edges, arc_a
 
 
-def futures_patch_nonblocking(verbose=False):
+def futures_patch_nonblocking(response_interval=0.04, verbose=False):
 	"""
 	Prevents certain python-futures features from blocking signal handling.
 	ONLY USE IF NO THREADS (except main) EVER WRITE TO DISK, ETC.
+
+	This must be called *before* any module from python-futures is imported.
 
 	Stuff patched so far:
 	- Future.result() blocking process signals
 	- thread._python_exit being registered as a handler, which blocks exit
 
+	Additional stuff
+	- Executor.run_to_results_any() yields results in any order, depending on
+	  which completes first.
+
+	Note that this entire suite of patches is a HACK HACK HACK and depends on
+	implementation details of python-futures, Queue and threading. Tested on
+	python-2.6 and python-futures svn@r67.
+
+	@param response_interval: don't make the patched features block threads
+	       longer than this
 	@param verbose: be verbose
 	"""
 	# prevent futures.thread from setting _python_exit
@@ -294,9 +315,23 @@ def futures_patch_nonblocking(verbose=False):
 	from futures import ThreadPoolExecutor
 	atexit.register = old
 
-	# rewrite future.Future.result() to periodically wakeup when waiting for a result
 	import futures._base
-	from futures._base import CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED, CancelledError, TimeoutError, Future
+	from futures._base import (CANCELLED, CANCELLED_AND_NOTIFIED, FINISHED,
+	    RETURN_IMMEDIATELY, FIRST_COMPLETED, CancelledError, TimeoutError, Future)
+
+	# override _Condition to prevent it from waiting too long.
+	# THIS IS ONLY SAFE if the code that uses it is coded correctly (ie. inside
+	# a loop, as per the while !cond { convar.wait(); } idiom. in particular,
+	# Future.result does not do this, which is why we have to override the
+	# entire fucking function below
+	from threading import _Condition
+	class LooseCondition(_Condition):
+		def wait(self, timeout=None):
+			if timeout is None or timeout > response_interval:
+				timeout = response_interval
+			_Condition.wait(self, timeout)
+
+	# rewrite Future.result() to periodically wakeup when waiting for a result
 	def result(self, timeout=None):
 		self._condition.acquire()
 		try:
@@ -307,7 +342,7 @@ def futures_patch_nonblocking(verbose=False):
 
 			if timeout is None:
 				while self._state != FINISHED:
-					self._condition.wait(0.04)
+					self._condition.wait(response_interval)
 			else:
 				self._condition.wait(timeout)
 
@@ -320,4 +355,26 @@ def futures_patch_nonblocking(verbose=False):
 		finally:
 			self._condition.release()
 	futures._base.Future.result = result
+
+	# add a method to Executor to return first result completed for any input,
+	# rather than wait for the next input's result
+	from Queue import Queue
+	def run_to_results_any(self, calls):
+
+		res_queue = Queue()
+		res_queue.not_empty = LooseCondition(res_queue.mutex)
+		res_queue.not_full = LooseCondition(res_queue.mutex)
+
+		def run(call):
+			res = call()
+			res_queue.put(res)
+			return res
+
+		fs = self.run_to_futures((partial(run, call) for call in calls), return_when=RETURN_IMMEDIATELY)
+
+		yielded = 0
+		while yielded < len(fs):
+			yield res_queue.get()
+			yielded += 1
+	futures._base.Executor.run_to_results_any = run_to_results_any
 

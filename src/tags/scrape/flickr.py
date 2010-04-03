@@ -20,6 +20,8 @@ from tags.scrape.util import intern_force, infer_arcs, repr_call, enumerate_cb
 LOG = logging.getLogger(__name__)
 LOG.setLevel(1)
 
+DEFAULT_CONC_MAX = 36
+
 
 class SafeFlickrAPI(FlickrAPI):
 
@@ -147,7 +149,7 @@ class SafeFlickrAPI(FlickrAPI):
 		return s
 
 
-	def scrapeGroups(self, users, conc_m=36):
+	def scrapeGroups(self, users, conc_m=DEFAULT_CONC_MAX):
 		"""
 		Scrapes all groups of the given users.
 
@@ -182,7 +184,7 @@ class SafeFlickrAPI(FlickrAPI):
 		spmap = {}
 
 		#[s.get("id") for s in self.photosets_getList(user_id=nsid).getchildren()[0].getchildren()]
-		for r in x.run_to_results(partial(self.photosets_getPhotos, photoset_id=sid) for sid in sets):
+		for r in x.run_to_results_any(partial(self.photosets_getPhotos, photoset_id=sid) for sid in sets):
 			pset = r.getchildren()[0]
 			sid = pset.get("id")
 			spmap[sid] = [p.get("id") for p in pset.getchildren()]
@@ -191,7 +193,7 @@ class SafeFlickrAPI(FlickrAPI):
 		return spmap
 
 
-	def execAllUnique(self, items, done, name, run, post, conc_m=36, assume_unique=False):
+	def execAllUnique(self, items, done, name, run, post, conc_m=DEFAULT_CONC_MAX, assume_unique=False):
 		"""
 		Gets the tags of all the given photos and saves these to a database
 
@@ -211,14 +213,14 @@ class SafeFlickrAPI(FlickrAPI):
 
 		i = -1
 		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			for i, (it, res) in enumerate_cb(x.run_to_results(tasks),
+			for i, (it, res) in enumerate_cb(x.run_to_results_any(tasks),
 			  LOG.info, "%s: %%(i1)s/%s %%(it)s" % (name, total), expected_length=total):
 				post(it, i, res)
 
 		LOG.info("%s: %s submitted, %s accepted, %s completed" % (name, len(items), total, (i+1)))
 
 
-	def commitPhotoTags(self, photos, ptdb, conc_m=36):
+	def commitPhotoTags(self, photos, ptdb, conc_m=DEFAULT_CONC_MAX):
 		"""
 		Gets the tags of the given photos and saves these to a database
 
@@ -237,7 +239,7 @@ class SafeFlickrAPI(FlickrAPI):
 		self.execAllUnique(photos, ptdb, "photo-tag db", run, post, conc_m)
 
 
-	def commitUserPhotos(self, users, ppdb, conc_m=36):
+	def commitUserPhotos(self, users, ppdb, conc_m=DEFAULT_CONC_MAX):
 		"""
 		Gets the photos of the given users and saves these to a database
 
@@ -261,7 +263,7 @@ class SafeFlickrAPI(FlickrAPI):
 		self.execAllUnique(users, ppdb, "producer db (user)", run, post, conc_m)
 
 
-	def commitGroupPhotos(self, gumap, ppdb, conc_m=36):
+	def commitGroupPhotos(self, gumap, ppdb, conc_m=DEFAULT_CONC_MAX):
 		"""
 		Gets the photos of the given pools and saves these to a database
 
@@ -323,7 +325,7 @@ class SafeFlickrAPI(FlickrAPI):
 		LOG.info("producer db: pruned %s users, %s groups" % (len(delu), len(delg)))
 
 
-	def invertProducerMap(self, ppdb, pcdb, conc_m=36):
+	def invertProducerMap(self, ppdb, pcdb, conc_m=DEFAULT_CONC_MAX):
 		"""
 		Calculates an inverse map from the given producer-photo database.
 
@@ -348,7 +350,7 @@ class SafeFlickrAPI(FlickrAPI):
 		LOG.info("context db: inverted %s producers to %s photos" % (len(ppdb), len(pcdb)))
 
 
-	def commitTagClusters(self, tags, tcdb, conc_m=36):
+	def commitTagClusters(self, tags, tcdb, conc_m=DEFAULT_CONC_MAX):
 		"""
 		Gets the clusters of all the given tags and saves these to a database
 
