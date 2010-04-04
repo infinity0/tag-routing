@@ -166,10 +166,10 @@ def enumerate_cb(iterable, callback, message=None, steps=0x100, every=None, expe
 
 	@param iterable: the iterable to enumerate
 	@param callback: the callback. this should take a single string input if
-	       [message] is non-empty, otherwise a (i, item) tuple
+	       <message> is non-empty, otherwise a (i, item) tuple
 	@param steps: the number of callbacks to make, distributed evenly amongst
-	       the items ([iterable] must also override __len__ in this case, or
-	       else [expected_length] must be set); however, if [every] is set, all
+	       the items (<iterable> must also override __len__ in this case, or
+	       else <expected_length> must be set); however, if <every> is set, all
 	       of this will be ignored
 	@param every: interval at which to call the callback
 	@param message: callback message; a string which will have %(i), %(i1),
@@ -231,7 +231,7 @@ def infer_arcs(mem, items, inverse=False):
 	than expected of a random target set of the same size. (Note that this
 	relationship is asymmetric.)
 
-	@param mem: [[items]] - list of sets
+	@param mem: [[item]] - list of item-sets
 	@param items: number of possible items; this is assumed to be correct
 	@param inverse: whether to return the inverse relationship
 	@return: iterable of ((source index, target index), arc weight)
@@ -275,7 +275,7 @@ def infer_arcs(mem, items, inverse=False):
 	return edges, arc_a
 
 
-def futures_patch_nonblocking(response_interval=0.04, verbose=False):
+def futures_patch_nonblocking(response_interval=0.25, verbose=False):
 	"""
 	Prevents certain python-futures features from blocking signal handling.
 	ONLY USE IF NO THREADS (except main) EVER WRITE TO DISK, ETC.
@@ -294,7 +294,7 @@ def futures_patch_nonblocking(response_interval=0.04, verbose=False):
 	implementation details of python-futures, Queue and threading. Tested on
 	python-2.6 and python-futures svn@r67.
 
-	@param response_interval: don't make the patched features block threads
+	@param response_interval: patch said features so they don't block threads
 	       longer than this
 	@param verbose: be verbose
 	"""

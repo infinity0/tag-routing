@@ -35,40 +35,5 @@ Dynamic following of hyperlinks...
 
 make Producer use a igraph.Graph to store tag arcs
 
-get tag clusters round
-get photo contexts round
-
-
-generateContentArcs:
-	user-* arcs:
-		inferContentArcs(fave photos)
-	group-group arcs:
-		inferContentArcs(TODO some subset of docset)
-
-
-def inferContentArc(photos):
-	for photo in photos:
-		get producers from photos_getAllContexts (groups) and photos_getInfo (owner)
-
-	for each producer in our sample
-		inferTagsetArc(our cover set, producer cover set)
-
-
-def inferTagsetArc(tset_s, tset_t, tcdb):
-	"""
-	Given a source tag-set and a target tag-set, infer the tags that the source
-	should point to the target with, if any.
-
-	@param tset_s: source tag-set
-	@param tset_t: target tag-set
-	@param tcdb: tag:[cluster] database
-	"""
-	for tag in tset_s:
-		for cluster in tcdb[tag]:
-			if tset_s significantly intersects cluster:
-				- link to intersected tags
-				- link to top tags of cluster, what weights?
-
-
 
 

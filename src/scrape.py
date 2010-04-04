@@ -245,10 +245,15 @@ class Scraper():
 
 		Round "group" must already have been executed.
 		"""
+		socgr = Graph.Read(self.infp("soc.graphml"))
+		gumap = dict_load(self.infp("gu.dict"))
 
-		if self.interact: code.interact(banner=self.banner, local=locals())
+		ppdb = self.db("pp")
+		pcdb = self.db("pc")
+		ptdb = self.db("pt")
+		tcdb = self.db("tc")
 
-		ss = FlickrSample(graph, self.db("pt"), upmap, g2map)
+		ss = FlickrSample(socgr, gumap, ppdb, ptdb, pcdb, tcdb)
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 

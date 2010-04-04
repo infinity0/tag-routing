@@ -153,7 +153,7 @@ class SafeFlickrAPI(FlickrAPI):
 		"""
 		Scrapes all groups of the given users.
 
-		@return: {group:[users]}
+		@return: {group:[user]}
 		"""
 		gumap = {}
 
@@ -179,7 +179,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 		@param sets: an iterable of set ids
 		@param x: an executor to execute calls in parallel
-		@return: {set:[photos]}
+		@return: {set:[photo]}
 		"""
 		spmap = {}
 
@@ -203,7 +203,7 @@ class SafeFlickrAPI(FlickrAPI):
 		@param run: job for worker threads; takes (item) parameter
 		@param post: job for main thread; takes (item, i, res) parameters
 		@param conc_m: max concurrent worker threads to run
-		@param assume_unique: whether to assume [items] is unique
+		@param assume_unique: whether to assume <item> is unique
 		"""
 		if not assume_unique and type(items) != set and type(items) != dict:
 			items = set(items)
@@ -234,7 +234,7 @@ class SafeFlickrAPI(FlickrAPI):
 
 		def post(phid, i, tags):
 			# filter out "machine-tags"
-			ptdb[phid] = [intern_force(tag.text) for tag in tags if ":" not in tag.text]
+			ptdb[phid] = [intern_force(tag.text) for tag in tags if tag.text and ":" not in tag.text]
 
 		self.execAllUnique(photos, ptdb, "photo-tag db", run, post, conc_m)
 
@@ -376,93 +376,28 @@ class SafeFlickrAPI(FlickrAPI):
 		self.execAllUnique(tags, tcdb, "cluster db", run, post, conc_m)
 
 
+
 class FlickrSample():
 
 
-	def __init__(self, graph, ptdb, upmap, g2map):
+	def __init__(self, socgr, gumap, ppdb, pcdb, ptdb, tcdb):
 		"""
 		Create a new FlickrSample from the given arguments
 
-		@param graph: [input] social network graph
+		@param socgr: social network graph
+		@param gumap: {group:[user]} map
+		@param ppdb: an open database of {producer:[photo]}
+		@param pcdb: an open database of {photo:[producer]}
 		@param ptdb: an open database of {photo:[tag]}
-		@param upmap: {user:[photo]}
-		@param g2map: {group:([user],[photo])}
+		@param tcdb: an open database of {tag:[cluster]}
 		"""
-
-		if len(upmap) != len(graph.vs):
-			raise ValueError("graph / upmap size not same")
-			# don't need to check nsids are the same since we do that implicitly
-			# when we create self.ps
-
-		if not hasattr(ptdb, "sync"): # we don't actually use sync(), we just want a type-check that works most of the type
-			raise TypeError("not a database")
-
+		self.socgr = socgr
+		self.gumap = gumap
+		self.ppdb = ppdb
 		self.ptdb = ptdb
-
-		self.id_u = {} # map of nsid:graphid
-		self.id_g = {} # map of nsid:graphid
-
-		# add existing social links between users and groups
-
-		for (i, v) in enumerate(graph.vs):
-			self.id_u[v["id"]] = i
-			v["isgroup"] = False
-
-		graph.add_vertices(len(g2map))
-		edges = []
-		for (i, (gnsid, (users, photos))) in enumerate(g2map.iteritems()):
-			gid = i + len(upmap)
-			self.id_g[gnsid] = gid
-			graph.vs[gid]["id"] = gnsid
-			graph.vs[gid]["isgroup"] = True
-
-			for nsid in users:
-				uid = self.id_u[nsid]
-				edges.extend([(uid, gid), (gid, uid)])
-				# TODO HIGH weights for these
-		graph.add_edges(edges)
-		del edges
-
-		# graph of social links between producers
-		self.gs = graph
-
-		# graph of content links between producers
-		self.gd = Graph(len(self.gs.vs), directed=True)
-
-		# {nsid:Producer}
-		self.ps = dict((nsid, Producer(dset, self.gs, self.gd, vid)) for nsid, vid, dset in
-			chain(((nsid, self.id_u[nsid], pset) for nsid, pset in upmap.iteritems()),
-				  ((nsid, self.id_g[nsid], gr[1]) for nsid, gr in g2map.iteritems())))
-
-		#print self.gs.summary()
-		for p in self.ps.itervalues():
-			p.invertMap(self.ptdb)
-			p.inferTagArcs()
-
-		#self.inferGroupArcs()
-
-
-	def inferGroupArcs(self):
-		"""
-		Given a sample of groups, infer arcs between them.
-		"""
-		# FIXME HIGH make sure this can only be run at the appropriate time
-
-		gidbase = len(self.id_u)
-		gidsize = len(self.id_g)
-
-		mem = [self.gs.successors(gidbase+ogid) for ogid in xrange(0, gidsize)] # users
-		#mem = [self.ps[self.gs.vs["id"][gidbase+ogid]].dset for ogid in xrange(0, gidsize)] # photos
-		#mem = [self.ps[self.gs.vs["id"][gidbase+ogid]].tag.values() for ogid in xrange(0, gidsize)] # tags
-		edges, arc_a = infer_arcs(mem, gidbase)
-
-		# add all edges at once, since we need successors() to remain free of group-producers
-		# this is also a lot faster for igraph
-		self.gs.add_edges((s+gidbase, t+gidbase) for s, t in edges)
-
-		added = len(arc_a)
-		poss = gidsize*gidsize
-		print "%s group-group arcs added (/%s, ~%.4f) between %s groups" % (added, poss, float(added)/poss, gidsize)
+		self.pcdb = pcdb
+		self.tcdb = tcdb
+		self.prod = {}
 
 
 	def generateSuperProducer(self): #producer_graph, seed, size
@@ -481,11 +416,74 @@ class FlickrSample():
 		raise NotImplementedError()
 
 
-	def generateContentArcs(self):
+	def generate(self):
+		'''
+		user-* arcs:
+			inferContentArcs(fave photos)
+		group-group arcs:
+			inferContentArcs(TODO some subset of docset)
+		'''
+
+		# pre-process producer data-sets
+		for prod in self.prod.itervalues():
+			prod.invertMap()
+			# prod.inferTagArcs()
+
+		# generate content arcs between producers
+		for prod in self.prod.itervalues():
+			# for each "related" producer, infer some tags to link to it with
+			for rel in self.inferRelProds(self, prod):
+				self.inferTagsetArc(prod.tagSet(), rel.tagSet())
+
+		# generate objects from producers
+		pass
+
+
+	def inferRelProds(self, prod):
 		"""
-		Generate content arcs between producers
+		Infer a set of related producers for the given producer.
+
+		This implementation selects producers from the ones that hold any of
+		its representative photos.
+		"""
+		return self.selectProdsForPhotos(self.selectRepPhotos(prod))
+
+
+	def selectRepPhotos(self, prod):
+		"""
+		Selects a set of "representative" photos for a given producer.
 		"""
 		raise NotImplementedError()
+
+
+	def selectProdsForPhotos(self, photos):
+		"""
+		Selects a set of "related" producers from all the producers that hold
+		any of the photos in the given set.
+		"""
+		rel_prods = []
+
+		for photo in photos:
+			#get producers from photos_getAllContexts (groups) and photos_getInfo (owner)
+			raise NotImplementedError()
+
+		return rel_prods
+
+
+	def inferTagsetArc(self, tset_s, tset_t):
+		"""
+		Given a source tag-set and a target tag-set, infer the tags that the
+		source should point to the target with, if any.
+
+		@param tset_s: source tag-set
+		@param tset_t: target tag-set
+		"""
+		for tag in tset_s:
+			for cluster in self.tcdb[tag]:
+				#if tset_s significantly intersects cluster:
+				#	- link to intersected tags
+				#	- link to top tags of cluster, what weights?
+				raise NotImplementedError()
 
 
 	def createAllObjects(self): #producer_graph
@@ -496,6 +494,7 @@ class FlickrSample():
 		#ie. 80-20 rule, but actually decide a precise way of doing these.
 		#- half of area-under-graph for each?
 		raise NotImplementedError()
+
 
 
 def FlickrError_code(e):

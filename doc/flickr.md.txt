@@ -43,10 +43,9 @@ their sets initialised with the photos from the group pool.
 
 For each producer, we generate arcs as follows.
 
-1. a set of "representative" photos are selected from the content set
-2. each photo can belong to multiple group pools or photo sets, and each of
-   these has an associated producer. we select our "related" producers from
-   ones that hold any of our "representative" photos.
+1. we select a set of "representative" photos from the content set
+2. we select a set of "related" producers from ones whose content set also
+   contains any of our "representative" photos.
 3. for each "related" producer, we infer some tags to link to it with.
 
 # Scraping

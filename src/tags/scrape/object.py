@@ -202,6 +202,10 @@ class Producer():
 		return len(self.cover) / float(len(self.inv)) if len(self.inv) > 0 else 0
 
 
+	def tagSet(self):
+		raise NotImplemented()
+
+
 	def inferTagArcs(self):
 		key = self.inv.keys()
 		val = self.inv.values()
