@@ -1,32 +1,46 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
 import sys, os, time
-from random import random
-from math import log, exp
-from array import array
-from functools import partial
 from itertools import izip, chain
-from ast import literal_eval
-from traceback import format_stack
-from repr import Repr
 
 
-repr_s = Repr()
-repr_s.maxlevel = 3
-repr_s.maxdict = 2
-repr_s.maxlist = 2
-repr_s.maxtuple = 2
-repr_s.maxset = 2
-repr_s.maxfrozenset = 2
-repr_s.maxdeque = 2
-repr_s.maxarray = 2
-repr_s.maxlong = 20
-repr_s.maxstring = 20
-repr_s.maxother = 15
+###############################################################################
+# Computations
+###############################################################################
 
 
-def repr_call(fname, *args, **kwargs):
-	return "%s(%s)" % (fname, ", ".join(chain((repr(arg) for arg in args), ("%s=%r" % (k,v) for k, v in kwargs.iteritems()))))
+def geo_mean(a, b):
+	"""
+	Returns the geometric mean of a, b, ie. sqrt(ab)
+	"""
+	return (a*b)**0.5
+
+
+def union_ind(*args):
+	"""
+	Returns the union of some probabilities, assuming they are all independent.
+	"""
+	return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in args))
+
+
+def intern_force(sss):
+	"""
+	Interns the given string, or its UTF-8 encoding if it's a unicde string.
+	"""
+	if type(sss) == str:
+		return sss
+	elif type(sss) == unicode:
+		return sss.encode("utf-8")
+	else:
+		raise TypeError("%s not unicode or string" % sss)
+
+
+###############################################################################
+# Data structures, collections
+###############################################################################
+
+from random import random
+from array import array
 
 
 def choice_dist(dist, total=None):
@@ -58,142 +72,11 @@ def count_iter(iter):
 	return cmap
 
 
-def geo_mean(a, b):
-	"""
-	Returns the geometric mean of a, b, ie. sqrt(ab)
-	"""
-	return (a*b)**0.5
-
-
-def thread_dump(hash=False):
-	"""
-	Generates a thread dump.
-
-	@param hash: Output a hash of the stack trace.
-	"""
-	from hashlib import md5
-	from binascii import crc32
-	code = ["# Thread dump @ %.4f\n" % time.time()]
-	for thid, stack in sorted(sys._current_frames().items()):
-		lines = format_stack(stack)
-		if hash:
-			code.append("%08x | %s | %s\n" % (thid,
-			    md5("".join(lines)).hexdigest()[8:24],
-			    #"%08x" % (crc32("".join(lines))&0xffffffff),
-			    lines[-1].split("\n", 1)[0].strip()))
-		else:
-			code.append("# thread %08x:\n" % thid)
-			code.extend(lines)
-			code.append("\n")
-	return "".join(code)
-
-
-try:
-	THREAD_DUMP_FILE = open(os.environ["THREAD_DUMP_FILE"], 'a')
-except (KeyError, IOError):
-	THREAD_DUMP_FILE = sys.stderr
-
-def signal_dump(fp=THREAD_DUMP_FILE):
-	"""
-	Registers a signal-handler which thread dumps to the given stream. If no
-	stream is given, the environment variable THREAD_DUMP_FILE is used, or
-	stderr if that is not given.
-
-	@param sig: Signal to trap, default USR1
-	@param fp: File object, default sys.stderr
-	"""
-	from signal import signal, SIGUSR1, SIGUSR2
-	def handle(signum, frame):
-		print >>fp, thread_dump(True if signum == SIGUSR2 else False)
-		fp.flush()
-
-	print >>fp, "\n## Thread dump session started at %.4f by %s (pid %s)\n" % (time.time(), sys.argv[0], os.getpid())
-	signal(SIGUSR1, handle)
-	signal(SIGUSR2, handle)
-
-
-def dict_save(d, fp=sys.stdout):
-	"""
-	Saves a dictionary to disk. Format: "k: v\n"* where k, v are data literals
-
-	Uses repr() to do the hard work.
-	"""
-	for k, v in d.iteritems():
-		fp.write("%r: %r\n" % (k, v))
-
-
-def dict_load(fp=sys.stdin):
-	"""
-	Loads a dictionary to disk. Format: "k: v\n"* where k, v are data literals
-
-	Uses ast.literal_eval to do the hard work.
-	"""
-	def parse_pair(line):
-		p = line.split(':', 1)
-		return literal_eval(p[0]), literal_eval(p[1].strip())
-	return dict(parse_pair(l) for l in fp.readlines())
-
-
-def intern_force(sss):
-	"""
-	Interns the given string, or its UTF-8 encoding if it's a unicde string.
-	"""
-	if type(sss) == str:
-		return sss
-	elif type(sss) == unicode:
-		return sss.encode("utf-8")
-	else:
-		raise TypeError("%s not unicode or string" % sss)
-
-
 def sort_v(kvit, reverse=False):
 	"""
 	Returns a list of (k, v) tuples, sorted by v.
 	"""
 	return ((k, v) for (v, k) in sorted(((v, k) for k, v in kvit), reverse=reverse))
-
-
-def union_ind(*args):
-	"""
-	Returns the union of some probabilities, assuming they are all independent.
-	"""
-	return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in args))
-
-
-def enumerate_cb(iterable, callback, message=None, steps=0x100, every=None, expected_length=None):
-	"""
-	Enumerates an iterable, with a callback for every n iterations (default 1).
-
-	@param iterable: the iterable to enumerate
-	@param callback: the callback. this should take a single string input if
-	       <message> is non-empty, otherwise a (i, item) tuple
-	@param steps: the number of callbacks to make, distributed evenly amongst
-	       the items (<iterable> must also override __len__ in this case, or
-	       else <expected_length> must be set); however, if <every> is set, all
-	       of this will be ignored
-	@param every: interval at which to call the callback
-	@param message: callback message; a string which will have %(i), %(i1),
-	       %(it), %(item), respectively substituted with the count, the count
-	       plus 1, a short representation of the item, the item.
-	"""
-	if every is None:
-		if hasattr(iterable, "__len__"):
-			every = len(iterable)/float(steps)
-		else:
-			every = float(expected_length)/steps
-
-	elif every <= 0:
-		raise ValueError("[every] must be greater than 0")
-
-	current = 0.0
-	for i, item in enumerate(iterable):
-		if i >= current:
-			if message:
-				callback(message % {'i':i, 'i1':i+1, 'it':repr_s.repr(item), 'item':item})
-			else:
-				callback(i, item)
-			current += every
-		yield i, item
 
 
 class azip():
@@ -273,6 +156,144 @@ def infer_arcs(mem, items, inverse=False):
 				#arc_a.append(a)
 
 	return edges, arc_a
+
+
+###############################################################################
+# IO, data formats, etc
+###############################################################################
+
+from ast import literal_eval
+from repr import Repr
+
+repr_s = Repr()
+repr_s.maxlevel = 3
+repr_s.maxdict = 2
+repr_s.maxlist = 2
+repr_s.maxtuple = 2
+repr_s.maxset = 2
+repr_s.maxfrozenset = 2
+repr_s.maxdeque = 2
+repr_s.maxarray = 2
+repr_s.maxlong = 20
+repr_s.maxstring = 20
+repr_s.maxother = 15
+
+
+def repr_call(fname, *args, **kwargs):
+	return "%s(%s)" % (fname, ", ".join(chain((repr(arg) for arg in args), ("%s=%r" % (k,v) for k, v in kwargs.iteritems()))))
+
+
+def dict_save(d, fp=sys.stdout):
+	"""
+	Saves a dictionary to disk. Format: "k: v\n"* where k, v are data literals
+
+	Uses repr() to do the hard work.
+	"""
+	for k, v in d.iteritems():
+		fp.write("%r: %r\n" % (k, v))
+
+
+def dict_load(fp=sys.stdin):
+	"""
+	Loads a dictionary to disk. Format: "k: v\n"* where k, v are data literals
+
+	Uses ast.literal_eval to do the hard work.
+	"""
+	def parse_pair(line):
+		p = line.split(':', 1)
+		return literal_eval(p[0]), literal_eval(p[1].strip())
+	return dict(parse_pair(l) for l in fp.readlines())
+
+
+###############################################################################
+# IPC, execution management, threads, signals, etc
+###############################################################################
+
+from traceback import format_stack
+from functools import partial
+
+
+def enumerate_cb(iterable, callback, message=None, steps=0x100, every=None, expected_length=None):
+	"""
+	Enumerates an iterable, with a callback for every n iterations (default 1).
+
+	@param iterable: the iterable to enumerate
+	@param callback: the callback. this should take a single string input if
+	       <message> is non-empty, otherwise a (i, item) tuple
+	@param steps: the number of callbacks to make, distributed evenly amongst
+	       the items (<iterable> must also override __len__ in this case, or
+	       else <expected_length> must be set); however, if <every> is set, all
+	       of this will be ignored
+	@param every: interval at which to call the callback
+	@param message: callback message; a string which will have %(i), %(i1),
+	       %(it), %(item), respectively substituted with the count, the count
+	       plus 1, a short representation of the item, the item.
+	"""
+	if every is None:
+		if hasattr(iterable, "__len__"):
+			every = len(iterable)/float(steps)
+		else:
+			every = float(expected_length)/steps
+
+	elif every <= 0:
+		raise ValueError("[every] must be greater than 0")
+
+	current = 0.0
+	for i, item in enumerate(iterable):
+		if i >= current:
+			if message:
+				callback(message % {'i':i, 'i1':i+1, 'it':repr_s.repr(item), 'item':item})
+			else:
+				callback(i, item)
+			current += every
+		yield i, item
+
+
+def thread_dump(hash=False):
+	"""
+	Generates a thread dump.
+
+	@param hash: Output a hash of the stack trace.
+	"""
+	from hashlib import md5
+	from binascii import crc32
+	code = ["# Thread dump @ %.4f\n" % time.time()]
+	for thid, stack in sorted(sys._current_frames().items()):
+		lines = format_stack(stack)
+		if hash:
+			code.append("%08x | %s | %s\n" % (thid,
+			    md5("".join(lines)).hexdigest()[8:24],
+			    #"%08x" % (crc32("".join(lines))&0xffffffff),
+			    lines[-1].split("\n", 1)[0].strip()))
+		else:
+			code.append("# thread %08x:\n" % thid)
+			code.extend(lines)
+			code.append("\n")
+	return "".join(code)
+
+
+try:
+	THREAD_DUMP_FILE = open(os.environ["THREAD_DUMP_FILE"], 'a')
+except (KeyError, IOError):
+	THREAD_DUMP_FILE = sys.stderr
+
+def signal_dump(fp=THREAD_DUMP_FILE):
+	"""
+	Registers a signal-handler which thread dumps to the given stream. If no
+	stream is given, the environment variable THREAD_DUMP_FILE is used, or
+	stderr if that is not given.
+
+	@param sig: Signal to trap, default USR1
+	@param fp: File object, default sys.stderr
+	"""
+	from signal import signal, SIGUSR1, SIGUSR2
+	def handle(signum, frame):
+		print >>fp, thread_dump(True if signum == SIGUSR2 else False)
+		fp.flush()
+
+	print >>fp, "\n## Thread dump session started at %.4f by %s (pid %s)\n" % (time.time(), sys.argv[0], os.getpid())
+	signal(SIGUSR1, handle)
+	signal(SIGUSR2, handle)
 
 
 def futures_patch_nonblocking(response_interval=0.25, verbose=False):
