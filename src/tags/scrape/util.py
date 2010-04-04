@@ -137,7 +137,8 @@ def infer_arcs(mem, items, inverse=False):
 			if ilen == 0: continue
 			rilen = r*ilen
 
-			# keep arc only if (significantly) better than independent intersections
+			# keep arc only if (significantly) better than independent intersection
+			# ie. intersect/total >> r * source/total * target/total
 
 			#a = ilen/float(slen) # don't use this since graph is not dense and * faster than /
 			#if a > r:

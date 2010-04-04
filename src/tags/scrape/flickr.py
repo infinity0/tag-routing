@@ -426,14 +426,14 @@ class FlickrSample():
 
 		# pre-process producer data-sets
 		for prod in self.prod.itervalues():
-			prod.invertMap()
 			# prod.inferTagArcs()
+			pass
 
 		# generate content arcs between producers
 		for prod in self.prod.itervalues():
 			# for each "related" producer, infer some tags to link to it with
 			for rel in self.inferRelProds(self, prod):
-				self.inferTagsetArc(prod.tagSet(), rel.tagSet())
+				self.inferTagsetArc(prod.coverTags(), rel.coverTags())
 
 		# generate objects from producers
 		pass
