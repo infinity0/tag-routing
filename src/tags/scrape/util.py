@@ -202,6 +202,53 @@ def infer_arcs(mem, items, inverse=False):
 	return edges, arc_a
 
 
+def representatives(cand, items=None, prop=0, thres=float("inf"), cover=0):
+	"""
+	Infers a set of representatives from a set of candidates, each of whom has
+	a rating, and a set of items for which they are responsible.
+
+	This implementation will give priority to candidates with higher ratings,
+	whilst trying to fit the criteria defined by the parameters.
+
+	@param cand: map of {candidate:(rating,items)}
+	@param items: all items - if this is given it will expected to be correct;
+	       otherwise it will be calculated automatically
+	@param thres: select everyone above this rating (or lower)
+	@param prop: select this proportion of candidates (or higher)
+	@param cover: ensure every item has this many representatives (or higher)
+	@return: a 2-tuple (reps, params), where reps are the selected candidates,
+	         and params is a dict containing the actual values of the input
+	         predicates.
+	"""
+	if not 0 <= prop <= 1:
+		raise ValueError()
+
+	if cover < 0:
+		raise ValueError()
+
+	if items is None:
+		items = []
+		for cid, (rating, its) in cand.iteritems():
+			items.extend(its)
+
+	reps = []
+	minl = len(cand) * float(prop)
+	covered = dict((i, 0) for i in items)
+	left = set(covered.iterkeys()) if cover > 0 else set()
+
+	for cid, (rating, its) in sort_v(cand.iteritems(), reverse=True):
+		if len(reps) > minl and rating <= thres and not left:
+			break
+
+		reps.append(cid)
+		for it in its:
+			covered[it] += 1
+			if covered[it] == cover:
+				left.remove(it)
+
+	return reps, {"thres": rating, "prop": len(reps)/float(len(cand)), "cover":min(covered.itervalues())}
+
+
 ###############################################################################
 # IO, data formats, etc
 ###############################################################################

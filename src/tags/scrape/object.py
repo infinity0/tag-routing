@@ -5,7 +5,7 @@ from array import array
 from igraph import Graph, IN, OUT
 from functools import partial
 
-from tags.scrape.util import intern_force, sort_v, union_ind, edge_array, infer_arcs, iterconverge
+from tags.scrape.util import intern_force, sort_v, union_ind, edge_array, infer_arcs, iterconverge, representatives
 
 
 NID = "id" # label for node id in graphs
@@ -250,8 +250,15 @@ class Producer():
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
 
+		if doc in self.id_d:
+			id = self.id_d[doc]
+		elif doc in self.drange():
+			id = doc
+		else:
+			raise ValueError()
+
 		g = self.docgr
-		eseq = g.es.select(g.adjacent(self.id_d[doc] if doc in self.id_d else doc, OUT))
+		eseq = g.es.select(g.adjacent(id, OUT))
 		return dict((g.vs[e.target][NID], e[AAT]) for e in eseq)
 
 
@@ -264,12 +271,27 @@ class Producer():
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
 
+		if tag in self.id_t:
+			id = self.id_t[tag]
+		elif tag in self.trange():
+			id = tag
+		else:
+			raise ValueError()
+
 		g = self.docgr
-		eseq = g.es.select(g.adjacent(self.id_t[tag] if tag in self.id_t else tag, IN))
+		eseq = g.es.select(g.adjacent(id, IN))
 		return dict((g.vs[e.source][NID], e[AAT]) for e in eseq)
 
 
 	def inferScores(self, init=0.5):
+		"""
+		Infer scores for docs and tags.
+
+		DOCUMENT more detail
+		"""
+		if self.docgr is None:
+			raise StateError("initContent not called yet")
+
 		g = self.docgr
 		tidbase = len(self.id_d)
 
@@ -302,7 +324,7 @@ class Producer():
 		for id in self.drange():
 			sc_d.append(iterconverge(partial(scoreDoc, id), (0,1), init))
 
-		self.docgr.vs["score"] = sc_d + sc_t
+		self.docgr.vs[NAT] = sc_d + sc_t
 
 
 	def debugScores(self, fp=sys.stderr):
@@ -313,8 +335,8 @@ class Producer():
 		"""
 		res = {}
 		for i in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
-			self.scoreNodes(i)
-			res[i] = self.docgr.vs.select()["score"][:]
+			self.inferScores(i)
+			res[i] = self.docgr.vs.select()[NAT][:]
 			print >>fp, "%.12f" % i,
 
 		print >>fp, ""
@@ -333,36 +355,29 @@ class Producer():
 			print >>fp, ""
 
 
-	def makeCover(self):
+	def representatives(self):
 		"""
-		Returns a set of tags which covers all documents.
+		Generates a set of representative ([doc], [tag]) for this producer.
 
-		This implementation uses a greedy heuristic which attempts to minimise
-		the size of the set (finding the absolute minimum is NP-complete).
-
-		FIXME HIGH this causes problems when eg. every photo has one tag. fix
-		the algorithm to make the cover be x deep (atm it is 1 deep), where x
-		is the 1/2 mean tags per doc, or something...
-
-		@return: proportion of tags it took to cover all documents, or 0 if
-		         there are no tags. (lower is better)
+		DOCUMENT more detail
 		"""
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
 
-		score = self.docgr.vs.select(self.trange())["score"]
+		if NAT not in self.docgr.vs.attribute_names():
+			raise StateError("inferScores not called yet")
 
-		left = set(xrange(0, len(self.id_d)))
-		cover = []
-		for id, attr in sort_v(enumerate(score), reverse=True):
-			tid = len(self.id_d) + id
-			left.difference_update(self.docgr.predecessors(tid))
-			cover.append(tid)
-			if len(left) == 0: break
+		g = self.docgr
 
-		self.score = score # TODO NORM store in graph as doubles
-		self.cover = cover
-		return len(self.cover) / float(len(self.id_t)) if len(self.id_t) > 0 else 0
+		cand_t = dict((g.vs[id][NID], (g.vs[id][NAT], g.predecessors(id))) for id in self.trange())
+		items_t = self.drange()
+		rep_t = representatives(cand_t, items_t, prop=0.25, thres=0.5, cover=1)
+
+		cand_d = dict((g.vs[id][NID], (g.vs[id][NAT], g.successors(id))) for id in self.drange())
+		items_d = self.trange()
+		rep_d = representatives(cand_d, items_d, prop=0.25, thres=0.96, cover=1)
+
+		return (rep_d, rep_t)
 
 
 	def coverTags(self):
