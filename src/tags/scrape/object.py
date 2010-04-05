@@ -2,9 +2,10 @@
 
 import sys
 from array import array
-from igraph import Graph, IN
+from igraph import Graph, IN, OUT
+from functools import partial
 
-from tags.scrape.util import intern_force, sort_v, union_ind, edge_array, infer_arcs
+from tags.scrape.util import intern_force, sort_v, union_ind, edge_array, infer_arcs, iterconverge
 
 
 NID = "id" # label for node id in graphs
@@ -161,37 +162,54 @@ class Node():
 class Producer():
 
 
-	def __init__(self, prodgr=None, vid=None):
+	def __init__(self, nsid):
 		"""
-		Creates a new producer attached to the given graphs. The graphs must
-		contain the given vertex id.
-
-		@param dset: own document set
-		@param prodgr: producer graph
-		@param vid: vertex id of node in the content graph
+		Creates a new producer
 		"""
-		self.prodgr = prodgr
-		self.vid = vid
-		self.nsid = prodgr.vs[vid][NID] if prodgr else None
+		self.nsid = nsid
+		self.prodgr = None
+		self.vid = None
 
 		self.docgr = None
 		self.id_d = None
 		self.it_t = None
 
+		self.rep_d = None # representative docs
+		self.rep_t = None # representative tags
 		# OPT HIGH move all of these into a "graph" instance
-		self.tag = None # {tag:attr}
-		self.cover = None
-		self.arcs = None
+		self.arc_t = None
 
 
-	def initContent(self, dset, ptdb):
+	def attachGraph(self, prodgr=None, vid=None):
+		"""
+		attached to the given graphs. The graphs must
+		contain the given vertex id.
+
+		@param prodgr: producer graph
+		@param vid: vertex id of node in the content graph
+		"""
+		if prodgr.vs[vid][NID] != self.nsid:
+			raise ValueError("nsid in graph doesn't match")
+
+		self.prodgr = prodgr
+		self.vid = vid
+
+
+	def initContent(self, dsrc, ptdb):
 		"""
 		Initialises the doc-tag graph from the given document set and the given
 		doc-tag database.
 
-		@param dset: A set of documents
+		@param dsrc: A source of documents. This can either be a collection of
+		       documents, or be a map associating the producer's id to such a
+		       collection.
 		@param ptdb: An open database of {doc:[tag]}
 		"""
+		if self.docgr is not None:
+			raise StateError("initContent already called")
+
+		dset = dsrc[self.nsid] if self.nsid in dsrc else dsrc
+
 		def outdict(doc):
 			tags = ptdb[doc]
 			attr = len(tags)**-0.5 if tags else 0 # formula pulled out of my ass
@@ -214,6 +232,107 @@ class Producer():
 		self.id_t = id_t
 
 
+	def drange(self):
+		return xrange(0, len(self.id_d))
+
+
+	def trange(self):
+		tidbase = len(self.id_d)
+		return xrange(tidbase, tidbase + len(self.id_t))
+
+
+	def tagsForDoc(self, doc):
+		"""
+		Returns a map of tags to their doc-tag weights, for the given doc.
+
+		@param doc: this can either be a graph id or a doc.
+		"""
+		if self.docgr is None:
+			raise StateError("initContent not called yet")
+
+		g = self.docgr
+		eseq = g.es.select(g.adjacent(self.id_d[doc] if doc in self.id_d else doc, OUT))
+		return dict((g.vs[e.target][NID], e[AAT]) for e in eseq)
+
+
+	def docsForTag(self, tag):
+		"""
+		Returns a map of docs to their doc-tag weights, for the given tag.
+
+		@param tag: this can either be a graph id or a tag.
+		"""
+		if self.docgr is None:
+			raise StateError("initContent not called yet")
+
+		g = self.docgr
+		eseq = g.es.select(g.adjacent(self.id_t[tag] if tag in self.id_t else tag, IN))
+		return dict((g.vs[e.source][NID], e[AAT]) for e in eseq)
+
+
+	def inferScores(self, init=0.5):
+		g = self.docgr
+		tidbase = len(self.id_d)
+
+		# doc-tag weight is P(t|d)
+		# tags and docs are considered as bags of meaning
+		# a producer = union of tags = union of docs
+
+		# Infer P(t|this) = union_ind(P(t|d) over all d attached to t)
+		#
+		# Justification: roughly, 1 match out of any is satisfactory. We have
+		# no further information so assume P(t|d) independent over d.
+		sc_t = list(union_ind(*g.es.select(g.adjacent(id, IN))[AAT]) for id in self.trange())
+
+		# Infer P(d|this) = union_ind(P(d|t) over all t attached to d)
+		#
+		# We assume that P(d|this) = P(d). This is NOT theoretically sound, but
+		# it doesn't matter because this heuristic is only used within this
+		# producer, to rank documents. (In reality, P(d|this) >> P(d).)
+		#
+		# We rewrite P(d|t) in terms of P(t|d); this results in a formula with
+		# P(d) on both sides; we use iterconverge to find a non-zero solution.
+		#
+		# Special case: if there is only 1 tag, its weight is 1.0, and its arc
+		# weight is 1.0, then iteration will always return the inital value.
+		# So we'll arbitrarily choose init=0.5 by default.
+		sc_d = []
+		def scoreDoc(id, k):
+			eseq = g.es.select(g.adjacent(id, OUT))
+			return union_ind(*(k * e[AAT] / sc_t[e.target-tidbase] for e in eseq))
+		for id in self.drange():
+			sc_d.append(iterconverge(partial(scoreDoc, id), (0,1), init))
+
+		self.docgr.vs["score"] = sc_d + sc_t
+
+
+	def debugScores(self, fp=sys.stderr):
+		"""
+		Tests the scoreNodes() algorithm for different values of <init>.
+
+		@param fp: the stream on which to output the table
+		"""
+		res = {}
+		for i in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+			self.scoreNodes(i)
+			res[i] = self.docgr.vs.select()["score"][:]
+			print >>fp, "%.12f" % i,
+
+		print >>fp, ""
+		print >>fp, "-" * (15*11-1)
+		from math import fabs
+
+		for c in self.drange():
+			k = -1
+			for i in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
+					o = k
+					k = res[i][c]
+					if fabs(k/o-1) <= sys.float_info.epsilon if o != 0 else k <= sys.float_info.min:
+						print >>fp, "%-14s" % "same",
+					else:
+						print >>fp, "%.12f" % res[i][c],
+			print >>fp, ""
+
+
 	def makeCover(self):
 		"""
 		Returns a set of tags which covers all documents.
@@ -228,21 +347,20 @@ class Producer():
 		@return: proportion of tags it took to cover all documents, or 0 if
 		         there are no tags. (lower is better)
 		"""
-		g = self.docgr
-		tidbase = len(self.id_d)
-		# use union_ind to weigh tags
-		# justification: roughly, 1 match out of any is satisfactory
-		tscore = list(union_ind(*g.es.select(g.adjacent(id, IN))[AAT]) for id in xrange(tidbase, tidbase+len(self.id_t)))
+		if self.docgr is None:
+			raise StateError("initContent not called yet")
+
+		score = self.docgr.vs.select(self.trange())["score"]
 
 		left = set(xrange(0, len(self.id_d)))
 		cover = []
-		for id, attr in sort_v(enumerate(tscore), reverse=True):
-			tid = tidbase + id
-			left.difference_update(g.predecessors(tid))
+		for id, attr in sort_v(enumerate(score), reverse=True):
+			tid = len(self.id_d) + id
+			left.difference_update(self.docgr.predecessors(tid))
 			cover.append(tid)
 			if len(left) == 0: break
 
-		self.tscore = tscore # TODO NORM store in graph as doubles
+		self.score = score # TODO NORM store in graph as doubles
 		self.cover = cover
 		return len(self.cover) / float(len(self.id_t)) if len(self.id_t) > 0 else 0
 

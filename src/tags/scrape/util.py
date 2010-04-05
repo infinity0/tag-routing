@@ -8,6 +8,9 @@ from itertools import izip, chain
 # Computations
 ###############################################################################
 
+from math import fabs
+FLOAT = sys.float_info
+
 
 def geo_mean(a, b):
 	"""
@@ -20,7 +23,7 @@ def union_ind(*args):
 	"""
 	Returns the union of some probabilities, assuming they are all independent.
 	"""
-	return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in args))
+	return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in args)) if args else 0
 
 
 def intern_force(sss):
@@ -33,6 +36,46 @@ def intern_force(sss):
 		return sss.encode("utf-8")
 	else:
 		raise TypeError("%s not unicode or string" % sss)
+
+
+def iterconverge(func, range=(-FLOAT.max, FLOAT.max), init=None, eps=FLOAT.epsilon, maxsteps=0x100):
+	"""
+	Iterates a function until it converges, or raise ValueError if it diverges
+	(does not converge within the number of steps).
+
+	@param func: function to iterate
+	@param range: a (lo, hi) tuple; raise if the value goes outside this
+	@param init: initial value (default (lo+hi)/2*(1+sys.float.epsilon))
+	@param eps: if **relative** difference between two successive iterations is
+	       smaller than this, stop iterating and return the arithmetic average
+	       of the two
+	@param maxsteps: maximum number of steps to run; will raise ValueError if
+	       value hasn't converge by then (default 0x100)
+	"""
+	lo, hi = range
+	if lo >= hi:
+		raise ValueError("lo < hi, but %s >= %s" % (lo, hi))
+
+	lo, hi = float(lo), float(hi)
+	if init is None:
+		init = (lo+hi)/2*(1.0+FLOAT.epsilon)
+
+	if eps < 0:
+		eps = -eps
+
+	if eps < FLOAT.epsilon:
+		raise ValueError("not advisable to have eps < sys.float_info.epsilon (= %s)" % FLOAT.epsilon)
+
+	k = init
+	for i in xrange(0, maxsteps):
+		ok = k
+		k = func(ok)
+		if not lo <= k <= hi:
+			raise ValueError("value went outside %s: %s" % (range, k))
+		if fabs(k/ok-1) <= eps if ok != 0 else k <= FLOAT.min:
+			return (k+ok)/2
+
+	raise ValueError("did not converge in %s steps: init=%s, range=%s, eps=%s, prev=%s, last=%s" % (maxsteps, init, range, eps, ok, k))
 
 
 ###############################################################################
