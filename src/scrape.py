@@ -56,7 +56,10 @@ def main(round, *args, **kwargs):
 		f = getattr(scr, "round_%s" % round)
 
 		if len(args) > 0 and args[0].lower() == "help":
+			rinfo = Scraper.rounds[round]
 			print >>sys.stderr, fmt_pydoc(f.__doc__)
+			print >>sys.stderr, "These rounds must already have been executed: %s" % ", ".join(rinfo.dep)
+			print >>sys.stderr, "These files will be written to: %s" % ", ".join("%s%s" % (kwargs["output"], ext) for ext in rinfo.out)
 			return 0
 
 		else:
@@ -80,9 +83,10 @@ class Scraper():
 	_rounds = [
 		("social", Round("Scraping social network", [], [".soc.graphml", ".soc.dot"])),
 		("group", Round("Scraping groups", ["social"], [".gu.dict"])),
-		("photo", Round("Scraping photos", ["group"], [".pp.db"])),
+		("photo", Round("Scraping photos", ["group"], [".pp.db"]+[".gu.dict"]+[".soc.graphml", ".soc.dot"])),
 		("invert", Round("Inverting producer mapping", ["photo"], [".pc.db"])),
 		("tag", Round("Scraping tags", ["photo"], [".pt.db"])),
+		("producer", Round("Generating producers", ["tag"], [".pd.db"])),
 		("cluster", Round("Scraping clusters", ["tag"], [".tc.db"])),
 		("generate", Round("Generating data", [])),
 	]
@@ -163,8 +167,6 @@ class Scraper():
 	def round_group(self):
 		"""
 		Scrape the group network from the social network.
-
-		Round "social" must already have been executed.
 		"""
 		users = Graph.Read(self.infp("soc.graphml")).vs["id"]
 
@@ -177,8 +179,6 @@ class Scraper():
 	def round_photo(self):
 		"""
 		Scrape photos of the collected producers.
-
-		Round "group" must already have been executed.
 		"""
 		socgr = Graph.Read(self.infp("soc.graphml"))
 		gumap = dict_load(self.infp("gu.dict"))
@@ -198,8 +198,6 @@ class Scraper():
 	def round_invert(self):
 		"""
 		Invert the producer-photo mapping.
-
-		Round "photo" must already have been executed.
 		"""
 		ppdb = self.db("pp")
 		pcdb = self.db("pc", writeback=True)
@@ -212,8 +210,6 @@ class Scraper():
 	def round_tag(self):
 		"""
 		Scrape tags of the collected photos.
-
-		Round "photo" must already have been executed.
 		"""
 		ppdb = self.db("pp")
 		ptdb = self.db("pt")
@@ -224,11 +220,22 @@ class Scraper():
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
 
+	def round_producer(self):
+		"""
+		Generate producers from the collected photos and tags.
+		"""
+		ppdb = self.db("pp")
+		ptdb = self.db("pt")
+		pddb = self.db("pd")
+
+		self.ff.generateProducers(ppdb, ptdb, pddb)
+
+		if self.interact: code.interact(banner=self.banner, local=locals())
+
+
 	def round_cluster(self):
 		"""
 		Scrape clusters of the collected tags.
-
-		Round "tag" must already have been executed.
 		"""
 		ptdb = self.db("pt")
 		tcdb = self.db("tc")
@@ -242,18 +249,15 @@ class Scraper():
 	def round_generate(self):
 		"""
 		Generate objects from the scraped data.
-
-		Round "group" must already have been executed.
 		"""
 		socgr = Graph.Read(self.infp("soc.graphml"))
 		gumap = dict_load(self.infp("gu.dict"))
 
-		ppdb = self.db("pp")
 		pcdb = self.db("pc")
-		ptdb = self.db("pt")
 		tcdb = self.db("tc")
+		pddb = self.db("pd")
 
-		ss = FlickrSample(socgr, gumap, ppdb, ptdb, pcdb, tcdb)
+		ss = FlickrSample(socgr, gumap, pcdb, tcdb, pddb)
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
@@ -263,7 +267,7 @@ if __name__ == "__main__":
 	from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
 	config = OptionParser(
 	  usage = "Usage: %prog [OPTIONS] [ROUND] [ARGS|help]",
-	  description = "Scrapes data from flickr. ROUND is one of: %s" % Scraper.roundlist,
+	  description = "Scrapes data from flickr. ROUND is one of: %s." % ", ".join(Scraper.roundlist),
 	  version = VERSION,
 	  formatter = IndentedHelpFormatter(max_help_position=25)
 	)
@@ -271,7 +275,7 @@ if __name__ == "__main__":
 	config.add_option("-o", "--output", type="string", metavar="OUTPUT", default="scrape",
 	  help = "Output file prefix (extensions will be added to it)")
 	config.add_option("-b", "--database", type="string", metavar="DATABASE", default=".",
-	  help = "Path to the photo-tag database (default .)")
+	  help = "Path to any databases used (default .)")
 	config.add_option("-i", "--interact", action="store_true", dest="interact",
 	  help = "Go into interactive mode after performing a round, to examine the objects created")
 	config.add_option("-k", "--api-key", type="string", metavar="APIKEY",

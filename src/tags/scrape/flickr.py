@@ -376,28 +376,49 @@ class SafeFlickrAPI(FlickrAPI):
 		self.execAllUnique(tags, tcdb, "cluster db", run, post, conc_m)
 
 
+	def generateProducers(self, ppdb, ptdb, pddb):
+		"""
+		Generate producer objects from the given data sets.
+
+		@param ppdb: an open database of {producer:[photo]}
+		@param ptdb: an open database of {photo:[tag]}
+		@param pddb: an open database of {producer:Producer}
+		"""
+		## TODO NORM enumerate_cb here
+
+		name = "producer db"
+		total = len(ppdb)
+
+		for i, pid in enumerate_cb(ppdb.iterkeys(),
+		  LOG.info, "%s: %%(i1)s/%s %%(it)s" % (name, total), expected_length=total):
+			prod = Producer(pid)
+			prod.initContent(ppdb, ptdb)
+			prod.inferScores()
+			prod.representatives()
+			pddb[pid] = prod
+
+		LOG.info("%s: generated %s producers" % (name, len(ppdb)))
+
+
 
 class FlickrSample():
 
 
-	def __init__(self, socgr, gumap, ppdb, pcdb, ptdb, tcdb):
+	def __init__(self, socgr, gumap, pcdb, tcdb, pddb):
 		"""
 		Create a new FlickrSample from the given arguments
 
 		@param socgr: social network graph
 		@param gumap: {group:[user]} map
-		@param ppdb: an open database of {producer:[photo]}
 		@param pcdb: an open database of {photo:[producer]}
-		@param ptdb: an open database of {photo:[tag]}
 		@param tcdb: an open database of {tag:[cluster]}
+		@param pddb: an open database of {producer:Producer}
 		"""
 		self.socgr = socgr
 		self.gumap = gumap
-		self.ppdb = ppdb
-		self.ptdb = ptdb
 		self.pcdb = pcdb
 		self.tcdb = tcdb
-		self.prod = {}
+		self.pddb = pddb
 
 
 	def generateSuperProducer(self): #producer_graph, seed, size
@@ -417,23 +438,12 @@ class FlickrSample():
 
 
 	def generate(self):
-		'''
-		user-* arcs:
-			inferContentArcs(fave photos)
-		group-group arcs:
-			inferContentArcs(TODO some subset of docset)
-		'''
-
-		# pre-process producer data-sets
-		for prod in self.prod.itervalues():
-			# prod.inferTagArcs()
-			pass
 
 		# generate content arcs between producers
-		for prod in self.prod.itervalues():
+		for prod in self.pddb.itervalues():
 			# for each "related" producer, infer some tags to link to it with
-			for rel in self.inferRelProds(self, prod):
-				self.inferTagsetArc(prod.coverTags(), rel.coverTags())
+			for rpid in self.inferRelProds(self, prod):
+				self.inferTagsetArc(prod.rep_t, self.pddb[rpid].rep_t)
 
 		# generate objects from producers
 		pass
@@ -446,14 +456,9 @@ class FlickrSample():
 		This implementation selects producers from the ones that hold any of
 		its representative photos.
 		"""
-		return self.selectProdsForPhotos(self.selectRepPhotos(prod))
-
-
-	def selectRepPhotos(self, prod):
-		"""
-		Selects a set of "representative" photos for a given producer.
-		"""
-		raise NotImplementedError()
+		rel = self.selectProdsForPhotos(prod.rep_d)
+		rel.discard(prod.nsid)
+		return rel
 
 
 	def selectProdsForPhotos(self, photos):
@@ -461,13 +466,10 @@ class FlickrSample():
 		Selects a set of "related" producers from all the producers that hold
 		any of the photos in the given set.
 		"""
-		rel_prods = []
-
-		for photo in photos:
-			#get producers from photos_getAllContexts (groups) and photos_getInfo (owner)
-			raise NotImplementedError()
-
-		return rel_prods
+		rel = set()
+		for phid in photos:
+			rel.update(self.pcdb[phid])
+		return rel
 
 
 	def inferTagsetArc(self, tset_s, tset_t):

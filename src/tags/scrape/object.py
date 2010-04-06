@@ -176,6 +176,7 @@ class Producer():
 
 		self.rep_d = None # representative docs
 		self.rep_t = None # representative tags
+
 		# OPT HIGH move all of these into a "graph" instance
 		self.arc_t = None
 
@@ -377,11 +378,8 @@ class Producer():
 		items_d = self.trange()
 		rep_d = representatives(cand_d, items_d, prop=0.25, thres=0.96, cover=1)
 
-		return (rep_d, rep_t)
-
-
-	def coverTags(self):
-		raise NotImplementedError()
+		self.rep_d = rep_d
+		self.rep_t = rep_t
 
 
 	def createTGraph(self, net_g):
