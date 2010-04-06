@@ -384,17 +384,21 @@ class SafeFlickrAPI(FlickrAPI):
 		@param ptdb: an open database of {photo:[tag]}
 		@param pddb: an open database of {producer:Producer}
 		"""
-		## TODO NORM enumerate_cb here
-
 		name = "producer db"
 		total = len(ppdb)
 
 		for i, pid in enumerate_cb(ppdb.iterkeys(),
 		  LOG.info, "%s: %%(i1)s/%s %%(it)s" % (name, total), expected_length=total):
 			prod = Producer(pid)
-			prod.initContent(ppdb, ptdb)
-			prod.inferScores()
-			prod.representatives()
+			try:
+				prod.initContent(ppdb, ptdb)
+				prod.inferScores()
+				prod.representatives()
+			except:
+				LOG.error("Error generating producer %s" % pid)
+				LOG.error("docs: %s" % prod.id_d)
+				LOG.error("tags: %s" % prod.id_t)
+				raise
 			pddb[pid] = prod
 
 		LOG.info("%s: generated %s producers" % (name, len(ppdb)))
@@ -480,6 +484,7 @@ class FlickrSample():
 		@param tset_s: source tag-set
 		@param tset_t: target tag-set
 		"""
+		# TODO NOW
 		for tag in tset_s:
 			for cluster in self.tcdb[tag]:
 				#if tset_s significantly intersects cluster:

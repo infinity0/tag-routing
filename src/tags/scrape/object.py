@@ -61,7 +61,7 @@ class NodeSample():
 		return self
 
 
-	def build(self, keep, node_attr=None):
+	def build(self, keep, bipartite=False, node_attr=None):
 		"""
 		Build a graph out of the sample.
 
@@ -74,10 +74,14 @@ class NodeSample():
 		if kept (see <keep>), the total number of dangling nodes will be stored
 		in self.extra.
 
-		@param keep: Whether to keep or discard dangling nodes. Dangling nodes
-		       will have vertex ids greater than explicit nodes.
-		@param node_attr: If keep is True, this sets the attribute for dangling
-		       nodes. If this is callable, the return value is used. If this
+		@param keep: whether to keep or discard dangling nodes; dangling nodes
+		       will have vertex ids greater than explicit nodes
+		@param bipartite: if this is True, then raise an error if an explicit
+		       node points to another explicit node
+		@param node_attr: if keep is True, this sets the attribute for dangling
+		       nodes. if this is callable or a dictionary, the node id is input
+		       to it and the output is used as the value; otherwise it is
+		       treated as a constant value for all nodes
 		@return: The built graph
 		"""
 		if self.graph is not None: return self.graph
@@ -108,9 +112,12 @@ class NodeSample():
 		for (i, node) in enumerate(self._node.itervalues()):
 			for (dst, attr) in node.out.iteritems():
 				if dst in self._node:
+					if keep and bipartite:
+						raise ValueError("non-bipartite graph: %s - %s" % (node.id, dst))
 					arc_s.append(i)
 					arc_t.append(self.idmap[dst])
 					e_attr.append(attr)
+
 				elif keep:
 					if dst in self.idmap:
 						x = self.idmap[dst]
@@ -172,7 +179,7 @@ class Producer():
 
 		self.docgr = None
 		self.id_d = None
-		self.it_t = None
+		self.id_t = None
 
 		self.rep_d = None # representative docs
 		self.rep_t = None # representative tags
@@ -219,7 +226,7 @@ class Producer():
 			return dict((tag, attr) for tag in tags)
 
 		ss = NodeSample().add_nodes(Node(doc, outdict(doc)) for doc in dset)
-		self.docgr = ss.build(True)
+		self.docgr = ss.build(True, bipartite=True)
 
 		id_d = {} # {doc:id}
 		id_t = {} # {tag:id}
@@ -321,9 +328,13 @@ class Producer():
 		sc_d = []
 		def scoreDoc(id, k):
 			eseq = g.es.select(g.adjacent(id, OUT))
-			return union_ind(*(k * e[AAT] / sc_t[e.target-tidbase] for e in eseq))
+			try:
+				return union_ind(*(k * e[AAT] / sc_t[e.target-tidbase] for e in eseq))
+			except IndexError:
+				print list(e.target for e in eseq)
+				raise
 		for id in self.drange():
-			sc_d.append(iterconverge(partial(scoreDoc, id), (0,1), init))
+			sc_d.append(iterconverge(partial(scoreDoc, id), (0,1), init, eps=2**-32, maxsteps=0x40))
 
 		self.docgr.vs[NAT] = sc_d + sc_t
 
@@ -378,8 +389,8 @@ class Producer():
 		items_d = self.trange()
 		rep_d = representatives(cand_d, items_d, prop=0.25, thres=0.96, cover=1)
 
-		self.rep_d = rep_d
-		self.rep_t = rep_t
+		self.rep_d = rep_d[0]
+		self.rep_t = rep_t[0]
 
 
 	def createTGraph(self, net_g):

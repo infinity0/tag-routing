@@ -86,6 +86,28 @@ from random import random
 from array import array
 
 
+class azip():
+
+	def __init__(self, *args):
+		self.args = args
+
+	def __iter__(self):
+		return izip(*self.args)
+
+	def __len__(self):
+		return len(self.args[0])
+
+
+class lazydict(dict):
+
+	def __getitem__(self, key):
+		val = dict.__getitem__(self, key)
+		if callable(val):
+			val = val()
+			self[key] = val
+		return val
+
+
 def choice_dist(dist, total=None):
 	"""
 	Pick a random key from the map according to the distribution defined by it
@@ -120,18 +142,6 @@ def sort_v(kvit, reverse=False):
 	Returns a list of (k, v) tuples, sorted by v.
 	"""
 	return ((k, v) for (v, k) in sorted(((v, k) for k, v in kvit), reverse=reverse))
-
-
-class azip():
-
-	def __init__(self, *args):
-		self.args = args
-
-	def __iter__(self):
-		return izip(*self.args)
-
-	def __len__(self):
-		return len(self.args[0])
 
 
 def edge_array(items, inverse=False):
@@ -220,6 +230,9 @@ def representatives(cand, items=None, prop=0, thres=float("inf"), cover=0):
 	         and params is a dict containing the actual values of the input
 	         predicates.
 	"""
+	if not cand:
+		return [], {"thres": thres, "prop": prop, "cover": cover}
+
 	if not 0 <= prop <= 1:
 		raise ValueError()
 
@@ -246,7 +259,7 @@ def representatives(cand, items=None, prop=0, thres=float("inf"), cover=0):
 			if covered[it] == cover:
 				left.remove(it)
 
-	return reps, {"thres": rating, "prop": len(reps)/float(len(cand)), "cover":min(covered.itervalues())}
+	return reps, lazydict([("thres", rating), ("prop", lambda: len(reps)/float(len(cand))), ("cover", lambda: min(covered.itervalues()))])
 
 
 ###############################################################################
@@ -333,7 +346,7 @@ def enumerate_cb(iterable, callback, message=None, steps=0x100, every=None, expe
 	for i, item in enumerate(iterable):
 		if i >= current:
 			if message:
-				callback(message % {'i':i, 'i1':i+1, 'it':repr_s.repr(item), 'item':item})
+				callback(message % lazydict({'i':i, 'i1':i+1, 'item':item}.items() + [('it', lambda: repr_s.repr(item))]))
 			else:
 				callback(i, item)
 			current += every
