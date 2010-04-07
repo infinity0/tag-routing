@@ -3,6 +3,7 @@
 import sys
 from igraph import Graph, IN, OUT
 from functools import partial
+from itertools import chain
 
 from tags.scrape.util import intern_force, sort_v, union_ind, edge_array, infer_arcs, iterconverge, representatives
 
@@ -95,9 +96,8 @@ class NodeSample():
 		else:
 			attr_cb = lambda id: node_attr
 
-
 		# init nodes
-		v_id, v_attr, idmap = zip(*((id, node.attr, (id, i)) for i, (id, node) in enumerate(self._node.iteritems())))
+		v_id, v_attr, idmap = zip(*((id, node.attr, (id, i)) for i, (id, node) in enumerate(self._node.iteritems()))) if len(self._node) > 0 else ([], [], [])
 		v_id, v_attr = list(v_id), list(v_attr)
 		self.idmap = dict(idmap)
 		self.order = j = len(self._node)
@@ -179,6 +179,11 @@ class Producer():
 		self.id_t = None # {tag:vid}
 		self.id_p = None # {pid:vid}
 
+		self.base_d = None # first doc id
+		self.base_t = None # first tag id
+		self.base_s = None # first newtag id
+		self.base_p = None # first producer id
+
 		self.rep_d = None # representative docs
 		self.rep_t = None # representative tags
 
@@ -234,8 +239,11 @@ class Producer():
 			else:
 				id_t[id] = vid
 		assert len(id_d) == ss.order and len(id_t) == ss.extra
+
 		self.id_d = id_d
 		self.id_t = id_t
+		self.base_d = 0
+		self.base_t = ss.order
 
 
 	def drange(self):
@@ -243,13 +251,11 @@ class Producer():
 
 
 	def trange(self):
-		tidbase = len(self.id_d)
-		return xrange(tidbase, tidbase + len(self.id_t))
+		return xrange(self.base_t, self.base_t + len(self.id_t))
 
 
 	def prange(self):
-		pidbase = len(self.id_d) + len(self.id_t)
-		return xrange(pidbase, pidbase + len(self.id_p))
+		return xrange(self.base_p, self.base_p + len(self.id_p))
 
 
 	def tagsForDoc(self, doc):
@@ -304,7 +310,6 @@ class Producer():
 			raise StateError("initContent not called yet")
 
 		g = self.docgr
-		tidbase = len(self.id_d)
 
 		# doc-tag weight is P(t|d)
 		# tags and docs are considered as bags of meaning
@@ -332,7 +337,7 @@ class Producer():
 		def scoreDoc(id, k):
 			eseq = g.es.select(g.adjacent(id, IN))
 			try:
-				return union_ind(*(k * e[AAT] / sc_t[e.source-tidbase] for e in eseq))
+				return union_ind(*(k * e[AAT] / sc_t[e.source-self.base_t] for e in eseq))
 			except IndexError:
 				print list(e.source for e in eseq)
 				raise
@@ -418,27 +423,37 @@ class Producer():
 
 		@param prodmap: {pid:{tag:attr}} map
 		"""
+		if self.docgr is None:
+			raise StateError("initContent not called yet")
 
-		## FIXME NOW some tags might be in prodmap that aren't in self.id_t
-		print prodmap
+		if self.base_p is not None:
+			raise StateError("initProdArcs already called")
+
+		# add tags in prodmap that aren't in self.id_t
+		self.base_s = len(self.docgr.vs)
+		newtags = list(set(chain(*((tag for tag in tmap.iterkeys() if tag not in self.id_t) for tmap in prodmap.itervalues()))))
+		self.id_t.update((tag, self.base_s+i) for i, tag in enumerate(newtags))
+		self.docgr.add_vertices(len(newtags))
+		self.docgr.vs[self.base_s:][NAT] = newtags
 
 		# init nodes
-		pidbase = len(self.id_d) + len(self.id_t)
-		self.id_p = dict((nsid, pidbase+i) for i, nsid in enumerate(prodmap.iterkeys()))
+		self.base_p = len(self.id_d) + len(self.id_t)
+		self.id_p = dict((nsid, self.base_p+i) for i, nsid in enumerate(prodmap.iterkeys()))
 
 		# init arcs
 		arc_s, arc_t, edges, e_attr = edge_array(len(self.id_t), 'd')
 
 		for i, (nsid, tmap) in enumerate(prodmap.iteritems()):
-			pid = pidbase+i
+			pid = self.base_p+i
 			for tag, attr in tmap.iteritems():
 				arc_s.append(self.id_t[tag])
 				arc_t.append(pid)
 				e_attr.append(attr)
 
 		self.docgr.add_vertices(len(prodmap))
+		eend = len(self.docgr.es)
 		self.docgr.add_edges(edges)
-		self.docgr.es[pidbase:][AAT] = e_attr
+		self.docgr.es[eend:][AAT] = e_attr
 
 
 	def createTGraph(self, net_g):

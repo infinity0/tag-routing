@@ -381,19 +381,19 @@ class SafeFlickrAPI(FlickrAPI):
 		name = "producer db"
 		total = len(ppdb)
 
-		for i, pid in enumerate_cb(ppdb.iterkeys(),
+		for i, nsid in enumerate_cb(ppdb.iterkeys(),
 		  LOG.info, "%s: %%(i1)s/%s %%(it)s" % (name, total), expected_length=total):
-			prod = Producer(pid)
+			prod = Producer(nsid)
 			try:
 				prod.initContent(ppdb, ptdb)
 				prod.inferScores()
 				prod.representatives()
 			except:
-				LOG.error("Error generating producer %s" % pid)
+				LOG.error("Error generating producer %s" % nsid)
 				LOG.error("docs: %s" % prod.id_d)
 				LOG.error("tags: %s" % prod.id_t)
 				raise
-			pddb[pid] = prod
+			pddb[nsid] = prod
 
 		LOG.info("%s: generated %s producers" % (name, len(ppdb)))
 
@@ -438,12 +438,12 @@ class FlickrSample():
 	def generate(self):
 
 		# generate content arcs between producers
-		for pid, prod in self.pddb.iteritems():
+		for nsid, prod in self.pddb.iteritems():
 			# for each "related" producer, infer some tags to link to it with
-			prodmap = dict((rpid, self.pddb[rpid].tagScores(self.inferTagsetArc(prod.rep_t,
-			  self.pddb[rpid].rep_t))) for rpid in self.inferRelProds(prod))
+			prodmap = dict((rnsid, self.pddb[rnsid].tagScores(self.inferTagsetArc(prod.rep_t,
+			  self.pddb[rnsid].rep_t))) for rnsid in self.inferRelProds(prod))
 			prod.initProdArcs(prodmap)
-			self.ppdb[pid] = prod
+			self.pddb[nsid] = prod
 
 		# generate objects from producers
 		pass
@@ -493,6 +493,7 @@ class FlickrSample():
 					# if intersection is big enough, link to "representative" tags of cluster
 					# on flickr, this is the first 3 tags
 					tags.update(cluster[0:3])
+					# FIXME NOW need to infer weights for these!!
 
 		return tags
 
