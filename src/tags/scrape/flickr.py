@@ -2,7 +2,7 @@
 
 import sys, socket, logging
 from time import time
-from array import array
+from collections import deque
 from functools import partial
 from itertools import chain
 from threading import local as ThreadLocal
@@ -124,7 +124,7 @@ class SafeFlickrAPI(FlickrAPI):
 			raise TypeError
 
 		def next(ss, qq):
-			id = qq.pop(0)
+			id = qq.popleft()
 			if id in ss: return None
 			node = self.makeID(id)
 			qq.extend(node.out.keys())
@@ -132,7 +132,7 @@ class SafeFlickrAPI(FlickrAPI):
 			return id
 
 		s = NodeSample()
-		q = [self.getNSID(seed)]
+		q = deque([self.getNSID(seed)])
 
 		while len(s) < size:
 			id = next(s, q)

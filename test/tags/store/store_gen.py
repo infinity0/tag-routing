@@ -6,6 +6,7 @@ Generates StoreGenerator.java
 
 import sys, math
 from random import choice, random, sample
+from collections import deque
 
 TAG = 0
 DOC = 1000
@@ -29,13 +30,13 @@ def sort_by_val(map, reverse=False):
 def breadth(g, s, n):
 
 	def next(g, done, queue):
-		k = queue.pop(0)
+		k = queue.popleft()
 		if k in done: return
 		queue.extend(g[k].keys())
 		done.append(k)
 
 	nodes = []
-	queue = [s]
+	queue = deque([s])
 
 	while len(nodes) < n:
 		next(g, nodes, queue)
