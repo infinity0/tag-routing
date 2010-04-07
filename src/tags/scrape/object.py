@@ -1,7 +1,6 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
 import sys
-from array import array
 from igraph import Graph, IN, OUT
 from functools import partial
 
@@ -61,7 +60,7 @@ class NodeSample():
 		return self
 
 
-	def build(self, keep, bipartite=False, node_attr=None):
+	def build(self, keep, bipartite=False, node_attr=None, inverse=False):
 		"""
 		Build a graph out of the sample.
 
@@ -82,6 +81,7 @@ class NodeSample():
 		       nodes. if this is callable or a dictionary, the node id is input
 		       to it and the output is used as the value; otherwise it is
 		       treated as a constant value for all nodes
+		@param inverse: Whether to invert edge directions
 		@return: The built graph
 		"""
 		if self.graph is not None: return self.graph
@@ -95,20 +95,16 @@ class NodeSample():
 		else:
 			attr_cb = lambda id: node_attr
 
-		v_id = []
-		v_attr = []
-		arc_s, arc_t, edges = edge_array(len(self._node))
-		e_attr = array('d')
 
 		# init nodes
-		for (i, node) in enumerate(self._node.itervalues()):
-			self.idmap[node.id] = i
-			assert len(v_id) == i
-			v_id.append(node.id)
-			v_attr.append(node.attr)
-
+		v_id, v_attr, idmap = zip(*((id, node.attr, (id, i)) for i, (id, node) in enumerate(self._node.iteritems())))
+		v_id, v_attr = list(v_id), list(v_attr)
+		self.idmap = dict(idmap)
 		self.order = j = len(self._node)
+
 		# init edges
+		arc_s, arc_t, edges, e_attr = edge_array(len(self._node), 'd', inverse)
+
 		for (i, node) in enumerate(self._node.itervalues()):
 			for (dst, attr) in node.out.iteritems():
 				if dst in self._node:
@@ -134,7 +130,8 @@ class NodeSample():
 					pass
 
 		assert j == len(self.idmap) == len(v_id) == len(v_attr)
-		if keep: self.extra = j - self.order
+		if keep:
+			self.extra = j - self.order
 		del self._node
 
 		# igraph can't handle utf-8 output, see launchpad bug #545663
@@ -178,8 +175,9 @@ class Producer():
 		self.vid = None
 
 		self.docgr = None
-		self.id_d = None
-		self.id_t = None
+		self.id_d = None # {doc:vid}
+		self.id_t = None # {tag:vid}
+		self.id_p = None # {pid:vid}
 
 		self.rep_d = None # representative docs
 		self.rep_t = None # representative tags
@@ -226,7 +224,7 @@ class Producer():
 			return dict((tag, attr) for tag in tags)
 
 		ss = NodeSample().add_nodes(Node(doc, outdict(doc)) for doc in dset)
-		self.docgr = ss.build(True, bipartite=True)
+		self.docgr = ss.build(True, bipartite=True, inverse=True)
 
 		id_d = {} # {doc:id}
 		id_t = {} # {tag:id}
@@ -249,6 +247,11 @@ class Producer():
 		return xrange(tidbase, tidbase + len(self.id_t))
 
 
+	def prange(self):
+		pidbase = len(self.id_d) + len(self.id_t)
+		return xrange(pidbase, pidbase + len(self.id_p))
+
+
 	def tagsForDoc(self, doc):
 		"""
 		Returns a map of tags to their doc-tag weights, for the given doc.
@@ -266,8 +269,8 @@ class Producer():
 			raise ValueError()
 
 		g = self.docgr
-		eseq = g.es.select(g.adjacent(id, OUT))
-		return dict((g.vs[e.target][NID], e[AAT]) for e in eseq)
+		eseq = g.es.select(g.adjacent(id, IN))
+		return dict((g.vs[e.source][NID], e[AAT]) for e in eseq)
 
 
 	def docsForTag(self, tag):
@@ -287,8 +290,8 @@ class Producer():
 			raise ValueError()
 
 		g = self.docgr
-		eseq = g.es.select(g.adjacent(id, IN))
-		return dict((g.vs[e.source][NID], e[AAT]) for e in eseq)
+		eseq = g.es.select(g.adjacent(id, OUT))
+		return dict((g.vs[e.target][NID], e[AAT]) for e in eseq)
 
 
 	def inferScores(self, init=0.5):
@@ -311,7 +314,7 @@ class Producer():
 		#
 		# Justification: roughly, 1 match out of any is satisfactory. We have
 		# no further information so assume P(t|d) independent over d.
-		sc_t = list(union_ind(*g.es.select(g.adjacent(id, IN))[AAT]) for id in self.trange())
+		sc_t = list(union_ind(*g.es.select(g.adjacent(id, OUT))[AAT]) for id in self.trange())
 
 		# Infer P(d|this) = union_ind(P(d|t) over all t attached to d)
 		#
@@ -327,16 +330,16 @@ class Producer():
 		# So we'll arbitrarily choose init=0.5 by default.
 		sc_d = []
 		def scoreDoc(id, k):
-			eseq = g.es.select(g.adjacent(id, OUT))
+			eseq = g.es.select(g.adjacent(id, IN))
 			try:
-				return union_ind(*(k * e[AAT] / sc_t[e.target-tidbase] for e in eseq))
+				return union_ind(*(k * e[AAT] / sc_t[e.source-tidbase] for e in eseq))
 			except IndexError:
-				print list(e.target for e in eseq)
+				print list(e.source for e in eseq)
 				raise
 		for id in self.drange():
 			sc_d.append(iterconverge(partial(scoreDoc, id), (0,1), init, eps=2**-32, maxsteps=0x40))
 
-		self.docgr.vs[NAT] = sc_d + sc_t
+		self.docgr.vs["score"] = sc_d + sc_t
 
 
 	def debugScores(self, fp=sys.stderr):
@@ -348,7 +351,7 @@ class Producer():
 		res = {}
 		for i in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
 			self.inferScores(i)
-			res[i] = self.docgr.vs.select()[NAT][:]
+			res[i] = self.docgr.vs.select()["score"][:]
 			print >>fp, "%.12f" % i,
 
 		print >>fp, ""
@@ -376,21 +379,66 @@ class Producer():
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
 
-		if NAT not in self.docgr.vs.attribute_names():
+		if "score" not in self.docgr.vs.attribute_names():
 			raise StateError("inferScores not called yet")
 
 		g = self.docgr
 
-		cand_t = dict((g.vs[id][NID], (g.vs[id][NAT], g.predecessors(id))) for id in self.trange())
+		cand_t = dict((g.vs[id][NID], (g.vs[id]["score"], g.successors(id))) for id in self.trange())
 		items_t = self.drange()
 		rep_t = representatives(cand_t, items_t, prop=0.25, thres=0.5, cover=1)
 
-		cand_d = dict((g.vs[id][NID], (g.vs[id][NAT], g.successors(id))) for id in self.drange())
+		cand_d = dict((g.vs[id][NID], (g.vs[id]["score"], g.predecessors(id))) for id in self.drange())
 		items_d = self.trange()
 		rep_d = representatives(cand_d, items_d, prop=0.25, thres=0.96, cover=1)
 
 		self.rep_d = rep_d[0]
 		self.rep_t = rep_t[0]
+
+
+	def tagScores(self, tags):
+		"""
+		Returns the scores for a bunch of tags.
+
+		@param tags: [tag]
+		@return: {tag:score}
+		"""
+		if self.docgr is None:
+			raise StateError("initContent not called yet")
+
+		if "score" not in self.docgr.vs.attribute_names():
+			raise StateError("inferScores not called yet")
+
+		return dict((tag, self.docgr.vs[self.id_t[tag]]["score"]) for tag in tags)
+
+
+	def initProdArcs(self, prodmap):
+		"""
+		Initialises the doc-tag graph with the given prod<-tag arcs
+
+		@param prodmap: {pid:{tag:attr}} map
+		"""
+
+		## FIXME NOW some tags might be in prodmap that aren't in self.id_t
+		print prodmap
+
+		# init nodes
+		pidbase = len(self.id_d) + len(self.id_t)
+		self.id_p = dict((nsid, pidbase+i) for i, nsid in enumerate(prodmap.iterkeys()))
+
+		# init arcs
+		arc_s, arc_t, edges, e_attr = edge_array(len(self.id_t), 'd')
+
+		for i, (nsid, tmap) in enumerate(prodmap.iteritems()):
+			pid = pidbase+i
+			for tag, attr in tmap.iteritems():
+				arc_s.append(self.id_t[tag])
+				arc_t.append(pid)
+				e_attr.append(attr)
+
+		self.docgr.add_vertices(len(prodmap))
+		self.docgr.add_edges(edges)
+		self.docgr.es[pidbase:][AAT] = e_attr
 
 
 	def createTGraph(self, net_g):

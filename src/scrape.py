@@ -258,6 +258,7 @@ class Scraper():
 		pddb = self.db("pd")
 
 		ss = FlickrSample(socgr, gumap, pcdb, tcdb, pddb)
+		ss.generate()
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 

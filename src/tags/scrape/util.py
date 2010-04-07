@@ -144,20 +144,23 @@ def sort_v(kvit, reverse=False):
 	return ((k, v) for (v, k) in sorted(((v, k) for k, v in kvit), reverse=reverse))
 
 
-def edge_array(items, inverse=False):
+def edge_array(items, attr=None, inverse=False):
 	"""
 	Creates efficient c-array containers for holding edges.
 
 	@param items: number of possible items; if this is small enough the array
 	       will be a short array rather than a int array
+	@param attr: type of attribute (see docs for array module); if this is None
+	       then no attribute array will be created
 	@param inverse: whether to invert source/target nodes
-	@return: (arc_s, arc_t, edges) - arc_* are empty arrays, and edges is a zip
-	         of the two, that can be iterated through once.
+	@return: (arc_s, arc_t, edges[, attr]) - arc_* are empty arrays, edges is a
+	         zip of the two, and attr is an empty array which is only included
+	         if <attr> was not None
 	"""
 	arc_s = array('H') if items <= 65536 else array('i')
 	arc_t = array('H') if items <= 65536 else array('i')
 	edges = azip(arc_t, arc_s) if inverse else azip(arc_s, arc_t)
-	return arc_s, arc_t, edges
+	return (arc_s, arc_t, edges) if attr is None else (arc_s, arc_t, edges, array(attr))
 
 
 def infer_arcs(mem, items, inverse=False):
@@ -174,8 +177,7 @@ def infer_arcs(mem, items, inverse=False):
 	"""
 	r = items**0.5 if items > 0 else 0 # FIXME LOW hack, if items == 0 then mlen must be 0
 	mlen = len(mem)
-	arc_s, arc_t, edges = edge_array(mlen, inverse)
-	arc_a = array('d')
+	arc_s, arc_t, edges, arc_a = edge_array(mlen, 'd', inverse)
 
 	for sid in xrange(0, mlen):
 		smem = mem[sid]

@@ -109,12 +109,6 @@ class SafeFlickrAPI(FlickrAPI):
 	data_walker = FlickrAPI._FlickrAPI__data_walker
 
 
-	def log2(self, msg, lv):
-		# TODO HIGH use the logging module
-		print >>sys.stderr, "%.4f | %s | %s                  \r" % (time(), lv, msg),
-		sys.stderr.flush()
-
-
 	def getNSID(self, n):
 		return self.people_findByUsername(username=n).getchildren()[0].get("nsid")
 
@@ -444,10 +438,12 @@ class FlickrSample():
 	def generate(self):
 
 		# generate content arcs between producers
-		for prod in self.pddb.itervalues():
+		for pid, prod in self.pddb.iteritems():
 			# for each "related" producer, infer some tags to link to it with
-			for rpid in self.inferRelProds(self, prod):
-				self.inferTagsetArc(prod.rep_t, self.pddb[rpid].rep_t)
+			prodmap = dict((rpid, self.pddb[rpid].tagScores(self.inferTagsetArc(prod.rep_t,
+			  self.pddb[rpid].rep_t))) for rpid in self.inferRelProds(prod))
+			prod.initProdArcs(prodmap)
+			self.ppdb[pid] = prod
 
 		# generate objects from producers
 		pass
@@ -484,13 +480,21 @@ class FlickrSample():
 		@param tset_s: source tag-set
 		@param tset_t: target tag-set
 		"""
-		# TODO NOW
+		tags = set()
+		if type(tset_t) != set:
+			tset_t = set(tset_t)
+
 		for tag in tset_s:
 			for cluster in self.tcdb[tag]:
-				#if tset_s significantly intersects cluster:
-				#	- link to intersected tags
-				#	- link to top tags of cluster, what weights?
-				raise NotImplementedError()
+				tset_x = tset_t.intersection(cluster)
+				tags.update(tset_x)
+
+				if 3*len(tset_x) > len(cluster):
+					# if intersection is big enough, link to "representative" tags of cluster
+					# on flickr, this is the first 3 tags
+					tags.update(cluster[0:3])
+
+		return tags
 
 
 	def createAllObjects(self): #producer_graph
