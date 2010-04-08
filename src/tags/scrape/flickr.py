@@ -14,7 +14,7 @@ from futures import ThreadPoolExecutor
 from igraph import Graph
 
 from tags.scrape.object import Node, NodeSample, Producer
-from tags.scrape.util import intern_force, infer_arcs, repr_call, enumerate_cb
+from tags.scrape.util import intern_force, infer_arcs, repr_call, enumerate_cb, union_ind
 
 
 LOG = logging.getLogger(__name__)
@@ -440,8 +440,7 @@ class FlickrSample():
 		# generate content arcs between producers
 		for nsid, prod in self.pddb.iteritems():
 			# for each "related" producer, infer some tags to link to it with
-			prodmap = dict((rnsid, self.pddb[rnsid].tagScores(self.inferTagsetArc(prod.rep_t,
-			  self.pddb[rnsid].rep_t))) for rnsid in self.inferRelProds(prod))
+			prodmap = dict((rnsid, self.inferProdArc(prod, self.pddb[rnsid])) for rnsid in self.inferRelProds(prod))
 			prod.initProdArcs(prodmap)
 			self.pddb[nsid] = prod
 
@@ -472,6 +471,21 @@ class FlickrSample():
 		return rel
 
 
+	def inferProdArc(self, prod_s, prod_t):
+		"""
+		Infer arcs and their weights between the given producers.
+
+		This implementation
+
+		@param prod_s: source producer
+		@param prod_t: target producer
+		"""
+		tags, hitags = self.inferTagsetArc(prod_s.rep_t, prod_t.rep_t)
+		prodmap = prod_t.tagScores(tags)
+		prodmap.update(hitags)
+		return prodmap
+
+
 	def inferTagsetArc(self, tset_s, tset_t):
 		"""
 		Given a source tag-set and a target tag-set, infer the tags that the
@@ -479,8 +493,12 @@ class FlickrSample():
 
 		@param tset_s: source tag-set
 		@param tset_t: target tag-set
+		@return: (tags, hitags) where tags is a subset of tset_t, and hitags
+		         are more "general" tags that describe tset_t, but which are
+		         not necessarily contained in it
 		"""
 		tags = set()
+		hitags = {}
 		if type(tset_t) != set:
 			tset_t = set(tset_t)
 
@@ -492,10 +510,14 @@ class FlickrSample():
 				if 3*len(tset_x) > len(cluster):
 					# if intersection is big enough, link to "representative" tags of cluster
 					# on flickr, this is the first 3 tags
-					tags.update(cluster[0:3])
-					# FIXME NOW need to infer weights for these!!
+					attr = len(tset_x)/float(len(cluster))
+					for rt in cluster[0:3]:
+						if rt in hitags:
+							hitags[rt].append(attr)
+						else:
+							hitags[rt] = [attr]
 
-		return tags
+		return tags, dict((tag, union_ind(*attrs)) for tag, attrs in hitags.iteritems())
 
 
 	def createAllObjects(self): #producer_graph
