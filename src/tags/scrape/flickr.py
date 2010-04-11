@@ -1,6 +1,7 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
 import sys, socket, logging
+from math import log
 from time import time
 from collections import deque
 from functools import partial
@@ -441,7 +442,7 @@ class FlickrSample():
 				prod.initProdArcs(prodmap)
 				self.pddb[nsid] = prod
 			id_p[nsid] = i
-			lab_p.append('\\n'.join(prod.rep_t[0:4]))
+			lab_p.append("%s\\n%s" % (prod.size(), '\\n'.join(prod.rep_t[0:4])))
 
 		# generate producer graph
 		arc_s, arc_t, edges = edge_array(total)
@@ -450,7 +451,8 @@ class FlickrSample():
 				arc_s.append(i)
 				arc_t.append(id_p[nsid])
 
-		v_attr = {"id": list(self.pddb.iterkeys()), "label": lab_p, "height": list(prod.size() for prod in self.pddb.itervalues())}
+		sz = [log(prod.size()) for prod in self.pddb.itervalues()]
+		v_attr = {"id": list(self.pddb.iterkeys()), "label": lab_p, "height": sz, "width": sz}
 
 		self.prodgr = Graph(total, edges=list(edges), directed=True, vertex_attrs=v_attr)
 
@@ -521,11 +523,11 @@ class FlickrSample():
 
 		from igraph.core import InternalError
 		from igraph.statistics import power_law_fit
-		ratio = power_law_fit(self.prodgr.vs["height"], 6)
+		ratio = power_law_fit([prod.size() for prod in self.pddb.itervalues()], 6)
 
 		for vxd in dgrams:
 			default_cut = len(vxd)
-			for n in list(int_unique(geo_prog_range(2, len(gg.vs)/4, ratio, default_cut))):
+			for n in int_unique(geo_prog_range(2, len(gg.vs)/4, ratio, default_cut)):
 				try:
 					mem = vxd.cut(n)
 				except InternalError:
@@ -535,6 +537,11 @@ class FlickrSample():
 		sprod = [com for com in sprod if len(com) > len(self.prodgr.vs)**0.5]
 		print sorted(len(com) for com in sprod)
 		print power_law_fit(sorted(len(com) for com in sprod), 4)
+
+		edges, arc_a = infer_arcs(sprod, len(self.prodgr.vs))
+		self.sprdgr = Graph(len(sprod), list(edges), directed=True, vertex_attrs={"label":[len(com) for com in sprod]})
+		#g.write_dot("sprdgr.dot")
+		#g.write("sprdgr.graphml")
 
 
 	def inferRelProds(self, prod):
