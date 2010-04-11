@@ -5,16 +5,12 @@ from igraph import Graph, IN, OUT
 from functools import partial
 from itertools import chain
 
-from tags.scrape.util import intern_force, sort_v, union_ind, edge_array, infer_arcs, iterconverge, representatives
+from tags.scrape.util import StateError, intern_force, sort_v, union_ind, edge_array, infer_arcs, iterconverge, representatives
 
 
 NID = "id" # label for node id in graphs
 NAT = "height" # label for node attribute in graphs
 AAT = "weight" # label for arc attribute in graphs
-
-
-class StateError(RuntimeError):
-	pass
 
 
 class NodeSample():
@@ -139,10 +135,12 @@ class NodeSample():
 			if type(id) == unicode:
 				v_id[i] = id.encode("utf-8")
 
+		# prepare attributes
 		va = {NID: v_id}
 		if any(a is not None for a in v_attr):
 			va[NAT] = v_attr
 
+		# build graph
 		self.graph = Graph(n=j, directed=True, vertex_attrs=va)
 		self.graph.add_edges(edges)
 		self.graph.es[AAT] = e_attr
@@ -256,6 +254,13 @@ class Producer():
 
 	def prange(self):
 		return xrange(self.base_p, self.base_p + len(self.id_p))
+
+
+	def size(self):
+		"""
+		Returns the number of documents.
+		"""
+		return self.base_t
 
 
 	def tagsForDoc(self, doc):
@@ -442,7 +447,6 @@ class Producer():
 
 		# init arcs
 		arc_s, arc_t, edges, e_attr = edge_array(len(self.id_t), 'd')
-
 		for i, (nsid, tmap) in enumerate(prodmap.iteritems()):
 			pid = self.base_p+i
 			for tag, attr in tmap.iteritems():
@@ -450,7 +454,9 @@ class Producer():
 				arc_t.append(pid)
 				e_attr.append(attr)
 
+		# add all to graph
 		self.docgr.add_vertices(len(prodmap))
+		self.docgr.vs[self.base_p:][NID] = list(prodmap.iterkeys())
 		eend = len(self.docgr.es)
 		self.docgr.add_edges(edges)
 		self.docgr.es[eend:][AAT] = e_attr

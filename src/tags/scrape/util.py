@@ -1,7 +1,7 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
 import sys, os, time
-from itertools import izip, chain
+from itertools import izip, chain, takewhile
 
 
 ###############################################################################
@@ -10,6 +10,48 @@ from itertools import izip, chain
 
 from math import fabs
 FLOAT = sys.float_info
+
+
+def geo_prog(base, ratio, inverse=False):
+	val = base
+	if inverse:
+		while True:
+			yield val
+			val /= ratio
+	else:
+		while True:
+			yield val
+			val *= ratio
+
+
+def geo_prog_range(lo, hi, ratio, thru=None):
+	"""
+	Returns a geometric progression between the given ranges.
+
+	@param lo: low endpoint (inclusive)
+	@param hi: high endpoint (inclusive)
+	@param ratio: ratio of sequence
+	@param through: sequence will pass through this number; defaults to low
+	       endpoint.
+	"""
+	if thru is None:
+		thru = lo
+
+	if lo > hi:
+		raise ValueError()
+
+	if not (lo <= thru <= hi):
+		raise ValueError()
+
+	ratio = float(ratio)
+	if -1 < ratio < 1:
+		ratio = 1/ratio
+
+	hiseq = list(takewhile(lambda x: lo <= x <= hi, geo_prog(thru, ratio)))
+	loseq = list(takewhile(lambda x: lo <= x <= hi, geo_prog(thru, ratio, True)))
+
+	loseq.reverse()
+	return loseq + hiseq[1:]
 
 
 def geo_mean(a, b):
@@ -84,6 +126,7 @@ def iterconverge(func, range=(-FLOAT.max, FLOAT.max), init=None, eps=FLOAT.epsil
 
 from random import random
 from array import array
+from igraph import Graph
 
 
 class azip():
@@ -127,14 +170,39 @@ def choice_dist(dist, total=None):
 			return k
 
 
-def count_iter(iter):
+def freq(it):
 	"""
-	Returns a frequency histogram for the items in the iterable
+	Returns a frequency histogram for the items in the iterable.
 	"""
 	cmap = {}
-	for it in iter:
-		cmap[it] = cmap[it]+1 if it in cmap else 1
+	for i in it:
+		cmap[i] = cmap[i]+1 if i in cmap else 1
 	return cmap
+
+
+def invert(it, fkey, fval=lambda x: x):
+	"""
+	Inverts a sequence by some given key, val metrics.
+
+	@param fkey: callable which retrieves the key
+	@param fval: callable which retrieves the values
+	"""
+	map = {}
+	for i in it:
+		k = fkey(i)
+		if k not in map:
+			map[k] = [fval(i)]
+		else:
+			map[k].append(fval(i))
+	return map
+
+
+def invert_seq(seq):
+	return invert(enumerate(seq), lambda (i, o): o, lambda (i, o): i)
+
+
+def invert_map(map):
+	return invert(map.iteritems(), lambda (k, v): k, lambda (k, v): v)
 
 
 def sort_v(kvit, reverse=False):
@@ -214,6 +282,59 @@ def infer_arcs(mem, items, inverse=False):
 	return edges, arc_a
 
 
+def graph_copy(g):
+	return Graph(len(g.vs), g.get_edgelist(), g.is_directed(), dict((attr, g[attr]) for attr in g.attributes()),
+	  dict((attr, g.vs[attr]) for attr in g.vertex_attributes()), dict((attr, g.es[attr]) for attr in g.edge_attributes()))
+
+
+def undirect_and_simplify(g, combiners={}, count_attr=None, sum_attrs={}):
+	"""
+	Returns a copy of the give graph with duplicate and directed edges combined
+	into single undirected edges. Loops are discarded.
+
+	@param combiners: a map of edge attribute names to combiner functions, that
+	       should take a sequence of (source, target, attribute) triples, or
+	       (source, target) pairs if the attribute does not exist, and returns
+	       an attribute value for the unified edge. edge attributes that are
+	       present in the graph, but not present in this map, are discarded
+	@param count_attr: whether to create a new attribute with the given name
+	       that holds the number of edges present in the subject graph
+	@param sum_attrs: a map of attribute names to divisors; this will create
+	       combiners which return the sum of existing attribute values, divided
+	       by the respective divisor
+	"""
+
+	if count_attr:
+		combiners[count_attr] = lambda seq: len(seq)
+
+	for attr, div in sum_attrs.iteritems():
+		if attr not in g.es.attribute_names():
+			raise ValueError("%s not an edge attribute" % attr)
+		combiners[attr] = lambda seq: sum(tup[2] for tup in seq) / div
+
+	unified = {}
+	edges = []
+	for i, (vs, vt) in enumerate(g.get_edgelist()):
+		if vs == vt:
+			continue
+		elif (vs, vt) in unified:
+			unified[vs, vt].append(i)
+		else:
+			eid = [i]
+			unified[vs, vt] = eid
+			unified[vt, vs] = eid
+			edges.append((vs, vt))
+
+	e_attr = dict((attr,
+	  [comb([(e.source, e.target, e[attr]) for e in g.es.select(unified[vs, vt])]) for (vs, vt) in edges]
+	  if attr in g.es.attribute_names() else
+	  [comb([(e.source, e.target) for e in g.es.select(unified[vs, vt])]) for (vs, vt) in edges]
+	) for attr, comb in combiners.iteritems())
+
+	return Graph(len(g.vs), edges, False, dict((attr, g[attr]) for attr in g.attributes()),
+	  dict((attr, g.vs[attr]) for attr in g.vertex_attributes()), e_attr)
+
+
 def representatives(cand, items=None, prop=0, thres=float("inf"), cover=0):
 	"""
 	Infers a set of representatives from a set of candidates, each of whom has
@@ -289,6 +410,13 @@ def repr_call(fname, *args, **kwargs):
 	return "%s(%s)" % (fname, ", ".join(chain((repr(arg) for arg in args), ("%s=%r" % (k,v) for k, v in kwargs.iteritems()))))
 
 
+def write_histogram(it, header=None, fp=sys.stdout, reverse=False):
+	if header:
+		print >>fp, "# %s" % header
+	for k, v in sorted(freq(it).iteritems(), reverse=reverse):
+		print >>fp, k, v
+
+
 def dict_save(d, fp=sys.stdout):
 	"""
 	Saves a dictionary to disk. Format: "k: v\n"* where k, v are data literals
@@ -317,6 +445,10 @@ def dict_load(fp=sys.stdin):
 
 from traceback import format_stack
 from functools import partial
+
+
+class StateError(RuntimeError):
+	pass
 
 
 def enumerate_cb(iterable, callback, message=None, steps=0x100, every=None, expected_length=None):

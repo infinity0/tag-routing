@@ -259,6 +259,7 @@ class Scraper():
 
 		ss = FlickrSample(socgr, gumap, pcdb, tcdb, pddb)
 		ss.generate()
+		ss.generateSuperProducers()
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
