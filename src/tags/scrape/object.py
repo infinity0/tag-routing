@@ -5,7 +5,8 @@ from igraph import Graph, IN, OUT
 from functools import partial
 from itertools import chain
 
-from tags.scrape.util import StateError, intern_force, sort_v, union_ind, edge_array, infer_arcs, iterconverge, representatives
+from tags.scrape.util import (StateError, intern_force, geo_mean, union_ind,
+  sort_v, edge_array, infer_arcs, iterconverge, representatives, graph_copy)
 
 
 NID = "id" # label for node id in graphs
@@ -453,7 +454,7 @@ class Producer():
 		newtags = list(set(chain(*((tag for tag in tmap.iterkeys() if tag not in self.id_t) for tmap in prodmap.itervalues()))))
 		self.id_t.update((tag, self.base_s+i) for i, tag in enumerate(newtags))
 		self.docgr.add_vertices(len(newtags))
-		self.docgr.vs[self.base_s:][NAT] = newtags
+		self.docgr.vs[self.base_s:][NID] = newtags
 
 		# init nodes
 		self.base_p = len(self.id_d) + len(self.id_t)
@@ -476,10 +477,66 @@ class Producer():
 		self.docgr.es[eend:][AAT] = e_attr
 
 
-	def createTGraph(self, net_g):
-		raise NotImplementedError()
+	def createTGraph(self, totalsize, display=False, node_attr={
+	  "style": ("filled", "filled"),
+	  "fillcolor":("firebrick1", "limegreen"),
+	  "shape":("ellipse","doublecircle"),
+	}):
+		"""
+		Creates a graph representing this producer as a tgraph.
+
+		@param totalsize: total number of photos in the entire world
+		@param display: whether to generate for display (adds attributes to
+		       pretty up the graph)
+		@param node_attr: {attr:(tag,prod)} node attributes for graphviz; each
+		       attribute should be mapped to a (tag,prod) pair that holds the
+		       attribute value for the respective type of node; this only has
+		       an effect if <display> is True
+		"""
+		if self.base_p is None:
+			raise StateError("initProdArcs not yet called")
+
+		g = graph_copy(self.docgr)
+		del g.vs["score"]
+
+		total = geo_mean(self.base_t, totalsize)
+		mem = [filter(lambda id: id in self.drange(), g.successors(tid)) for tid in self.trange()]
+		edges, arc_a = infer_arcs(mem, total)
+
+		g.delete_vertices(self.drange())
+		g.add_edges(edges)
+
+		#assert g.es[-len(edges):][AAT] == [None] * len(edges)
+		g.es[-len(edges):][AAT] = arc_a
+		return g
 
 
-	def createIndex(self, net_h):
-		raise NotImplementedError()
+	def createIndex(self, display=False, node_attr={
+	  "style": ("filled", "filled", "filled"),
+	  "fillcolor":("deepskyblue", "firebrick1", "limegreen"),
+	  "shape":("box", "ellipse","doublecircle"),
+	}):
+		"""
+		Creates a graph representing this producer as an index.
+
+		@param display: whether to generate for display (adds attributes to
+		       pretty up the graph)
+		@param node_attr: {attr:(doc,tag,prod)} node attributes for graphviz;
+		       each attribute should be mapped to a (doc,tag,prod) triple that
+		       holds the attribute value for the respective type of node; this
+		       only has an effect if <display> is True
+		"""
+		if self.base_p is None:
+			raise StateError("initProdArcs not yet called")
+
+		g = graph_copy(self.docgr)
+		del g.vs["score"]
+
+		if display:
+			g.vs["label"] = g.vs["id"]
+			del g.vs["id"]
+			for attr, val in node_attr.iteritems():
+				g.vs[attr] = [val[0] for i in self.drange()] + [val[1] for i in self.trange()] + [val[2] for i in self.prange()]
+
+		return g
 

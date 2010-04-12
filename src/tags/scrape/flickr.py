@@ -387,13 +387,12 @@ class FlickrSample():
 				prod.initContent(pmap, self.ptdb)
 				prod.inferScores()
 				prod.representatives(tag=True, doc=(not tag_reps_only))
-			except:
-				LOG.error("Error generating Producer %s" % nsid)
+			except Exception, e:
+				LOG.error("Error generating Producer %s: %r" % (nsid, e))
 				LOG.debug("docs: %s" % prod.id_d)
 				LOG.debug("tags: %s" % prod.id_t)
 				raise
 			prdb[nsid] = prod
-			return prod
 		exec_unique(pmap, prdb, run, None, "%s db: producers" % name, LOG.info)
 
 
@@ -409,7 +408,6 @@ class FlickrSample():
 			prodmap = dict((rnsid, self.inferProdArc(prod, self.phdb[rnsid])) for rnsid in self.inferRelProds(prod))
 			prod.initProdArcs(prodmap)
 			self.phdb[nsid] = prod
-			return prod
 		exec_unique(self.phdb.iteritems(), lambda (nsid, prod): prod.base_p is not None,
 		  run, None, "%s db: relations" % name, LOG.info)
 
@@ -514,22 +512,30 @@ class FlickrSample():
 		# generate docsets for new producers
 		sprd = self.selectCommunities()
 		pmap = dict(("%04d" % i, set(chain(*(self.ppdb[self.prodgr.vs[p]["id"]] for p in pset)))) for i, pset in enumerate(sprd))
+		# FIXME NOW atm this generates too many representative tags
 		self.generateProducers(pmap, self.pgdb, name, tag_reps_only=True)
 
-		id_p = dict(("%04d" % i, i) for i in xrange(0, len(sprd)))
+		# FIXME NOW atm this creates too many arcs
 		edges, arc_a = infer_arcs(sprd, len(self.prodgr.vs))
+
+		id_p = dict(("%04d" % i, i) for i in xrange(0, len(sprd)))
 		self.sprdgr = Graph(len(sprd), list(edges), directed=True,
 		  vertex_attrs={"id":list("%04d" % i for i in xrange(0, len(sprd))), "label":[len(com) for com in sprd]})
 		g = self.sprdgr
 		#g.write_dot("sprdgr.dot")
 		#g.write("sprdgr.graphml")
+		LOG.info("%s db: generated producer graph" % name)
 
 		# generate content arcs between producers
+		import gc
+		gc.set_debug(gc.DEBUG_LEAK)
 		def run((nsid, prod)):
 			prodmap = dict((rnsid, self.inferProdArc(prod, self.pgdb[rnsid])) for rnsid in g.vs.select(g.successors(id_p[nsid]))["id"])
+			self.pgdb.sync()
 			prod.initProdArcs(prodmap)
+			del prodmap
+			gc.collect()
 			self.pgdb[nsid] = prod
-			return prod
 		exec_unique(self.pgdb.iteritems(), lambda (nsid, prod): prod.base_p is not None,
 		  run, None, "%s db: relations" % name, LOG.info)
 

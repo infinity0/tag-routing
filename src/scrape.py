@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
 import sys, logging, code
 from time import time, ctime
@@ -129,9 +130,13 @@ class Scraper():
 	def db(self, suffix, writeback=False):
 		dbf = "%s/%s.%s.db" % (self.dbp, self.out, suffix)
 		try:
+			#if writeback:
 			from shelve import BsdDbShelf
 			from bsddb import btopen
 			db = BsdDbShelf(btopen(dbf), writeback=writeback)
+			#else:
+			#	import bsddb.dbshelve, bsddb.db
+			#	db = bsddb.dbshelve.open(dbf, filetype=bsddb.db.DB_BTREE)
 		except Exception:
 			import shelve
 			db = shelve.open(dbf, writeback=writeback)
@@ -256,12 +261,11 @@ class Scraper():
 
 if __name__ == "__main__":
 
-	from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
+	from optparse import OptionParser
 	config = OptionParser(
 	  usage = "Usage: %prog [OPTIONS] [ROUND] [ARGS|help]",
 	  description = "Scrapes data from flickr. ROUND is one of: %s." % ", ".join(Scraper.roundlist),
 	  version = VERSION,
-	  formatter = IndentedHelpFormatter(max_help_position=25)
 	)
 
 	config.add_option("-o", "--output", type="string", metavar="OUTPUT", default="scrape",

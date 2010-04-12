@@ -1,0 +1,56 @@
+#!/usr/bin/python
+# Released under GPLv2 or later. See http://www.gnu.org/ for details.
+
+import sys, os
+from subprocess import call
+from igraph import Graph
+
+def graph2svg(gfn, epsilon=0, keep=False, verbose=False, scale=False):
+	g = Graph.Read(gfn)
+	g["overlap"] = "scale" if scale else "false"
+	g["epsilon"] = epsilon
+	ofn = "%s.dot" % gfn
+	g.write(ofn)
+	patch_igraph_dot_output(ofn)
+
+	cmd = ["neato", "-Tsvg"]
+	if verbose: cmd.append("-v")
+	cmd.extend(["-o", "%s.svg" % gfn, ofn])
+	call(cmd)
+
+	if not keep:
+		os.remove(ofn)
+
+
+def patch_igraph_dot_output(fn):
+	with open(fn) as fp:
+		lines = fp.readlines()
+	with open(fn, 'w') as fp:
+		for line in lines:
+			fp.write(line.replace(r"\\n", r"\n").replace('=graph', '="graph"').replace('=edge', '="edge"'))
+
+
+if __name__ == "__main__":
+
+	from optparse import OptionParser
+	config = OptionParser(
+	  usage = "Usage: %prog [OPTIONS] [FILES]",
+	  description = "reads graphs in various formats and outputs it in SVG using the neato layout algorithm",
+	)
+
+	config.add_option("-k", "--keep", action="store_true", dest="keep",
+	  help = "Keep intermediate files (eg. dot files).")
+	config.add_option("-e", "--epsilon", type="float", metavar="epsilon", default=0,
+	  help = "epsilon for neato layout algorithm. higher is quicker but less accurate")
+	config.add_option("-s", "--scale", action="store_true", dest="scale",
+	  help = "use scaling instead of Voroni to make sure nodes don't overlap")
+	config.add_option("-v", "--verbose", action="store_true", dest="verbose",
+	  help = "Output more information")
+
+	(opts, args) = config.parse_args()
+
+	#print opts, args
+
+	for gfn in args:
+		graph2svg(gfn, **opts.__dict__)
+

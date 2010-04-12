@@ -231,19 +231,19 @@ def edge_array(items, attr=None, inverse=False):
 	return (arc_s, arc_t, edges) if attr is None else (arc_s, arc_t, edges, array(attr))
 
 
-def infer_arcs(mem, items, inverse=False):
+def infer_arcs(mem, total, inverse=False):
 	"""
 	Return a list of directed weighted edges between related sets. A source set
 	is "related to" a target set if their intersection is significantly better
-	than expected of a random target set of the same size. (Note that this
-	relationship is asymmetric.)
+	than expected of a random target set of the same size. (Note that this is
+	asymmetric.)
 
 	@param mem: [[item]] - list of item-sets
-	@param items: number of possible items; this is assumed to be correct
+	@param total: number of possible items; this is assumed to be correct
 	@param inverse: whether to return the inverse relationship
 	@return: iterable of ((source index, target index), arc weight)
 	"""
-	r = items**0.5 if items > 0 else 0 # FIXME LOW hack, if items == 0 then mlen must be 0
+	r = total**0.5 if total > 0 else 0 # FIXME LOW hack, if items == 0 then mlen must be 0
 	mlen = len(mem)
 	arc_s, arc_t, edges, arc_a = edge_array(mlen, 'd', inverse)
 
