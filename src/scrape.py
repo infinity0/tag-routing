@@ -59,7 +59,7 @@ def main(round, *args, **kwargs):
 			rinfo = Scraper.rounds[round]
 			print >>sys.stderr, fmt_pydoc(f.__doc__)
 			print >>sys.stderr, "These rounds must already have been executed: %s" % ", ".join(rinfo.dep)
-			print >>sys.stderr, "These files will be written to: %s" % ", ".join("%s%s" % (kwargs["output"], ext) for ext in rinfo.out)
+			print >>sys.stderr, "These files will be written to: %s" % ", ".join("%s.%s" % (kwargs["output"], ext) for ext in rinfo.out)
 			return 0
 
 		else:
@@ -81,14 +81,13 @@ class Round():
 class Scraper():
 
 	_rounds = [
-		("social", Round("Scraping social network", [], [".soc.graphml", ".soc.dot"])),
-		("group", Round("Scraping groups", ["social"], [".gu.dict"])),
-		("photo", Round("Scraping photos", ["group"], [".pp.db"]+[".gu.dict"]+[".soc.graphml", ".soc.dot"])),
-		("invert", Round("Inverting producer mapping", ["photo"], [".pc.db"])),
-		("tag", Round("Scraping tags", ["photo"], [".pt.db"])),
-		("producer", Round("Generating producers", ["tag"], [".pd.db"])),
-		("cluster", Round("Scraping clusters", ["tag"], [".tc.db"])),
-		("generate", Round("Generating data", [])),
+		("social", Round("Scraping social network", [], ["soc.graphml", "soc.dot"])),
+		("group", Round("Scraping groups", ["social"], ["gu.dict"])),
+		("photo", Round("Scraping photos", ["group"], ["pp.db"]+["gu.dict"]+["soc.graphml", "soc.dot"])),
+		("invert", Round("Inverting producer mapping", ["photo"], ["pc.db"])),
+		("tag", Round("Scraping tags", ["photo"], ["pt.db"])),
+		("cluster", Round("Scraping clusters", ["tag"], ["tc.db"])),
+		("generate", Round("Generating data", ["ph.db", "pg.db"])),
 	]
 	rounds = dict(_rounds)
 	roundlist = [k for k, r in _rounds]
@@ -220,19 +219,6 @@ class Scraper():
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
 
-	def round_producer(self):
-		"""
-		Generate producers from the collected photos and tags.
-		"""
-		ppdb = self.db("pp")
-		ptdb = self.db("pt")
-		pddb = self.db("pd")
-
-		self.ff.generateProducers(ppdb, ptdb, pddb)
-
-		if self.interact: code.interact(banner=self.banner, local=locals())
-
-
 	def round_cluster(self):
 		"""
 		Scrape clusters of the collected tags.
@@ -253,13 +239,17 @@ class Scraper():
 		socgr = Graph.Read(self.infp("soc.graphml"))
 		gumap = dict_load(self.infp("gu.dict"))
 
+		ppdb = self.db("pp")
 		pcdb = self.db("pc")
+		ptdb = self.db("pt")
 		tcdb = self.db("tc")
-		pddb = self.db("pd")
 
-		ss = FlickrSample(socgr, gumap, pcdb, tcdb, pddb)
-		ss.generate()
-		ss.generateSuperProducers()
+		phdb = self.db("ph")
+		pgdb = self.db("pg")
+
+		ss = FlickrSample(socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, pgdb)
+		ss.generateIndexes()
+		ss.generateTGraphs()
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 

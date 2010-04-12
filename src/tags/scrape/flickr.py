@@ -11,19 +11,16 @@ from httplib import HTTPConnection, ImproperConnectionState, HTTPException
 from xml.etree.ElementTree import dump
 
 from flickrapi import FlickrAPI, FlickrError
-from futures import ThreadPoolExecutor
 from igraph import Graph
 
 from tags.scrape.object import Node, NodeSample, Producer
 from tags.scrape.util import (StateError, intern_force, infer_arcs, repr_call,
-  enumerate_cb, union_ind, geo_prog_range, invert_seq, edge_array, graph_copy,
-  undirect_and_simplify)
+  enumerate_cb, exec_unique, union_ind, geo_prog_range, invert_seq, edge_array,
+  graph_copy, undirect_and_simplify)
 
 
 LOG = logging.getLogger(__name__)
 LOG.setLevel(1)
-
-DEFAULT_CONC_MAX = 36
 
 
 class SafeFlickrAPI(FlickrAPI):
@@ -146,7 +143,7 @@ class SafeFlickrAPI(FlickrAPI):
 		return s
 
 
-	def scrapeGroups(self, users, conc_m=DEFAULT_CONC_MAX):
+	def scrapeGroups(self, users):
 		"""
 		Scrapes all groups of the given users.
 
@@ -166,7 +163,7 @@ class SafeFlickrAPI(FlickrAPI):
 				else:
 					gumap[gid].append(nsid)
 
-		self.execAllUnique(users, gumap, "gid sample db", run, post, conc_m)
+		exec_unique(users, gumap, run, post, "gid sample db", LOG.info)
 		return gumap
 
 
@@ -190,34 +187,7 @@ class SafeFlickrAPI(FlickrAPI):
 		return spmap
 
 
-	def execAllUnique(self, items, done, name, run, post, conc_m=DEFAULT_CONC_MAX, assume_unique=False):
-		"""
-		Gets the tags of all the given photos and saves these to a database
-
-		@param items: a list of items
-		@param done: a collection of done items (can be a database or dict)
-		@param name: name of the batch, used in logging messages
-		@param run: job for worker threads; takes (item) parameter
-		@param post: job for main thread; takes (item, i, res) parameters
-		@param conc_m: max concurrent worker threads to run
-		@param assume_unique: whether to assume <item> is unique
-		"""
-		if not assume_unique and type(items) != set and type(items) != dict:
-			items = set(items)
-		tasks = [partial(lambda it: (it, run(it)), it) for it in items if it not in done]
-		total = len(tasks)
-		LOG.info("%s: %s submitted, %s accepted" % (name, len(items), total))
-
-		i = -1
-		with ThreadPoolExecutor(max_threads=conc_m) as x:
-			for i, (it, res) in enumerate_cb(x.run_to_results_any(tasks),
-			  LOG.info, "%s: %%(i1)s/%s %%(it)s" % (name, total), expected_length=total):
-				post(it, i, res)
-
-		LOG.info("%s: %s submitted, %s accepted, %s completed" % (name, len(items), total, (i+1)))
-
-
-	def commitPhotoTags(self, photos, ptdb, conc_m=DEFAULT_CONC_MAX):
+	def commitPhotoTags(self, photos, ptdb):
 		"""
 		Gets the tags of the given photos and saves these to a database
 
@@ -233,10 +203,10 @@ class SafeFlickrAPI(FlickrAPI):
 			# filter out "machine-tags"
 			ptdb[phid] = [intern_force(tag.text) for tag in tags if tag.text and ":" not in tag.text]
 
-		self.execAllUnique(photos, ptdb, "photo-tag db", run, post, conc_m)
+		exec_unique(photos, ptdb, run, post, "photo-tag db", LOG.info)
 
 
-	def commitUserPhotos(self, users, ppdb, conc_m=DEFAULT_CONC_MAX):
+	def commitUserPhotos(self, users, ppdb):
 		"""
 		Gets the photos of the given users and saves these to a database
 
@@ -257,10 +227,10 @@ class SafeFlickrAPI(FlickrAPI):
 				LOG.info("producer db (user): got %s photos for user %s" % (len(photos), nsid))
 			ppdb[nsid] = photos
 
-		self.execAllUnique(users, ppdb, "producer db (user)", run, post, conc_m)
+		exec_unique(users, ppdb, run, post, "producer db (user)", LOG.info)
 
 
-	def commitGroupPhotos(self, gumap, ppdb, conc_m=DEFAULT_CONC_MAX):
+	def commitGroupPhotos(self, gumap, ppdb):
 		"""
 		Gets the photos of the given pools and saves these to a database
 
@@ -283,7 +253,7 @@ class SafeFlickrAPI(FlickrAPI):
 				LOG.info("producer db (group): got %s photos for group %s" % (len(photos), gid))
 			ppdb[gid] = [p.get("id") for p in photos]
 
-		self.execAllUnique(gumap, ppdb, "producer db (group)", run, post, conc_m)
+		exec_unique(gumap, ppdb, run, post, "producer db (group)", LOG.info)
 
 
 	def pruneProducers(self, socgr, gumap, ppdb, cutoff=1):
@@ -322,7 +292,7 @@ class SafeFlickrAPI(FlickrAPI):
 		LOG.info("producer db: pruned %s users, %s groups" % (len(delu), len(delg)))
 
 
-	def invertProducerMap(self, ppdb, pcdb, conc_m=DEFAULT_CONC_MAX):
+	def invertProducerMap(self, ppdb, pcdb):
 		"""
 		Calculates an inverse map from the given producer-photo database.
 
@@ -347,7 +317,7 @@ class SafeFlickrAPI(FlickrAPI):
 		LOG.info("context db: inverted %s producers to %s photos" % (len(ppdb), len(pcdb)))
 
 
-	def commitTagClusters(self, tags, tcdb, conc_m=DEFAULT_CONC_MAX):
+	def commitTagClusters(self, tags, tcdb):
 		"""
 		Gets the clusters of all the given tags and saves these to a database
 
@@ -370,178 +340,96 @@ class SafeFlickrAPI(FlickrAPI):
 		def post(tag, i, clusters):
 			tcdb[tag] = [[intern_force(t.text) for t in cluster.getchildren()] for cluster in clusters]
 
-		self.execAllUnique(tags, tcdb, "cluster db", run, post, conc_m)
-
-
-	def generateProducers(self, ppdb, ptdb, pddb):
-		"""
-		Generate producer objects from the given data sets.
-
-		@param ppdb: an open database of {producer:[photo]}
-		@param ptdb: an open database of {photo:[tag]}
-		@param pddb: an open database of {producer:Producer}
-		"""
-		name = "Producer db"
-		total = len(ppdb)
-
-		for i, nsid in enumerate_cb(ppdb.iterkeys(),
-		  LOG.info, "%s: %%(i1)s/%s %%(it)s" % (name, total), expected_length=total):
-			prod = Producer(nsid)
-			try:
-				prod.initContent(ppdb, ptdb)
-				prod.inferScores()
-				prod.representatives()
-			except:
-				LOG.error("Error generating Producer %s" % nsid)
-				LOG.error("docs: %s" % prod.id_d)
-				LOG.error("tags: %s" % prod.id_t)
-				raise
-			pddb[nsid] = prod
-
-		LOG.info("%s: generated %s Producer objects" % (name, len(ppdb)))
-
+		exec_unique(tags, tcdb, run, post, "cluster db", LOG.info)
 
 
 class FlickrSample():
 
 
-	def __init__(self, socgr, gumap, pcdb, tcdb, pddb):
+	def __init__(self, socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, pgdb):
 		"""
 		Create a new FlickrSample from the given arguments
 
 		@param socgr: social network graph
 		@param gumap: {group:[user]} map
+		@param ppdb: an open database of {producer:[photo]}
 		@param pcdb: an open database of {photo:[producer]}
+		@param ptdb: an open database of {photo:[tag]}
 		@param tcdb: an open database of {tag:[cluster]}
-		@param pddb: an open database of {producer:Producer}
+		@param phdb: an open database of {nsid:Producer} (for indexes)
+		@param pgdb: an open database of {prid:Producer} (for tgraphs)
 		"""
 		self.socgr = socgr
 		self.gumap = gumap
+		self.ppdb = ppdb
 		self.pcdb = pcdb
+		self.ptdb = ptdb
 		self.tcdb = tcdb
-		self.pddb = pddb
+		self.phdb = phdb
+		self.pgdb = pgdb
 
 		self.prodgr = None
 		self.sprdgr = None
 
 
-	def generate(self):
+	def generateProducers(self, pmap, prdb, name, tag_reps_only=False):
+		"""
+		Generate producer objects from the given data sets.
 
-		name = "Producer db"
-		total = len(self.pddb)
+		@param pmap: a map of {producer:[photo]}
+		@param prdb: an open database of {producer:Producer}
+		@param tag_reps_only: only generate representative tags; this speeds
+		       things up if representative docs aren't needed
+		"""
+		def run(nsid):
+			prod = Producer(nsid)
+			try:
+				prod.initContent(pmap, self.ptdb)
+				prod.inferScores()
+				prod.representatives(tag=True, doc=(not tag_reps_only))
+			except:
+				LOG.error("Error generating Producer %s" % nsid)
+				LOG.debug("docs: %s" % prod.id_d)
+				LOG.debug("tags: %s" % prod.id_t)
+				raise
+			prdb[nsid] = prod
+			return prod
+		exec_unique(pmap, prdb, run, None, "%s db: producers" % name, LOG.info)
 
-		id_p = {}
-		lab_p = []
+
+	def generateIndexes(self):
+
+		name = "indexes"
+
+		# generate Producer objects
+		self.generateProducers(self.ppdb, self.phdb, name)
 
 		# generate content arcs between producers
-		for i, (nsid, prod) in enumerate_cb(self.pddb.iteritems(),
-		  LOG.info, "%s: %%(i1)s/%s %%(it)s" % (name , total), expected_length=total):
-			# for each "related" producer, infer some tags to link to it with
-			if not prod.base_p:
-				prodmap = dict((rnsid, self.inferProdArc(prod, self.pddb[rnsid])) for rnsid in self.inferRelProds(prod))
-				prod.initProdArcs(prodmap)
-				self.pddb[nsid] = prod
-			id_p[nsid] = i
-			lab_p.append("%s\\n%s" % (prod.size(), '\\n'.join(prod.rep_t[0:4])))
+		def run((nsid, prod)):
+			prodmap = dict((rnsid, self.inferProdArc(prod, self.phdb[rnsid])) for rnsid in self.inferRelProds(prod))
+			prod.initProdArcs(prodmap)
+			self.phdb[nsid] = prod
+			return prod
+		exec_unique(self.phdb.iteritems(), lambda (nsid, prod): prod.base_p is not None,
+		  run, None, "%s db: relations" % name, LOG.info)
+
+		total = len(self.phdb)
+		lab_p, id_p = zip(*(("%s\\n%s" % (prod.size(), '\\n'.join(prod.rep_t[0:4])),
+		  (nsid, i)) for i, (nsid, prod) in enumerate(self.phdb.iteritems()))) if self.phdb else ([], [])
+		id_p = dict(id_p)
 
 		# generate producer graph
 		arc_s, arc_t, edges = edge_array(total)
-		for i, prod in enumerate(self.pddb.itervalues()):
+		for i, prod in enumerate(self.phdb.itervalues()):
 			for nsid in prod.docgr.vs.select(prod.prange())["id"]:
 				arc_s.append(i)
 				arc_t.append(id_p[nsid])
 
-		sz = [log(prod.size()) for prod in self.pddb.itervalues()]
-		v_attr = {"id": list(self.pddb.iterkeys()), "label": lab_p, "height": sz, "width": sz}
+		sz = [log(prod.size()) for prod in self.phdb.itervalues()]
+		v_attr = {"id": list(self.phdb.iterkeys()), "label": lab_p, "height": sz, "width": sz}
 
 		self.prodgr = Graph(total, edges=list(edges), directed=True, vertex_attrs=v_attr)
-
-
-	def generateSuperProducers(self):
-		"""
-		Generate a set of super-producers.
-
-		This implementation uses various community detection algorithms on the
-		underlying producer-graph and generates producers from these.
-		"""
-		# TODO NORM
-		#Given a graph of producers, generate superproducers following a power-law
-		#distribution
-		#- then make social links between these supergroups and the normal groups
-		#- TODO HOW??
-
-		sprod = set()
-
-		'''
-		# adds communities generated with "label propagation" until no new
-		# communities are generated for 3 rounds in a row. this is shit because
-		# it'll generate a lot of similar (ie. redundant) communities with size
-		# in the midrange
-		unchanged = 0
-		while unchanged < 3:
-			mem = self.prodgr.community_label_propagation().membership
-			coms = list(frozenset(community) for community in invert_seq(mem).itervalues())
-			unchanged = unchanged+1 if all(com in sprod for com in coms) else 0
-			sprod.update(coms)
-		'''
-
-		'''
-		# aggregate communities using "label propagation" algorithm
-		# currently this segfaults, igraph bug.
-		# also maybe do this several times and generate several aggregates
-		mem = self.prodgr.community_label_propagation().membership
-		agg = []
-		agg.append(self.prodgr.community_label_propagation().membership)
-		agg.append(self.prodgr.community_label_propagation().membership)
-		lll = zip(*agg)
-		ddd = dict((o, i) for i, o in enumerate(set(lll)))
-		self.prodgr.community_label_propagation(initial=[ddd[o] for o in lll])
-		'''
-
-		# select communities from dendrograms generated by a bunch of algorithms
-		dgrams = [
-		  undirect_and_simplify(self.prodgr).community_fastgreedy(),
-		  self.prodgr.community_edge_betweenness(directed=True),
-		]
-		gg = undirect_and_simplify(self.prodgr)
-		gg.delete_vertices(gg.vs.select(_degree=0)) # walktrap impl can't handle islands
-		dgrams.append(gg.community_walktrap())
-
-		def int_unique(flseq):
-			"""
-			Turns a sorted list of floats into a sorted list of unique ints
-			"""
-			it = iter(flseq)
-			o = round(it.next())
-			yield int(o)
-
-			while True:
-				i = round(it.next())
-				if i != o:
-					yield int(i)
-				o = i
-
-		from igraph.core import InternalError
-		from igraph.statistics import power_law_fit
-		ratio = power_law_fit([prod.size() for prod in self.pddb.itervalues()], 6)
-
-		for vxd in dgrams:
-			default_cut = len(vxd)
-			for n in int_unique(geo_prog_range(2, len(gg.vs)/4, ratio, default_cut)):
-				try:
-					mem = vxd.cut(n)
-				except InternalError:
-					continue
-				sprod.update(frozenset(community) for community in invert_seq(mem).itervalues())
-
-		sprod = [com for com in sprod if len(com) > len(self.prodgr.vs)**0.5]
-		print sorted(len(com) for com in sprod)
-		print power_law_fit(sorted(len(com) for com in sprod), 4)
-
-		edges, arc_a = infer_arcs(sprod, len(self.prodgr.vs))
-		self.sprdgr = Graph(len(sprod), list(edges), directed=True, vertex_attrs={"label":[len(com) for com in sprod]})
-		#g.write_dot("sprdgr.dot")
-		#g.write("sprdgr.graphml")
+		LOG.info("%s db: generated producer graph" % name)
 
 
 	def inferRelProds(self, prod):
@@ -617,6 +505,106 @@ class FlickrSample():
 
 		# FIXME HIGH rethink whether these weights are theoretically sound
 		return tags, dict((tag, union_ind(*attrs)) for tag, attrs in hitags.iteritems())
+
+
+	def generateTGraphs(self):
+
+		name = "tgraphs"
+
+		# generate docsets for new producers
+		sprd = self.selectCommunities()
+		pmap = dict(("%04d" % i, set(chain(*(self.ppdb[self.prodgr.vs[p]["id"]] for p in pset)))) for i, pset in enumerate(sprd))
+		self.generateProducers(pmap, self.pgdb, name, tag_reps_only=True)
+
+		id_p = dict(("%04d" % i, i) for i in xrange(0, len(sprd)))
+		edges, arc_a = infer_arcs(sprd, len(self.prodgr.vs))
+		self.sprdgr = Graph(len(sprd), list(edges), directed=True,
+		  vertex_attrs={"id":list("%04d" % i for i in xrange(0, len(sprd))), "label":[len(com) for com in sprd]})
+		g = self.sprdgr
+		#g.write_dot("sprdgr.dot")
+		#g.write("sprdgr.graphml")
+
+		# generate content arcs between producers
+		def run((nsid, prod)):
+			prodmap = dict((rnsid, self.inferProdArc(prod, self.pgdb[rnsid])) for rnsid in g.vs.select(g.successors(id_p[nsid]))["id"])
+			prod.initProdArcs(prodmap)
+			self.pgdb[nsid] = prod
+			return prod
+		exec_unique(self.pgdb.iteritems(), lambda (nsid, prod): prod.base_p is not None,
+		  run, None, "%s db: relations" % name, LOG.info)
+
+
+	def selectCommunities(self):
+		"""
+		Generates a bunch of communities using various community detection
+		algorithms on the underlying producer graph, and selects the non-tiny
+		ones.
+		"""
+		comm = set()
+
+		'''
+		# adds communities generated with "label propagation" until no new
+		# communities are generated for 3 rounds in a row. this is shit because
+		# it'll generate a lot of similar (ie. redundant) communities with size
+		# in the midrange
+		unchanged = 0
+		while unchanged < 3:
+			mem = self.prodgr.community_label_propagation().membership
+			coms = list(frozenset(community) for community in invert_seq(mem).itervalues())
+			unchanged = unchanged+1 if all(com in comm for com in coms) else 0
+			comm.update(coms)
+		'''
+
+		'''
+		# aggregate communities using "label propagation" algorithm
+		# currently this segfaults, igraph bug.
+		# also maybe do this several times and generate several aggregates
+		mem = self.prodgr.community_label_propagation().membership
+		agg = []
+		agg.append(self.prodgr.community_label_propagation().membership)
+		agg.append(self.prodgr.community_label_propagation().membership)
+		lll = zip(*agg)
+		ddd = dict((o, i) for i, o in enumerate(set(lll)))
+		self.prodgr.community_label_propagation(initial=[ddd[o] for o in lll])
+		'''
+
+		# select communities from dendrograms generated by a bunch of algorithms
+		dgrams = [
+		  undirect_and_simplify(self.prodgr).community_fastgreedy(),
+		  self.prodgr.community_edge_betweenness(directed=True),
+		]
+		gg = undirect_and_simplify(self.prodgr)
+		gg.delete_vertices(gg.vs.select(_degree=0)) # walktrap impl can't handle islands
+		dgrams.append(gg.community_walktrap())
+
+		def int_unique(flseq):
+			"""
+			Turns a sorted list of floats into a sorted list of unique ints
+			"""
+			it = iter(flseq)
+			o = round(it.next())
+			yield int(o)
+
+			while True:
+				i = round(it.next())
+				if i != o:
+					yield int(i)
+				o = i
+
+		from igraph.core import InternalError
+		from igraph.statistics import power_law_fit
+		ratio = power_law_fit([prod.size() for prod in self.phdb.itervalues()], 6)
+
+		for vxd in dgrams:
+			default_cut = len(vxd)
+			for n in int_unique(geo_prog_range(2, len(gg.vs)/4, ratio, default_cut)):
+				try:
+					mem = vxd.cut(n)
+				except InternalError:
+					continue
+				comm.update(frozenset(community) for community in invert_seq(mem).itervalues())
+
+		return [com for com in comm if len(com) > len(self.prodgr.vs)**0.5]
 
 
 	def createAllObjects(self): #producer_graph

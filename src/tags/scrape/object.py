@@ -93,7 +93,7 @@ class NodeSample():
 			attr_cb = lambda id: node_attr
 
 		# init nodes
-		v_id, v_attr, idmap = zip(*((id, node.attr, (id, i)) for i, (id, node) in enumerate(self._node.iteritems()))) if len(self._node) > 0 else ([], [], [])
+		v_id, v_attr, idmap = zip(*((id, node.attr, (id, i)) for i, (id, node) in enumerate(self._node.iteritems()))) if self._node else ([], [], [])
 		v_id, v_attr = list(v_id), list(v_attr)
 		self.idmap = dict(idmap)
 		self.order = j = len(self._node)
@@ -314,6 +314,9 @@ class Producer():
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
 
+		if self.base_p is not None:
+			raise StateError("initProdArcs already called")
+
 		g = self.docgr
 
 		# doc-tag weight is P(t|d)
@@ -380,11 +383,15 @@ class Producer():
 			print >>fp, ""
 
 
-	def representatives(self):
+	def representatives(self, doc=False, tag=False):
 		"""
 		Generates a set of representative ([doc], [tag]) for this producer.
 
+		If neither parameter is given, assumes both are True.
+
 		DOCUMENT more detail
+		@param doc: whether to generate representative docs (default False)
+		@param tag: whether to generate representative tags (default False)
 		"""
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
@@ -392,18 +399,25 @@ class Producer():
 		if "score" not in self.docgr.vs.attribute_names():
 			raise StateError("inferScores not called yet")
 
+		if self.base_p is not None:
+			raise StateError("initProdArcs already called")
+
+		if not doc and not tag:
+			doc, tag = True, True
+
 		g = self.docgr
 
-		cand_t = dict((g.vs[id][NID], (g.vs[id]["score"], g.successors(id))) for id in self.trange())
-		items_t = self.drange()
-		rep_t = representatives(cand_t, items_t, prop=0.25, thres=0.5, cover=1)
+		if tag:
+			cand_t = dict((g.vs[id][NID], (g.vs[id]["score"], g.successors(id))) for id in self.trange())
+			items_t = self.drange()
+			rep_t = representatives(cand_t, items_t, prop=0.25, thres=0.5, cover=1)
+			self.rep_t = rep_t[0]
 
-		cand_d = dict((g.vs[id][NID], (g.vs[id]["score"], g.predecessors(id))) for id in self.drange())
-		items_d = self.trange()
-		rep_d = representatives(cand_d, items_d, prop=0.25, thres=0.96, cover=1)
-
-		self.rep_d = rep_d[0]
-		self.rep_t = rep_t[0]
+		if doc:
+			cand_d = dict((g.vs[id][NID], (g.vs[id]["score"], g.predecessors(id))) for id in self.drange())
+			items_d = self.trange()
+			rep_d = representatives(cand_d, items_d, prop=0.25, thres=0.96, cover=1)
+			self.rep_d = rep_d[0]
 
 
 	def tagScores(self, tags):
@@ -426,7 +440,7 @@ class Producer():
 		"""
 		Initialises the doc-tag graph with the given prod<-tag arcs
 
-		@param prodmap: {pid:{tag:attr}} map
+		@param prodmap: {nsid:{tag:attr}} map
 		"""
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
