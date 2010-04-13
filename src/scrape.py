@@ -71,7 +71,7 @@ def main(round, *args, **kwargs):
 			return ret
 
 
-class Round():
+class Round(object):
 
 	def __init__(self, desc, dep=[], out=[]):
 		self.desc = desc
@@ -79,7 +79,7 @@ class Round():
 		self.out = out
 
 
-class Scraper():
+class Scraper(object):
 
 	_rounds = [
 		("social", Round("Scraping social network", [], ["soc.graphml", "soc.dot"])),

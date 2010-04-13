@@ -124,12 +124,16 @@ def iterconverge(func, range=(-FLOAT.max, FLOAT.max), init=None, eps=FLOAT.epsil
 # Data structures, collections
 ###############################################################################
 
+from math import log
 from random import random
 from array import array
 from igraph import Graph
 
 
-class azip():
+class azip(object):
+
+	__slots__ = ["args"]
+
 
 	def __init__(self, *args):
 		self.args = args
@@ -143,12 +147,24 @@ class azip():
 
 class lazydict(dict):
 
+	__slots__ = []
+
 	def __getitem__(self, key):
 		val = dict.__getitem__(self, key)
 		if callable(val):
 			val = val()
 			self[key] = val
 		return val
+
+	def eval_all(self):
+		for k in self:
+			self.__getitem__(k)
+
+	def __reduce_ex__(self, proto):
+		# needed so pickle works properly
+		self.eval_all()
+		return dict.__reduce_ex__(self, proto)
+
 
 
 def choice_dist(dist, total=None):
@@ -231,7 +247,7 @@ def edge_array(items, attr=None, inverse=False):
 	return (arc_s, arc_t, edges) if attr is None else (arc_s, arc_t, edges, array(attr))
 
 
-def infer_arcs(mem, total, inverse=False):
+def infer_arcs(mem, total, inverse=False, ratio=None):
 	"""
 	Return a list of directed weighted edges between related sets. A source set
 	is "related to" a target set if their intersection is significantly better
@@ -241,9 +257,15 @@ def infer_arcs(mem, total, inverse=False):
 	@param mem: [[item]] - list of item-sets
 	@param total: number of possible items; this is assumed to be correct
 	@param inverse: whether to return the inverse relationship
+	@param ratio: minimum ratio of (subject node):(intersection) at which to
+	       infer the existence of arcs; by default this is log(1+total)
 	@return: iterable of ((source index, target index), arc weight)
 	"""
-	r = total**0.5 if total > 0 else 0 # FIXME LOW hack, if items == 0 then mlen must be 0
+	if total < 0:
+		raise ValueError("total must be positive: %s" % total)
+
+	if not ratio:
+		ratio = log(1+total)
 	mlen = len(mem)
 	arc_s, arc_t, edges, arc_a = edge_array(mlen, 'd', inverse)
 
@@ -258,12 +280,11 @@ def infer_arcs(mem, total, inverse=False):
 			imem = set(smem) & set(tmem)
 			ilen = len(imem)
 			if ilen == 0: continue
-			rilen = r*ilen
+			rilen = ratio*ilen
 
-			# keep arc only if (significantly) better than independent intersection
-			# ie. intersect/total >> r * source/total * target/total
+			# keep arc only if intersection is big enough
 
-			#a = ilen/float(slen) # don't use this since graph is not dense and * faster than /
+			#a = ilen/float(slen) # don't use this since (assume) graph is not dense and * faster than /
 			#if a > r:
 			if rilen > slen:
 				arc_s.append(sid)

@@ -14,7 +14,7 @@ NAT = "height" # label for node attribute in graphs
 AAT = "weight" # label for arc attribute in graphs
 
 
-class NodeSample():
+class NodeSample(object):
 
 
 	def __init__(self, f=None):
@@ -148,7 +148,10 @@ class NodeSample():
 		return self.graph
 
 
-class Node():
+
+class Node(object):
+
+	__slots__ = ["id", "out", "attr"]
 
 
 	def __init__(self, id, out, attr=None):
@@ -162,7 +165,21 @@ class Node():
 		self.attr = attr
 
 
-class Producer():
+	def __getstate__(self):
+		return (self.id, self.out, self.attr)
+
+
+	def __setstate__(self, state):
+		(self.id, self.out, self.attr) = state
+
+
+
+class Producer(object):
+
+	__slots__ = ["nsid", "docgr", "id_d", "id_t", "id_p",
+	  "base_d", "base_t", "base_s", "base_p",
+	  "rep_d", "rpp_d", "rep_t", "rpp_t",
+	]
 
 
 	def __init__(self, nsid):
@@ -170,8 +187,6 @@ class Producer():
 		Creates a new producer
 		"""
 		self.nsid = nsid
-		self.prodgr = None
-		self.vid = None
 
 		self.docgr = None
 		self.id_d = None # {doc:vid}
@@ -184,41 +199,35 @@ class Producer():
 		self.base_p = None # first producer id
 
 		self.rep_d = None # representative docs
+		self.rpp_d = None # representative docs
 		self.rep_t = None # representative tags
-
-		# OPT HIGH move all of these into a "graph" instance
-		self.arc_t = None
+		self.rpp_t = None # representative tags
 
 
-	def attachGraph(self, prodgr=None, vid=None):
-		"""
-		attached to the given graphs. The graphs must
-		contain the given vertex id.
-
-		@param prodgr: producer graph
-		@param vid: vertex id of node in the content graph
-		"""
-		if prodgr.vs[vid][NID] != self.nsid:
-			raise ValueError("nsid in graph doesn't match")
-
-		self.prodgr = prodgr
-		self.vid = vid
+	def __getstate__(self):
+		return (self.nsid, self.docgr, self.id_d, self.id_t, self.id_p,
+		  self.base_d, self.base_t, self.base_s, self.base_p,
+		  self.rep_d, self.rpp_d, self.rep_t, self.rpp_t,
+		)
 
 
-	def initContent(self, dsrc, ptdb):
+	def __setstate__(self, state):
+		(self.nsid, self.docgr, self.id_d, self.id_t, self.id_p,
+		  self.base_d, self.base_t, self.base_s, self.base_p,
+		  self.rep_d, self.rpp_d, self.rep_t, self.rpp_t,
+		) = state
+
+
+	def initContent(self, dset, ptdb):
 		"""
 		Initialises the doc-tag graph from the given document set and the given
 		doc-tag database.
 
-		@param dsrc: A source of documents. This can either be a collection of
-		       documents, or be a map associating the producer's id to such a
-		       collection.
-		@param ptdb: An open database of {doc:[tag]}
+		@param dset: a collection of documents
+		@param ptdb: an open database of {doc:[tag]}
 		"""
 		if self.docgr is not None:
 			raise StateError("initContent already called")
-
-		dset = dsrc[self.nsid] if self.nsid in dsrc else dsrc
 
 		def outdict(doc):
 			tags = ptdb[doc]
@@ -384,15 +393,15 @@ class Producer():
 			print >>fp, ""
 
 
-	def representatives(self, doc=False, tag=False):
+	def repDoc(self, store_res=False, prop=0.25, thres=0.96, cover=1):
 		"""
-		Generates a set of representative ([doc], [tag]) for this producer.
+		Generates a set of representative docs for this producer. The results
+		are stored in self.rep_d and also returned, and the result parameters
+		are stored in self.rpp_d (if <store_res> is True).
 
-		If neither parameter is given, assumes both are True.
+		This method takes the same parameters as representatives()
 
-		DOCUMENT more detail
-		@param doc: whether to generate representative docs (default False)
-		@param tag: whether to generate representative tags (default False)
+		@param store_res: whether to store the result parameters
 		"""
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
@@ -403,22 +412,39 @@ class Producer():
 		if self.base_p is not None:
 			raise StateError("initProdArcs already called")
 
-		if not doc and not tag:
-			doc, tag = True, True
+		g = self.docgr
+		cand = dict((g.vs[id][NID], (g.vs[id]["score"], g.predecessors(id))) for id in self.drange())
+		self.rep_d, rpp_d = representatives(cand, self.trange(), prop, thres, cover)
+		if store_res:
+			self.rpp_d = rpp_d
+		return self.rep_d
+
+
+	def repTag(self, store_res=False, prop=0.25, thres=0.50, cover=1):
+		"""
+		Generates a set of representative tags for this producer. The results
+		are stored in self.rep_t and also returned, and the result parameters
+		are stored in self.rpp_t (if <store_res> is True).
+
+		This method takes the same parameters as representatives()
+
+		@param store_res: whether to store the result parameters
+		"""
+		if self.docgr is None:
+			raise StateError("initContent not called yet")
+
+		if "score" not in self.docgr.vs.attribute_names():
+			raise StateError("inferScores not called yet")
+
+		if self.base_p is not None:
+			raise StateError("initProdArcs already called")
 
 		g = self.docgr
-
-		if tag:
-			cand_t = dict((g.vs[id][NID], (g.vs[id]["score"], g.successors(id))) for id in self.trange())
-			items_t = self.drange()
-			rep_t = representatives(cand_t, items_t, prop=0.25, thres=0.5, cover=1)
-			self.rep_t = rep_t[0]
-
-		if doc:
-			cand_d = dict((g.vs[id][NID], (g.vs[id]["score"], g.predecessors(id))) for id in self.drange())
-			items_d = self.trange()
-			rep_d = representatives(cand_d, items_d, prop=0.25, thres=0.96, cover=1)
-			self.rep_d = rep_d[0]
+		cand = dict((g.vs[id][NID], (g.vs[id]["score"], g.successors(id))) for id in self.trange())
+		self.rep_t, rpp_t = representatives(cand, self.drange(), prop, thres, cover)
+		if store_res:
+			self.rpp_t = rpp_t
+		return self.rep_t
 
 
 	def tagScores(self, tags):
@@ -477,7 +503,7 @@ class Producer():
 		self.docgr.es[eend:][AAT] = e_attr
 
 
-	def createTGraph(self, totalsize, display=False, node_attr={
+	def createTGraph(self, totalsize, pgdb, display=False, node_attr={
 	  "style": ("filled", "filled"),
 	  "fillcolor":("firebrick1", "limegreen"),
 	  "shape":("ellipse","doublecircle"),
@@ -486,6 +512,7 @@ class Producer():
 		Creates a graph representing this producer as a tgraph.
 
 		@param totalsize: total number of photos in the entire world
+		@param pgdb: an open database of {prid:Producer} (for tgraphs)
 		@param display: whether to generate for display (adds attributes to
 		       pretty up the graph)
 		@param node_attr: {attr:(tag,prod)} node attributes for graphviz; each
@@ -496,18 +523,28 @@ class Producer():
 		if self.base_p is None:
 			raise StateError("initProdArcs not yet called")
 
+		# estimate total size from producer's perspective
+		total = geo_mean(self.base_t, totalsize)
+
 		g = graph_copy(self.docgr)
 		del g.vs["score"]
 
-		total = geo_mean(self.base_t, totalsize)
 		mem = [filter(lambda id: id in self.drange(), g.successors(tid)) for tid in self.trange()]
+		n_attr = [len(m)/float(total) for m in mem] + [pgdb[g.vs[pid][NID]].size()/float(total) for pid in self.prange()]
 		edges, arc_a = infer_arcs(mem, total)
 
 		g.delete_vertices(self.drange())
 		g.add_edges(edges)
-
+		g.vs[NAT] = n_attr
 		#assert g.es[-len(edges):][AAT] == [None] * len(edges)
 		g.es[-len(edges):][AAT] = arc_a
+
+		if display:
+			g.vs["label"] = g.vs[NID]
+			del g.vs[NID]
+			for attr, val in node_attr.iteritems():
+				g.vs[attr] = [val[0] for i in self.drange()] + [val[1] for i in self.trange()] + [val[2] for i in self.prange()]
+
 		return g
 
 
@@ -533,8 +570,8 @@ class Producer():
 		del g.vs["score"]
 
 		if display:
-			g.vs["label"] = g.vs["id"]
-			del g.vs["id"]
+			g.vs["label"] = g.vs[NID]
+			del g.vs[NID]
 			for attr, val in node_attr.iteritems():
 				g.vs[attr] = [val[0] for i in self.drange()] + [val[1] for i in self.trange()] + [val[2] for i in self.prange()]
 

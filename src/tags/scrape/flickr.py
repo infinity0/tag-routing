@@ -343,7 +343,7 @@ class SafeFlickrAPI(FlickrAPI):
 		exec_unique(tags, tcdb, run, post, "cluster db", LOG.info)
 
 
-class FlickrSample():
+class FlickrSample(object):
 
 
 	def __init__(self, socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, pgdb):
@@ -372,44 +372,27 @@ class FlickrSample():
 		self.sprdgr = None
 
 
-	def generateProducers(self, pmap, prdb, name, tag_reps_only=False):
-		"""
-		Generate producer objects from the given data sets.
-
-		@param pmap: a map of {producer:[photo]}
-		@param prdb: an open database of {producer:Producer}
-		@param tag_reps_only: only generate representative tags; this speeds
-		       things up if representative docs aren't needed
-		"""
-		def run(nsid):
-			prod = Producer(nsid)
-			try:
-				prod.initContent(pmap, self.ptdb)
-				prod.inferScores()
-				prod.representatives(tag=True, doc=(not tag_reps_only))
-			except Exception, e:
-				LOG.error("Error generating Producer %s: %r" % (nsid, e))
-				LOG.debug("docs: %s" % prod.id_d)
-				LOG.debug("tags: %s" % prod.id_t)
-				raise
-			prdb[nsid] = prod
-		exec_unique(pmap, prdb, run, None, "%s db: producers" % name, LOG.info)
-
-
 	def generateIndexes(self):
 
 		name = "indexes"
 
 		# generate Producer objects
-		self.generateProducers(self.ppdb, self.phdb, name)
+		def run_p(nsid):
+			prod = Producer(nsid)
+			prod.initContent(self.ppdb[nsid], self.ptdb)
+			prod.inferScores()
+			prod.repDoc()
+			prod.repTag()
+			self.phdb[nsid] = prod
+		exec_unique(self.ppdb, self.phdb, run_p, None, "%s db: producers" % name, LOG.info)
 
 		# generate content arcs between producers
-		def run((nsid, prod)):
+		def run_r((nsid, prod)):
 			prodmap = dict((rnsid, self.inferProdArc(prod, self.phdb[rnsid])) for rnsid in self.inferRelProds(prod))
 			prod.initProdArcs(prodmap)
 			self.phdb[nsid] = prod
 		exec_unique(self.phdb.iteritems(), lambda (nsid, prod): prod.base_p is not None,
-		  run, None, "%s db: relations" % name, LOG.info)
+		  run_r, None, "%s db: relations" % name, LOG.info)
 
 		total = len(self.phdb)
 		lab_p, id_p = zip(*(("%s\\n%s" % (prod.size(), '\\n'.join(prod.rep_t[0:4])),
@@ -511,12 +494,17 @@ class FlickrSample():
 
 		# generate docsets for new producers
 		sprd = self.selectCommunities()
-		pmap = dict(("%04d" % i, set(chain(*(self.ppdb[self.prodgr.vs[p]["id"]] for p in pset)))) for i, pset in enumerate(sprd))
-		# FIXME NOW atm this generates too many representative tags
-		self.generateProducers(pmap, self.pgdb, name, tag_reps_only=True)
+		pmap = dict(("%04d" % i, pset) for i, pset in enumerate(sprd))
 
-		# FIXME NOW atm this creates too many arcs
-		edges, arc_a = infer_arcs(sprd, len(self.prodgr.vs))
+		def run_p(nsid):
+			prod = Producer(nsid)
+			prod.initContent(set(chain(*(self.ppdb[self.prodgr.vs[p]["id"]] for p in pmap[nsid]))), self.ptdb)
+			prod.inferScores()
+			prod.repTag(cover=0) # TWEAK
+			self.pgdb[nsid] = prod
+		exec_unique(pmap, self.pgdb, run_p, None, "%s db: producers" % name, LOG.info)
+
+		edges, arc_a = infer_arcs(sprd, len(self.prodgr.vs), ratio=3) # TWEAK
 
 		id_p = dict(("%04d" % i, i) for i in xrange(0, len(sprd)))
 		self.sprdgr = Graph(len(sprd), list(edges), directed=True,
@@ -527,8 +515,9 @@ class FlickrSample():
 		LOG.info("%s db: generated producer graph" % name)
 
 		# generate content arcs between producers
+		# FIXME NOW this still uses up far too much memory :/
 		import gc
-		gc.set_debug(gc.DEBUG_LEAK)
+		#gc.set_debug(gc.DEBUG_LEAK)
 		def run((nsid, prod)):
 			prodmap = dict((rnsid, self.inferProdArc(prod, self.pgdb[rnsid])) for rnsid in g.vs.select(g.successors(id_p[nsid]))["id"])
 			self.pgdb.sync()
