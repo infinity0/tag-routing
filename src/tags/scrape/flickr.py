@@ -694,14 +694,16 @@ class SampleWriter(ProducerSample):
 		def run((nsid, prod)):
 			g = prod.createIndex()
 			g.write(os.path.join(base, "%s.graphml" % nsid))
-		exec_unique(self.phdb.iteritems(), lambda x: False, run, None, "indexes db: object files", LOG.info)
+		exec_unique(self.phdb.iteritems(), lambda (nsid, prod): os.path.exists(os.path.join(base, "%s.graphml" % nsid)),
+		  run, None, "indexes db: object files", LOG.info)
 
 
 	def writeTGraphs(self, base):
 		def run((nsid, prod)):
 			g = prod.createTGraph(self.totalsize, self.pgdb)
 			g.write(os.path.join(base, "%s.graphml" % nsid))
-		exec_unique(self.pgdb.iteritems(), lambda x: False, run, None, "tgraphs db: object files", LOG.info)
+		exec_unique(self.pgdb.iteritems(), lambda (nsid, prod): os.path.exists(os.path.join(base, "%s.graphml" % nsid)),
+		  run, None, "tgraphs db: object files", LOG.info)
 
 
 
