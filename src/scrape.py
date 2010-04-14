@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
-import sys, logging, code
+import sys, logging, code, os
 from time import time, ctime
 from itertools import chain
 
@@ -60,7 +60,7 @@ def main(round, *args, **kwargs):
 			rinfo = Scraper.rounds[round]
 			print >>sys.stderr, fmt_pydoc(f.__doc__)
 			print >>sys.stderr, "These rounds must already have been executed: %s" % ", ".join(rinfo.dep)
-			print >>sys.stderr, "These files will be written to: %s" % ", ".join("%s.%s" % (kwargs["output"], ext) for ext in rinfo.out)
+			print >>sys.stderr, "These files will be written to: %s" % ", ".join(os.path.join(kwargs["basedir"], ext) for ext in rinfo.out)
 			return 0
 
 		else:
@@ -82,9 +82,9 @@ class Round(object):
 class Scraper(object):
 
 	_rounds = [
-		("social", Round("Scraping social network", [], ["soc.graphml", "soc.dot"])),
-		("group", Round("Scraping groups", ["social"], ["gu.dict"])),
-		("photo", Round("Scraping photos", ["group"], ["pp.db"]+["gu.dict"]+["soc.graphml", "soc.dot"])),
+		("social", Round("Scraping social network", [], ["soc.graphml"])),
+		("group", Round("Scraping groups", ["social"], ["gu.map"])),
+		("photo", Round("Scraping photos", ["group"], ["pp.db"]+["gu.map"]+["soc.graphml"])),
 		("invert", Round("Inverting producer mapping", ["photo"], ["pc.db"])),
 		("tag", Round("Scraping tags", ["photo"], ["pt.db"])),
 		("cluster", Round("Scraping clusters", ["tag"], ["tc.db"])),
@@ -94,13 +94,16 @@ class Scraper(object):
 	roundlist = [k for k, r in _rounds]
 
 
-	def __init__(self, api_key, secret, token, output="scrape", database=".", interact=False):
+	def __init__(self, api_key, secret, token, basedir="scrape", interact=False):
 		self.ff = SafeFlickrAPI(api_key, secret, token)
 		self.res = {}
-		self.out = output
-		self.dbp = database
+		self.base = basedir
 		self.interact = interact
 		self.banner = "[Scraper interactive console]\n>>> self\n%r\n>>> self.ff\n%r" % (self, self.ff)
+
+		for path in [basedir, os.path.join(basedir, "idx"), os.path.join(basedir, "tgr")]:
+			if not os.path.isdir(path):
+				os.mkdir(path)
 
 
 	def __enter__(self):
@@ -113,22 +116,22 @@ class Scraper(object):
 			print >>sys.stderr, "%s closed" % (path)
 
 
-	def outfp(self, suffix):
-		fn = "%s.%s" % (self.out, suffix)
+	def outfp(self, name):
+		fn = os.path.join(self.base, name)
 		fp = open(fn, 'w')
 		self.respush(fn, fp, 'w')
 		return fp
 
 
-	def infp(self, suffix):
-		fn = "%s.%s" % (self.out, suffix)
+	def infp(self, name):
+		fn = os.path.join(self.base, name)
 		fp = open(fn)
 		self.respush(fn, fp, 'r')
 		return fp
 
 
-	def db(self, suffix, writeback=False):
-		dbf = "%s/%s.%s.db" % (self.dbp, self.out, suffix)
+	def db(self, name, writeback=False):
+		dbf = os.path.join(self.base, "%s.db" % name)
 		try:
 			#if writeback:
 			from shelve import BsdDbShelf
@@ -163,7 +166,6 @@ class Scraper(object):
 
 		socgr = self.ff.scrapeIDs(seed, size).graph
 		socgr.write_graphml(self.outfp("soc.graphml"))
-		socgr.write_dot(self.outfp("soc.dot"))
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
@@ -175,7 +177,7 @@ class Scraper(object):
 		users = Graph.Read(self.infp("soc.graphml")).vs["id"]
 
 		gumap = self.ff.scrapeGroups(users)
-		dict_save(gumap, self.outfp("gu.dict"))
+		dict_save(gumap, self.outfp("gu.map"))
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
@@ -185,7 +187,7 @@ class Scraper(object):
 		Scrape photos of the collected producers.
 		"""
 		socgr = Graph.Read(self.infp("soc.graphml"))
-		gumap = dict_load(self.infp("gu.dict"))
+		gumap = dict_load(self.infp("gu.map"))
 
 		ppdb = self.db("pp")
 		self.ff.commitUserPhotos(socgr.vs["id"], ppdb)
@@ -193,8 +195,7 @@ class Scraper(object):
 
 		self.ff.pruneProducers(socgr, gumap, ppdb)
 		socgr.write_graphml(self.outfp("soc.graphml"))
-		socgr.write_dot(self.outfp("soc.dot"))
-		dict_save(gumap, self.outfp("gu.dict"))
+		dict_save(gumap, self.outfp("gu.map"))
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
@@ -242,7 +243,7 @@ class Scraper(object):
 		Generate objects from the scraped data.
 		"""
 		socgr = Graph.Read(self.infp("soc.graphml"))
-		gumap = dict_load(self.infp("gu.dict"))
+		gumap = dict_load(self.infp("gu.map"))
 
 		ppdb = self.db("pp")
 		pcdb = self.db("pc")
@@ -268,10 +269,8 @@ if __name__ == "__main__":
 	  version = VERSION,
 	)
 
-	config.add_option("-o", "--output", type="string", metavar="OUTPUT", default="scrape",
-	  help = "Output file prefix (extensions will be added to it)")
-	config.add_option("-b", "--database", type="string", metavar="DATABASE", default=".",
-	  help = "Path to any databases used (default .)")
+	config.add_option("-d", "--basedir", type="string", metavar="BASEDIR", default="scrape",
+	  help = "Base output directory")
 	config.add_option("-i", "--interact", action="store_true", dest="interact",
 	  help = "Go into interactive mode after performing a round, to examine the objects created")
 	config.add_option("-k", "--api-key", type="string", metavar="APIKEY",
