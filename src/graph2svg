@@ -5,10 +5,11 @@ import sys, os
 from subprocess import call
 from igraph import Graph
 
-def graph2svg(gfn, epsilon=0, keep=False, verbose=False, scale=False):
+def graph2svg(gfn, epsilon=0, maxiter=200, keep=False, verbose=False, scale=False):
 	g = Graph.Read(gfn)
 	g["overlap"] = "scale" if scale else "false"
 	g["epsilon"] = epsilon
+	g["maxiter"] = maxiter
 	ofn = "%s.dot" % gfn
 	g.write(ofn)
 	patch_igraph_dot_output(ofn)
@@ -44,6 +45,8 @@ if __name__ == "__main__":
 	  help = "epsilon for neato layout algorithm. higher is quicker but less accurate")
 	config.add_option("-s", "--scale", action="store_true", dest="scale",
 	  help = "use scaling instead of Voroni to make sure nodes don't overlap")
+	config.add_option("-m", "--maxiter", type="int", metavar="maxiter", default=200,
+	  help = "maximum number of iterations for the layout algorithm")
 	config.add_option("-v", "--verbose", action="store_true", dest="verbose",
 	  help = "Output more information")
 

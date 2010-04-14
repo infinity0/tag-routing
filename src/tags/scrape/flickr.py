@@ -485,7 +485,7 @@ class FlickrSample(object):
 							hitags[rt] = [attr]
 
 		# FIXME HIGH rethink whether these weights are theoretically sound
-		return tags, dict((tag, union_ind(*attrs)) for tag, attrs in hitags.iteritems())
+		return tags, dict((tag, union_ind(attrs)) for tag, attrs in hitags.iteritems())
 
 
 	def generateTGraphs(self):
@@ -504,7 +504,8 @@ class FlickrSample(object):
 			self.pgdb[nsid] = prod
 		exec_unique(pmap, self.pgdb, run_p, None, "%s db: producers" % name, LOG.info)
 
-		edges, arc_a = infer_arcs(sprd, len(self.prodgr.vs), ratio=3) # TWEAK
+		total = len(self.prodgr.vs)
+		edges, arc_a = infer_arcs(sprd, total, ratio=2*log(1+total)) # TWEAK # relax for tgraphs
 
 		id_p = dict(("%04d" % i, i) for i in xrange(0, len(sprd)))
 		self.sprdgr = Graph(len(sprd), list(edges), directed=True,
@@ -599,7 +600,9 @@ class FlickrSample(object):
 					continue
 				comm.update(frozenset(community) for community in invert_seq(mem).itervalues())
 
-		return [com for com in comm if len(com) > len(self.prodgr.vs)**0.5]
+		total = len(self.prodgr.vs)
+		# don't generate too big or too small
+		return [com for com in comm if log(total) <= len(com) <= total/log(total)]
 
 
 	def createAllObjects(self): #producer_graph

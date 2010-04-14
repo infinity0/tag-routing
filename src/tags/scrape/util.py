@@ -61,11 +61,17 @@ def geo_mean(a, b):
 	return (a*b)**0.5
 
 
-def union_ind(*args):
+def union_ind(it, total=None):
 	"""
 	Returns the union of some probabilities, assuming they are all independent.
 	"""
-	return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in args)) if args else 0
+	if not it:
+		return 0
+	elif total:
+		total = float(total)
+		return total*(1.0 - reduce(lambda x,y : x*y, ((total-i)/total for i in it)))
+	else:
+		return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in it))
 
 
 def intern_force(sss):
