@@ -173,6 +173,14 @@ class Node(object):
 		(self.id, self.out, self.attr) = state
 
 
+	def __repr__(self):
+		return "Node(%r, %r, %r)" % self.__getstate__()
+
+
+	def __str__(self):
+		return "<Node %s: %s (%s out-neighbours)>" % (self.id, self.attr, len(self.out))
+
+
 
 class Producer(object):
 
@@ -218,13 +226,14 @@ class Producer(object):
 		) = state
 
 
-	def initContent(self, dset, ptdb):
+	def initContent(self, dset, ptdb, store_node_attr=False):
 		"""
 		Initialises the doc-tag graph from the given document set and the given
 		doc-tag database.
 
 		@param dset: a collection of documents
 		@param ptdb: an open database of {doc:[tag]}
+		@param store_node_attr: whether to calculate and store node attributes
 		"""
 		if self.docgr is not None:
 			raise StateError("initContent already called")
@@ -237,7 +246,9 @@ class Producer(object):
 			return dict((tag, attr) for tag in tags)
 
 		ss = NodeSample().add_nodes(Node(doc, outdict(doc)) for doc in dset)
-		self.docgr = ss.build(True, bipartite=True, inverse=True)
+		g = ss.build(True, bipartite=True, inverse=True)
+		g.vs[NAT] = [float(d)/ss.order for d in g.outdegree()]
+		self.docgr = g
 
 		id_d = {} # {doc:id}
 		id_t = {} # {tag:id}
@@ -451,9 +462,9 @@ class Producer(object):
 		return self.rep_t
 
 
-	def tagScores(self, tags):
+	def tagScore(self, tag):
 		"""
-		Returns the scores for a bunch of tags.
+		Returns the score for a tag.
 
 		@param tags: [tag]
 		@return: {tag:score}
@@ -464,16 +475,25 @@ class Producer(object):
 		if "score" not in self.docgr.vs.attribute_names():
 			raise StateError("inferScores not called yet")
 
-		return dict((tag, self.docgr.vs[self.id_t[tag]]["score"]) for tag in tags)
+		s = self.docgr.vs[self.id_t[tag]]["score"] if tag in self.id_t else 0
+		return s if s is not None else 0
 
 
-	def initProdArcs(self, prodmap, keep=True):
+	def __scoreTags(self, tags):
 		"""
-		Initialises the doc-tag graph with the given prod<-tag arcs
+		DOCUMENT
+		"""
+		doc = set(chain(*(self.docgr.successors(v.index) for v in self.docgr.vs.select(self.id_t[tag] for tag in tags))))
+		return float(len(doc)) / self.size()
 
-		@param prodmap: {nsid:{tag:attr}} map
-		@param keep: whether to keep tags in prodmap that are not already
-		       defined in this producer
+
+	def initProdArcs(self, pmap_a, pmap_t=None):
+		"""
+		Initialises the doc-tag graph with the given prod<-tag arcs.
+
+		@param pmap_a: {nsid:{rtag:attr}} map
+		@param pmap_t: {nsid:{rtag:tags}} map (optional; this must have the
+		       same keys and subkeys as pmap_a)
 		"""
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
@@ -481,24 +501,35 @@ class Producer(object):
 		if self.base_p is not None:
 			raise StateError("initProdArcs already called")
 
-		self.base_s = len(self.docgr.vs)
-		if keep:
-			# add tags in prodmap that aren't in self.id_t
-			newtags = list(set(chain(*((tag for tag in tmap.iterkeys() if tag not in self.id_t) for tmap in prodmap.itervalues()))))
-			self.id_t.update((tag, self.base_s+i) for i, tag in enumerate(newtags))
-			self.docgr.add_vertices(len(newtags))
-			self.docgr.vs[self.base_s:][NID] = newtags
-		else:
-			for tmap in prodmap.itervalues():
-				raise NotImplementedError()
+		g = self.docgr
+		self.base_s = len(g.vs)
+		# add tags in pmap_a that aren't in self.id_t
+		newtags = list(set(chain(*((tag for tag in tmap.iterkeys() if tag not in self.id_t) for tmap in pmap_a.itervalues()))))
+		self.id_t.update((tag, self.base_s+i) for i, tag in enumerate(newtags))
+		g.add_vertices(len(newtags))
+		g.vs[self.base_s:][NID] = newtags
 
 		# init nodes
 		self.base_p = len(self.id_d) + len(self.id_t)
-		self.id_p = dict((nsid, self.base_p+i) for i, nsid in enumerate(prodmap.iterkeys()))
+		self.id_p = dict((nsid, self.base_p+i) for i, nsid in enumerate(pmap_a.iterkeys()))
+
+		# add node attributes for tags
+		# TODO NORM atm this just adds srange(), maybe we should mix in values
+		# for other tags too?
+		if pmap_t:
+			rtags = {}
+			for nsid, tmap in pmap_t.iteritems():
+				for rtag, tags in tmap.iteritems():
+					if rtag in rtags:
+						rtags[rtag].update(tags)
+					else:
+						rtags[rtag] = set(tags)
+			n_attr = [self.__scoreTags(rtags[tag]) for tag in g.vs.select(self.srange())[NID]]
+			g.vs[self.base_s:][NAT] = n_attr
 
 		# init arcs
 		arc_s, arc_t, edges, e_attr = edge_array(len(self.id_t), 'd')
-		for i, (nsid, tmap) in enumerate(prodmap.iteritems()):
+		for i, (nsid, tmap) in enumerate(pmap_a.iteritems()):
 			pid = self.base_p+i
 			for tag, attr in tmap.iteritems():
 				arc_s.append(self.id_t[tag])
@@ -506,11 +537,11 @@ class Producer(object):
 				e_attr.append(attr)
 
 		# add all to graph
-		self.docgr.add_vertices(len(prodmap))
-		self.docgr.vs[self.base_p:][NID] = list(prodmap.iterkeys())
-		eend = len(self.docgr.es)
-		self.docgr.add_edges(edges)
-		self.docgr.es[eend:][AAT] = e_attr
+		g.add_vertices(len(pmap_a))
+		g.vs[self.base_p:][NID] = list(pmap_a.iterkeys())
+		eend = len(g.es)
+		g.add_edges(edges)
+		g.es[eend:][AAT] = e_attr
 
 
 	def createTGraph(self, totalsize, pgdb, display=False, node_attr={
@@ -539,19 +570,24 @@ class Producer(object):
 		# - neighbours are not independent => total lower than this
 		# - neighbours are not entire network => total higher than this
 		total = union_ind(chain([self.size()], (pgdb[self.docgr.vs[pid]["id"]].size() for pid in self.prange())), totalsize)
-		print "producer %s (%s): total size of network estimated to be %s (actual %s)" % (self.nsid, self.size(), total, totalsize)
+		# print "producer %s (%s): total size of network estimated to be %s (actual %s)" % (self.nsid, self.size(), total, totalsize)
 
 		gg = graph_copy(self.docgr)
 		del gg.vs["score"]
+		gg["base_d"] = self.base_d
+		gg["base_t"] = self.base_t
+		gg["base_s"] = self.base_s
+		gg["base_p"] = self.base_p
 
+		# node-attrs for prange
+		gg.vs[self.base_p:][NAT] = [pgdb[gg.vs[pid][NID]].size()/float(total) for pid in self.prange()]
+
+		# infer arcs between tags
 		mem = [filter(lambda id: id in self.drange(), gg.successors(tid)) for tid in self.trange()]
-		# FIXME NOW calculate heights for srange(). ATM they are zero.
-		n_attr = [len(m)/float(total) for m in mem] + [pgdb[gg.vs[pid][NID]].size()/float(total) for pid in self.prange()]
 		edges, arc_a = infer_arcs(mem, total)
 
 		gg.delete_vertices(self.drange())
 		gg.add_edges(edges)
-		gg.vs[NAT] = n_attr
 		#assert gg.es[-len(edges):][AAT] == [None] * len(edges)
 		gg.es[-len(edges):][AAT] = arc_a
 
@@ -584,6 +620,10 @@ class Producer(object):
 
 		gg = graph_copy(self.docgr)
 		del gg.vs["score"]
+		gg["base_d"] = self.base_d
+		gg["base_t"] = self.base_t
+		gg["base_s"] = self.base_s
+		gg["base_p"] = self.base_p
 
 		if display:
 			gg.vs["label"] = gg.vs[NID]
@@ -592,4 +632,9 @@ class Producer(object):
 				gg.vs[attr] = [val[0] for i in self.drange()] + [val[1] for i in self.trange()] + [val[2] for i in self.prange()]
 
 		return gg
+
+
+def make_tgraph_node(g, tag):
+	return Node(tag, dict((g.vs[e.target][NID], g.es[e.index][AAT])
+	  for e in g.es.select(g.adjacent(g.vs.select(id=tag)[0].index))), g.vs.select(id=tag)[0][NAT])
 

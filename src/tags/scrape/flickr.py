@@ -5,7 +5,7 @@ from math import log
 from time import time
 from collections import deque
 from functools import partial
-from itertools import chain
+from itertools import chain, izip
 from threading import local as ThreadLocal
 from httplib import HTTPConnection, ImproperConnectionState, HTTPException
 from xml.etree.ElementTree import dump
@@ -388,8 +388,8 @@ class FlickrSample(object):
 
 		# generate content arcs between producers
 		def run_r((nsid, prod)):
-			prodmap = dict((rnsid, self.inferProdArc(prod, self.phdb[rnsid])) for rnsid in self.inferRelProds(prod))
-			prod.initProdArcs(prodmap)
+			pmap_a = dict((rnsid, self.inferProdArc(prod, self.phdb[rnsid])) for rnsid in self.inferRelProds(prod))
+			prod.initProdArcs(pmap_a)
 			self.phdb[nsid] = prod
 		exec_unique(self.phdb.iteritems(), lambda (nsid, prod): prod.base_p is not None,
 		  run_r, None, "%s db: relations" % name, LOG.info)
@@ -436,7 +436,7 @@ class FlickrSample(object):
 		return rel
 
 
-	def inferProdArc(self, prod_s, prod_t):
+	def inferProdArc(self, prod_s, prod_t, show_tag=False):
 		"""
 		Infer arcs and their weights between the given producers.
 
@@ -445,11 +445,13 @@ class FlickrSample(object):
 
 		@param prod_s: source producer
 		@param prod_t: target producer
+		@param show_tag: whether to return tag_a
+		@return: (arc_a, tag_a) DOCUMENT
 		"""
-		tags, hitags = self.selectTagsFromClusters(prod_s.rep_t, prod_t.rep_t)
-		prodmap = prod_t.tagScores(tags)
-		prodmap.update(hitags)
-		return prodmap
+		rtags, htags = self.selectTagsFromClusters(prod_s.rep_t, prod_t.rep_t)
+		arc_a = dict((rtag, prod_t.tagScore(rtag)) for rtag in rtags)
+		arc_a.update(htags)
+		return (arc_a, rtags) if show_tag else arc_a
 
 
 	def selectTagsFromClusters(self, tset_s, tset_t):
@@ -460,32 +462,41 @@ class FlickrSample(object):
 
 		@param tset_s: source tag-set
 		@param tset_t: target tag-set
-		@return: ([tags], {hitag:weight}) where tags is a subset of tset_t, and
-		         hitags are more "general" tags that describe tset_t, but which
-		         are not necessarily contained in it
+		@return: (rtags, htags), where rtags = {rtag:[tag]} associates tags on
+		         the target side to related tags on the source side, and htags
+		         = {htag:e_attr} associates "high-level" tags (which might not
+		         exist on the target side) to appropriate arc-attributes.
 		"""
-		tags = set()
-		hitags = {}
+		rtags = {}
+		htags = {}
 		if type(tset_t) != set:
 			tset_t = set(tset_t)
 
 		for tag in tset_s:
 			for cluster in self.tcdb[tag]:
 				tset_x = tset_t.intersection(cluster)
-				tags.update(tset_x)
 
-				if 3*len(tset_x) > len(cluster):
-					# if intersection is big enough, link to "representative" tags of cluster
+				# add intersection to rtags
+				for rtag in tset_x:
+					if rtag not in rtags:
+						rtags[rtag] = [tag]
+					else:
+						rtags[rtag].append(tag)
+
+				# if intersection is big enough, add "representative" tags of
+				# this cluster to htags
+				if 3*len(tset_x) > len(cluster): # TWEAK
 					# on flickr, this is the first 3 tags
 					attr = len(tset_x)/float(len(cluster))
-					for rt in cluster[0:3]:
-						if rt in hitags:
-							hitags[rt].append(attr)
+					for rtag in cluster[0:3]:
+						if rtag in htags:
+							htags[rtag].append(attr)
+							rtags[rtag].append(tag)
 						else:
-							hitags[rt] = [attr]
+							htags[rtag] = [attr]
+							rtags[rtag] = [tag]
 
-		# FIXME HIGH rethink whether these weights are theoretically sound
-		return tags, dict((tag, union_ind(attrs)) for tag, attrs in hitags.iteritems())
+		return rtags, dict((htag, union_ind(attrs)) for htag, attrs in htags.iteritems())
 
 
 	def generateTGraphs(self):
@@ -498,7 +509,7 @@ class FlickrSample(object):
 
 		def run_p(nsid):
 			prod = Producer(nsid)
-			prod.initContent(set(chain(*(self.ppdb[self.prodgr.vs[p]["id"]] for p in pmap[nsid]))), self.ptdb)
+			prod.initContent(set(chain(*(self.ppdb[self.prodgr.vs[p]["id"]] for p in pmap[nsid]))), self.ptdb, True)
 			prod.inferScores()
 			prod.repTag(cover=0) # TWEAK
 			self.pgdb[nsid] = prod
@@ -516,14 +527,16 @@ class FlickrSample(object):
 		LOG.info("%s db: generated producer graph" % name)
 
 		# generate content arcs between producers
-		# FIXME NOW this still uses up far too much memory :/
+		# FIXME HIGH this uses up too much memory :/
 		import gc
 		#gc.set_debug(gc.DEBUG_LEAK)
 		def run((nsid, prod)):
-			prodmap = dict((rnsid, self.inferProdArc(prod, self.pgdb[rnsid])) for rnsid in g.vs.select(g.successors(id_p[nsid]))["id"])
+			rprod = g.vs.select(g.successors(id_p[nsid]))["id"]
+			pmap = [(rnsid, self.inferProdArc(prod, self.pgdb[rnsid], show_tag=True)) for rnsid in rprod]
 			self.pgdb.sync()
-			prod.initProdArcs(prodmap)
-			del prodmap
+			pmap_a, pmap_t = izip(*(((rnsid, arc_a), (rnsid, node_a)) for rnsid, (arc_a, node_a) in pmap)) if pmap else ([], [])
+			prod.initProdArcs(dict(pmap_a), dict(pmap_t))
+			del pmap, pmap_a, pmap_t
 			gc.collect()
 			self.pgdb[nsid] = prod
 		exec_unique(self.pgdb.iteritems(), lambda (nsid, prod): prod.base_p is not None,

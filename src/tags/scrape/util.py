@@ -69,9 +69,9 @@ def union_ind(it, total=None):
 		return 0
 	elif total:
 		total = float(total)
-		return total*(1.0 - reduce(lambda x,y : x*y, ((total-i)/total for i in it)))
+		return total*(1.0 - reduce(lambda x,y : x*y, ((total-i)/total for i in it), 1.0))
 	else:
-		return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in it))
+		return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in it), 1.0)
 
 
 def intern_force(sss):
@@ -212,10 +212,10 @@ def invert(it, fkey, fval=lambda x: x):
 	map = {}
 	for i in it:
 		k = fkey(i)
-		if k not in map:
-			map[k] = [fval(i)]
-		else:
+		if k in map:
 			map[k].append(fval(i))
+		else:
+			map[k] = [fval(i)]
 	return map
 
 
