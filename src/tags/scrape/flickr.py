@@ -1,6 +1,6 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
-import sys, socket, logging
+import sys, socket, logging, os
 from math import log
 from time import time
 from collections import deque
@@ -13,10 +13,10 @@ from xml.etree.ElementTree import dump
 from flickrapi import FlickrAPI, FlickrError
 from igraph import Graph
 
-from tags.scrape.object import Node, NodeSample, Producer
+from tags.scrape.object import Node, NodeSample, Producer, ProducerSample, NID
 from tags.scrape.util import (StateError, intern_force, infer_arcs, repr_call,
   enumerate_cb, exec_unique, union_ind, geo_prog_range, invert_seq, edge_array,
-  graph_copy, undirect_and_simplify)
+  graph_copy, undirect_and_simplify, invert_multimap)
 
 
 LOG = logging.getLogger(__name__)
@@ -158,10 +158,10 @@ class SafeFlickrAPI(FlickrAPI):
 		def post(nsid, i, groups):
 			for g in groups:
 				gid = g.get("nsid")
-				if gid not in gumap:
-					gumap[gid] = [nsid]
-				else:
+				if gid in gumap:
 					gumap[gid].append(nsid)
+				else:
+					gumap[gid] = [nsid]
 
 		exec_unique(users, gumap, run, post, "gid sample db", LOG.info)
 		return gumap
@@ -177,11 +177,11 @@ class SafeFlickrAPI(FlickrAPI):
 		"""
 		spmap = {}
 
-		#[s.get("id") for s in self.photosets_getList(user_id=nsid).getchildren()[0].getchildren()]
+		#[s.get(NID) for s in self.photosets_getList(user_id=nsid).getchildren()[0].getchildren()]
 		for r in x.run_to_results_any(partial(self.photosets_getPhotos, photoset_id=sid) for sid in sets):
 			pset = r.getchildren()[0]
-			sid = pset.get("id")
-			spmap[sid] = [p.get("id") for p in pset.getchildren()]
+			sid = pset.get(NID)
+			spmap[sid] = [p.get(NID) for p in pset.getchildren()]
 			LOG.debug("set: got %s photos (%s)" % (len(pset), sid), 6)
 
 		return spmap
@@ -222,7 +222,7 @@ class SafeFlickrAPI(FlickrAPI):
 			return stream, faves
 
 		def post(nsid, i, (stream, faves)):
-			photos = [p.get("id") for p in chain(stream, faves)]
+			photos = [p.get(NID) for p in chain(stream, faves)]
 			if len(photos) >= 4096:
 				LOG.info("producer db (user): got %s photos for user %s" % (len(photos), nsid))
 			ppdb[nsid] = photos
@@ -251,7 +251,7 @@ class SafeFlickrAPI(FlickrAPI):
 		def post(gid, i, photos):
 			if len(photos) >= 4096:
 				LOG.info("producer db (group): got %s photos for group %s" % (len(photos), gid))
-			ppdb[gid] = [p.get("id") for p in photos]
+			ppdb[gid] = [p.get(NID) for p in photos]
 
 		exec_unique(gumap, ppdb, run, post, "producer db (group)", LOG.info)
 
@@ -271,7 +271,7 @@ class SafeFlickrAPI(FlickrAPI):
 		#FIXME HIGH if we prune users, then we also need to prune groups that
 		#point to this user
 		delu = []
-		#for u in socgr.vs["id"]:
+		#for u in socgr.vs[NID]:
 		#	if u in ppdb:
 		#		if len(ppdb[u]) > cutoff:
 		#			continue
@@ -308,10 +308,10 @@ class SafeFlickrAPI(FlickrAPI):
 
 		for i, (prod, photos) in enumerate_cb(ppdb.iteritems(), syncer, every=0x10000):
 			for phid in photos:
-				if phid not in pcdb:
-					pcdb[phid] = [prod]
-				else:
+				if phid in pcdb:
 					pcdb[phid].append(prod)
+				else:
+					pcdb[phid] = [prod]
 		pcdb.sync()
 
 		LOG.info("context db: inverted %s producers to %s photos" % (len(ppdb), len(pcdb)))
@@ -343,12 +343,12 @@ class SafeFlickrAPI(FlickrAPI):
 		exec_unique(tags, tcdb, run, post, "cluster db", LOG.info)
 
 
-class FlickrSample(object):
+class SampleGenerator(object):
 
 
 	def __init__(self, socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, pgdb):
 		"""
-		Create a new FlickrSample from the given arguments
+		Create a new SampleGenerator from the given arguments
 
 		@param socgr: social network graph
 		@param gumap: {group:[user]} map
@@ -370,10 +370,15 @@ class FlickrSample(object):
 
 		self.prodgr = None
 		self.sprdgr = None
+		self.ptabgr = None
+		self.ptbmap = None
+		self.comm = None
 
 
 	def generateIndexes(self):
-
+		"""
+		DOCUMENT
+		"""
 		name = "indexes"
 
 		# generate Producer objects
@@ -395,19 +400,19 @@ class FlickrSample(object):
 		  run_r, None, "%s db: relations" % name, LOG.info)
 
 		total = len(self.phdb)
-		lab_p, id_p = zip(*(("%s\\n%s" % (prod.size(), '\\n'.join(prod.rep_t[0:4])),
+		lab_p, id_p = zip(*(("%s (%s)\\n%s" % (prod.nsid, prod.size(), '\\n'.join(prod.rep_t[0:4])),
 		  (nsid, i)) for i, (nsid, prod) in enumerate(self.phdb.iteritems()))) if self.phdb else ([], [])
 		id_p = dict(id_p)
 
 		# generate producer graph
 		arc_s, arc_t, edges = edge_array(total)
 		for i, prod in enumerate(self.phdb.itervalues()):
-			for nsid in prod.docgr.vs.select(prod.prange())["id"]:
+			for nsid in prod.docgr.vs.select(prod.prange())[NID]:
 				arc_s.append(i)
 				arc_t.append(id_p[nsid])
 
 		sz = [log(prod.size()) for prod in self.phdb.itervalues()]
-		v_attr = {"id": list(self.phdb.iterkeys()), "label": lab_p, "height": sz, "width": sz}
+		v_attr = {NID: list(self.phdb.iterkeys()), "label": lab_p, "height": sz, "width": sz}
 
 		self.prodgr = Graph(total, edges=list(edges), directed=True, vertex_attrs=v_attr)
 		LOG.info("%s db: generated producer graph" % name)
@@ -478,10 +483,10 @@ class FlickrSample(object):
 
 				# add intersection to rtags
 				for rtag in tset_x:
-					if rtag not in rtags:
-						rtags[rtag] = [tag]
-					else:
+					if rtag in rtags:
 						rtags[rtag].append(tag)
+					else:
+						rtags[rtag] = [tag]
 
 				# if intersection is big enough, add "representative" tags of
 				# this cluster to htags
@@ -500,27 +505,30 @@ class FlickrSample(object):
 
 
 	def generateTGraphs(self):
-
+		"""
+		DOCUMENT
+		"""
 		name = "tgraphs"
 
 		# generate docsets for new producers
-		sprd = self.selectCommunities()
-		pmap = dict(("%04d" % i, pset) for i, pset in enumerate(sprd))
+		self.comm = self.selectCommunities()
+		pmap = dict(("%04d" % i, pset) for i, pset in enumerate(self.comm))
 
 		def run_p(nsid):
 			prod = Producer(nsid)
-			prod.initContent(set(chain(*(self.ppdb[self.prodgr.vs[p]["id"]] for p in pmap[nsid]))), self.ptdb, True)
+			prod.initContent(set(chain(*(self.ppdb[self.prodgr.vs[p][NID]] for p in pmap[nsid]))), self.ptdb, True)
 			prod.inferScores()
 			prod.repTag(cover=0) # TWEAK
 			self.pgdb[nsid] = prod
 		exec_unique(pmap, self.pgdb, run_p, None, "%s db: producers" % name, LOG.info)
 
-		total = len(self.prodgr.vs)
-		edges, arc_a = infer_arcs(sprd, total, ratio=2*log(1+total)) # TWEAK # relax for tgraphs
+		tot_p = len(self.prodgr.vs)
+		tot_s = len(self.comm)
+		edges, arc_a = infer_arcs(self.comm, tot_p, ratio=2*log(1+tot_p)) # TWEAK # relax for tgraphs
 
-		id_p = dict(("%04d" % i, i) for i in xrange(0, len(sprd)))
-		self.sprdgr = Graph(len(sprd), list(edges), directed=True,
-		  vertex_attrs={"id":list("%04d" % i for i in xrange(0, len(sprd))), "label":[len(com) for com in sprd]})
+		id_p = dict(("%04d" % i, i) for i in xrange(0, tot_s))
+		self.sprdgr = Graph(tot_s, list(edges), directed=True,
+		  vertex_attrs={NID:list("%04d" % i for i in xrange(0, tot_s)), "label":[len(com) for com in self.comm]})
 		g = self.sprdgr
 		#g.write_dot("sprdgr.dot")
 		#g.write("sprdgr.graphml")
@@ -530,8 +538,8 @@ class FlickrSample(object):
 		# FIXME HIGH this uses up too much memory :/
 		import gc
 		#gc.set_debug(gc.DEBUG_LEAK)
-		def run((nsid, prod)):
-			rprod = g.vs.select(g.successors(id_p[nsid]))["id"]
+		def run_r((nsid, prod)):
+			rprod = g.vs.select(g.successors(id_p[nsid]))[NID]
 			pmap = [(rnsid, self.inferProdArc(prod, self.pgdb[rnsid], show_tag=True)) for rnsid in rprod]
 			self.pgdb.sync()
 			pmap_a, pmap_t = izip(*(((rnsid, arc_a), (rnsid, node_a)) for rnsid, (arc_a, node_a) in pmap)) if pmap else ([], [])
@@ -540,7 +548,7 @@ class FlickrSample(object):
 			gc.collect()
 			self.pgdb[nsid] = prod
 		exec_unique(self.pgdb.iteritems(), lambda (nsid, prod): prod.base_p is not None,
-		  run, None, "%s db: relations" % name, LOG.info)
+		  run_r, None, "%s db: relations" % name, LOG.info)
 
 
 	def selectCommunities(self):
@@ -618,14 +626,83 @@ class FlickrSample(object):
 		return [com for com in comm if log(total) <= len(com) <= total/log(total)]
 
 
-	def createAllObjects(self): #producer_graph
-		# TODO NOW
-		#Given a graph of producers, generate tgraphs from the narrow peak, and
-		#indexes from the fat tail.
+	def generatePTables(self):
+		"""
+		DOCUMENT
+		"""
+		name = "ptables"
 
-		#ie. 80-20 rule, but actually decide a precise way of doing these.
-		#- half of area-under-graph for each?
-		raise NotImplementedError()
+		id_u = dict((nsid, vid) for vid, nsid in enumerate(self.socgr.vs[NID]))
+
+		base_h = len(id_u)
+		lab_h, id_h = zip(*((nsid, (nsid, base_h+vid)) for vid, nsid in enumerate(self.gumap.iterkeys()))) if self.gumap else ([], [])
+		id_h = dict(id_h)
+
+		base_g = len(id_h) + base_h
+		lab_g, id_g = zip(*((nsid, (nsid, base_g+vid)) for vid, nsid in enumerate(self.sprdgr.vs[NID]))) if len(self.sprdgr.vs) > 0 else ([], [])
+		id_g = dict(id_g)
+
+		ptabgr = graph_copy(self.socgr)
+
+		edges = set()
+		# add arcs to self
+		edges.update((vid, vid) for vid in xrange(0, base_h))
+		# add arcs to indexes
+		for nsid, users in self.gumap.iteritems():
+			hvid = id_h[nsid]
+			edges.update((id_u[user], hvid) for user in users)
+		# add arcs to tgraphs
+		for i, hvids in enumerate(self.comm):
+			gvid = base_g + i
+			for nsid in self.prodgr.vs.select(hvids)[NID]:
+				if nsid in id_u:
+					continue
+				for user in self.gumap[nsid]:
+					edges.add((id_u[user], gvid))
+
+		ptabgr.add_vertices(len(id_h) + len(id_g))
+		ptabgr.add_edges(edges)
+		ptabgr.vs[base_h:][NID] = lab_h + lab_g
+		ptabgr["base_u"] = 0
+		ptabgr["base_h"] = base_h
+		ptabgr["base_g"] = base_g
+		self.ptabgr = ptabgr
+
+		# for easy access / human readability
+		ugmap = dict((nsid, set(gnsid)) for nsid, gnsid in invert_multimap(self.gumap,
+		  dict((nsid, []) for nsid in self.socgr.vs[NID])).iteritems())
+		for i, pvid in enumerate(self.comm):
+			spid = self.sprdgr.vs[i][NID]
+			for nsid in self.prodgr.vs.select(pvid)[NID]:
+				if nsid in ugmap:
+					continue
+				for uid in self.gumap[nsid]:
+					ugmap[uid].add(spid)
+		self.ptbmap = ugmap
+
+
+
+class SampleWriter(ProducerSample):
+
+
+	def __init__(self, phdb, pgdb, totalsize):
+		ProducerSample.__init__(self, phdb, pgdb)
+		self.totalsize = totalsize
+
+
+	def writeIndexes(self, base):
+		def run((nsid, prod)):
+			g = prod.createIndex()
+			g.write(os.path.join(base, "%s.graphml" % nsid))
+		exec_unique(self.phdb.iteritems(), lambda x: False, run, None, "indexes db: object files", LOG.info)
+
+
+	def writeTGraphs(self, base):
+		def run((nsid, prod)):
+			g = prod.createTGraph(self.totalsize, self.pgdb)
+			g.write(os.path.join(base, "%s.graphml" % nsid))
+		exec_unique(self.pgdb.iteritems(), lambda x: False, run, None, "tgraphs db: object files", LOG.info)
+
 
 
 

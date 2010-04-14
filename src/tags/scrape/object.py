@@ -12,6 +12,7 @@ from tags.scrape.util import (StateError, intern_force, geo_mean, union_ind,
 NID = "id" # label for node id in graphs
 NAT = "height" # label for node attribute in graphs
 AAT = "weight" # label for arc attribute in graphs
+NAA = "score" # label for arc attributes from a node
 
 
 class NodeSample(object):
@@ -377,7 +378,7 @@ class Producer(object):
 		for id in self.drange():
 			sc_d.append(iterconverge(partial(scoreDoc, id), (0,1), init, eps=2**-32, maxsteps=0x40))
 
-		self.docgr.vs["score"] = sc_d + sc_t
+		self.docgr.vs[NAA] = sc_d + sc_t
 
 
 	def debugScores(self, fp=sys.stderr):
@@ -389,7 +390,7 @@ class Producer(object):
 		res = {}
 		for i in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]:
 			self.inferScores(i)
-			res[i] = self.docgr.vs.select()["score"][:]
+			res[i] = self.docgr.vs.select()[NAA][:]
 			print >>fp, "%.12f" % i,
 
 		print >>fp, ""
@@ -421,14 +422,14 @@ class Producer(object):
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
 
-		if "score" not in self.docgr.vs.attribute_names():
+		if NAA not in self.docgr.vertex_attributes():
 			raise StateError("inferScores not called yet")
 
 		if self.base_p is not None:
 			raise StateError("initProdArcs already called")
 
 		g = self.docgr
-		cand = dict((g.vs[id][NID], (g.vs[id]["score"], g.predecessors(id))) for id in self.drange())
+		cand = dict((g.vs[id][NID], (g.vs[id][NAA], g.predecessors(id))) for id in self.drange())
 		self.rep_d, rpp_d = representatives(cand, self.trange(), prop, thres, cover)
 		if store_res:
 			self.rpp_d = rpp_d
@@ -448,14 +449,14 @@ class Producer(object):
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
 
-		if "score" not in self.docgr.vs.attribute_names():
+		if NAA not in self.docgr.vertex_attributes():
 			raise StateError("inferScores not called yet")
 
 		if self.base_p is not None:
 			raise StateError("initProdArcs already called")
 
 		g = self.docgr
-		cand = dict((g.vs[id][NID], (g.vs[id]["score"], g.successors(id))) for id in self.trange())
+		cand = dict((g.vs[id][NID], (g.vs[id][NAA], g.successors(id))) for id in self.trange())
 		self.rep_t, rpp_t = representatives(cand, self.drange(), prop, thres, cover)
 		if store_res:
 			self.rpp_t = rpp_t
@@ -472,10 +473,10 @@ class Producer(object):
 		if self.docgr is None:
 			raise StateError("initContent not called yet")
 
-		if "score" not in self.docgr.vs.attribute_names():
+		if NAA not in self.docgr.vertex_attributes():
 			raise StateError("inferScores not called yet")
 
-		s = self.docgr.vs[self.id_t[tag]]["score"] if tag in self.id_t else 0
+		s = self.docgr.vs[self.id_t[tag]][NAA] if tag in self.id_t else 0
 		return s if s is not None else 0
 
 
@@ -502,6 +503,10 @@ class Producer(object):
 			raise StateError("initProdArcs already called")
 
 		g = self.docgr
+
+		if pmap_t and NAT not in g.vertex_attributes():
+			raise ValueError("<pmap> not None but initContent was not called with <store_node_attr=False>")
+
 		self.base_s = len(g.vs)
 		# add tags in pmap_a that aren't in self.id_t
 		newtags = list(set(chain(*((tag for tag in tmap.iterkeys() if tag not in self.id_t) for tmap in pmap_a.itervalues()))))
@@ -573,7 +578,7 @@ class Producer(object):
 		# print "producer %s (%s): total size of network estimated to be %s (actual %s)" % (self.nsid, self.size(), total, totalsize)
 
 		gg = graph_copy(self.docgr)
-		del gg.vs["score"]
+		del gg.vs[NAA]
 		gg["base_d"] = self.base_d
 		gg["base_t"] = self.base_t
 		gg["base_s"] = self.base_s
@@ -619,7 +624,7 @@ class Producer(object):
 			raise StateError("initProdArcs not yet called")
 
 		gg = graph_copy(self.docgr)
-		del gg.vs["score"]
+		del gg.vs[NAA]
 		gg["base_d"] = self.base_d
 		gg["base_t"] = self.base_t
 		gg["base_s"] = self.base_s
@@ -634,7 +639,17 @@ class Producer(object):
 		return gg
 
 
-def make_tgraph_node(g, tag):
-	return Node(tag, dict((g.vs[e.target][NID], g.es[e.index][AAT])
-	  for e in g.es.select(g.adjacent(g.vs.select(id=tag)[0].index))), g.vs.select(id=tag)[0][NAT])
+
+class ProducerSample(object):
+
+
+	def __init__(self, phdb, pgdb):
+		self.pgdb = pgdb
+		self.phdb = phdb
+
+
+	def make_tgraph_node(self, g, tag):
+		return Node(tag, dict((g.vs[e.target][NID], g.es[e.index][AAT])
+		  for e in g.es.select(g.adjacent(g.vs.select(id=tag)[0].index))), g.vs.select(id=tag)[0][NAT])
+
 

@@ -224,7 +224,19 @@ def invert_seq(seq):
 
 
 def invert_map(map):
-	return invert(map.iteritems(), lambda (k, v): k, lambda (k, v): v)
+	return invert(map.iteritems(), lambda (k, v): v, lambda (k, v): k)
+
+
+def invert_multimap(lmap, rmap=None):
+	if rmap is None:
+		rmap = {}
+	for k, vs in lmap.iteritems():
+		for v in vs:
+			if v in rmap:
+				rmap[v].append(k)
+			else:
+				rmap[v] = [k]
+	return rmap
 
 
 def sort_v(kvit, reverse=False):
@@ -335,7 +347,7 @@ def undirect_and_simplify(g, combiners={}, count_attr=None, sum_attrs={}):
 		combiners[count_attr] = lambda seq: len(seq)
 
 	for attr, div in sum_attrs.iteritems():
-		if attr not in g.es.attribute_names():
+		if attr not in g.edge_attributes():
 			raise ValueError("%s not an edge attribute" % attr)
 		combiners[attr] = lambda seq: sum(tup[2] for tup in seq) / div
 
@@ -354,7 +366,7 @@ def undirect_and_simplify(g, combiners={}, count_attr=None, sum_attrs={}):
 
 	e_attr = dict((attr,
 	  [comb([(e.source, e.target, e[attr]) for e in g.es.select(unified[vs, vt])]) for (vs, vt) in edges]
-	  if attr in g.es.attribute_names() else
+	  if attr in g.edge_attributes() else
 	  [comb([(e.source, e.target) for e in g.es.select(unified[vs, vt])]) for (vs, vt) in edges]
 	) for attr, comb in combiners.iteritems())
 

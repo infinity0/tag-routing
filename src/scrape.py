@@ -10,7 +10,7 @@ futures_patch_nonblocking()
 logging.basicConfig(format="%(asctime)s.%(msecs)03d | %(levelno)02d | %(message)s", datefmt="%s")
 
 from igraph import Graph
-from tags.scrape.flickr import SafeFlickrAPI, FlickrSample
+from tags.scrape.flickr import SafeFlickrAPI, SampleGenerator, SampleWriter
 from tags.scrape.object import NodeSample, Node
 from tags.scrape.util import signal_dump, dict_load, dict_save
 from xml.etree.ElementTree import dump
@@ -73,7 +73,7 @@ def main(round, *args, **kwargs):
 
 class Round(object):
 
-	def __init__(self, desc, dep=[], out=[]):
+	def __init__(self, desc, dep, out):
 		self.desc = desc
 		self.dep = dep
 		self.out = out
@@ -86,9 +86,10 @@ class Scraper(object):
 		("group", Round("Scraping groups", ["social"], ["gu.map"])),
 		("photo", Round("Scraping photos", ["group"], ["pp.db"]+["gu.map"]+["soc.graphml"])),
 		("invert", Round("Inverting producer mapping", ["photo"], ["pc.db"])),
-		("tag", Round("Scraping tags", ["photo"], ["pt.db"])),
+		("tag", Round("Scraping tags", ["photo"], ["pt.db", "pt.len"])),
 		("cluster", Round("Scraping clusters", ["tag"], ["tc.db"])),
-		("generate", Round("Generating data", ["ph.db", "pg.db"])),
+		("generate", Round("Generating data", ["invert", "cluster"], ["ph.db", "pg.db"])),
+		("writeall", Round("Writing objects", ["generate"], [])),
 	]
 	rounds = dict(_rounds)
 	roundlist = [k for k, r in _rounds]
@@ -101,7 +102,10 @@ class Scraper(object):
 		self.interact = interact
 		self.banner = "[Scraper interactive console]\n>>> self\n%r\n>>> self.ff\n%r" % (self, self.ff)
 
-		for path in [basedir, os.path.join(basedir, "idx"), os.path.join(basedir, "tgr")]:
+		self.dir_idx = os.path.join(basedir, "idx")
+		self.dir_tgr = os.path.join(basedir, "tgr")
+
+		for path in [self.base, self.dir_idx, self.dir_tgr]:
 			if not os.path.isdir(path):
 				os.mkdir(path)
 
@@ -221,6 +225,7 @@ class Scraper(object):
 
 		photos = chain(*ppdb.itervalues())
 		self.ff.commitPhotoTags(photos, ptdb)
+		print >>self.outfp("pt.len"), len(ptdb)
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
 
@@ -253,11 +258,36 @@ class Scraper(object):
 		phdb = self.db("ph")
 		pgdb = self.db("pg")
 
-		ss = FlickrSample(socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, pgdb)
-		ss.generateIndexes()
-		ss.generateTGraphs()
+		sg = SampleGenerator(socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, pgdb)
+		sg.generateIndexes()
+		sg.prodgr.write(self.outfp("idx.graphml"))
+		sg.generateTGraphs()
+		sg.sprdgr.write(self.outfp("tgr.graphml"))
+		sg.generatePTables()
+		sg.ptabgr.write(self.outfp("ptb.graphml"))
+
+		dict_save(sg.ptbmap, self.outfp("ptables.map"))
 
 		if self.interact: code.interact(banner=self.banner, local=locals())
+
+
+	def round_writeall(self):
+		"""
+		Write objects from the generated data.
+		"""
+		socgr = Graph.Read(self.infp("soc.graphml"))
+		gumap = dict_load(self.infp("gu.map"))
+
+		totalsize = int(self.infp("pt.len").read())
+		phdb = self.db("ph")
+		pgdb = self.db("pg")
+
+		ss = SampleWriter(phdb, pgdb, totalsize)
+		ss.writeIndexes(self.dir_idx)
+		ss.writeTGraphs(self.dir_tgr)
+
+		if self.interact: code.interact(banner=self.banner, local=locals())
+
 
 
 if __name__ == "__main__":

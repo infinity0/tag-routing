@@ -6,6 +6,7 @@ tmp
 lib
 !lib/patches
 src/futures
+src/flickrapi
 test/tags/store/StoreGenerator.java
 sample.*.txt
 sample-data-*.tar.bz2
