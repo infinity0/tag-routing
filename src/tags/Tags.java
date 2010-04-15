@@ -22,12 +22,17 @@ import org.xml.sax.SAXException;
 */
 public class Tags {
 
+
 	public static void main(String[] args) throws Throwable {
 		System.out.println("Hello, world!");
 		String fn = args.length == 0? "../test.graphml": args[0];
 		readGraphML(fn);
 		//for (String a: args) { System.out.println(a); }
 	}
+
+	final public static String NID = "id";
+	final public static String NAT = "height";
+	final public static String AAT = "weight";
 
 	public static class Vx {
 		@Override public String toString() { return "o"; }
@@ -39,11 +44,9 @@ public class Tags {
 
 	public static void readGraphML(String fn) throws IOException, ParserConfigurationException, SAXException {
 
-		Factory<Vx> fac_v = FactoryUtils.instantiateFactory(Vx.class);
-		Factory<Ed> fac_e = FactoryUtils.instantiateFactory(Ed.class);
-		AttrGraphMLReader<DirectedGraph<Vx, Ed>, Vx, Ed> reader = new
-		AttrGraphMLReader<DirectedGraph<Vx, Ed>, Vx, Ed>(fac_v, fac_e);
-
+		AttrGraphMLReader<DirectedGraph<Vx, Ed>, Vx, Ed> reader = new AttrGraphMLReader<DirectedGraph<Vx, Ed>, Vx, Ed>(
+			FactoryUtils.instantiateFactory(Vx.class), FactoryUtils.instantiateFactory(Ed.class)
+		);
 		DirectedGraph<Vx, Ed> g = new DirectedSparseGraph<Vx, Ed>();
 		reader.load(fn, g);
 

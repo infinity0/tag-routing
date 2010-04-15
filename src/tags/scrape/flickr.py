@@ -472,6 +472,7 @@ class SampleGenerator(object):
 		         = {htag:e_attr} associates "high-level" tags (which might not
 		         exist on the target side) to appropriate arc-attributes.
 		"""
+		LOG.debug("III enter selectTagsFromClusters: %s %s" % (len(tset_s), len(tset_t)))
 		rtags = {}
 		htags = {}
 		if type(tset_t) != set:
@@ -501,6 +502,7 @@ class SampleGenerator(object):
 							htags[rtag] = [attr]
 							rtags[rtag] = [tag]
 
+		LOG.debug("XXX exit selectTagsFromClusters: %s %s" % (len(tset_s), len(tset_t)))
 		return rtags, dict((htag, union_ind(attrs)) for htag, attrs in htags.iteritems())
 
 

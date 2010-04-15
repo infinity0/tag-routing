@@ -6,8 +6,18 @@ import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
 import java.util.Map;
 
+import tags.io.AttrGraphMLReader;
+import tags.io.AttrGraphMLMetadata;
+import edu.uci.ics.jung.io.GraphMLMetadata;
+import edu.uci.ics.jung.graph.DirectedGraph;
+import edu.uci.ics.jung.graph.DirectedSparseGraph;
+import org.apache.commons.collections15.Factory;
+import org.apache.commons.collections15.FactoryUtils;
+
 import java.io.File;
 import java.io.IOException;
+import javax.xml.parsers.ParserConfigurationException;
+import org.xml.sax.SAXException;
 
 /**
 ** DOCUMENT.

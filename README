@@ -50,7 +50,6 @@ python-futures
 :	Get it from the SVN repo (r67) and put trunk/python2/futures into src/
 	(resulting in src/futures)
 
-
 ## Format
 
 2.4.2 Declaring GraphML-Attributes
