@@ -22,7 +22,13 @@ import org.xml.sax.SAXException;
 import java.lang.reflect.InvocationTargetException;
 
 /**
-** DOCUMENT
+** An extension of {@link XMLGraph} which can distinguish between multiple
+** types of nodes.
+**
+** @param <T> Enum of node types
+** @param <K> Type of primary key
+** @param <U> Type of default node attribute
+** @param <W> Type of default arc attribute
 */
 abstract public class TypedXMLGraph<T extends Enum<T>, K, U, W> extends XMLGraph<K, U, W> {
 
@@ -44,10 +50,13 @@ abstract public class TypedXMLGraph<T extends Enum<T>, K, U, W> extends XMLGraph
 		this.ranges = makeRanges(getGraphAttributes(), vertices.size());
 	}
 
-	public EnumMap<T, Range> makeRanges(Map<String, Object> attr, int order) {
+	public EnumMap<T, Range> makeRanges(Map<String, Object> attrmap, int order) {
 		Map<Integer, T> bases = new TreeMap<Integer, T>(Collections.reverseOrder());
 		for (T type: types) {
-			bases.put((Integer)attr.get(getAttributeNameForType(type)), type);
+			String attr = getAttributeNameForType(type);
+			Object base = attrmap.get(attr);
+			if (base == null) { throw new IllegalArgumentException("graph does not contain attribute: " + attr); }
+			bases.put((Integer)base, type);
 		}
 
 		EnumMap<T, Range> ranges = new EnumMap<T, Range>(typecl);
@@ -104,7 +113,7 @@ abstract public class TypedXMLGraph<T extends Enum<T>, K, U, W> extends XMLGraph
 	** Splits the given map of nodes up by type. The returned maps are copies,
 	** not views, of the original.
 	*/
-	public <V> EnumMap<T, Map<Node, V>> splitMap(Map<Node, V> map) {
+	public <V> EnumMap<T, Map<Node, V>> splitMapByType(Map<Node, V> map) {
 		//vertices.get(nodes.get(key)).getSecond()
 		EnumMap<T, Map<Node, V>> split = new EnumMap<T, Map<Node, V>>(typecl);
 		for (T type: types) {
@@ -114,6 +123,18 @@ abstract public class TypedXMLGraph<T extends Enum<T>, K, U, W> extends XMLGraph
 		for (Map.Entry<Node, V> en: map.entrySet()) {
 			Node key = en.getKey();
 			split.get(getNodeType(key)).put(key, en.getValue());
+		}
+		return split;
+	}
+
+	public EnumMap<T, Set<K>> keyTypedSet() {
+		throw new UnsupportedOperationException("not implemented");
+	}
+
+	public Map<T, Map<K, W>> getSuccessorTypedMap(K key) {
+		EnumMap<T, Map<K, W>> split = new EnumMap<T, Map<K, W>>(typecl);
+		for (Map.Entry<T, Map<Node, Arc>> en: splitMapByType(vertices.get(nodes.get(key)).getSecond()).entrySet()) {
+			split.put(en.getKey(), new KeyAttrMap(en.getValue()));
 		}
 		return split;
 	}

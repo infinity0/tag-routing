@@ -21,6 +21,7 @@ import java.util.AbstractSet;
 import java.util.AbstractMap;
 import java.util.HashMap;
 
+import java.io.File;
 import java.io.Reader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -66,6 +67,15 @@ public class XMLGraph<K, U, W> extends DirectedSparseGraph<XMLGraph.Node, XMLGra
 	** @return this object, with the data loaded
 	*/
 	public XMLGraph<K, U, W> load(String fn) throws IOException {
+		return load(new FileReader(fn));
+	}
+
+	/**
+	** Load graph data from the given file.
+	**
+	** @return this object, with the data loaded
+	*/
+	public XMLGraph<K, U, W> load(File fn) throws IOException {
 		return load(new FileReader(fn));
 	}
 

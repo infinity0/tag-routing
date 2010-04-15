@@ -669,7 +669,7 @@ class SampleGenerator(object):
 		ptabgr.add_vertices(len(id_h) + len(id_g))
 		ptabgr.add_edges(edges)
 		ptabgr.vs[base_h:][NID] = lab_h + lab_g
-		ptabgr["base_u"] = 0
+		ptabgr["base_z"] = 0
 		ptabgr["base_h"] = base_h
 		ptabgr["base_g"] = base_g
 		self.ptabgr = ptabgr

@@ -579,10 +579,8 @@ class Producer(object):
 
 		gg = graph_copy(self.docgr)
 		del gg.vs[NAA]
-		gg["base_d"] = self.base_d
-		gg["base_t"] = self.base_t
-		gg["base_s"] = self.base_s
-		gg["base_p"] = self.base_p
+		gg["base_t"] = 0
+		gg["base_g"] = self.base_p - self.base_t
 
 		# node-attrs for prange
 		gg.vs[self.base_p:][NAT] = [pgdb[gg.vs[pid][NID]].size()/float(total) for pid in self.prange()]
@@ -627,8 +625,7 @@ class Producer(object):
 		del gg.vs[NAA]
 		gg["base_d"] = self.base_d
 		gg["base_t"] = self.base_t
-		gg["base_s"] = self.base_s
-		gg["base_p"] = self.base_p
+		gg["base_h"] = self.base_p
 
 		if display:
 			gg.vs["label"] = gg.vs[NID]

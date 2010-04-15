@@ -22,7 +22,7 @@ public class ProtoTypedXMLGraph<T extends Enum<T>, K, U, W> extends TypedXMLGrap
 	}
 
 	@Override public String getAttributeNameForType(T type) {
-		return "base_" + type.toString();
+		return "base_" + type.name();
 	}
 
 	final private static long serialVersionUID = -1328383656184693368L;
