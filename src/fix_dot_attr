@@ -1,0 +1,4 @@
+#!/bin/sh
+# igraph writes integer attributes as double attributes.
+# this changes all attribute names of the form base_? from double to int type
+exec sed -i 's/attr\.name="base_\(\w\)" attr\.type="double"/attr.name="base_\1" attr.type="int"/g' "$@"

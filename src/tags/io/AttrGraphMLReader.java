@@ -109,6 +109,9 @@ public class AttrGraphMLReader<G extends Hypergraph<V, E>, V, E> extends GraphML
 
 		keyname.put(id, aname);
 		AttrType t = attr_type.get(atype);
+		if (t == null) {
+			throw new UnsupportedOperationException("unrecognised attribute type: " + atype + "; valid types are: " + attr_type.keySet());
+		}
 
 		assert !keytype.containsKey(id);
 		keytype.put(id, t == null? AttrType.STRING: t);
@@ -151,13 +154,13 @@ public class AttrGraphMLReader<G extends Hypergraph<V, E>, V, E> extends GraphML
 	}
 
 	@Override protected <T> void addDatum(Map<String, GraphMLMetadata<T>> metadata,
-		T current_elt, String text) throws SAXNotSupportedException
+	  T current_elt, String text) throws SAXNotSupportedException
 	{
 		// do nothing
 	}
 
 	protected <T> void addAttrDatum(Map<String, SettableAttrGraphMLMetadata<T>> metadata,
-		T current_elt, String text) throws SAXNotSupportedException
+	  T current_elt, String text) throws SAXNotSupportedException
 	{
 		if (metadata.containsKey(this.current_key))
 		{
@@ -210,7 +213,7 @@ public class AttrGraphMLReader<G extends Hypergraph<V, E>, V, E> extends GraphML
 	}
 
 	@Override protected <T> void addExtraData(Map<String, String> atts,
-			Map<String, GraphMLMetadata<T>> metadata_map, T current_elt)
+	  Map<String, GraphMLMetadata<T>> metadata_map, T current_elt)
 	{
 		super.addExtraData(atts, metadata_map, current_elt);
 		// TODO NORM
@@ -280,7 +283,7 @@ public class AttrGraphMLReader<G extends Hypergraph<V, E>, V, E> extends GraphML
 	}
 
 	protected <T> AttrGraphMLMetadata<T> buildAttrMetadata(String key,
-		Map<String, GraphMLMetadata<T>> metadata, Map<String, SettableAttrGraphMLMetadata<T>> attr_metadata)
+	  Map<String, GraphMLMetadata<T>> metadata, Map<String, SettableAttrGraphMLMetadata<T>> attr_metadata)
 	{
 		MetadataBuilder<T> mt = (MetadataBuilder<T>)metadata.get(key);
 		SettableAttrGraphMLMetadata<T> attr_mt = mt.build();

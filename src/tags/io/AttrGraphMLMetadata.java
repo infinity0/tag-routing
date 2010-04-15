@@ -10,6 +10,8 @@ import org.apache.commons.collections15.Transformer;
 ** casting attribute-values to their correct attribute-types, and also uses
 ** final fields.
 **
+** (This class does not extend {@link GraphMLMetadata} on purpose.)
+**
 ** @see <a href="http://graphml.graphdrawing.org/primer/graphml-primer.html#AttributesDefinition">2.4.2 Declaring GraphML-Attributes</a>
 ** @see <a href="http://www.graphviz.org/doc/info/attrs.html">Node, Edge and Graph Attributes</a>
 */
@@ -38,18 +40,27 @@ public class AttrGraphMLMetadata<T> {
 	final public boolean isDouble() { return type == AttrType.DOUBLE; }
 	final public boolean isString() { return type == AttrType.STRING; }
 
+	/**
+	** A type-safe transformer that uses {@link Object#toString()} to return
+	** values for unknown value types.
+	*/
 	public Transformer<T, String> transformer() {
 		if (_transformer == null) {
 			_transformer = new Transformer<T, String>() {
-
 				@Override public String transform(T key) {
 					Object o = transformer.transform(key);
 					return o == null? null: o.toString();
 				}
-
 			};
 		}
 		return _transformer;
+	}
+
+	/**
+	** Returns the transformer with an unknown type.
+	*/
+	public Transformer<T, ?> transformerUntyped() {
+		return transformer;
 	}
 
 	@SuppressWarnings("unchecked")

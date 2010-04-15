@@ -6,13 +6,8 @@ import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
 import java.util.Map;
 
-import tags.io.AttrGraphMLReader;
-import tags.io.AttrGraphMLMetadata;
-import edu.uci.ics.jung.io.GraphMLMetadata;
-import edu.uci.ics.jung.graph.DirectedGraph;
-import edu.uci.ics.jung.graph.DirectedSparseGraph;
-import org.apache.commons.collections15.Factory;
-import org.apache.commons.collections15.FactoryUtils;
+import tags.io.GraphMLFile;
+import org.apache.commons.collections15.map.ReferenceMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,7 +27,26 @@ import org.xml.sax.SAXException;
 */
 public class GraphMLStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T, A, U, W, S, Z> {
 
+	final public static String NODE_ID = "id";
+	final public static String NODE_ATTR = "height";
+	final public static String ARC_ATTR = "weight";
+
+	final public static String FILE_PTB = "ptb.graphml";
+	final public static String DIR_IDX = "idx";
+	final public static String DIR_TGR = "tgr";
+
 	final public File basedir;
+
+	final protected GraphMLFile<I, Double, Double> ptables;
+	final protected ReferenceMap<String, GraphMLFile<X, Double, Double>> tgraphs;
+	final protected ReferenceMap<String, GraphMLFile<X, Double, Double>> indexes;
+
+	/**
+	** @see #GraphMLStoreControl(File)
+	*/
+	public GraphMLStoreControl(String basedir) {
+		this(new File(basedir));
+	}
 
 	/**
 	** @throws IllegalArgumentException if {@code basedir} is not a directory
@@ -42,10 +56,10 @@ public class GraphMLStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I,
 			throw new IllegalArgumentException("not a directory: " + basedir);
 		}
 		this.basedir = basedir;
-	}
 
-	public GraphMLStoreControl(String basedir) {
-		this(new File(basedir));
+		this.ptables = null;
+		this.tgraphs = null;
+		this.indexes = null;
 	}
 
 	public Map<I, Z> getFriends(I id) throws IOException {

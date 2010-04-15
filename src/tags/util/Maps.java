@@ -208,7 +208,7 @@ final public class Maps {
 							if (!keys.contains(key)) { return false; }
 
 							V val = parent.get(key);
-							return val == null? parent.containsKey(key) && testval == null: val.equals(testval);
+							return val == null? testval == null && parent.containsKey(key): val.equals(testval);
 						}
 
 						@Override public boolean remove(Object o) {
@@ -219,7 +219,7 @@ final public class Maps {
 							if (!keys.contains(key)) { return false; }
 
 							V val = parent.get(key);
-							if (val == null? parent.containsKey(key) && testval == null: val.equals(testval)) {
+							if (val == null? testval == null && parent.containsKey(key): val.equals(testval)) {
 								parent.remove(key);
 								return true;
 							} else {
@@ -451,7 +451,7 @@ final public class Maps {
 						Object key = u.isT0()? u.getT0(): u.getT1();
 						Map<?, V> map = u.isT0()? m0: m1;
 						V val = map.get(key);
-						return val == null? map.containsKey(key) && testval == null: val.equals(testval);
+						return val == null? testval == null && map.containsKey(key): val.equals(testval);
 					}
 
 					@Override public boolean remove(Object o) {
@@ -464,7 +464,7 @@ final public class Maps {
 						Map<?, V> map = u.isT0()? m0: m1;
 						V val = map.get(key);
 
-						if (val == null? map.containsKey(key) && testval == null: val.equals(testval)) {
+						if (val == null? testval == null && map.containsKey(key): val.equals(testval)) {
 							map.remove(key);
 							return true;
 						} else {

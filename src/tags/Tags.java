@@ -11,11 +11,22 @@ import tags.io.GraphMLFile;
 public class Tags {
 
 	public static void main(String[] args) throws Throwable {
-		System.out.println("Hello, world!");
-		String fn = args.length == 0? "../test.graphml": args[0];
-		GraphMLFile gf = new GraphMLFile(fn);
-		gf.debug();
 		//for (String a: args) { System.out.println(a); }
+		String fn = args.length == 0? "../test.graphml": args[0];
+		System.out.println("Hello, world!");
+
+		GraphMLFile<String, Double, Double> gf = new GraphMLFile<String, Double, Double>(fn);
+		gf.setVertexPrimaryKey("id");
+		gf.setDefaultEdgeAttribute("weight");
+		//gf.setDefaultVertexAttribute("height");
+
+		System.out.println(gf.getGraphAttributes());
+		System.out.println(gf.getVertexAttributeNames());
+		System.out.println(gf.getEdgeAttributeNames());
+
+		for (String id: gf.keySet()) {
+			System.out.println(id + " : " + gf.getSuccessorMap(id));
+		}
 	}
 
 }

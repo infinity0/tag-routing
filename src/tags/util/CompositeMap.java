@@ -10,6 +10,9 @@ import java.util.AbstractMap;
 /**
 ** An {@link Map} backed by another {@link Map}.
 **
+** Note that the map will be mutable iff {@link #inverseItemFor(Object)} is
+** defined. To create an immutable map, simply do not override this method.
+**
 ** @param <K> Type of key
 ** @param <S> Type of source value
 ** @param <T> Type of target value
@@ -25,7 +28,7 @@ abstract public class CompositeMap<K, S, T> extends AbstractMap<K, T> implements
 	abstract protected T itemFor(S elem);
 
 	protected S inverseItemFor(T elem) {
-		throw new UnsupportedOperationException("cannot put");
+		throw new UnsupportedOperationException("inverse not defined");
 	}
 
 	@Override public int size() {
@@ -92,7 +95,7 @@ abstract public class CompositeMap<K, S, T> extends AbstractMap<K, T> implements
 					T testval = en.getValue();
 
 					S val = map.get(key);
-					return val == null? map.containsKey(key) && testval == null: itemFor(val).equals(testval);
+					return val == null? testval == null && map.containsKey(key): itemFor(val).equals(testval);
 				}
 
 				@Override public boolean remove(Object o) {
@@ -102,7 +105,7 @@ abstract public class CompositeMap<K, S, T> extends AbstractMap<K, T> implements
 					T testval = en.getValue();
 
 					S val = map.get(key);
-					if (val == null? map.containsKey(key) && testval == null: itemFor(val).equals(testval)) {
+					if (val == null? testval == null && map.containsKey(key): itemFor(val).equals(testval)) {
 						map.remove(key);
 						return true;
 					} else {

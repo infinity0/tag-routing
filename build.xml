@@ -46,9 +46,11 @@
 		<echo message="  package     builds .jar packages in ./${main.dst}/"/>
 		<echo message="  doc         builds documentation in ./${doc.dst}/"/>
 		<echo message="  clean-all   cleans all build products"/>
+		<echo message="  run         run the main class with args in -Drun.args="/>
 		<echo message=""/>
 		<echo message="Test parameters (-Dtest.PARAM=true)"/>
 		<echo message=""/>
+		<echo message="  skip        Skip all tests"/>
 		<echo message="  verbose     Report additional information"/>
 		<echo message="  extensive   Run extensive tests"/>
 		<echo message=""/>
