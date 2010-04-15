@@ -1,7 +1,7 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags;
 
-import tags.io.GraphMLFile;
+import tags.io.XMLGraph;
 
 /**
 ** Entry point for the tag-routing suite.
@@ -15,7 +15,8 @@ public class Tags {
 		String fn = args.length == 0? "../test.graphml": args[0];
 		System.out.println("Hello, world!");
 
-		GraphMLFile<String, Double, Double> gf = new GraphMLFile<String, Double, Double>(fn);
+		XMLGraph<String, Double, Double> gf = new XMLGraph<String, Double, Double>();
+		gf.load(fn);
 		gf.setVertexPrimaryKey("id");
 		gf.setDefaultEdgeAttribute("weight");
 		//gf.setDefaultVertexAttribute("height");

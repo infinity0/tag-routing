@@ -6,7 +6,7 @@ import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
 import java.util.Map;
 
-import tags.io.GraphMLFile;
+import tags.io.XMLGraph;
 import org.apache.commons.collections15.map.ReferenceMap;
 
 import java.io.File;
@@ -37,9 +37,9 @@ public class GraphMLStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I,
 
 	final public File basedir;
 
-	final protected GraphMLFile<I, Double, Double> ptables;
-	final protected ReferenceMap<String, GraphMLFile<X, Double, Double>> tgraphs;
-	final protected ReferenceMap<String, GraphMLFile<X, Double, Double>> indexes;
+	final protected XMLGraph<I, Double, Double> ptables;
+	final protected ReferenceMap<String, XMLGraph<T, Double, Double>> tgraphs;
+	final protected ReferenceMap<String, XMLGraph<A, Double, Double>> indexes;
 
 	/**
 	** @see #GraphMLStoreControl(File)
