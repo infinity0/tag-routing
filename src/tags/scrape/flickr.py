@@ -389,18 +389,20 @@ class SampleGenerator(object):
 			prod.repDoc()
 			prod.repTag()
 			self.phdb[nsid] = prod
-		exec_unique(self.ppdb, self.phdb, run_p, None, "%s db: producers" % name, LOG.info)
+		exec_unique(self.ppdb.iterkeys(), self.phdb, run_p, None, "%s db: producers" % name, LOG.info)
 
 		# generate content arcs between producers
-		def run_r((nsid, prod)):
+		def run_r(nsid):
+			prod = self.phdb[nsid]
 			pmap_a = dict((rnsid, self.inferProdArc(prod, self.phdb[rnsid])) for rnsid in self.inferRelProds(prod))
 			prod.initProdArcs(pmap_a)
 			self.phdb[nsid] = prod
-		exec_unique(self.phdb.iteritems(), lambda (nsid, prod): prod.base_p is not None,
-		  run_r, None, "%s db: relations" % name, LOG.info)
+		# OPT HIGH the lambda is inefficient, we should store this state in a smaller+faster db
+		exec_unique(self.phdb.iterkeys(), lambda nsid: self.phdb[nsid].base_p is not None,
+		  run_r, None, "%s db: relations" % name, LOG.info, steps=0x10000)
 
 		total = len(self.phdb)
-		lab_p, id_p = zip(*(("%s (%s)\\n%s" % (prod.nsid, prod.size(), '\\n'.join(prod.rep_t[0:4])),
+		lab_p, id_p = zip(*(("%s (%s)\\n%s" % (nsid, prod.size(), '\\n'.join(prod.rep_t[0:4])),
 		  (nsid, i)) for i, (nsid, prod) in enumerate(self.phdb.iteritems()))) if self.phdb else ([], [])
 		id_p = dict(id_p)
 
@@ -540,7 +542,8 @@ class SampleGenerator(object):
 		# FIXME HIGH this uses up too much memory :/
 		import gc
 		#gc.set_debug(gc.DEBUG_LEAK)
-		def run_r((nsid, prod)):
+		def run_r(nsid):
+			prod = self.pgdb[nsid]
 			rprod = g.vs.select(g.successors(id_p[nsid]))[NID]
 			pmap = [(rnsid, self.inferProdArc(prod, self.pgdb[rnsid], show_tag=True)) for rnsid in rprod]
 			self.pgdb.sync()
@@ -549,8 +552,9 @@ class SampleGenerator(object):
 			del pmap, pmap_a, pmap_t
 			gc.collect()
 			self.pgdb[nsid] = prod
-		exec_unique(self.pgdb.iteritems(), lambda (nsid, prod): prod.base_p is not None,
-		  run_r, None, "%s db: relations" % name, LOG.info)
+		# OPT HIGH the lambda is inefficient, we should store this state in a smaller+faster db
+		exec_unique(self.pgdb.iterkeys(), lambda nsid: self.pgdb[nsid].base_p is not None,
+		  run_r, None, "%s db: relations" % name, LOG.info, steps=0x10000)
 
 
 	def selectCommunities(self):
@@ -693,18 +697,20 @@ class SampleWriter(ProducerSample):
 
 
 	def writeIndexes(self, base):
-		def run((nsid, prod)):
+		def run(nsid):
+			prod = self.phdb[nsid]
 			g = prod.createIndex()
 			g.write(os.path.join(base, "%s.graphml" % nsid))
-		exec_unique(self.phdb.iteritems(), lambda (nsid, prod): os.path.exists(os.path.join(base, "%s.graphml" % nsid)),
+		exec_unique(self.phdb.iterkeys(), lambda nsid: os.path.exists(os.path.join(base, "%s.graphml" % nsid)),
 		  run, None, "indexes db: object files", LOG.info)
 
 
 	def writeTGraphs(self, base):
-		def run((nsid, prod)):
+		def run(nsid):
+			prod = self.pgdb[nsid]
 			g = prod.createTGraph(self.totalsize, self.pgdb)
 			g.write(os.path.join(base, "%s.graphml" % nsid))
-		exec_unique(self.pgdb.iteritems(), lambda (nsid, prod): os.path.exists(os.path.join(base, "%s.graphml" % nsid)),
+		exec_unique(self.pgdb.iterkeys(), lambda nsid: os.path.exists(os.path.join(base, "%s.graphml" % nsid)),
 		  run, None, "tgraphs db: object files", LOG.info)
 
 

@@ -532,10 +532,13 @@ def enumerate_cb(iterable, callback, message=None, steps=0x100, every=None, expe
 
 def exec_unique(items, done, run, post=lambda it, i, res: None, name="exec_unique",
   logcb=lambda line: sys.stderr.write("%s\n", line), logcb_p=None, max_threads=None,
-  assume_unique=False, steps=0x100):
+  assume_unique=False, **kwargs):
 	"""
 	Executes the given jobs in parallel, excluding jobs that have already been
 	done.
+
+	NOTE: this method will load the entire <items> into a set at the start, so
+	don't give it an infinite generator or a iteritems() over a huge database.
 
 	@param items: a collection of to-do items
 	@param done: a collection of done items (overrides __contains__), or a
@@ -550,16 +553,15 @@ def exec_unique(items, done, run, post=lambda it, i, res: None, name="exec_uniqu
 	       in the same thread as the caller
 	@param assume_unique: whether to assume <item> is unique
 	"""
-	print "got here 0"
+	#print "got here 0"
 	if not assume_unique and type(items) != set and type(items) != dict:
-		# OPT NOW
-		# when items is of the form database.iteritems(), this will try to load
-		# the entire database into memory!!!
 		items = set(items)
-	print "got here 1"
+	#print "got here 1"
 	todo = list(ifilterfalse(done, items)) if callable(done) else [it for it in items if it not in done]
-	print "got here 2"
+	#print "got here 2"
 	total = len(todo)
+	#print "got here 3"
+	kwargs["expected_length"] = total
 	logcb("%s: %s submitted, %s accepted" % (name, len(items), total))
 
 	if logcb_p is None:
@@ -577,12 +579,12 @@ def exec_unique(items, done, run, post=lambda it, i, res: None, name="exec_uniqu
 		from futures import ThreadPoolExecutor
 		with ThreadPoolExecutor(max_threads=max_threads) as x:
 			for i, (it, res) in enumerate_cb(x.run_to_results_any(partial(lambda it: (it, run(it)), it) for it in todo),
-			  logcb_p, "%s: %%(i1)s/%s %%(it)s" % (name, total), expected_length=total, steps=steps):
+			  logcb_p, "%s: %%(i1)s/%s %%(it)s" % (name, total), **kwargs):
 				post(it, i, res)
 
 	else:
 		for i, (it, res) in enumerate_cb(((it, run(it)) for it in todo),
-		  logcb_p, "%s: %%(i1)s/%s %%(it)s" % (name, total), expected_length=total, steps=steps):
+		  logcb_p, "%s: %%(i1)s/%s %%(it)s" % (name, total), **kwargs):
 			post(it, i, res)
 
 	logcb("%s: %s submitted, %s accepted, %s completed" % (name, len(items), total, (i+1)))
