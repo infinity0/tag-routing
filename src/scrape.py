@@ -90,6 +90,7 @@ class Scraper(object):
 		("cluster", Round("Scraping clusters", ["tag"], ["tc.db"])),
 		("generate", Round("Generating data", ["invert", "cluster"], ["ph.db", "pg.db"])),
 		("writeall", Round("Writing objects", ["generate"], [])),
+		("examine", Round("Examine data", [], [])),
 	]
 	rounds = dict(_rounds)
 	roundlist = [k for k, r in _rounds]
@@ -100,7 +101,6 @@ class Scraper(object):
 		self.res = {}
 		self.base = basedir
 		self.interact = interact
-		self.banner = "[Scraper interactive console]\n>>> self\n%r\n>>> self.ff\n%r" % (self, self.ff)
 
 		self.dir_idx = os.path.join(basedir, "idx")
 		self.dir_tgr = os.path.join(basedir, "tgr")
@@ -118,6 +118,10 @@ class Scraper(object):
 		for path, res in self.res.iteritems():
 			res.close()
 			print >>sys.stderr, "%s closed" % (path)
+
+
+	def banner(self, local):
+		return "[Scraper interactive console]\n>>> locals().keys()\n%r\n>>> self.ff\n%r" % (sorted(local.keys()), self.ff)
 
 
 	def outfp(self, name):
@@ -171,7 +175,7 @@ class Scraper(object):
 		socgr = self.ff.scrapeIDs(seed, size).graph
 		socgr.write_graphml(self.outfp("soc.graphml"))
 
-		if self.interact: code.interact(banner=self.banner, local=locals())
+		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
 
 	def round_group(self):
@@ -183,7 +187,7 @@ class Scraper(object):
 		gumap = self.ff.scrapeGroups(users)
 		dict_save(gumap, self.outfp("gu.map"))
 
-		if self.interact: code.interact(banner=self.banner, local=locals())
+		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
 
 	def round_photo(self):
@@ -201,7 +205,7 @@ class Scraper(object):
 		socgr.write_graphml(self.outfp("soc.graphml"))
 		dict_save(gumap, self.outfp("gu.map"))
 
-		if self.interact: code.interact(banner=self.banner, local=locals())
+		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
 
 	def round_invert(self):
@@ -213,7 +217,7 @@ class Scraper(object):
 
 		self.ff.invertProducerMap(ppdb, pcdb)
 
-		if self.interact: code.interact(banner=self.banner, local=locals())
+		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
 
 	def round_tag(self):
@@ -227,7 +231,7 @@ class Scraper(object):
 		self.ff.commitPhotoTags(photos, ptdb)
 		print >>self.outfp("pt.len"), len(ptdb)
 
-		if self.interact: code.interact(banner=self.banner, local=locals())
+		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
 
 	def round_cluster(self):
@@ -240,7 +244,7 @@ class Scraper(object):
 		tags = chain(*ptdb.itervalues())
 		self.ff.commitTagClusters(tags, tcdb)
 
-		if self.interact: code.interact(banner=self.banner, local=locals())
+		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
 
 	def round_generate(self):
@@ -268,7 +272,7 @@ class Scraper(object):
 
 		dict_save(sg.ptbmap, self.outfp("ptables.map"))
 
-		if self.interact: code.interact(banner=self.banner, local=locals())
+		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
 
 	def round_writeall(self):
@@ -286,7 +290,25 @@ class Scraper(object):
 		ss.writeIndexes(self.dir_idx)
 		ss.writeTGraphs(self.dir_tgr)
 
-		if self.interact: code.interact(banner=self.banner, local=locals())
+		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
+
+
+	def round_examine(self):
+		"""
+		Examine objects through the python interactive interpreter.
+		"""
+		socgr = Graph.Read(self.infp("soc.graphml"))
+		gumap = dict_load(self.infp("gu.map"))
+
+		ppdb = self.db("pp")
+		pcdb = self.db("pc")
+		ptdb = self.db("pt")
+		tcdb = self.db("tc")
+
+		phdb = self.db("ph")
+		pgdb = self.db("pg")
+
+		code.interact(banner=self.banner(locals()), local=locals())
 
 
 

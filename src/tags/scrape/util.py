@@ -572,7 +572,7 @@ def exec_unique(items, done, run, post=lambda it, i, res: None, name="exec_uniqu
 		post = lambda it, i, res: None
 
 	if max_threads is None:
-		max_threads = DEFAULT_CONC_MAX
+		max_threads = DEFAULT_MAX_THREADS
 
 	i = -1
 	if max_threads > 0:
