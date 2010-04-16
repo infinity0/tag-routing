@@ -35,4 +35,8 @@ Dynamic following of hyperlinks...
 
 # sed 's/\\\\n/\\n/g' lol.0.dot | less
 
+- invert pt.db to get tp.db
+- make double->probability adaptors for StoreControl
+- plot address scheme
+- plot lookups table
 

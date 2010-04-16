@@ -15,10 +15,10 @@ import tags.util.exec.MessageRejectedException;
 ** @param <S> Type of state
 ** @param <M> Type of message
 */
-abstract public class LayerService<Q extends Query, P extends QueryProcessor, S, M>
+abstract public class LayerService<Q extends Query, P extends QueryProcessor, S extends Enum<S>, M>
 extends UnitService<S> implements MessageReceiver<M> {
 
-	final String name;
+	final public String name;
 	final protected Q query;
 	final protected P proc;
 
@@ -42,7 +42,7 @@ extends UnitService<S> implements MessageReceiver<M> {
 	}
 
 	public String getStatus() {
-		return name + ": " + (last_ex == null? (active?'A':'I'): 'E') + " " + completed + " " + state;
+		return "[" + (last_ex == null? (active?'A':'I'): 'E') + "|" + state.ordinal() + "|" + completed + "]";
 	}
 
 }

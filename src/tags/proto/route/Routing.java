@@ -162,6 +162,14 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		return s;
 	}
 
+	public int countResultsD() {
+		return results == null? 0: results.K0Map().size();
+	}
+
+	public int countResultsH() {
+		return results == null? 0: results.K1Map().size();
+	}
+
 	// TODO HIGH this is a major hack...
 	volatile protected int pending = 0;
 	protected boolean hasNothingToDo() {

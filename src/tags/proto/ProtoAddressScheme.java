@@ -133,7 +133,23 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		}
 	}
 
-	@Override public void pushNode(U2<T, A> node, T parent, Set<T> inc) {
+	/**
+	** Attaches the given node to the address scheme, with a set of incoming
+	** neighbours. Only nodes already in the scheme (ie. nearer to the seed)
+	** will be added as incoming neighbours; the rest will be filtered out.
+	**
+	** It is '''assumed''' that nodes are added in shortest-path order. It is
+	** up to the caller to ensure that this holds.
+	**
+	** @param node The node to push onto this address scheme
+	** @param parent The immediate parent of the node in the shortest-path tree
+	** @param inc The incoming neighbours of the node
+	** @throws IllegalArgumentException if the scheme or {@code inc} contains
+	**         {@code tag}, or if either of them do not contain {@code parent}.
+	** @throws IllegalStateException if the scheme has been made incomplete
+	** @throws NullPointerException if {@code parent} is {@code null}
+	*/
+	public void pushNode(U2<T, A> node, T parent, Set<T> inc) {
 		if (node_map.containsKey(node)) {
 			throw new IllegalArgumentException("scheme already contains node " + node);
 		}
@@ -182,11 +198,17 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		}
 	}
 
-	@Override public void pushNodeT(T tag, T parent, Set<T> inc) {
+	/**
+	** @see #pushNode(Union.U2, Object, Set)
+	*/
+	public void pushNodeT(T tag, T parent, Set<T> inc) {
 		pushNode(Union.<T, A>U2_0(tag), parent, inc);
 	}
 
-	@Override public void pushNodeG(A addr, T parent, Set<T> inc) {
+	/**
+	** @see #pushNode(Union.U2, Object, Set)
+	*/
+	public void pushNodeG(A addr, T parent, Set<T> inc) {
 		pushNode(Union.<T, A>U2_1(addr), parent, inc);
 	}
 

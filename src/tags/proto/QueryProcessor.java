@@ -49,6 +49,8 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 	// TODO NORM this is a hack, make a better way of doing this
 	final public int parallel_idx_lku = 0x10;
 
+	protected int steps;
+
 	public QueryProcessor(
 		Query<I, T> query,
 		StoreControl<I, T, A, U, W, S, Z> sctl,
@@ -75,10 +77,29 @@ public class QueryProcessor<I, T, A, U, W, S, Z> {
 
 	public void getMoreData() throws MessageRejectedException {
 		routing.recv(Routing.MRecv.REQ_MORE_DATA);
+		++steps;
+	}
+
+	public String getStats() {
+		return "(" + steps + ")" +
+		  " | G:" + naming.countSources() +
+		  " | T:" + naming.countTagsInScheme() +
+		  " | L:" + routing.countLookups() +
+		  " | D:" + routing.countResultsD() +
+		  " | H:" + routing.countResultsH() +
+		  " |";
+	}
+
+	public String getStatus() {
+		return contact.name + ":" + contact.getStatus() + " " + naming.name + ":" + naming.getStatus() + " " + routing.name + ":" + routing.getStatus();
 	}
 
 	public U2Map<A, A, W> getResults() {
 		return routing.getResults();
+	}
+
+	public AddressScheme<T, A, W> getAddressScheme() {
+		return naming.getAddressScheme();
 	}
 
 	/**

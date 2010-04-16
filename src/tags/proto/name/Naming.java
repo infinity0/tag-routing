@@ -141,7 +141,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 	}
 
 	public int countTagsInScheme() {
-		return scheme.nodeList().size();
+		return scheme == null? 0: scheme.nodeList().size();
 	}
 
 	protected void addDataSourceAndComplete(A addr) {

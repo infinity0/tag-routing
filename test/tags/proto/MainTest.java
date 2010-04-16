@@ -109,25 +109,26 @@ public class MainTest extends TestCase {
 		while (proc.getResults() == null || proc.getResults().isEmpty()) {
 			nextStep(proc);
 		}
-		showResults(proc.getResults(), proc.query);
+		//showResults(proc.getResults(), proc.query);
 
 		U2Map<Long, Long, Probability> res = proc.getResults();
 		for (int i=0; i<n; ++i) {
 			nextStep(proc);
 			if (proc.getResults() == res) { continue; }
 			res = proc.getResults();
-			showResults(res, proc.query);
+			LOG.info(proc.query + " " + proc.getStatus() + " " + proc.getStats());
+			//showResults(res, proc.query);
 		}
 
 	}
 
 	public void showResults(U2Map<Long, Long, Probability> res, Query<Long, String> query) {
 		LOG.info("Query " + query + " results: " + res.K0Map().size() + " doc, " + res.K1Map().size() + " idx");
-		LOG.finest("doc: " + outputMap(res.K0Map()));
-		LOG.finest("idx: " + outputMap(res.K1Map()));
+		LOG.finest("doc: " + formatMap(res.K0Map()));
+		LOG.finest("idx: " + formatMap(res.K1Map()));
 	}
 
-	public String outputMap(Map<Long, Probability> map) {
+	public String formatMap(Map<Long, Probability> map) {
 		StringBuilder s = new StringBuilder();
 		s.append("{ ");
 		for (Map.Entry<Long, Probability> en: map.entrySet()) {
@@ -140,12 +141,13 @@ public class MainTest extends TestCase {
 	public void nextStep(QueryProcessor<Long, String, Long, Probability, Probability, Probability, Probability> proc) {
 		try {
 			proc.getMoreData();
+			LOG.fine(proc.query + " " + proc.getStatus() + " " + proc.getStats());
 		} catch (MessageRejectedException e) {
-			if (!e.getMessage().equals("bad timing")) {
+			String msg = e.getMessage();
+			if (!msg.equals("bad timing") && !msg.substring(0,15).equals("invalid message")) {
 				LOG.fine(e.getMessage());
 			}
 		}
-		LOG.fine("[ " + proc.contact.getStatus() + " | " + proc.naming.getStatus() + " | " + proc.routing.getStatus() + " ]");
 		try { Thread.sleep(250); } catch (InterruptedException e) { }
 	}
 
