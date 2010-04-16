@@ -9,34 +9,37 @@ Probability needs to check for div/0 errors
 (laterz)
 - rename Probability to just Prob?
 - rename SPUProbabilityInferer to ShortPathUnionProbInferer?
-- possibly move AddressScheme.pushNode* into ProtoAddressScheme
+- rename AddressScheme to just AddrScheme
 
 (very later)
 - add tags.rout.IndexComposer to the design document
 - explain how tags are scored, in the design document
 
 
-(architecture issues)
-current architecture has each QueryProcessor spawn new Contact/Naming/Routing
-layers. ideally, Contact should be split off from this, since the information
-it uses is independent of any query.
+== Architecture ==
 
-to do this we first need to extend MessageReceiver.recv() to accept a "sender"
-argument, or something.
+- QueryProcessor should instead be QueryProcess<I, T> extends Query<I, T>
+- new*Service() should be split into a separate QueryServiceProvider class, or something
 
+- QueryProcess.{exec,sctl,serv} should then go in a separate class called QueryEnvironment
 
+- current architecture has each QueryProcessor spawn new Contact/Naming/Routing layers
+- Contact should be split off from this, since the information it uses is independent of any query; it can go in QueryEnvironment
+- we also need to extend MessageReceiver.recv() to accept a "sender" argument, or something
+- this is so that Contact knows who to send replies back to...
+
+== Observations ==
 
 In Kleinberg's model, geographic location is a uniting factor. In this model,
 language is a uniting factor.
 
 Dynamic following of hyperlinks...
 
-----
-
-# sed 's/\\\\n/\\n/g' lol.0.dot | less
 
 - invert pt.db to get tp.db
 - make double->probability adaptors for StoreControl
 - plot address scheme
 - plot lookups table
+- make Probability implement Formattable
+
 

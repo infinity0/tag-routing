@@ -26,6 +26,7 @@ import tags.proto.Index.Lookup;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Arc;
+import tags.util.CompositeMap;
 import tags.util.MapQueue;
 import tags.util.BaseMapQueue;
 import java.util.Set;
@@ -154,7 +155,20 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		return results;
 	}
 
+	private transient Map<A, Set<T>> _completed;
+	public Map<A, Set<T>> getCompletedLookups() {
+		if (_completed == null) {
+			_completed = new CompositeMap<A, Set<T>, Set<T>>(completed) {
+				@Override public Set<T> itemFor(Set<T> elem) {
+					return Collections.<T>unmodifiableSet(elem);
+				}
+			};
+		}
+		return _completed;
+	}
+
 	public int countLookups() {
+		// FIXME HIGH java.util.ConcurrentModificationException observed here, synchronize
 		int s = 0;
 		for (Set<T> tag: completed.values()) {
 			s += tag.size();
@@ -242,7 +256,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 	}
 
 	/**
-	** This is to be called whenever:
+	** Get new lookups to do. This is to be called whenever:
 	**
 	** - address scheme is updated
 	*/
@@ -255,7 +269,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 	}
 
 	/**
-	** This is to be called whenever:
+	** Get new lookups to do. This is to be called whenever:
 	**
 	** - we add a source
 	*/

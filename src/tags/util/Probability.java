@@ -1,10 +1,15 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
 package tags.util;
 
+import static java.util.FormattableFlags.*;
+import java.util.Formattable;
+import java.util.Formatter;
+
 /**
 ** Immutable wrapper around a {@code double}, representing a probability.
 */
-public class Probability /*extends Number TODO LOW*/ implements Comparable<Probability> {
+public class Probability /*extends Number TODO LOW*/
+implements Comparable<Probability>, Formattable {
 
 	/**
 	** Minimum possible probability. Corresponds to {@link Entropy#MAX_VALUE}.
@@ -83,6 +88,14 @@ public class Probability /*extends Number TODO LOW*/ implements Comparable<Proba
 	*/
 	public Probability conditionalComplement(Probability given, Probability p) {
 		return new Probability((this.val - given.val * p.val)/(1.0 - p.val));
+	}
+
+	@Override public void formatTo(Formatter formatter, int flags, int width, int precision) {
+		StringBuilder fstr = new StringBuilder();
+		fstr.append('%');
+		if ((flags & LEFT_JUSTIFY) == LEFT_JUSTIFY) { fstr.append('-'); }
+		fstr.append(width).append('.').append(precision).append('f');
+		formatter.format(fstr.toString(), val);
 	}
 
 	@Override public int compareTo(Probability c) {
