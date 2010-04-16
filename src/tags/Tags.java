@@ -8,6 +8,9 @@ import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 
+import tags.proto.Query;
+import tags.proto.QueryProcessors;
+import tags.proto.QueryProcessors.*;
 import tags.store.GraphMLStoreControl;
 
 /**
@@ -48,6 +51,9 @@ public class Tags {
 
 		GraphMLStoreControl<String, Double, Double, Double> sctl = new
 		GraphMLStoreControl<String, Double, Double, Double>(basedir);
+
+		// FIXME NOW this needs to be Probability, not Double
+		//QueryProcessors.processQuery(sctl, seedid, java.util.Arrays.asList(tags));
 
 	}
 
