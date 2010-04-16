@@ -80,7 +80,7 @@ abstract public class TypedXMLGraph<T extends Enum<T>, K, U, W> extends XMLGraph
 
 	/**
 	** Convert a vertex String id (from the GraphML file, accessible by {@link
-	** GraphMLReader#getVertexIDs()}) into an int id.
+	** AttrGraphMLReader#getVertexIDs()}) into an int id.
 	**
 	** The mapping must be constant and bijective.
 	*/

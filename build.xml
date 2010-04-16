@@ -197,6 +197,7 @@
 				<include name="**/*.java"/>
 			</fileset>
 			<link href="http://java.sun.com/javase/6/docs/api"/>
+			<link href="http://jung.sourceforge.net/doc/api"/>
 		</javadoc>
 	</target>
 
