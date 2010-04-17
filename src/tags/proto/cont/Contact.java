@@ -83,6 +83,8 @@ extends LayerService<QueryProcess<I, ?, A, ?, ?, S, Z>, Contact.State, Contact.M
 	}
 
 	protected void makePTable() {
+		proc.log("makePTable");
+
 		TaskService<I, PTable<A, S>, IOException> srv = proc.env.makePTableService();
 		try {
 			Map<I, Z> id_score = proc.env.getTrustedIDs(proc.id);

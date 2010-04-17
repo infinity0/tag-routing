@@ -15,6 +15,8 @@ import tags.util.ScoreInferer;
 import tags.util.Maps.U2Map;
 
 import tags.util.exec.MessageRejectedException;
+import tags.ui.Loggers;
+import java.util.logging.Logger;
 
 /**
 ** An object that represents a running {@link Query}.
@@ -36,6 +38,8 @@ public class QueryProcess<I, T, A, U, W, S, Z> extends Query<I, T> {
 	final public Routing<T, A, W, S> routing;
 
 	protected int steps;
+
+	protected Logger log = Loggers.getNullLogger();
 
 	public QueryProcess(
 	  I id, T tag,
@@ -83,6 +87,15 @@ public class QueryProcess<I, T, A, U, W, S, Z> extends Query<I, T> {
 
 	public AddressScheme<T, A, W> getAddressScheme() {
 		return naming.getAddressScheme();
+	}
+
+	public void attachLogger(Logger log) {
+		if (log == null) { throw new NullPointerException(); }
+		this.log = log;
+	}
+
+	public void log(String msg) {
+		log.fine(this.toString() + " :: " + msg);
 	}
 
 }

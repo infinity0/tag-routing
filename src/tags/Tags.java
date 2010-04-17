@@ -90,6 +90,7 @@ public class Tags {
 
 		for (String tag: tags) {
 			BasicProcess<K> proc = QueryTypes.makeProtoProcess(id, tag, env);
+			proc.attachLogger(agt.log);
 			agt.log.info("Starting query " + proc);
 
 			agt.runUntilAfter(proc, steps);

@@ -40,4 +40,13 @@ public class Loggers {
 		return log;
 	}
 
+	private static transient Logger nullLogger;
+	public static synchronized Logger getNullLogger() {
+		if (nullLogger == null) {
+			nullLogger = Logger.getAnonymousLogger();
+			nullLogger.setUseParentHandlers(false);
+		}
+		return nullLogger;
+	}
+
 }

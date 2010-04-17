@@ -47,13 +47,13 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 			showResults(res, proc);
 			String[] lines;
 
-			log.fine("================");
+			log.finer("================");
 			lines = fmt.formatAddressScheme(proc.naming.getAddressScheme());
-			for (String line: lines) { log.fine(line); }
-			log.fine("================");
+			for (String line: lines) { log.finer(line); }
+			log.finer("================");
 			lines = fmt.formatLookups(proc.routing.getCompletedLookups(), proc.naming.getAddressScheme().tagSet());
-			for (String line: lines) { log.fine(line); }
-			log.fine("================");
+			for (String line: lines) { log.finer(line); }
+			log.finer("================");
 		}
 	}
 

@@ -17,6 +17,7 @@ FIXME NOW:
 - explain how tags are scored, in the design document
 
 (more laterz)
+- decide whether we want to synchronized all methods in Contact, Naming, Routing
 - rename Probability to just Prob?
 - rename SPUProbabilityInferer to ShortPathUnionProbInferer?
 - rename AddressScheme to just AddrScheme

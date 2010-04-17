@@ -145,6 +145,8 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 	}
 
 	protected void addDataSourceAndComplete(A addr) {
+		proc.log("addDataSourceAndComplete: " + addr);
+
 		LocalTGraph<T, A, U, W> view = source.useSource(addr);
 		Set<T> old_complete = getCompletedTags();
 
@@ -220,6 +222,8 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 	}
 
 	protected void addTagAndComplete(T tag) {
+		proc.log("addTagAndComplete: " + tag);
+
 		Map<A, LocalTGraph<T, A, U, W>> local = source.localMap();
 
 		TaskService<Lookup<T, A>, U2Map<T, A, W>, IOException> srv = proc.env.makeTGraphService();
@@ -241,8 +245,8 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 					assert view.getCompletedTags().contains(tag);
 					} catch (AssertionError e) {
 						System.err.println(tag);
-						System.err.println(view.getCompletedTags());
-						System.err.println(view.nodeMap().keySet());
+						System.err.println("complete " + view.getCompletedTags());
+						System.err.println("contains " + view.nodeMap().keySet());
 						throw e;
 					}
 				}
@@ -298,6 +302,8 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 	}
 
 	protected void addSeedTag() {
+		proc.log("addSeedTag");
+
 		Map<A, LocalTGraph<T, A, U, W>> local = source.localMap();
 		T tag = proc.tag;
 
