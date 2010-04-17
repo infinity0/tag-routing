@@ -2,10 +2,9 @@
 package tags.proto.name;
 
 import tags.proto.LayerService;
-import tags.proto.Query;
-import tags.proto.QueryProcessor;
-import tags.proto.LocalViewFactory;
-import tags.util.ScoreInferer;
+import tags.proto.QueryProcess;
+import tags.proto.route.Routing;
+import tags.proto.cont.Contact;
 
 import tags.util.exec.MessageReceiver;
 import tags.util.exec.MessageRejectedException;
@@ -15,6 +14,8 @@ import tags.util.exec.TaskService;
 import java.io.IOException;
 
 import tags.proto.MultiParts;
+import tags.proto.LocalViewFactory;
+import tags.util.ScoreInferer;
 import tags.util.Maps;
 import java.util.Collections;
 
@@ -44,7 +45,7 @@ import java.util.HashSet;
 ** @param <S> Type of score
 */
 public class Naming<T, A, U, W, S>
-extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.State, Naming.MRecv> {
+extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRecv> {
 
 	public enum State { NEW, AWAIT_SEEDS, IDLE }
 	public enum MRecv { REQ_MORE_DATA, RECV_SEED_G }
@@ -58,14 +59,13 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 	volatile protected AddressScheme<T, A, W> scheme;
 
 	public Naming(
-		Query<?, T> query,
-		QueryProcessor<?, T, A, U, W, S, ?> proc,
+		QueryProcess<?, T, A, U, W, S, ?> proc,
 		TGraphComposer<T, A, U, W, S> mod_tgr_cmp,
 		AddressSchemeBuilder<T, A, U, W> mod_asc_bld,
 		LocalViewFactory<A, LocalTGraph<T, A, U, W>> view_fac,
 		ScoreInferer<S> score_inf
 	) {
-		super("N", query, proc, State.NEW);
+		super("N", proc, State.NEW);
 		if (mod_tgr_cmp == null) { throw new NullPointerException(); }
 		if (mod_asc_bld == null) { throw new NullPointerException(); }
 		this.mod_tgr_cmp = mod_tgr_cmp;
@@ -79,7 +79,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 		case NEW:
 			switch (msg) {
 			case REQ_MORE_DATA:
-				sendAtomic(State.AWAIT_SEEDS, Services.defer(proc.contact, tags.proto.cont.Contact.MRecv.REQ_MORE_DATA));
+				sendAtomic(State.AWAIT_SEEDS, Services.defer(proc.contact, Contact.MRecv.REQ_MORE_DATA));
 
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
@@ -96,7 +96,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 						updateAddressScheme();
 					}
 				}, State.IDLE,
-				Services.defer(proc.routing, tags.proto.route.Routing.MRecv.RECV_ADDR_SCH));
+				Services.defer(proc.routing, Routing.MRecv.RECV_ADDR_SCH));
 
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
@@ -111,7 +111,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 							addTagAndComplete(scheme.getIncomplete());
 							updateAddressScheme();
 						}
-					}, Services.defer(proc.routing, tags.proto.route.Routing.MRecv.RECV_ADDR_SCH));
+					}, Services.defer(proc.routing, Routing.MRecv.RECV_ADDR_SCH));
 
 				} else if (scheme.getNearestTGraph() != null) {
 					// add a tgraph as a data source
@@ -120,11 +120,11 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 							addDataSourceAndComplete(scheme.getNearestTGraph());
 							updateAddressScheme();
 						}
-					}, Services.defer(proc.routing, tags.proto.route.Routing.MRecv.RECV_ADDR_SCH));
+					}, Services.defer(proc.routing, Routing.MRecv.RECV_ADDR_SCH));
 
 				} else {
 					// nothing to do, pass request onto contact layer
-					proc.contact.recv(tags.proto.cont.Contact.MRecv.REQ_MORE_DATA);
+					proc.contact.recv(Contact.MRecv.REQ_MORE_DATA);
 				}
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
@@ -148,8 +148,8 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 		LocalTGraph<T, A, U, W> view = source.useSource(addr);
 		Set<T> old_complete = getCompletedTags();
 
-		TaskService<Lookup<T, A>, U2Map<T, A, W>, IOException> srv = proc.newTGraphService();
-		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
+		TaskService<Lookup<T, A>, U2Map<T, A, W>, IOException> srv = proc.env.makeTGraphService();
+		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.env.makeTGraphNodeService();
 		Set<NodeLookup<T, A>> submitted = new HashSet<NodeLookup<T, A>>();
 		Map<T, U2Map<T, A, W>> outgoing = new HashMap<T, U2Map<T, A, W>>();
 
@@ -203,7 +203,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 					}
 				}
 
-				Thread.sleep(proc.interval);
+				Thread.sleep(proc.env.interval);
 			} while (srv.hasPending() || srv_node.hasPending());
 
 			assert outgoing.isEmpty();
@@ -222,8 +222,8 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 	protected void addTagAndComplete(T tag) {
 		Map<A, LocalTGraph<T, A, U, W>> local = source.localMap();
 
-		TaskService<Lookup<T, A>, U2Map<T, A, W>, IOException> srv = proc.newTGraphService();
-		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
+		TaskService<Lookup<T, A>, U2Map<T, A, W>, IOException> srv = proc.env.makeTGraphService();
+		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.env.makeTGraphNodeService();
 		Set<NodeLookup<T, A>> submitted = new HashSet<NodeLookup<T, A>>();
 
 		if (getCompletedTags().contains(tag)) { return; }
@@ -267,7 +267,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 					}
 				}
 
-				Thread.sleep(proc.interval);
+				Thread.sleep(proc.env.interval);
 			} while (srv.hasPending() || srv_node.hasPending());
 
 			try{
@@ -290,9 +290,9 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 
 	protected void addSeedTag() {
 		Map<A, LocalTGraph<T, A, U, W>> local = source.localMap();
-		T tag = query.tag;
+		T tag = proc.tag;
 
-		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.newTGraphNodeService();
+		TaskService<NodeLookup<T, A>, U, IOException> srv_node = proc.env.makeTGraphNodeService();
 
 		try {
 			// retrieve outgoing arcs of tag, in all sources
@@ -308,7 +308,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 					view.setNodeAttr(res.getKey().node, res.getValue());
 				}
 
-				Thread.sleep(proc.interval);
+				Thread.sleep(proc.env.interval);
 			} while (srv_node.hasPending());
 
 		} catch (InterruptedException e) {
@@ -369,7 +369,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, U, W, S, ?>, Naming.St
 	** the latter changes, ie. after {@link #composeTGraph()}.
 	*/
 	protected AddressScheme<T, A, W> makeAddressScheme() {
-		return mod_asc_bld.buildAddressScheme(graph, getCompletedTags(), query.tag);
+		return mod_asc_bld.buildAddressScheme(graph, getCompletedTags(), proc.tag);
 	}
 
 }

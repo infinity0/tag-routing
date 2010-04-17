@@ -18,11 +18,6 @@ Probability needs to check for div/0 errors
 
 == Architecture ==
 
-- QueryProcessor should instead be QueryProcess<I, T> extends Query<I, T>
-- new*Service() should be split into a separate QueryServiceProvider class, or something
-
-- QueryProcess.{exec,sctl,serv} should then go in a separate class called QueryEnvironment
-
 - current architecture has each QueryProcessor spawn new Contact/Naming/Routing layers
 - Contact should be split off from this, since the information it uses is independent of any query; it can go in QueryEnvironment
 - we also need to extend MessageReceiver.recv() to accept a "sender" argument, or something

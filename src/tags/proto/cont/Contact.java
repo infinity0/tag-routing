@@ -2,8 +2,7 @@
 package tags.proto.cont;
 
 import tags.proto.LayerService;
-import tags.proto.Query;
-import tags.proto.QueryProcessor;
+import tags.proto.QueryProcess;
 import tags.proto.name.Naming;
 import tags.proto.route.Routing;
 
@@ -25,7 +24,7 @@ import java.util.HashMap;
 /**
 ** DOCUMENT.
 **
-** OPT NORM abstract away from "Query" since this depends only on the
+** OPT NORM abstract away from QueryProcess since this depends only on the
 ** identity and not any query tag, and therefore can be run continually in the
 ** background.
 **
@@ -35,7 +34,7 @@ import java.util.HashMap;
 ** @param <Z> Type of identity-score
 */
 public class Contact<I, A, S, Z>
-extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.State, Contact.MRecv> {
+extends LayerService<QueryProcess<I, ?, A, ?, ?, S, Z>, Contact.State, Contact.MRecv> {
 
 	public enum State { NEW, IDLE }
 	public enum MRecv { REQ_MORE_DATA }
@@ -48,11 +47,10 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 	volatile protected PTable<A, S> table;
 
 	public Contact(
-		Query<I, ?> query,
-		QueryProcessor<I, ?, A, ?, ?, S, Z> proc,
+		QueryProcess<I, ?, A, ?, ?, S, Z> proc,
 		PTableComposer<I, A, S, Z> mod_ptb_cmp
 	) {
-		super("C", query, proc, State.NEW);
+		super("C", proc, State.NEW);
 		if (mod_ptb_cmp == null) { throw new NullPointerException(); }
 		this.mod_ptb_cmp = mod_ptb_cmp;
 		this.source = Maps.convoluteStrict(new HashMap<I, PTable<A, S>>(), new HashMap<I, Z>(), Maps.BaseMapX2.Inclusion.EQUAL);
@@ -85,9 +83,9 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 	}
 
 	protected void makePTable() {
-		TaskService<I, PTable<A, S>, IOException> srv = proc.newPTableService();
+		TaskService<I, PTable<A, S>, IOException> srv = proc.env.makePTableService();
 		try {
-			Map<I, Z> id_score = proc.getTrustedIDs();
+			Map<I, Z> id_score = proc.env.getTrustedIDs(proc.id);
 
 			for (I id: id_score.keySet()) { srv.submit(Services.newTask(id)); }
 			do {
@@ -97,7 +95,7 @@ extends LayerService<Query<I, ?>, QueryProcessor<I, ?, A, ?, ?, S, Z>, Contact.S
 					source.putX2(res.getKey(), res.getValue(), id_score.get(res.getKey()));
 				}
 
-				Thread.sleep(proc.interval);
+				Thread.sleep(proc.env.interval);
 			} while (srv.hasPending());
 
 		} catch (InterruptedException e) {

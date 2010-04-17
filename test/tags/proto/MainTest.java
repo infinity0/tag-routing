@@ -3,7 +3,7 @@ package tags.proto;
 
 import junit.framework.TestCase;
 
-import tags.proto.QueryProcessors.*;
+import tags.proto.QueryProcesses.*;
 import tags.proto.cont.*;
 import tags.proto.name.*;
 import tags.proto.route.*;
@@ -56,9 +56,13 @@ public class MainTest extends TestCase {
 	public void testProbabilityQueryProcessor() throws Throwable {
 		if (!extensive) { return; }
 
-		Executor exec = QueryProcessors.makeDefaultExecutor();
 		RAMStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl = new
 		RAMStoreControl<Long, String, Long, Probability, Probability, Probability, Probability>();
+
+		QueryEnvironment<Long, String, Long, Probability, Probability, Probability, Probability> env = new
+		QueryEnvironment<Long, String, Long, Probability, Probability, Probability, Probability>(
+		  QueryProcesses.makeDefaultExecutor(), sctl
+		);
 
 		try {
 			Class<?> gen = Class.forName("tags.store.StoreGenerator");
@@ -81,16 +85,16 @@ public class MainTest extends TestCase {
 		log.info("----");
 		for (long id: new long[]{8028L, 8032L, 8036L, 8040L, 8044L}) {
 
-			BasicQP<Long> proc = QueryProcessors.makeProtoQP(new Query<Long, String>(id, "aacs"), sctl, exec);
-			log.info("Starting query " + proc.query);
+			BasicQP<Long> proc = QueryProcesses.makeProtoQP(id, "aacs", env);
+			log.info("Starting query " + proc);
 
 			run.runUntilAfter(proc, 16);
 
 			// test whether the results actually match
-			int d = sctl.map_tag.get(proc.query.tag).size();
+			int d = sctl.map_tag.get(proc.tag).size();
 			int r = proc.getResults().K0Map().size();
 
-			Set<Long> doc = new HashSet<Long>(sctl.map_tag.get(proc.query.tag));
+			Set<Long> doc = new HashSet<Long>(sctl.map_tag.get(proc.tag));
 			doc.retainAll(proc.getResults().K0Map().keySet());
 			int x = doc.size();
 

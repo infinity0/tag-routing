@@ -2,10 +2,9 @@
 package tags.proto.route;
 
 import tags.proto.LayerService;
-import tags.proto.Query;
-import tags.proto.QueryProcessor;
-import tags.proto.LocalViewFactory;
-import tags.util.ScoreInferer;
+import tags.proto.QueryProcess;
+import tags.proto.cont.Contact;
+import tags.proto.name.Naming;
 
 import tags.util.exec.MessageReceiver;
 import tags.util.exec.MessageRejectedException;
@@ -15,6 +14,8 @@ import tags.util.exec.TaskService;
 import java.io.IOException;
 
 import tags.proto.MultiParts;
+import tags.proto.LocalViewFactory;
+import tags.util.ScoreInferer;
 import tags.util.Maps;
 import java.util.Collections;
 
@@ -43,7 +44,7 @@ import java.util.HashMap;
 ** @param <S> Type of score
 */
 public class Routing<T, A, W, S>
-extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.State, Routing.MRecv> {
+extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.MRecv> {
 
 	public enum State { NEW, AWAIT_SEEDS, AWAIT_ADDR_SCH, IDLE }
 	public enum MRecv { REQ_MORE_DATA, RECV_SEED_H, RECV_ADDR_SCH }
@@ -61,14 +62,13 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 	protected boolean rcache_v; // accesses to this field need to be synchronized(Routing.this)
 
 	public Routing(
-		Query<?, T> query,
-		QueryProcessor<?, T, A, ?, W, S, ?> proc,
+		QueryProcess<?, T, A, ?, W, S, ?> proc,
 		IndexComposer<T, A, W, S> mod_idx_cmp,
 		LookupScorer<W, S> mod_lku_scr,
 		LocalViewFactory<A, LocalIndex<T, A, W>> view_fac,
 		ScoreInferer<S> score_inf
 	) {
-		super("R", query, proc, State.NEW);
+		super("R", proc, State.NEW);
 		if (mod_idx_cmp == null) { throw new NullPointerException(); }
 		if (mod_lku_scr == null) { throw new NullPointerException(); }
 		this.mod_idx_cmp = mod_idx_cmp;
@@ -83,7 +83,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 		case NEW:
 			switch (msg) {
 			case REQ_MORE_DATA:
-				sendAtomic(State.AWAIT_SEEDS, Services.defer(proc.naming, tags.proto.name.Naming.MRecv.REQ_MORE_DATA));
+				sendAtomic(State.AWAIT_SEEDS, Services.defer(proc.naming, Naming.MRecv.REQ_MORE_DATA));
 
 				return;
 			default: throw mismatchMsgRejEx(state, msg);
@@ -124,7 +124,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 				if (idx_en == null) {
 					if (hasNothingToDo()) {
 						// nothing to do, pass request to naming layer
-						proc.naming.recv(tags.proto.name.Naming.MRecv.REQ_MORE_DATA);
+						proc.naming.recv(Naming.MRecv.REQ_MORE_DATA);
 					}
 
 				} else {
@@ -191,11 +191,11 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 	}
 
 	protected void runLookups() {
-		TaskService<Lookup<T, A>, U2Map<A, A, W>, IOException> srv = proc.newIndexService();
+		TaskService<Lookup<T, A>, U2Map<A, A, W>, IOException> srv = proc.env.makeIndexService();
 
 		try {
 			do {
-				while (pending < proc.parallel_idx_lku && !queue.isEmpty()) {
+				while (pending < proc.env.parallel_idx_lku && !queue.isEmpty()) {
 					srv.submit(Services.newTask(queue.remove()));
 					++pending;
 				}
@@ -220,7 +220,7 @@ extends LayerService<Query<?, T>, QueryProcessor<?, T, A, ?, W, S, ?>, Routing.S
 					--pending;
 				}
 
-				Thread.sleep(proc.interval);
+				Thread.sleep(proc.env.interval);
 			} while (true);
 
 		} catch (InterruptedException e) {
