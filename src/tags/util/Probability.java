@@ -71,7 +71,8 @@ implements Comparable<Probability>, Formattable {
 	** @param given P(this|evt)
 	** @param p P(evt)
 	** @return P(evt|this)
-	** @throws IllegalArgumentException if this probability is 0
+	** @throws IllegalArgumentException if this probability is 0, or if the
+	**         intersection probability is greater than either probability.
 	*/
 	public Probability conditionalInverse(Probability given, Probability p) {
 		return new Probability(given.val * p.val / this.val);

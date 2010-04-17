@@ -30,6 +30,10 @@ public class Tags {
 		  withLongOpt("basedir").withArgName("DIR").hasArg().create('d'));
 		opt.addOption(OptionBuilder.withDescription("seed identity").
 		  withLongOpt("seed-id").withArgName("ID").hasArg().create('s'));
+		opt.addOption(OptionBuilder.withDescription("number of further steps to run after query bootstrap").
+		  withLongOpt("numsteps").withArgName("NUM").hasArg().create('n'));
+		opt.addOption(OptionBuilder.withDescription("milliseconds between sucessive steps").
+		  withLongOpt("interval").withArgName("MS").hasArg().create('i'));
 
 		CommandLineParser parser = new GnuParser();
 		CommandLine line = parser.parse(opt, args);
@@ -41,18 +45,14 @@ public class Tags {
 			System.exit(0);
 		}
 
+		String[] tags = line.getArgs();
+		if (tags.length == 0) { System.exit(0); }
+
 		String basedir = line.getOptionValue('d');
 		if (basedir == null) { exitErrorMessage("no basedir supplied", 2); }
 		String seedid = line.getOptionValue('s');
 		if (seedid == null) { exitErrorMessage("no seedid supplied", 2); }
-		String[] tags = line.getArgs();
-		if (tags.length == 0) { System.exit(0); }
-
-		System.out.println("basedir=" + basedir + "; seedid=" + seedid + ";");
-		System.out.println("tags=" + java.util.Arrays.asList(tags));
-
-		// FIXME NOW this needs to be Probability, not Double
-		//QueryTypes.processQuery(sctl, seedid, java.util.Arrays.asList(tags));
+		int steps = Integer.parseInt(line.getOptionValue('n', "16"));
 
 		BasicEnvironment<String> env = QueryTypes.makeProtoEnvironment(
 		  new ProbabilityProxyStoreControl<String, String, String>(
@@ -60,7 +60,15 @@ public class Tags {
 		  )
 		);
 		BasicAgent<String> agt = QueryTypes.makeProtoAgent();
-		runQueries(env, agt, seedid, tags);
+
+		String interval = line.getOptionValue('i');
+		if (interval != null) {
+			agt.setInterval(Integer.parseInt(interval));
+		}
+
+		System.out.println("basedir=" + basedir + "; seedid=" + seedid + "; steps=" + steps + "; interval=" + interval);
+		System.out.println("tags=" + java.util.Arrays.asList(tags));
+		runQueries(env, agt, seedid, tags, steps);
 
 		System.exit(0);
 	}
@@ -70,14 +78,18 @@ public class Tags {
 		System.exit(code);
 	}
 
-	public static <K> void runQueries(BasicEnvironment<K> env, BasicAgent<K> agt, K id, String[] tags) {
+	public static <K> void runQueries(
+	  BasicEnvironment<K> env, BasicAgent<K> agt,
+	  K id, String[] tags,
+	  int steps
+	) {
 		agt.log.info("----");
 
 		for (String tag: tags) {
 			BasicProcess<K> proc = QueryTypes.makeProtoProcess(id, tag, env);
 			agt.log.info("Starting query " + proc);
 
-			agt.runUntilAfter(proc, 16);
+			agt.runUntilAfter(proc, steps);
 
 			agt.log.info("----");
 		}

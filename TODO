@@ -1,5 +1,12 @@
-LocalIndex and LocalTGraph need to check for loops
-Probability needs to check for div/0 errors
+== Tasks ==
+
+TODO NOW:
+- invert pt.db to get tp.db
+- plot address scheme
+
+FIXME NOW:
+- for some reason all tgraphs are loaded at the start, and
+- address scheme seems to only ever have 1 tag in
 
 (cleanup)
 - review Maps.viewSubMap
@@ -16,6 +23,36 @@ Probability needs to check for div/0 errors
 - rename AddressScheme to just AddrScheme
 - make Probability, Entropy both subclass some DoubleWrapper parent class or smth
 
+== Integrity checks ==
+
+- make sure nodes don't point to themselves (LocalIndex, LocalTGraph, etc)
+- probability needs to check for div/0, also that P(A*B) <= P(A), P(B)
+
+- there is a problem even with this; since we merge data from several different
+  data sources it's entirely possible that after the merge, we end up with
+  invalid probabilities... the merge algorithm isn't robust enough to handle
+  such a case at the moment.
+
+run:
+     [java] basedir=../scrape; seedid=51114580@N00;
+     [java] tags=[google]
+     [java] 1271520624.738 | INFO | ----
+     [java] 1271520624.791 | INFO | Starting query [51114580@N00:google]
+     [java] tried to calculate P(t|s) from P(s)=0.00472094557927466 P(t)=0.032302141165909085 P(s|t)=0.2696264196544963
+     [java] Exception in thread "pool-1-thread-4" java.lang.IllegalArgumentException: Invalid probability: 1.8448657209635402
+     [java] 	at tags.util.Probability.<init>(Probability.java:28)
+     [java] 	at tags.util.Probability.conditionalInverse(Probability.java:78)
+     [java] 	at tags.proto.name.ProbabilityDistanceMetric.getDistance(ProbabilityDistanceMetric.java:51)
+     [java] 	at tags.proto.name.ProbabilityDistanceMetric.getDistance(ProbabilityDistanceMetric.java:29)
+     [java] 	at tags.proto.name.ShortestPathAddressSchemeBuilder.buildAddressScheme(ShortestPathAddressSchemeBuilder.java:116)
+     [java] 	at tags.proto.name.Naming.makeAddressScheme(Naming.java:372)
+     [java] 	at tags.proto.name.Naming.updateAddressScheme(Naming.java:326)
+     [java] 	at tags.proto.name.Naming$2.run(Naming.java:112)
+     [java] 	at tags.util.exec.UnitService$1.run(UnitService.java:56)
+     [java] 	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1110)
+     [java] 	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:603)
+     [java] 	at java.lang.Thread.run(Thread.java:636)
+
 == Architecture ==
 
 - current architecture has each QueryProcessor spawn new Contact/Naming/Routing layers
@@ -29,17 +66,4 @@ In Kleinberg's model, geographic location is a uniting factor. In this model,
 language is a uniting factor.
 
 Dynamic following of hyperlinks...
-
-
-- invert pt.db to get tp.db
-- make double->probability adaptors for StoreControl
-- plot address scheme
-
-
-
-== Integrity checks ==
-
-- make sure nodes don't point to themselves
-
-
 

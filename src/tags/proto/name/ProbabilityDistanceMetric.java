@@ -47,7 +47,13 @@ public class ProbabilityDistanceMetric implements DistanceMetric<Probability, Pr
 	** @see tags.proto.Notation
 	*/
 	@Override public Probability getDistance(Probability srcu, Probability dstu, Probability arcw) {
-		return srcu.conditionalInverse(arcw, dstu);
+		try {
+			return srcu.conditionalInverse(arcw, dstu);
+		} catch (IllegalArgumentException e) {
+			System.err.println("tried to calculate P(t|s) from P(s)=" + srcu.val + " P(t)=" + dstu.val + " P(s|t)=" + arcw.val);
+			//throw e;
+			return new Probability(1.0);
+		}
 	}
 
 	/**

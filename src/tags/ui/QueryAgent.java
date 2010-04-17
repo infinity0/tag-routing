@@ -19,6 +19,8 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 	/** The {@link QueryStateFormatter} used. */
 	final public QueryStateFormatter<T, A, W> fmt;
 
+	protected int interval = 250; // TODO getter & setter methods for these
+
 	public QueryAgent(Logger log, QueryStateFormatter<T, A, W> fmt) {
 		this.log = log;
 		this.fmt = fmt;
@@ -64,7 +66,14 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 				log.fine(e.getMessage());
 			}
 		}
-		try { Thread.sleep(250); } catch (InterruptedException e) { }
+		try { Thread.sleep(interval); } catch (InterruptedException e) { }
+	}
+
+	public void setInterval(int interval) {
+		if (interval < 10) {
+			throw new IllegalArgumentException("interval must be >=10: " + interval);
+		}
+		this.interval = interval;
 	}
 
 }
