@@ -62,17 +62,15 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 	}
 
 	@Override public Set<T> tagSet() {
-		return arc_attr_map.keySet();
+		return Collections.unmodifiableSet(arc_attr_map.keySet());
 	}
 
 	@Override public Map<T, W> arcAttrMap() {
-		// FIXME NORM should really be immutable view
-		return arc_attr_map;
+		return Collections.unmodifiableMap(arc_attr_map);
 	}
 
 	@Override public List<U2<T, A>> nodeList() {
-		// FIXME NORM should really be immutable view
-		return node_list;
+		return Collections.unmodifiableList(node_list);
 	}
 
 	@Override public U2Map<T, A, Integer> indexMap() {
@@ -109,7 +107,7 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 
 	@Override public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map) {
 		if (map.isEmpty()) { return null; }
-		return Collections.max(map.entrySet(), Maps.<K, W>entryValueComparator(cmp));
+		return Maps.<K, W>immutableEntry(Collections.max(map.entrySet(), Maps.<K, W>entryValueComparator(cmp)));
 	}
 
 	@Override public Map.Entry<T, W> getMostRelevant(Set<T> tags) {
@@ -210,6 +208,10 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 	*/
 	public void pushNodeG(A addr, T parent, Set<T> inc) {
 		pushNode(Union.<T, A>U2_1(addr), parent, inc);
+	}
+
+	public void setTagAttribute(T tag, W attr) {
+		arc_attr_map.put(tag, attr);
 	}
 
 }

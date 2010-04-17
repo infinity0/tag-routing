@@ -263,7 +263,7 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 	protected Map<A, Set<T>> getLookups(AddressScheme<T, A, W> scheme) {
 		Map<A, Set<T>> lookups = new HashMap<A, Set<T>>();
 		for (A idx: source.localMap().keySet()) {
-			lookups.put(idx, source.seedMap().containsKey(idx)? scheme.tagSet(): getLookups(scheme, idx));
+			lookups.put(idx, source.seedMap().containsKey(idx)? new HashSet<T>(scheme.tagSet()): getLookups(scheme, idx));
 		}
 		return lookups;
 	}

@@ -287,11 +287,10 @@ public class XMLGraph<K, U, W> extends DirectedSparseGraph<XMLGraph.Node, XMLGra
 					final private Iterable<Map.Entry<K, W>> ib = new
 					ProxyIterable<Map.Entry<Node, Arc>, Map.Entry<K, W>>(map.entrySet()) {
 						@Override public Map.Entry<K, W> nextFor(final Map.Entry<Node, Arc> en) {
-							return new Maps.AbstractEntry<K, W>(XMLGraph.this.node_id.transform(en.getKey())) {
-								@Override public W getValue() {
-									return XMLGraph.this.arc_attr.transform(en.getValue());
-								}
-							};
+							return Maps.immutableEntry(
+							  XMLGraph.this.node_id.transform(en.getKey()),
+							  XMLGraph.this.arc_attr.transform(en.getValue())
+							);
 						}
 					};
 

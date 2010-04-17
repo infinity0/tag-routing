@@ -126,7 +126,7 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 			if (!tag.equals(seed)) {
 				scheme.pushNode(node, parent, graph.getIncomingT(tag).nodeAttrMap().K0Map().keySet());
 			}
-			scheme.arcAttrMap().put(tag, dmetric.getAttrFromDistance(seedu, srcu, cur.dist));
+			scheme.setTagAttribute(tag, dmetric.getAttrFromDistance(seedu, srcu, cur.dist));
 		}
 
 		return scheme;

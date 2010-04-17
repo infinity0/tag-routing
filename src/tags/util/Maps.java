@@ -23,21 +23,6 @@ final public class Maps {
 	private Maps() { }
 
 	/**
-	** Returns an entry backed by the given entry but with a different key.
-	** Updates to the value are reflected in both entries.
-	**
-	** @param <J> Type of source key
-	** @param <K> Type of target key
-	** @param <V> Type of value
-	*/
-	public static <J, K, V> Map.Entry<K, V> composeEntry(final Map.Entry<J, V> en, K key) {
-		return new AbstractEntry<K, V>(key) {
-			@Override public V getValue() { return en.getValue(); }
-			@Override public V setValue(V val) { return en.setValue(val); }
-		};
-	}
-
-	/**
 	** A basic {@link Entry}. DOCUMENT more details.
 	*/
 	abstract public static class AbstractEntry<K, V> implements Map.Entry<K, V> {
@@ -64,6 +49,43 @@ final public class Maps {
 			return (key == null? 0: key.hashCode()) ^ (getValue() == null? 0: getValue().hashCode());
 		}
 
+	}
+
+	/**
+	** Returns an entry backed by the given entry but with a different key.
+	** Updates to the value are reflected in both entries.
+	**
+	** @param <J> Type of source key
+	** @param <K> Type of target key
+	** @param <V> Type of value
+	*/
+	public static <J, K, V> Map.Entry<K, V> composeEntry(final Map.Entry<J, V> en, K key) {
+		return new AbstractEntry<K, V>(key) {
+			@Override public V getValue() { return en.getValue(); }
+			@Override public V setValue(V val) { return en.setValue(val); }
+		};
+	}
+
+	/**
+	** Returns an immutable entry with the given key and value.
+	**
+	** @param <K> Type of key
+	** @param <V> Type of value
+	*/
+	public static <K, V> Map.Entry<K, V> immutableEntry(K key, final V val) {
+		return new AbstractEntry<K, V>(key) {
+			@Override public V getValue() { return val; }
+		};
+	}
+
+	/**
+	** Returns an immutable entry from the given entry's key and value.
+	**
+	** @param <K> Type of key
+	** @param <V> Type of value
+	*/
+	public static <K, V> Map.Entry<K, V> immutableEntry(Map.Entry<K, V> en) {
+		return immutableEntry(en.getKey(), en.getValue());
 	}
 
 	/**

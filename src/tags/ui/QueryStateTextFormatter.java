@@ -55,7 +55,7 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 	}
 
 	public String[] formatAddressScheme(AddressScheme<T, A, W> scheme) {
-		String[] out = new String[scheme.indexMap().size()+3];
+		String[] out = new String[scheme.indexMap().size()+2];
 		out[0] = "Address scheme for " + scheme.seedTag();
 		out[1] = "----";
 
