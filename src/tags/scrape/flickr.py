@@ -292,29 +292,29 @@ class SafeFlickrAPI(FlickrAPI):
 		LOG.info("producer db: pruned %s users, %s groups" % (len(delu), len(delg)))
 
 
-	def invertProducerMap(self, ppdb, pcdb):
+	def invertMap(self, kvdb, vkdb, name):
 		"""
 		Calculates an inverse map from the given producer-photo database.
 
-		@param ppdb: an open database of {producer:[photo]}
-		@param pcdb: an open database of {photo:[producer]} - this must have
-		       been opened with writeback=True (see shelve docs for details)
+		@param kvdb: an open database of {key:[item]}
+		@param vkdb: an open database of {item:[key]} - this must have been
+		       opened with writeback=True (see shelve docs for details)
 		"""
-		if pcdb.writeback is not True:
-			raise ValueError("[pcdb] must have writeback=True")
+		if vkdb.writeback is not True:
+			raise ValueError("[vkdb] must have writeback=True")
 
-		def syncer(i, (prod, photos)):
-			pcdb.sync()
+		def syncer(i, (key, items)):
+			vkdb.sync()
 
-		for i, (prod, photos) in enumerate_cb(ppdb.iteritems(), syncer, every=0x10000):
-			for phid in photos:
-				if phid in pcdb:
-					pcdb[phid].append(prod)
+		for i, (key, items) in enumerate_cb(kvdb.iteritems(), syncer, every=0x10000):
+			for item in items:
+				if item in vkdb:
+					vkdb[item].append(key)
 				else:
-					pcdb[phid] = [prod]
-		pcdb.sync()
+					vkdb[item] = [key]
+		vkdb.sync()
 
-		LOG.info("context db: inverted %s producers to %s photos" % (len(ppdb), len(pcdb)))
+		LOG.info("%s db: inverted %s keys to %s items" % (name, len(kvdb), len(vkdb)))
 
 
 	def commitTagClusters(self, tags, tcdb):

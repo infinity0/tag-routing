@@ -85,10 +85,11 @@ class Scraper(object):
 		("social", Round("Scraping social network", [], ["soc.graphml"])),
 		("group", Round("Scraping groups", ["social"], ["gu.map"])),
 		("photo", Round("Scraping photos", ["group"], ["pp.db"]+["gu.map"]+["soc.graphml"])),
-		("invert", Round("Inverting producer mapping", ["photo"], ["pc.db"])),
+		("invertp", Round("Inverting producer mapping", ["photo"], ["pc.db"])),
 		("tag", Round("Scraping tags", ["photo"], ["pt.db", "pt.len"])),
+		("invertt", Round("Inverting tag mapping", ["tag"], ["tp.db"])),
 		("cluster", Round("Scraping clusters", ["tag"], ["tc.db"])),
-		("generate", Round("Generating data", ["invert", "cluster"], ["ph.db", "pg.db"])),
+		("generate", Round("Generating data", ["invertp", "cluster"], ["ph.db", "pg.db"])),
 		("writeall", Round("Writing objects", ["generate"], [])),
 		("examine", Round("Examine data", [], [])),
 	]
@@ -208,14 +209,14 @@ class Scraper(object):
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
 
-	def round_invert(self):
+	def round_invertp(self):
 		"""
 		Invert the producer-photo mapping.
 		"""
 		ppdb = self.db("pp")
 		pcdb = self.db("pc", writeback=True)
 
-		self.ff.invertProducerMap(ppdb, pcdb)
+		self.ff.invertMap(ppdb, pcdb, "context")
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -230,6 +231,18 @@ class Scraper(object):
 		photos = chain(*ppdb.itervalues())
 		self.ff.commitPhotoTags(photos, ptdb)
 		print >>self.outfp("pt.len"), len(ptdb)
+
+		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
+
+
+	def round_invertt(self):
+		"""
+		Invert the photo-tag mapping.
+		"""
+		ptdb = self.db("pt")
+		tpdb = self.db("tp", writeback=True)
+
+		self.ff.invertMap(ptdb, tpdb, "tag-photo")
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -303,6 +316,7 @@ class Scraper(object):
 		ppdb = self.db("pp")
 		pcdb = self.db("pc")
 		ptdb = self.db("pt")
+		tpdb = self.db("tp")
 		tcdb = self.db("tc")
 
 		phdb = self.db("ph")
