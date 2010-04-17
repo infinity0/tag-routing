@@ -3,7 +3,7 @@ package tags.proto;
 
 import junit.framework.TestCase;
 
-import tags.proto.QueryProcesses.*;
+import tags.QueryTypes.*;
 import tags.proto.cont.*;
 import tags.proto.name.*;
 import tags.proto.route.*;
@@ -59,10 +59,7 @@ public class MainTest extends TestCase {
 		RAMStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl = new
 		RAMStoreControl<Long, String, Long, Probability, Probability, Probability, Probability>();
 
-		QueryEnvironment<Long, String, Long, Probability, Probability, Probability, Probability> env = new
-		QueryEnvironment<Long, String, Long, Probability, Probability, Probability, Probability>(
-		  QueryProcesses.makeDefaultExecutor(), sctl
-		);
+		BasicEnvironment<Long> env = QueryTypes.makeProtoEnvironment(sctl);
 
 		try {
 			Class<?> gen = Class.forName("tags.store.StoreGenerator");
@@ -76,16 +73,14 @@ public class MainTest extends TestCase {
 			fail("Test data not generated; generate with `ant regen-data`.");
 			return;
 		}
-		log.info("Test data initialised with " + sctl.getSummary());
+		log.info("Test data initialised with " + ((RAMStoreControl)sctl).getSummary());
 
-		QueryAgent<Long, String, Long, Probability, Probability, Probability, Probability> run = new
-		QueryAgent<Long, String, Long, Probability, Probability, Probability, Probability>(log,
-		  new QueryStateTextFormatter<String, Long, Probability>());
+		BasicAgent<Long> run = QueryTypes.makeProtoAgent(log, new QueryStateTextFormatter<String, Long, Probability>());
 
 		log.info("----");
 		for (long id: new long[]{8028L, 8032L, 8036L, 8040L, 8044L}) {
 
-			BasicQP<Long> proc = QueryProcesses.makeProtoQP(id, "aacs", env);
+			BasicProcess<Long> proc = QueryTypes.makeProtoProcess(id, "aacs", env);
 			log.info("Starting query " + proc);
 
 			run.runUntilAfter(proc, 16);

@@ -9,6 +9,9 @@ import java.util.Map;
 
 import tags.util.exec.TaskService;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 
 /**
@@ -82,6 +85,14 @@ public class QueryEnvironment<I, T, A, U, W, S, Z> {
 				return sctl.getIndexOutgoing(lku.idx, lku.tag);
 			}
 		};
+	}
+
+	public static Executor makeDefaultExecutor() {
+		return new ThreadPoolExecutor(
+		  0x40, 0x40, 1, TimeUnit.SECONDS,
+		  new LinkedBlockingQueue<Runnable>(),
+		  new ThreadPoolExecutor.CallerRunsPolicy()
+		);
 	}
 
 }
