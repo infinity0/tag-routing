@@ -187,8 +187,8 @@ public class QueryTypes {
 		return new BasicAgent<K>(log, fmt);
 	}
 
-	public static <K> BasicAgent<K> makeProtoAgent() {
-		return new BasicAgent<K>(Loggers.makeConsoleShortLogger(true), new QueryStateTextFormatter<String, K, Probability>());
+	public static <K> BasicAgent<K> makeProtoAgent(boolean verbose) {
+		return new BasicAgent<K>(Loggers.makeConsoleShortLogger(verbose), new QueryStateTextFormatter<String, K, Probability>());
 	}
 
 }

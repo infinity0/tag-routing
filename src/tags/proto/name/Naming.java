@@ -235,7 +235,16 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 					srv.submit(Services.newTask(Lookup.make(view.addr, tag)));
 				} else {
 					// FIXME NOW this assertion has been observed to fail
+					// can reproduce with ./run.sh -d ../scrape -s 51114580@N00 -i 1000 -n 64 -v google
+					// always fails after step 27
+					try{
 					assert view.getCompletedTags().contains(tag);
+					} catch (AssertionError e) {
+						System.err.println(tag);
+						System.err.println(view.getCompletedTags());
+						System.err.println(view.nodeMap().keySet());
+						throw e;
+					}
 				}
 			}
 

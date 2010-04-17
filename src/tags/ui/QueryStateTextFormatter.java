@@ -3,6 +3,7 @@ package tags.ui;
 
 import tags.proto.AddressScheme;
 
+import tags.util.Union.U2;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
@@ -25,11 +26,11 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 	}
 
 	public String[] formatLookups(Map<A, Set<T>> lookups, Set<T> tags) {
-		int w = maxSize(tags);
 		String[] out = new String[tags.size()+4];
 		out[0] = String.format("Lookups over %d idx, %d tag", lookups.size(), tags.size());
 		out[1] = "----";
 
+		int w = maxSize(tags);
 		char[][] tab = new char[lookups.size()][];
 		int i = 0;
 		for (Map.Entry<A, Set<T>> en: lookups.entrySet()) {
@@ -54,7 +55,18 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 	}
 
 	public String[] formatAddressScheme(AddressScheme<T, A, W> scheme) {
-		throw new UnsupportedOperationException("not implemented");
+		String[] out = new String[scheme.tagSet().size()+3];
+		out[0] = "Address scheme for " + scheme.seedTag();
+		out[1] = "----";
+
+		int w = maxSize(scheme.tagSet());
+		int i = 0;
+		for (U2<T, A> node: scheme.nodeList()) {
+			out[i+2] = String.format("%d %-"+w+"s %s", i, node.val.toString(), scheme.pathMap().get(node).toString());
+			++i;
+		}
+		if (scheme.isIncomplete()) { out[i+1] = "#" + out[i+1].substring(1); }
+		return out;
 	}
 
 	public static <T> int maxSize(Iterable<T> it) {

@@ -26,6 +26,7 @@ public class Tags {
 
 		Options opt = new Options();
 		opt.addOption("h", "help", false, "print this help message");
+		opt.addOption("v", "verbose", false, "show additional information");
 		opt.addOption(OptionBuilder.withDescription("base data directory").
 		  withLongOpt("basedir").withArgName("DIR").hasArg().create('d'));
 		opt.addOption(OptionBuilder.withDescription("seed identity").
@@ -52,14 +53,16 @@ public class Tags {
 		if (basedir == null) { exitErrorMessage("no basedir supplied", 2); }
 		String seedid = line.getOptionValue('s');
 		if (seedid == null) { exitErrorMessage("no seedid supplied", 2); }
+
 		int steps = Integer.parseInt(line.getOptionValue('n', "16"));
+		boolean verbose = line.hasOption('v');
 
 		BasicEnvironment<String> env = QueryTypes.makeProtoEnvironment(
 		  new ProbabilityProxyStoreControl<String, String, String>(
 		    new GraphMLStoreControl<String, Double, Double, Double>(basedir)
 		  )
 		);
-		BasicAgent<String> agt = QueryTypes.makeProtoAgent();
+		BasicAgent<String> agt = QueryTypes.makeProtoAgent(verbose);
 
 		String interval = line.getOptionValue('i');
 		if (interval != null) {

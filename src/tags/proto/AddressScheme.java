@@ -28,7 +28,7 @@ public interface AddressScheme<T, A, W> extends Comparator<W> {
 	public Set<T> tagSet();
 
 	/**
-	** Returns a map of tags to their arc-attributes, w.r.t. the seed tag.
+	** Returns a map of tags to their arc-attributes, relative to the seed tag.
 	*/
 	public Map<T, W> arcAttrMap();
 

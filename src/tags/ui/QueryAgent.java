@@ -41,19 +41,26 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 		for (int i=0; i<n; ++i) {
 			nextStep(proc);
 			if (proc.getResults() == res) { continue; }
+
 			res = proc.getResults();
 			log.info(proc + " " + proc.getStatus() + " " + proc.getStats());
 			showResults(res, proc);
+			String[] lines;
 
-			String [] lines = fmt.formatLookups(proc.routing.getCompletedLookups(), proc.naming.getAddressScheme().tagSet());
-			for (String line: lines) { log.finest(line); }
+			log.fine("================");
+			lines = fmt.formatAddressScheme(proc.naming.getAddressScheme());
+			for (String line: lines) { log.fine(line); }
+			log.fine("================");
+			lines = fmt.formatLookups(proc.routing.getCompletedLookups(), proc.naming.getAddressScheme().tagSet());
+			for (String line: lines) { log.fine(line); }
+			log.fine("================");
 		}
 	}
 
 	public void showResults(U2Map<A, A, W> res, Query<I, T> query) {
 		log.info("Query " + query + " results: " + res.K0Map().size() + " doc, " + res.K1Map().size() + " idx");
-		log.finest("doc: " + fmt.formatResults(res.K0Map()));
-		log.finest("idx: " + fmt.formatResults(res.K1Map()));
+		//log.finest("doc: " + fmt.formatResults(res.K0Map()));
+		//log.finest("idx: " + fmt.formatResults(res.K1Map()));
 	}
 
 	public void nextStep(QueryProcess<I, T, A, U, W, S, Z> proc) {
