@@ -195,13 +195,9 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 						outgoing.put(tag, out);
 					}
 
-					// retrieve node-weights of all out-neighbours
+					// retrieve node-attributes of all out-neighbours
 					for (U2<T, A> u2: out.keySet()) {
-						NodeLookup<T, A> lku = NodeLookup.make(view.addr, u2);
-						// don't submit same node twice
-						if (submitted.contains(lku)) { continue; }
-						submitted.add(lku);
-						srv_node.submit(Services.newTask(lku));
+						getAttributesForNode(u2, submitted, srv_node);
 					}
 				}
 
@@ -238,17 +234,11 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 				if (view.nodeMap().K0Map().containsKey(tag)) {
 					srv.submit(Services.newTask(Lookup.make(view.addr, tag)));
 				} else {
-					// FIXME NOW this assertion has been observed to fail
-					// can reproduce with ./run.sh -d ../scrape -s 51114580@N00 -i 1000 -n 64 -v google
-					// always fails after step 27
-					try{
+					// NOTE HIGH this assertion only holds as long as we're retrieving node
+					// attributes *for all data sources* whenever we encounter a new node.
+					// at the moment, this is required by the default "compose" algorithm; see
+					// source code notes in getAttributesForNode() for details
 					assert view.getCompletedTags().contains(tag);
-					} catch (AssertionError e) {
-						System.err.println(tag);
-						System.err.println("complete " + view.getCompletedTags());
-						System.err.println("contains " + view.nodeMap().keySet());
-						throw e;
-					}
 				}
 			}
 
@@ -258,6 +248,8 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 					TaskResult<NodeLookup<T, A>, U, IOException> res = srv_node.reclaim();
 					LocalTGraph<T, A, U, W> view = local.get(res.getKey().tgr);
 					view.setNodeAttr(res.getKey().node, res.getValue());
+					//proc.log("addTagAndComplete: setting node attribute for " + res.getKey().node + " in " + view.addr);
+					// can reproduce with ./run.sh -d ../scrape -s 51114580@N00 -i 1000 -n 64 -v google
 				}
 
 				// handle downloaded arc-maps
@@ -270,13 +262,9 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 					assert view.nodeMap().K0Map().containsKey(tag);
 					view.setOutgoingT(tag, out);
 
-					// retrieve node-weights of all out-neighbours
+					// retrieve node-attributes of all out-neighbours
 					for (U2<T, A> u2: out.keySet()) {
-						NodeLookup<T, A> lku = NodeLookup.make(view.addr, u2);
-						// don't submit same node twice
-						if (submitted.contains(lku)) { continue; }
-						submitted.add(lku);
-						srv_node.submit(Services.newTask(lku));
+						getAttributesForNode(u2, submitted, srv_node);
 					}
 				}
 
@@ -298,6 +286,35 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 		} finally {
 			srv.close();
 			srv_node.close();
+		}
+	}
+
+	/**
+	** Submit a request to load the attributes for a given node (in all data
+	** sources; see source code for notes.)
+	*/
+	protected void getAttributesForNode(
+	  U2<T, A> u2, Set<NodeLookup<T, A>> submitted,
+	  TaskService<NodeLookup<T, A>, U, IOException> srv_node
+	) {
+		// OPT NORM due to the default compose algorithm, we need to retrieve a
+		// node's attribute in *all data sources*, for *any* node encountered in
+		// *any* data source. see MeanProbabilityComposer and MeanEntropyComposer
+		// for discussion of that algorithm.
+		//
+		// it would be better, if this was done only if required by the particular
+		// compose algorithm actually in use by the current process.
+		for (LocalTGraph<T, A, U, W> view: source.localMap().values()) {
+			if (view.nodeMap().containsKey(u2) || u2.isT0() && view.getCompletedTags().contains(u2.getT0())) {
+				// node-attribute already loaded; skip
+				continue;
+			}
+
+			NodeLookup<T, A> lku = NodeLookup.make(view.addr, u2);
+			// don't submit same node twice
+			if (submitted.contains(lku)) { continue; }
+			submitted.add(lku);
+			srv_node.submit(Services.newTask(lku));
 		}
 	}
 
