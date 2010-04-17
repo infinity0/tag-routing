@@ -1,12 +1,24 @@
 // Released under GPLv2 or later. See http://www.gnu.org/ for details.
-package tags.proto;
+package tags;
 
+import tags.proto.QueryProcess;
+import tags.proto.LocalViewFactory;
+import tags.proto.LocalTGraph;
+import tags.proto.LocalIndex;
 import tags.proto.cont.PTableComposer;
 import tags.proto.name.TGraphComposer;
 import tags.proto.name.AddressSchemeBuilder;
 import tags.proto.route.IndexComposer;
 import tags.proto.route.LookupScorer;
 import tags.util.ScoreInferer;
+
+import tags.proto.QueryEnvironment;
+import tags.store.StoreControl;
+import java.util.concurrent.Executor;
+
+import tags.ui.QueryAgent;
+import tags.ui.QueryStateFormatter;
+import java.util.logging.Logger;
 
 import tags.proto.cont.ProtoPTableComposer;
 import tags.proto.name.ProbabilityDistanceMetric;
@@ -15,30 +27,36 @@ import tags.proto.name.ShortestPathAddressSchemeBuilder;
 import tags.proto.route.ProbabilityIndexComposer;
 import tags.proto.route.ProbabilityLookupScorer;
 import tags.util.SPUProbabilityInferer;
+
 import tags.util.Probability;
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-
 /**
-** Utility class for {@link QueryProcess}es.
+** Utility class for simplifying the types of various query objects.
+**
+** The classes named {@code SimpleXXX} consolidate all attribute types into a
+** single type, and all node address types into a single type, leaving 3 type
+** parameters rather than 7.
+**
+** The classes named {@code BasicXXX} define the attribute type to be {@link
+** Probability} and the tag type to be {@link String}, leaving a single type
+** parameter for the user to define, ie. the node address type.
+**
+** TODO NORM perhaps redesign the whole {@code QueryX} suite of classes to
+** instead be interfaces?
 */
-public class QueryProcesses {
+public class QueryTypes {
 
-	private QueryProcesses() { }
+	private QueryTypes() { }
 
 	/**
-	** A {@link QueryProcess} with one single score type, and one single
-	** node type.
+	** A {@link QueryProcess} with a single score type, and a single node type.
 	**
-	** @param <K> Type of node
+	** @param <K> Type of node address
 	** @param <T> Type of tag
-	** @param <S> Type of score
+	** @param <S> Type of attribute
 	*/
-	public static class SimpleQP<K, T, S> extends QueryProcess<K, T, K, S, S, S, S> {
-		public SimpleQP(
+	public static class SimpleProcess<K, T, S> extends QueryProcess<K, T, K, S, S, S, S> {
+		public SimpleProcess(
 		  K id, T tag,
 		  PTableComposer<K, K, S, S> mod_ptb_cmp,
 		  TGraphComposer<T, K, S, S, S> mod_tgr_cmp,
@@ -59,13 +77,39 @@ public class QueryProcesses {
 	}
 
 	/**
-	** A {@link QueryProcess} with one single node type, with {@link String}
-	** tags and {@link Probability} scores.
+	** A {@link QueryEnvironment} with a single score type, and a single node type.
 	**
-	** @param <K> Type of node
+	** @param <K> Type of node address
+	** @param <T> Type of tag
+	** @param <S> Type of attribute
 	*/
-	public static class BasicQP<K> extends SimpleQP<K, String, Probability> {
-		public BasicQP(
+	public static class SimpleEnvironment<K, T, S> extends QueryEnvironment<K, T, K, S, S, S, S> {
+		public SimpleEnvironment(Executor exec, StoreControl<K, T, K, S, S, S, S> sctl) {
+			super(exec, sctl);
+		}
+	}
+
+	/**
+	** A {@link QueryAgent} with a single score type, and a single node type.
+	**
+	** @param <K> Type of node address
+	** @param <T> Type of tag
+	** @param <S> Type of attribute
+	*/
+	public static class SimpleAgent<K, T, S> extends QueryAgent<K, T, K, S, S, S, S> {
+		public SimpleAgent(Logger log, QueryStateFormatter<T, K, S> fmt) {
+			super(log, fmt);
+		}
+	}
+
+	/**
+	** A {@link QueryProcess} with a single node type, {@link String} tags and
+	** {@link Probability} attributes.
+	**
+	** @param <K> Type of node address
+	*/
+	public static class BasicProcess<K> extends SimpleProcess<K, String, Probability> {
+		public BasicProcess(
 		  K id, String tag,
 		  PTableComposer<K, K, Probability, Probability> mod_ptb_cmp,
 		  TGraphComposer<String, K, Probability, Probability, Probability> mod_tgr_cmp,
@@ -85,19 +129,35 @@ public class QueryProcesses {
 		};
 	}
 
-	public static Executor makeDefaultExecutor() {
-		return new ThreadPoolExecutor(
-		  0x40, 0x40, 1, TimeUnit.SECONDS,
-		  new LinkedBlockingQueue<Runnable>(),
-		  new ThreadPoolExecutor.CallerRunsPolicy()
-		);
+	/**
+	** A {@link QueryEnvironment} with a single node type, {@link String} tags
+	** and {@link Probability} attributes.
+	**
+	** @param <K> Type of node address
+	*/
+	public static class BasicEnvironment<K> extends SimpleEnvironment<K, String, Probability> {
+		public BasicEnvironment(Executor exec, StoreControl<K, String, K, Probability, Probability, Probability, Probability> sctl) {
+			super(exec, sctl);
+		}
 	}
 
-	public static <K> BasicQP<K> makeProtoQP(
+	/**
+	** A {@link QueryAgent} with a single node type, {@link String} tags and
+	** {@link Probability} attributes.
+	**
+	** @param <K> Type of node address
+	*/
+	public static class BasicAgent<K> extends SimpleAgent<K, String, Probability> {
+		public BasicAgent(Logger log, QueryStateFormatter<String, K, Probability> fmt) {
+			super(log, fmt);
+		}
+	}
+
+	public static <K> BasicProcess<K> makeProtoProcess(
 	  K id, String tag,
 	  QueryEnvironment<K, String, K, Probability, Probability, Probability, Probability> env
 	) {
-		return new BasicQP<K>(
+		return new BasicProcess<K>(
 		  id, tag,
 		  new ProtoPTableComposer<K, K>(),
 		  new ProbabilityEntropyTGraphComposer<String, K>(),
@@ -110,6 +170,18 @@ public class QueryProcesses {
 		  new SPUProbabilityInferer(),
 		  env
 		);
+	}
+
+	public static <K> BasicEnvironment<K> makeProtoEnvironment(
+	  StoreControl<K, String, K, Probability, Probability, Probability, Probability> sctl
+	) {
+		return new BasicEnvironment<K>(QueryEnvironment.makeDefaultExecutor(), sctl);
+	}
+
+	public static <K> BasicAgent<K> makeProtoAgent(
+	  Logger log, QueryStateFormatter<String, K, Probability> fmt
+	) {
+		return new BasicAgent<K>(log, fmt);
 	}
 
 }

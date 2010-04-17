@@ -34,7 +34,6 @@ Dynamic following of hyperlinks...
 - invert pt.db to get tp.db
 - make double->probability adaptors for StoreControl
 - plot address scheme
-- plot lookups table
-- make Probability implement Formattable
+
 
 

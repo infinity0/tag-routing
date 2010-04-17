@@ -3,6 +3,7 @@ package tags.proto;
 
 import junit.framework.TestCase;
 
+import tags.*;
 import tags.QueryTypes.*;
 import tags.proto.cont.*;
 import tags.proto.name.*;
@@ -58,9 +59,6 @@ public class MainTest extends TestCase {
 
 		RAMStoreControl<Long, String, Long, Probability, Probability, Probability, Probability> sctl = new
 		RAMStoreControl<Long, String, Long, Probability, Probability, Probability, Probability>();
-
-		BasicEnvironment<Long> env = QueryTypes.makeProtoEnvironment(sctl);
-
 		try {
 			Class<?> gen = Class.forName("tags.store.StoreGenerator");
 			java.lang.reflect.Method method = gen.getMethod("sctl_gen_all", RAMStoreControl.class);
@@ -75,6 +73,7 @@ public class MainTest extends TestCase {
 		}
 		log.info("Test data initialised with " + ((RAMStoreControl)sctl).getSummary());
 
+		BasicEnvironment<Long> env = QueryTypes.makeProtoEnvironment(sctl);
 		BasicAgent<Long> run = QueryTypes.makeProtoAgent(log, new QueryStateTextFormatter<String, Long, Probability>());
 
 		log.info("----");
