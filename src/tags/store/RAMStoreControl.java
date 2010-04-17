@@ -13,7 +13,8 @@ import java.io.File;
 import java.io.IOException;
 
 /**
-** DOCUMENT.
+** A {@link StoreControl} that stores all its data in as standard Java data
+** structure objects in main memory.
 **
 ** @param <I> Type of identity
 ** @param <T> Type of tag
@@ -40,7 +41,7 @@ public class RAMStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T, 
 		return "" + map_doc.size() + " documents, " + map_tag.size() + " tags, " + map_frn.size() + " ids, " + map_tgr.size() + " tgraphs, " + map_idx.size() + " indexes.";
 	}
 
-	public Map<I, Z> getFriends(I id) throws IOException {
+	@Override public Map<I, Z> getFriends(I id) throws IOException {
 		Map<I, Z> frn;
 
 		frn = map_frn.get(id);
@@ -48,7 +49,7 @@ public class RAMStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T, 
 		return frn;
 	}
 
-	public PTable<A, S> getPTable(I id) throws IOException {
+	@Override public PTable<A, S> getPTable(I id) throws IOException {
 		PTable<A, S> ptb;
 
 		ptb = map_ptb.get(id);
@@ -56,7 +57,7 @@ public class RAMStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T, 
 		return ptb;
 	}
 
-	public U2Map<T, A, W> getTGraphOutgoing(A addr, T src) throws IOException {
+	@Override public U2Map<T, A, W> getTGraphOutgoing(A addr, T src) throws IOException {
 		Map<T, U2Map<T, A, W>> tgr;
 
 		tgr = map_tgr.get(addr);
@@ -64,7 +65,7 @@ public class RAMStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T, 
 		return tgr.get(src);
 	}
 
-	public U getTGraphNodeAttr(A addr, U2<T, A> node) throws IOException {
+	@Override public U getTGraphNodeAttr(A addr, U2<T, A> node) throws IOException {
 		U2Map<T, A, U> tgr_node;
 
 		tgr_node = map_tgr_node.get(addr);
@@ -72,7 +73,7 @@ public class RAMStoreControl<I, T, A, U, W, S, Z> implements StoreControl<I, T, 
 		return tgr_node.get(node);
 	}
 
-	public U2Map<A, A, W> getIndexOutgoing(A addr, T src) throws IOException {
+	@Override public U2Map<A, A, W> getIndexOutgoing(A addr, T src) throws IOException {
 		Map<T, U2Map<A, A, W>> idx;
 
 		idx = map_idx.get(addr);

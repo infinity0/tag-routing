@@ -4,7 +4,8 @@ package tags.util;
 import java.util.Iterator;
 
 /**
-** An {@link Iterable} backed by another {@link Iterable}.
+** A proxy to a backing {@link Iterable}. The {@link #nextFor(Object)} method
+** must be overridden to convert source items to target items.
 **
 ** @param <S> Type of source
 ** @param <T> Type of target

@@ -16,43 +16,15 @@ import tags.util.Maps.U2Map;
 
 import java.util.concurrent.*;
 import java.util.*;
-import java.io.IOException;
-
-import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.Handler;
-import java.util.logging.Formatter;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.LogRecord;
+import java.io.IOException;
 
 public class MainTest extends TestCase {
 
 	final protected static boolean verbose = Boolean.getBoolean("test.verbose");
 	final protected static boolean extensive = Boolean.getBoolean("test.extensive");
 
-	final protected Logger log;
-
-	public MainTest() {
-		log = Logger.getAnonymousLogger();
-		log.setUseParentHandlers(false);
-		ConsoleHandler hd = new ConsoleHandler();
-		hd.setFormatter(new Formatter() {
-			@Override public synchronized String format(LogRecord record) {
-				StringBuilder sb = new StringBuilder();
-				long t = System.currentTimeMillis();
-				sb.append(t/1000).append('.').append(String.format("%03d", t%1000)).append(" | ");
-				sb.append(record.getLevel().getLocalizedName()).append(" | ");
-				sb.append(formatMessage(record));
-				sb.append('\n');
-				return sb.toString();
-			}
-		});
-		if (verbose) {
-			log.setLevel(Level.ALL);
-			hd.setLevel(Level.ALL);
-		}
-		log.addHandler(hd);
-	}
+	final protected Logger log = Loggers.makeConsoleShortLogger(verbose);
 
 	public void testProbabilityQueryProcessor() throws Throwable {
 		if (!extensive) { return; }
@@ -71,10 +43,10 @@ public class MainTest extends TestCase {
 			fail("Test data not generated; generate with `ant regen-data`.");
 			return;
 		}
-		log.info("Test data initialised with " + ((RAMStoreControl)sctl).getSummary());
+		log.info("Test data initialised with " + sctl.getSummary());
 
 		BasicEnvironment<Long> env = QueryTypes.makeProtoEnvironment(sctl);
-		BasicAgent<Long> run = QueryTypes.makeProtoAgent(log, new QueryStateTextFormatter<String, Long, Probability>());
+		BasicAgent<Long> agt = QueryTypes.makeProtoAgent(log, new QueryStateTextFormatter<String, Long, Probability>());
 
 		log.info("----");
 		for (long id: new long[]{8028L, 8032L, 8036L, 8040L, 8044L}) {
@@ -82,7 +54,7 @@ public class MainTest extends TestCase {
 			BasicProcess<Long> proc = QueryTypes.makeProtoProcess(id, "aacs", env);
 			log.info("Starting query " + proc);
 
-			run.runUntilAfter(proc, 16);
+			agt.runUntilAfter(proc, 16);
 
 			// test whether the results actually match
 			int d = sctl.map_tag.get(proc.tag).size();

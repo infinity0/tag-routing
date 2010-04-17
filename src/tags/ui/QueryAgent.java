@@ -14,8 +14,10 @@ import java.util.logging.Logger;
 */
 public class QueryAgent<I, T, A, U, W, S, Z> {
 
-	final protected Logger log;
-	final protected QueryStateFormatter<T, A, W> fmt;
+	/** The {@link Logger} that output is sent to. */
+	final public Logger log;
+	/** The {@link QueryStateFormatter} used. */
+	final public QueryStateFormatter<T, A, W> fmt;
 
 	public QueryAgent(Logger log, QueryStateFormatter<T, A, W> fmt) {
 		this.log = log;

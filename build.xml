@@ -1,10 +1,7 @@
 <?xml version="1.0"?>
 
 <project name="tag-routing" default="help" basedir=".">
-
 	<property name="packagebase" value="tags" />
-	<property name="lib.junit" value="/usr/share/java/junit.jar"/>
-	<property name="lib.commons-cli" value="/usr/share/java/commons-cli.jar"/>
 
 	<property name="main.src" value="src"/>
 	<property name="main.make" value="build/main"/>
@@ -20,6 +17,8 @@
 
 	<property name="tmp" value="tmp"/>
 	<property name="lib" value="lib"/>
+	<property name="lib.junit" value="/usr/share/java/junit.jar"/>
+	<property name="lib.commons-cli" value="/usr/share/java/commons-cli.jar"/>
 	<path id="lib.path">
 		<fileset dir="${lib}">
 			<include name="**/*.jar"/>

@@ -8,10 +8,12 @@ import java.util.AbstractSet;
 import java.util.AbstractMap;
 
 /**
-** An {@link Map} backed by another {@link Map}.
+** A proxy to a backing {@link Map}. The {@link #itemFor(Object)} method must
+** be overridden to convert source items to target items.
 **
-** Note that the map will be mutable iff {@link #inverseItemFor(Object)} is
-** defined. To create an immutable map, simply do not override this method.
+** To create a mutable map, the {@link #inverseItemFor(Object)} method may be
+** overridden to convert target items to source items. (To create an immutable
+** map, simply do not override this method.)
 **
 ** @param <K> Type of key
 ** @param <S> Type of source value

@@ -11,7 +11,7 @@ import java.util.Map;
 import java.io.IOException;
 
 /**
-** DOCUMENT.
+** An interface to the underlying storage network.
 **
 ** @param <I> Type of identity
 ** @param <T> Type of tag

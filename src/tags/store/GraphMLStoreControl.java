@@ -17,7 +17,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 
 /**
-** DOCUMENT.
+** A {@link StoreControl} that reads from a repository of GraphML files.
+**
+** Format: DOCUMENT
 **
 ** @param <N> Type of node (identity, object address, tag)
 ** @param <U> Type of node-attribute
@@ -61,27 +63,27 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 		this.indexes = new ReferenceMap<N, TypedXMLGraph<T_IDX, N, U, W>>();
 	}
 
-	public Map<N, S> getFriends(N id) throws IOException {
+	@Override public Map<N, S> getFriends(N id) throws IOException {
 		return ptables.getSuccessorTypedMap(id).get(T_PTB.z);
 	}
 
-	public PTable<N, S> getPTable(N id) throws IOException {
+	@Override public PTable<N, S> getPTable(N id) throws IOException {
 		Map<T_PTB, Map<N, S>> out = ptables.getSuccessorTypedMap(id);
 		return new PTable<N, S>(out.get(T_PTB.g), out.get(T_PTB.h));
 	}
 
-	public U2Map<N, N, W> getTGraphOutgoing(N addr, N src) throws IOException {
+	@Override public U2Map<N, N, W> getTGraphOutgoing(N addr, N src) throws IOException {
 		TypedXMLGraph<T_TGR, N, U, W> tgr = getTGraph(addr);
 		Map<T_TGR, Map<N, W>> out = tgr.getSuccessorTypedMap(src);
 		return Maps.uniteDisjoint(out.get(T_TGR.t), out.get(T_TGR.g));
 	}
 
-	public U getTGraphNodeAttr(N addr, U2<N, N> node) throws IOException {
+	@Override public U getTGraphNodeAttr(N addr, U2<N, N> node) throws IOException {
 		TypedXMLGraph<T_TGR, N, U, W> tgr = getTGraph(addr);
 		return tgr.getVertexAttribute(node.isT0()? node.getT0(): node.getT1());
 	}
 
-	public U2Map<N, N, W> getIndexOutgoing(N addr, N src) throws IOException {
+	@Override public U2Map<N, N, W> getIndexOutgoing(N addr, N src) throws IOException {
 		TypedXMLGraph<T_IDX, N, U, W> idx = getIndex(addr);
 		Map<T_IDX, Map<N, W>> out = idx.getSuccessorTypedMap(src);
 		return Maps.uniteDisjoint(out.get(T_IDX.d), out.get(T_IDX.h));

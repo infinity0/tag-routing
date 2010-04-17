@@ -20,6 +20,8 @@ import tags.ui.QueryAgent;
 import tags.ui.QueryStateFormatter;
 import java.util.logging.Logger;
 
+import tags.util.Probability;
+
 import tags.proto.cont.ProtoPTableComposer;
 import tags.proto.name.ProbabilityDistanceMetric;
 import tags.proto.name.ProbabilityEntropyTGraphComposer;
@@ -28,7 +30,8 @@ import tags.proto.route.ProbabilityIndexComposer;
 import tags.proto.route.ProbabilityLookupScorer;
 import tags.util.SPUProbabilityInferer;
 
-import tags.util.Probability;
+import tags.ui.QueryStateTextFormatter;
+import tags.ui.Loggers;
 
 /**
 ** Utility class for simplifying the types of various query objects.
@@ -182,6 +185,10 @@ public class QueryTypes {
 	  Logger log, QueryStateFormatter<String, K, Probability> fmt
 	) {
 		return new BasicAgent<K>(log, fmt);
+	}
+
+	public static <K> BasicAgent<K> makeProtoAgent() {
+		return new BasicAgent<K>(Loggers.makeConsoleShortLogger(), new QueryStateTextFormatter<String, K, Probability>());
 	}
 
 }

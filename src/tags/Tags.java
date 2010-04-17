@@ -9,8 +9,11 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 
 import tags.QueryTypes;
-import tags.QueryTypes.*;
+import tags.QueryTypes.BasicProcess;
+import tags.QueryTypes.BasicEnvironment;
+import tags.QueryTypes.BasicAgent;
 import tags.store.GraphMLStoreControl;
+import tags.store.ProbabilityProxyStoreControl;
 
 /**
 ** Entry point for the tag-routing suite.
@@ -48,17 +51,36 @@ public class Tags {
 		System.out.println("basedir=" + basedir + "; seedid=" + seedid + ";");
 		System.out.println("tags=" + java.util.Arrays.asList(tags));
 
-		GraphMLStoreControl<String, Double, Double, Double> sctl = new
-		GraphMLStoreControl<String, Double, Double, Double>(basedir);
-
 		// FIXME NOW this needs to be Probability, not Double
 		//QueryTypes.processQuery(sctl, seedid, java.util.Arrays.asList(tags));
 
+		BasicEnvironment<String> env = QueryTypes.makeProtoEnvironment(
+		  new ProbabilityProxyStoreControl<String, String, String>(
+		    new GraphMLStoreControl<String, Double, Double, Double>(basedir)
+		  )
+		);
+		BasicAgent<String> agt = QueryTypes.makeProtoAgent();
+		runQueries(env, agt, seedid, tags);
+
+		System.exit(0);
 	}
 
 	public static void exitErrorMessage(String message, int code) {
 		System.err.println(message);
 		System.exit(code);
+	}
+
+	public static <K> void runQueries(BasicEnvironment<K> env, BasicAgent<K> agt, K id, String[] tags) {
+		agt.log.info("----");
+
+		for (String tag: tags) {
+			BasicProcess<K> proc = QueryTypes.makeProtoProcess(id, tag, env);
+			agt.log.info("Starting query " + proc);
+
+			agt.runUntilAfter(proc, 16);
+
+			agt.log.info("----");
+		}
 	}
 
 }
