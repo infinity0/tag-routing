@@ -12,8 +12,8 @@ import org.apache.commons.collections15.FactoryUtils;
 
 import tags.util.Maps;
 
-import tags.util.CompositeIterable;
-import tags.util.CompositeMap;
+import tags.util.ProxyIterable;
+import tags.util.ProxyMap;
 import java.util.Iterator;
 import java.util.Set;
 import java.util.Map;
@@ -164,7 +164,7 @@ public class XMLGraph<K, U, W> extends DirectedSparseGraph<XMLGraph.Node, XMLGra
 	*/
 	public Map<String, Object> getGraphAttributes() {
 		if (graph_attr == null) {
-			graph_attr = new CompositeMap<String, AttrGraphMLMetadata<DirectedGraph<Node, Arc>>, Object>(
+			graph_attr = new ProxyMap<String, AttrGraphMLMetadata<DirectedGraph<Node, Arc>>, Object>(
 			  reader.getGraphAttrMetadata()) {
 				@Override public Object itemFor(AttrGraphMLMetadata<DirectedGraph<Node, Arc>> meta) {
 					return meta.transformerUntyped().transform(XMLGraph.this);
@@ -279,7 +279,7 @@ public class XMLGraph<K, U, W> extends DirectedSparseGraph<XMLGraph.Node, XMLGra
 				entries = new AbstractSet<Map.Entry<K, W>>() {
 
 					final private Iterable<Map.Entry<K, W>> ib = new
-					CompositeIterable<Map.Entry<Node, Arc>, Map.Entry<K, W>>(map.entrySet()) {
+					ProxyIterable<Map.Entry<Node, Arc>, Map.Entry<K, W>>(map.entrySet()) {
 						@Override public Map.Entry<K, W> nextFor(final Map.Entry<Node, Arc> en) {
 							return new Maps.AbstractEntry<K, W>(XMLGraph.this.node_id.transform(en.getKey())) {
 								@Override public W getValue() {

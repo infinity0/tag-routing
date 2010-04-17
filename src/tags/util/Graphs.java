@@ -200,9 +200,9 @@ final public class Graphs {
 
 							@SuppressWarnings("unchecked")
 							final Iterable<Map.Entry<Arc<S, T0>, W>> ib = new ChainIterable<Map.Entry<Arc<S, T0>, W>>(true,
-								new CompositeIterable<Map.Entry<S, U2Map<T0, T1, W>>, Iterable<Map.Entry<Arc<S, T0>, W>>>(outgoing.entrySet()) {
+								new ProxyIterable<Map.Entry<S, U2Map<T0, T1, W>>, Iterable<Map.Entry<Arc<S, T0>, W>>>(outgoing.entrySet()) {
 									@Override public Iterable<Map.Entry<Arc<S, T0>, W>> nextFor(final Map.Entry<S, U2Map<T0, T1, W>> enu) {
-										return new CompositeIterable<Map.Entry<T0, W>, Map.Entry<Arc<S, T0>, W>>(enu.getValue().K0Map().entrySet()) {
+										return new ProxyIterable<Map.Entry<T0, W>, Map.Entry<Arc<S, T0>, W>>(enu.getValue().K0Map().entrySet()) {
 											@Override public Map.Entry<Arc<S, T0>, W> nextFor(Map.Entry<T0, W> en) {
 												return Maps.composeEntry(en, Arc.arc(enu.getKey(), en.getKey()));
 											}
@@ -281,9 +281,9 @@ final public class Graphs {
 
 							@SuppressWarnings("unchecked")
 							final Iterable<Map.Entry<Arc<S, T1>, W>> ib = new ChainIterable<Map.Entry<Arc<S, T1>, W>>(true,
-								new CompositeIterable<Map.Entry<S, U2Map<T0, T1, W>>, Iterable<Map.Entry<Arc<S, T1>, W>>>(outgoing.entrySet()) {
+								new ProxyIterable<Map.Entry<S, U2Map<T0, T1, W>>, Iterable<Map.Entry<Arc<S, T1>, W>>>(outgoing.entrySet()) {
 									@Override public Iterable<Map.Entry<Arc<S, T1>, W>> nextFor(final Map.Entry<S, U2Map<T0, T1, W>> enu) {
-										return new CompositeIterable<Map.Entry<T1, W>, Map.Entry<Arc<S, T1>, W>>(enu.getValue().K1Map().entrySet()) {
+										return new ProxyIterable<Map.Entry<T1, W>, Map.Entry<Arc<S, T1>, W>>(enu.getValue().K1Map().entrySet()) {
 											@Override public Map.Entry<Arc<S, T1>, W> nextFor(Map.Entry<T1, W> en) {
 												return Maps.composeEntry(en, Arc.arc(enu.getKey(), en.getKey()));
 											}

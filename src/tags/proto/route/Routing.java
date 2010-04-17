@@ -27,7 +27,7 @@ import tags.proto.Index.Lookup;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Arc;
-import tags.util.CompositeMap;
+import tags.util.ProxyMap;
 import tags.util.MapQueue;
 import tags.util.BaseMapQueue;
 import java.util.Set;
@@ -158,7 +158,7 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 	private transient Map<A, Set<T>> _completed;
 	public Map<A, Set<T>> getCompletedLookups() {
 		if (_completed == null) {
-			_completed = new CompositeMap<A, Set<T>, Set<T>>(completed) {
+			_completed = new ProxyMap<A, Set<T>, Set<T>>(completed) {
 				@Override public Set<T> itemFor(Set<T> elem) {
 					return Collections.<T>unmodifiableSet(elem);
 				}

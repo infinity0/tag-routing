@@ -7,7 +7,7 @@ import tags.util.MapViewer;
 import tags.util.Maps.U2Map;
 import tags.util.Union.U2;
 import tags.util.Arc;
-import tags.util.CompositeMap;
+import tags.util.ProxyMap;
 import tags.util.Probability;
 import tags.util.Entropy;
 import java.util.Map;
@@ -55,12 +55,12 @@ final public class Viewers {
 		@SuppressWarnings("unchecked")
 		@Override public U2Map mapFor(TGraph obj) {
 			return Maps.uniteDisjoint(
-				new CompositeMap<Object, Probability, Entropy>(obj.nodeMap().K0Map()) {
+				new ProxyMap<Object, Probability, Entropy>(obj.nodeMap().K0Map()) {
 					@Override public Entropy itemFor(Probability p) {
 						return p.entropy();
 					}
 				},
-				new CompositeMap<Object, Probability, Entropy>(obj.nodeMap().K1Map()) {
+				new ProxyMap<Object, Probability, Entropy>(obj.nodeMap().K1Map()) {
 					@Override public Entropy itemFor(Probability p) {
 						return p.entropy();
 					}

@@ -17,11 +17,11 @@ import java.util.AbstractMap;
 ** @param <S> Type of source value
 ** @param <T> Type of target value
 */
-abstract public class CompositeMap<K, S, T> extends AbstractMap<K, T> implements Map<K, T> {
+abstract public class ProxyMap<K, S, T> extends AbstractMap<K, T> implements Map<K, T> {
 
 	final protected Map<K, S> map;
 
-	public CompositeMap(Map<K, S> map) {
+	public ProxyMap(Map<K, S> map) {
 		this.map = map;
 	}
 
@@ -75,7 +75,7 @@ abstract public class CompositeMap<K, S, T> extends AbstractMap<K, T> implements
 			entries = new AbstractSet<Map.Entry<K, T>>() {
 
 				@SuppressWarnings("unchecked")
-				final Iterable<Map.Entry<K, T>> ib = new CompositeIterable<Map.Entry<K, S>, Map.Entry<K, T>>(map.entrySet()) {
+				final Iterable<Map.Entry<K, T>> ib = new ProxyIterable<Map.Entry<K, S>, Map.Entry<K, T>>(map.entrySet()) {
 					@Override public Map.Entry<K, T> nextFor(final Map.Entry<K, S> en) {
 						return new Maps.AbstractEntry<K, T>(en.getKey()) {
 							@Override public T getValue() { return itemFor(en.getValue()); }

@@ -425,12 +425,12 @@ final public class Maps {
 					@SuppressWarnings("unchecked")
 					final Iterable<Map.Entry<U2<K0, K1>, V>> ib = new ChainIterable<Map.Entry<U2<K0, K1>, V>>(
 						false, (Iterable<Map.Entry<U2<K0, K1>, V>>[]) new Iterable[] {
-							new CompositeIterable<Map.Entry<K1, V>, Map.Entry<U2<K0, K1>, V>>(m1.entrySet()) {
+							new ProxyIterable<Map.Entry<K1, V>, Map.Entry<U2<K0, K1>, V>>(m1.entrySet()) {
 								@Override public Map.Entry<U2<K0, K1>, V> nextFor(final Map.Entry<K1, V> en) {
 									return Maps.composeEntry(en, Union.<K0, K1>U2_1(en.getKey()));
 								}
 							},
-							new CompositeIterable<Map.Entry<K0, V>, Map.Entry<U2<K0, K1>, V>>(m0.entrySet()) {
+							new ProxyIterable<Map.Entry<K0, V>, Map.Entry<U2<K0, K1>, V>>(m0.entrySet()) {
 								@Override public Map.Entry<U2<K0, K1>, V> nextFor(final Map.Entry<K0, V> en) {
 									return Maps.composeEntry(en, Union.<K0, K1>U2_0(en.getKey()));
 								}
@@ -637,7 +637,7 @@ final public class Maps {
 						switch (inc) {
 						case EQUAL:
 						case SUB0SUP1:
-							return new CompositeIterable<Map.Entry<K, V0>, Map.Entry<K, X2<V0, V1>>>(m0.entrySet(), CompositeIterable.Mutability.REMOVE_CLEANUP) {
+							return new ProxyIterable<Map.Entry<K, V0>, Map.Entry<K, X2<V0, V1>>>(m0.entrySet(), ProxyIterable.Mutability.REMOVE_CLEANUP) {
 								@Override public void removeFor(Map.Entry<K, V0> en) { m1.remove(en.getKey()); }
 								@Override public Map.Entry<K, X2<V0, V1>> nextFor(final Map.Entry<K, V0> en) {
 									return new AbstractEntry<K, X2<V0, V1>>(en.getKey()) {
@@ -651,7 +651,7 @@ final public class Maps {
 								}
 							};
 						case SUB1SUP0:
-							return new CompositeIterable<Map.Entry<K, V1>, Map.Entry<K, X2<V0, V1>>>(m1.entrySet(), CompositeIterable.Mutability.REMOVE_CLEANUP) {
+							return new ProxyIterable<Map.Entry<K, V1>, Map.Entry<K, X2<V0, V1>>>(m1.entrySet(), ProxyIterable.Mutability.REMOVE_CLEANUP) {
 								@Override public void removeFor(Map.Entry<K, V1> en) { m0.remove(en.getKey()); }
 								@Override public Map.Entry<K, X2<V0, V1>> nextFor(final Map.Entry<K, V1> en) {
 									return new AbstractEntry<K, X2<V0, V1>>(en.getKey()) {

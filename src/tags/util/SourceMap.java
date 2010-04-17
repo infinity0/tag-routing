@@ -50,7 +50,7 @@ import java.util.Map;
 		if (entries == null) {
 			entries = new AbstractSet<Map.Entry<Map<K, V>, S>>() {
 
-				final Iterable<Map.Entry<Map<K, V>, S>> ib = new CompositeIterable<Map.Entry<T, S>, Map.Entry<Map<K, V>, S>>(smap.entrySet()) {
+				final Iterable<Map.Entry<Map<K, V>, S>> ib = new ProxyIterable<Map.Entry<T, S>, Map.Entry<Map<K, V>, S>>(smap.entrySet()) {
 					@Override public Map.Entry<Map<K, V>, S> nextFor(Map.Entry<T, S> en) {
 						return Maps.composeEntry(en, mapFor(en.getKey()));
 					}
