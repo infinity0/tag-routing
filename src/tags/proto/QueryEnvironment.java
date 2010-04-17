@@ -17,7 +17,7 @@ import java.io.IOException;
 ** {@link Executor} and a {@link StoreControl}.
 **
 ** Generally, there will be one instance of this for each storage network that
-** needs to be queried.
+** needs to be queried, per running application.
 */
 public class QueryEnvironment<I, T, A, U, W, S, Z> {
 

@@ -2,7 +2,7 @@
 package tags.proto;
 
 /**
-** DOCUMENT.
+** An object that represents a query from some identity for some tag.
 **
 ** @param <I> Type of identity
 ** @param <T> Type of tag

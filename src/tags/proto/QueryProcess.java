@@ -17,7 +17,7 @@ import tags.util.Maps.U2Map;
 import tags.util.exec.MessageRejectedException;
 
 /**
-** DOCUMENT.
+** An object that represents a running {@link Query}.
 **
 ** @param <I> Type of identity
 ** @param <T> Type of tag
