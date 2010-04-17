@@ -7,14 +7,14 @@ Probability needs to check for div/0 errors
 - test ProbabilityEntropyTGraphComposer, ProbabilityIndexComposer
 
 (laterz)
-- rename Probability to just Prob?
-- rename SPUProbabilityInferer to ShortPathUnionProbInferer?
-- rename AddressScheme to just AddrScheme
-
-(very later)
 - add tags.rout.IndexComposer to the design document
 - explain how tags are scored, in the design document
 
+(more laterz)
+- rename Probability to just Prob?
+- rename SPUProbabilityInferer to ShortPathUnionProbInferer?
+- rename AddressScheme to just AddrScheme
+- make Probability, Entropy both subclass some DoubleWrapper parent class or smth
 
 == Architecture ==
 
@@ -34,6 +34,4 @@ Dynamic following of hyperlinks...
 - invert pt.db to get tp.db
 - make double->probability adaptors for StoreControl
 - plot address scheme
-
-
 

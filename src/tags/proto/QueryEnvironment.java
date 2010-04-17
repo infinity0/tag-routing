@@ -21,6 +21,9 @@ import java.io.IOException;
 **
 ** Generally, there will be one instance of this for each storage network that
 ** needs to be queried, per running application.
+**
+** OPT HIGH have the option to use an asynchronous StoreControl instead of a
+** blocking one.
 */
 public class QueryEnvironment<I, T, A, U, W, S, Z> {
 

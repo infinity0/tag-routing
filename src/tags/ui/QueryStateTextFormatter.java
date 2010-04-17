@@ -9,6 +9,8 @@ import java.util.Set;
 
 /**
 ** A {@link QueryStateFormatter} that outputs plain text representations.
+**
+** DOCUMENT more detail here...
 */
 public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, A, W> {
 
