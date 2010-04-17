@@ -30,6 +30,7 @@ public class ProbabilityProxyStoreControl<I, T, A> implements StoreControl<I, T,
 	}
 
 	@Override public Map<I, Probability> getFriends(I id) throws IOException {
+		//System.err.println(sctl.getFriends(id));
 		return probabilityProxyMap(sctl.getFriends(id));
 	}
 

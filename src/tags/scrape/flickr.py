@@ -13,7 +13,7 @@ from xml.etree.ElementTree import dump
 from flickrapi import FlickrAPI, FlickrError
 from igraph import Graph
 
-from tags.scrape.object import Node, NodeSample, Producer, ProducerSample, NID
+from tags.scrape.object import Node, NodeSample, Producer, ProducerSample, NID, AAT
 from tags.scrape.util import (StateError, intern_force, infer_arcs, repr_call,
   enumerate_cb, exec_unique, union_ind, geo_prog_range, invert_seq, edge_array,
   graph_copy, undirect_and_simplify, invert_multimap)
@@ -667,7 +667,9 @@ class SampleGenerator(object):
 					edges.add((id_u[user], gvid))
 
 		ptabgr.add_vertices(len(id_h) + len(id_g))
+		eend = len(ptabgr.es)
 		ptabgr.add_edges(edges)
+		ptabgr.es[eend:][AAT] = [1.0] * len(edges)
 		ptabgr.vs[base_h:][NID] = lab_h + lab_g
 		ptabgr["base_z"] = 0
 		ptabgr["base_h"] = base_h

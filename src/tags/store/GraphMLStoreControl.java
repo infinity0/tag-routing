@@ -7,6 +7,8 @@ import tags.proto.PTable;
 import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
 import java.util.Map;
+import java.util.EnumMap;
+import java.util.HashMap;
 
 import tags.io.TypedXMLGraph;
 import org.apache.commons.collections15.map.ReferenceMap;
@@ -32,7 +34,8 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 	final protected File dir_tgr;
 	final protected File dir_idx;
 
-	final protected TypedXMLGraph<T_PTB, N, U, S> ptables;
+	final protected TypedXMLGraph<T_PTB, N, U, S> socnet;
+	final protected ReferenceMap<N, Map<T_PTB, Map<N, S>>> idsuccs;
 	final protected ReferenceMap<N, TypedXMLGraph<T_TGR, N, U, W>> tgraphs;
 	final protected ReferenceMap<N, TypedXMLGraph<T_IDX, N, U, W>> indexes;
 
@@ -54,21 +57,22 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 		this.dir_tgr = new File(basedir, DIR_TGR);
 		this.dir_idx = new File(basedir, DIR_IDX);
 
-		this.ptables = makeTypedXMLGraph(T_PTB.class);
-		this.ptables.load(new File(basedir, FILE_PTB));
-		this.ptables.setVertexPrimaryKey(NODE_ID);
-		this.ptables.setDefaultEdgeAttribute(ARC_ATTR);
+		this.socnet = makeTypedXMLGraph(T_PTB.class);
+		this.socnet.load(new File(basedir, FILE_PTB));
+		this.socnet.setVertexPrimaryKey(NODE_ID);
+		this.socnet.setDefaultEdgeAttribute(ARC_ATTR);
 
+		this.idsuccs = new ReferenceMap<N, Map<T_PTB, Map<N, S>>>();
 		this.tgraphs = new ReferenceMap<N, TypedXMLGraph<T_TGR, N, U, W>>();
 		this.indexes = new ReferenceMap<N, TypedXMLGraph<T_IDX, N, U, W>>();
 	}
 
 	@Override public Map<N, S> getFriends(N id) throws IOException {
-		return ptables.getSuccessorTypedMap(id).get(T_PTB.z);
+		return getIDSuccs(id).get(T_PTB.z);
 	}
 
 	@Override public PTable<N, S> getPTable(N id) throws IOException {
-		Map<T_PTB, Map<N, S>> out = ptables.getSuccessorTypedMap(id);
+		Map<T_PTB, Map<N, S>> out = getIDSuccs(id);
 		return new PTable<N, S>(out.get(T_PTB.g), out.get(T_PTB.h));
 	}
 
@@ -87,6 +91,24 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 		TypedXMLGraph<T_IDX, N, U, W> idx = getIndex(addr);
 		Map<T_IDX, Map<N, W>> out = idx.getSuccessorTypedMap(src);
 		return Maps.uniteDisjoint(out.get(T_IDX.d), out.get(T_IDX.h));
+	}
+
+	protected Map<T_PTB, Map<N, S>> getIDSuccs(N id) {
+		Map<T_PTB, Map<N, S>> idsucc = idsuccs.get(id);
+		if (idsucc == null) {
+			// the below is a little hack due to the fact that ids point to themselves,
+			// but this mapping should belong to the ptable rather than the friend table
+			idsucc = new EnumMap<T_PTB, Map<N, S>>(socnet.getSuccessorTypedMap(id));
+			Map<N, S> map_z = new HashMap<N, S>(idsucc.get(T_PTB.z));
+			Map<N, S> map_g = new HashMap<N, S>(idsucc.get(T_PTB.g));
+			Map<N, S> map_h = new HashMap<N, S>(idsucc.get(T_PTB.h));
+			map_h.put(id, map_z.remove(id));
+			idsucc.put(T_PTB.z, map_z);
+			idsucc.put(T_PTB.g, map_g);
+			idsucc.put(T_PTB.h, map_h);
+			idsuccs.put(id, idsucc);
+		}
+		return idsucc;
 	}
 
 	protected TypedXMLGraph<T_TGR, N, U, W> getTGraph(N addr) throws IOException {
