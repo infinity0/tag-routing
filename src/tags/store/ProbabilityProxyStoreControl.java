@@ -41,15 +41,18 @@ public class ProbabilityProxyStoreControl<I, T, A> implements StoreControl<I, T,
 
 	@Override public U2Map<T, A, Probability> getTGraphOutgoing(A addr, T src) throws IOException {
 		U2Map<T, A, Double> out = sctl.getTGraphOutgoing(addr, src);
+		if (out == null) { return null; } // can't use ?: due to shitty broken type inference
 		return Maps.uniteDisjoint(probabilityProxyMap(out.K0Map()), probabilityProxyMap(out.K1Map()));
 	}
 
 	@Override public Probability getTGraphNodeAttr(A addr, U2<T, A> node) throws IOException {
-		return new Probability(sctl.getTGraphNodeAttr(addr, node));
+		Double val = sctl.getTGraphNodeAttr(addr, node);
+		return val == null? null: new Probability(val);
 	}
 
 	@Override public U2Map<A, A, Probability> getIndexOutgoing(A addr, T src) throws IOException {
 		U2Map<A, A, Double> out = sctl.getIndexOutgoing(addr, src);
+		if (out == null) { return null; } // can't use ?: due to shitty broken type inference
 		return Maps.uniteDisjoint(probabilityProxyMap(out.K0Map()), probabilityProxyMap(out.K1Map()));
 	}
 

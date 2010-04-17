@@ -87,11 +87,12 @@ abstract public class TypedXMLGraph<T extends Enum<T>, K, U, W> extends XMLGraph
 	abstract public int getIDForString(String vid);
 
 	/**
-	** Get the type for a given vertex id. If the vertex id is not found,
-	** returns {@code null}.
+	** Get the type for a given vertex id.
 	**
 	** '''Note''': this implementation is linear in the size of the enum; it is
 	** assumed that this is small enough not to be a problem. OPT LOW.
+	**
+	** @return as described; or {@code null} if the id is absent
 	*/
 	public T getIDType(int id) {
 		for (Map.Entry<T, Range> en: ranges.entrySet()) {
@@ -131,9 +132,18 @@ abstract public class TypedXMLGraph<T extends Enum<T>, K, U, W> extends XMLGraph
 		throw new UnsupportedOperationException("not implemented");
 	}
 
+	/**
+	** Return a map of type-enums to submaps, where each submap is a '''copy'''
+	** of the given source key's successors of that type, each mapped to the
+	** attribute of the edge that connects it to the source key.
+	**
+	** @return as described; or {@code null} if the key is absent
+	*/
 	public Map<T, Map<K, W>> getSuccessorTypedMap(K key) {
+		Node node = nodes.get(key);
+		if (node == null) { return null; }
 		EnumMap<T, Map<K, W>> split = new EnumMap<T, Map<K, W>>(typecl);
-		for (Map.Entry<T, Map<Node, Arc>> en: splitMapByType(vertices.get(nodes.get(key)).getSecond()).entrySet()) {
+		for (Map.Entry<T, Map<Node, Arc>> en: splitMapByType(vertices.get(node).getSecond()).entrySet()) {
 			split.put(en.getKey(), new KeyAttrMap(en.getValue()));
 		}
 		return split;

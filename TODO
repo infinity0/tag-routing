@@ -35,3 +35,11 @@ Dynamic following of hyperlinks...
 - make double->probability adaptors for StoreControl
 - plot address scheme
 
+
+
+== Integrity checks ==
+
+- make sure nodes don't point to themselves
+
+
+

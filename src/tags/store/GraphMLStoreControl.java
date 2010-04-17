@@ -79,6 +79,7 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 	@Override public U2Map<N, N, W> getTGraphOutgoing(N addr, N src) throws IOException {
 		TypedXMLGraph<T_TGR, N, U, W> tgr = getTGraph(addr);
 		Map<T_TGR, Map<N, W>> out = tgr.getSuccessorTypedMap(src);
+		if (out == null) { return null; } // can't use ?: due to shitty broken type inference
 		return Maps.uniteDisjoint(out.get(T_TGR.t), out.get(T_TGR.g));
 	}
 
@@ -90,15 +91,17 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 	@Override public U2Map<N, N, W> getIndexOutgoing(N addr, N src) throws IOException {
 		TypedXMLGraph<T_IDX, N, U, W> idx = getIndex(addr);
 		Map<T_IDX, Map<N, W>> out = idx.getSuccessorTypedMap(src);
+		if (out == null) { return null; } // can't use ?: due to shitty broken type inference
 		return Maps.uniteDisjoint(out.get(T_IDX.d), out.get(T_IDX.h));
 	}
 
-	protected Map<T_PTB, Map<N, S>> getIDSuccs(N id) {
+	protected Map<T_PTB, Map<N, S>> getIDSuccs(N id) throws IOException {
 		Map<T_PTB, Map<N, S>> idsucc = idsuccs.get(id);
 		if (idsucc == null) {
+			idsucc = new EnumMap<T_PTB, Map<N, S>>(socnet.getSuccessorTypedMap(id));
+			if (idsucc == null) { throw new IOException("identity " + id + " not found"); }
 			// the below is a little hack due to the fact that ids point to themselves,
 			// but this mapping should belong to the ptable rather than the friend table
-			idsucc = new EnumMap<T_PTB, Map<N, S>>(socnet.getSuccessorTypedMap(id));
 			Map<N, S> map_z = new HashMap<N, S>(idsucc.get(T_PTB.z));
 			Map<N, S> map_g = new HashMap<N, S>(idsucc.get(T_PTB.g));
 			Map<N, S> map_h = new HashMap<N, S>(idsucc.get(T_PTB.h));
@@ -108,6 +111,7 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 			idsucc.put(T_PTB.h, map_h);
 			idsuccs.put(id, idsucc);
 		}
+		//System.err.println(idsucc);
 		return idsucc;
 	}
 
@@ -115,7 +119,7 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 		TypedXMLGraph<T_TGR, N, U, W> graph = tgraphs.get(addr);
 		if (graph == null) {
 			graph = makeTypedXMLGraph(T_TGR.class);
-			graph.load(new File(dir_idx, addr.toString() + ".graphml"));
+			graph.load(new File(dir_tgr, addr.toString() + ".graphml"));
 			graph.setVertexPrimaryKey(NODE_ID);
 			graph.setDefaultVertexAttribute(NODE_ATTR);
 			graph.setDefaultEdgeAttribute(ARC_ATTR);

@@ -193,6 +193,7 @@ public class XMLGraph<K, U, W> extends DirectedSparseGraph<XMLGraph.Node, XMLGra
 	}
 
 	/**
+	** @return as described; or {@code null} if the key is absent
 	** @throws NullPointerException if {@link #setVertexPrimaryKey(String)} has
 	**         not yet been called.
 	*/
@@ -201,27 +202,32 @@ public class XMLGraph<K, U, W> extends DirectedSparseGraph<XMLGraph.Node, XMLGra
 	}
 
 	/**
+	** @return as described; or {@code null} if the key is absent
 	** @throws NullPointerException if {@link #setDefaultVertexAttribute(String)}
 	**         has not yet been called.
 	*/
 	public U getVertexAttribute(K key) {
-		return node_attr.transform(nodes.get(key));
+		Node node = nodes.get(key);
+		return node == null? null: node_attr.transform(nodes.get(key));
 	}
 
 	@SuppressWarnings("unchecked")
 	public <V> V getVertexAttribute(K key, String attr) {
-		return (V)reader.getVertexAttrMetadata().get(attr).transformerUntyped().transform(nodes.get(key));
+		Node node = nodes.get(key);
+		return node == null? null: (V)reader.getVertexAttrMetadata().get(attr).transformerUntyped().transform(node);
 	}
 
 	/**
-	** Returns a map view of the given source key's successors, each one being
-	** mapped to the attribute of the edge that connects it to the source key.
+	** Return a map view of the given source key's successors, each mapped to
+	** the attribute of the edge that connects it to the source key.
 	**
+	** @return as described; or {@code null} if the key is absent
 	** @throws IllegalStateException if either the vertex primary key, or the
 	**         default edge attribute, has not been set.
 	*/
 	public Map<K, W> getSuccessorMap(K key) {
-		return new KeyAttrMap(vertices.get(nodes.get(key)).getSecond());
+		Node node = nodes.get(key);
+		return node == null? null: new KeyAttrMap(vertices.get(node).getSecond());
 	}
 
 	/**
