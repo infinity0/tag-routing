@@ -669,7 +669,8 @@ class SampleGenerator(object):
 		ptabgr.add_vertices(len(id_h) + len(id_g))
 		eend = len(ptabgr.es)
 		ptabgr.add_edges(edges)
-		ptabgr.es[eend:][AAT] = [1.0] * len(edges)
+		ptabgr.es[eend:][AAT] = [0.5] * len(edges)
+		ptabgr.es.select(ptabgr.get_eid(vid, vid) for vid in xrange(0, base_h))[AAT] = [1.0] * base_h
 		ptabgr.vs[base_h:][NID] = lab_h + lab_g
 		ptabgr["base_z"] = 0
 		ptabgr["base_h"] = base_h

@@ -1,7 +1,6 @@
 == Tasks ==
 
-TODO NOW:
-- plot address scheme
+./run.sh -d../scrape -s51114580@N00 -i1000 -n64 -v google
 
 FIXME NOW:
 - for some reason all tgraphs are loaded at the start, and

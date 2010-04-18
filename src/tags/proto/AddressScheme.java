@@ -23,7 +23,8 @@ public interface AddressScheme<T, A, W> extends Comparator<W> {
 	public T seedTag();
 
 	/**
-	** Returns the set of tags contained within this scheme.
+	** Returns the set of tags contained within this scheme, excluding the
+	** incomplete tag, if there is one.
 	*/
 	public Set<T> tagSet();
 

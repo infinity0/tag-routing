@@ -53,7 +53,7 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		outgoing.put(src, new HashSet<U2<T, A>>());
 		incoming.K0Map().put(src, Collections.<T>emptySet());
 		ancestor.K0Map().put(src, Collections.<T>emptySet());
-		path.K0Map().put(src, Collections.<T>singletonList(src));
+		path.K0Map().put(src, Collections.<T>emptyList());
 	}
 
 	@Override public T seedTag() {

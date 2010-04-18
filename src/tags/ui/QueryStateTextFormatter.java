@@ -5,6 +5,7 @@ import tags.proto.AddressScheme;
 
 import tags.util.Union.U2;
 import java.util.Collections;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Set;
 
@@ -59,13 +60,19 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 		out[0] = "Address scheme for " + scheme.seedTag();
 		out[1] = "----";
 
-		int w = maxSize(scheme.tagSet());
+		int d = positiveNumberWidth(scheme.nodeList().size()-1);
+		int w = maxSize(scheme.indexMap().K0Map().keySet());
 		int i = 0;
 		for (U2<T, A> node: scheme.nodeList()) {
-			out[i+2] = String.format("%d %-"+w+"s %s", i, node.val.toString(), scheme.pathMap().get(node).toString());
+			out[i+2] = String.format("%"+d+"d %-"+w+"s (%6.4s) %s", i, node.val.toString(),
+			  scheme.arcAttrMap().get(node.val), scheme.pathMap().get(node).toString());
 			++i;
 		}
-		if (scheme.isIncomplete()) { out[i+1] = "#" + out[i+1].substring(1); }
+		if (scheme.isIncomplete()) {
+			char[] pad = new char[d];
+			Arrays.fill(pad, '#');
+			out[i+1] = new String(pad) + out[i+1].substring(d);
+		}
 		return out;
 	}
 
@@ -76,6 +83,11 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 			if (sz > max) { max = sz; }
 		}
 		return max;
+	}
+
+	public static int positiveNumberWidth(int i) {
+		if (i < 0) { throw new IllegalArgumentException(); }
+		return i < 10? 1: i < 100? 2: i < 1000? 3: i < 10000? 4: i < 100000? 5: 6;
 	}
 
 	public static <T> char[] formatIndicatorVector(Set<T> slots, Set<T> items, char present, char absent) {

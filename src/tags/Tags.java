@@ -92,9 +92,9 @@ public class Tags {
 			BasicProcess<K> proc = QueryTypes.makeProtoProcess(id, tag, env);
 			proc.attachLogger(agt.log);
 			agt.log.info("Starting query " + proc);
-
 			agt.runUntilAfter(proc, steps);
-
+			agt.log.info("----");
+			agt.log.info("results (doc): " + proc.getResults().K0Map());
 			agt.log.info("----");
 		}
 	}
