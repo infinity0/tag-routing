@@ -357,7 +357,6 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 		source.calculateScores();
 		graph = composeTGraph();
 		scheme = makeAddressScheme();
-		proc.log("updateAddressScheme: " + scheme.arcAttrMap());
 	}
 
 	/**
@@ -395,6 +394,7 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 			arc_map.put(arc, mod_tgr_cmp.composeArc(source.localScoreMap(), arc));
 		}
 
+		proc.log(String.format("composeTGraph: %d nodes, %d arcs", node_map.size(), arc_map.size()));
 		return new FullTGraph<T, A, U, W>(node_map, arc_map);
 	}
 
@@ -403,7 +403,9 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 	** the latter changes, ie. after {@link #composeTGraph()}.
 	*/
 	protected AddressScheme<T, A, W> makeAddressScheme() {
-		return mod_asc_bld.buildAddressScheme(graph, getCompletedTags(), proc.tag);
+		AddressScheme<T, A, W> scheme = mod_asc_bld.buildAddressScheme(graph, getCompletedTags(), proc.tag);
+		proc.log("makeAddressScheme: " + scheme.arcAttrMap());
+		return scheme;
 	}
 
 }

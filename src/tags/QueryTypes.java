@@ -19,6 +19,7 @@ import java.util.concurrent.Executor;
 import tags.ui.QueryAgent;
 import tags.ui.QueryStateFormatter;
 import java.util.logging.Logger;
+import java.util.logging.Level;
 
 import tags.util.Probability;
 
@@ -187,8 +188,8 @@ public class QueryTypes {
 		return new BasicAgent<K>(log, fmt);
 	}
 
-	public static <K> BasicAgent<K> makeProtoAgent(boolean verbose) {
-		return new BasicAgent<K>(Loggers.makeConsoleShortLogger(verbose), new QueryStateTextFormatter<String, K, Probability>());
+	public static <K> BasicAgent<K> makeProtoAgent(Level level) {
+		return new BasicAgent<K>(Loggers.makeConsoleShortLogger(level), new QueryStateTextFormatter<String, K, Probability>());
 	}
 
 }

@@ -15,6 +15,11 @@ import tags.QueryTypes.BasicAgent;
 import tags.store.GraphMLStoreControl;
 import tags.store.ProbabilityProxyStoreControl;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.logging.Level;
+
 /**
 ** Entry point for the tag-routing suite.
 **
@@ -22,11 +27,14 @@ import tags.store.ProbabilityProxyStoreControl;
 */
 public class Tags {
 
+	final private static List<Level> levels = Arrays.asList(new Level[]{Level.OFF, Level.INFO, Level.FINE, Level.ALL});
+
 	public static void main(String[] args) throws Throwable {
 
 		Options opt = new Options();
 		opt.addOption("h", "help", false, "print this help message");
-		opt.addOption("v", "verbose", false, "show additional information");
+		opt.addOption(OptionBuilder.withDescription("show additional information (0-2)").
+		  withLongOpt("verbose").withArgName("LEVEL").hasOptionalArg().create('v'));
 		opt.addOption(OptionBuilder.withDescription("base data directory").
 		  withLongOpt("basedir").withArgName("DIR").hasArg().create('d'));
 		opt.addOption(OptionBuilder.withDescription("seed identity").
@@ -46,30 +54,30 @@ public class Tags {
 			System.exit(0);
 		}
 
-		String[] tags = line.getArgs();
-		if (tags.length == 0) { System.exit(0); }
-
 		String basedir = line.getOptionValue('d');
 		if (basedir == null) { exitErrorMessage("no basedir supplied", 2); }
 		String seedid = line.getOptionValue('s');
 		if (seedid == null) { exitErrorMessage("no seedid supplied", 2); }
 
 		int steps = Integer.parseInt(line.getOptionValue('n', "16"));
-		boolean verbose = line.hasOption('v');
+		int verbose = line.hasOption('v')? Integer.parseInt(line.getOptionValue('v', "1")): 0;
 
 		BasicEnvironment<String> env = QueryTypes.makeProtoEnvironment(
 		  new ProbabilityProxyStoreControl<String, String, String>(
 		    new GraphMLStoreControl<String, Double, Double, Double>(basedir)
 		  )
 		);
-		BasicAgent<String> agt = QueryTypes.makeProtoAgent(verbose);
+		BasicAgent<String> agt = QueryTypes.makeProtoAgent(levels.get(verbose));
 
 		String interval = line.getOptionValue('i');
 		if (interval != null) {
 			agt.setInterval(Integer.parseInt(interval));
 		}
 
-		System.out.println("basedir=" + basedir + "; seedid=" + seedid + "; steps=" + steps + "; interval=" + interval);
+		String[] tags = line.getArgs();
+		if (tags.length == 0) { System.exit(0); }
+
+		System.out.println("basedir=" + basedir + "; seedid=" + seedid + "; steps=" + steps + "; interval=" + interval + "; verbose=" + verbose);
 		System.out.println("tags=" + java.util.Arrays.asList(tags));
 		runQueries(env, agt, seedid, tags, steps);
 

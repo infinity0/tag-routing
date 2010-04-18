@@ -14,10 +14,10 @@ import java.util.logging.LogRecord;
 public class Loggers {
 
 	public static Logger makeConsoleShortLogger() {
-		return makeConsoleShortLogger(false);
+		return makeConsoleShortLogger(Level.INFO);
 	}
 
-	public static Logger makeConsoleShortLogger(boolean showall) {
+	public static Logger makeConsoleShortLogger(Level level) {
 		Logger log = Logger.getAnonymousLogger();
 		log.setUseParentHandlers(false);
 		ConsoleHandler hd = new ConsoleHandler();
@@ -32,10 +32,8 @@ public class Loggers {
 				return sb.toString();
 			}
 		});
-		if (showall) {
-			log.setLevel(Level.ALL);
-			hd.setLevel(Level.ALL);
-		}
+		log.setLevel(level);
+		hd.setLevel(level);
 		log.addHandler(hd);
 		return log;
 	}
