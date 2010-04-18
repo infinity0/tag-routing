@@ -6,6 +6,7 @@ import tags.util.Probability;
 
 import tags.util.Maps.U2Map;
 import java.util.Map;
+import java.util.HashMap;
 
 import tags.util.exec.TaskService;
 import java.util.concurrent.Executor;
@@ -50,9 +51,13 @@ public class QueryEnvironment<I, T, A, U, W, S, Z> {
 	** TODO NORM this should really be a module in the Contact layer.
 	*/
 	public Map<I, Z> getTrustedIDs(I id) throws IOException {
+		if (highscore_hack == null) { throw new IllegalArgumentException("you need to set env.highscore_hack"); }
 		// TODO HIGH better implementation than this
-		return sctl.getFriends(id);
+		Map<I, Z> trusted = new HashMap<I, Z>(sctl.getFriends(id));
+		trusted.put(id, highscore_hack); // add self!
+		return trusted;
 	}
+	public Z highscore_hack = null;
 
 	public TaskService<I, PTable<A, S>, IOException> makePTableService() {
 		// TODO HIGH better implementation than this

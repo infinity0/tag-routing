@@ -15,7 +15,11 @@ import tags.QueryTypes.BasicAgent;
 import tags.store.GraphMLStoreControl;
 import tags.store.ProbabilityProxyStoreControl;
 
+import tags.util.MapQueue;
+import tags.util.BaseMapQueue;
+import tags.util.Probability;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -102,7 +106,9 @@ public class Tags {
 			agt.log.info("Starting query " + proc);
 			agt.runUntilAfter(proc, steps);
 			agt.log.info("----");
-			agt.log.info("results (doc): " + proc.getResults().K0Map());
+			MapQueue<K, Probability> queue = new BaseMapQueue<K, Probability>(Collections.<Probability>reverseOrder(), false);
+			queue.addAll(proc.getResults().K0Map());
+			agt.log.info("results (doc): " + queue);
 			agt.log.info("----");
 		}
 	}

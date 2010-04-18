@@ -106,7 +106,9 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 				// TODO HIGH this is a hack
 				execute(new Runnable() {
 					@Override public void run() {
+						proc.log("runLookups thread started");
 						runLookups();
+						proc.log("runLookups thread exited successfully");
 					}
 				});
 
@@ -233,6 +235,7 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 	}
 
 	protected void addDataSourceAndLookups(AddressScheme<T, A, W> scheme, A addr) {
+		proc.log("addDataSourceAndLookups: " + addr);
 		// FIXME HIGH sync/race bug here, this method might be called twice with the same argument
 		source.useSource(addr);
 		Map<Lookup<T, A>, W> lku_score = scoreLookups(scheme, Collections.singletonMap(addr, getLookups(scheme, addr)));
@@ -240,6 +243,7 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 	}
 
 	protected void addLookupsFromNewAddressScheme(AddressScheme<T, A, W> scheme) {
+		proc.log("addLookupsFromNewAddressScheme: " + scheme.tagSet());
 		Map<A, Set<T>> lookups = getLookups(scheme);
 		synchronized (this) { Maps.multiMapRemoveAll(lookups, completed); }
 		Map<Lookup<T, A>, W> lku_score = scoreLookups(scheme, lookups);

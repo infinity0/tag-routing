@@ -142,6 +142,7 @@ public class QueryTypes {
 	public static class BasicEnvironment<K> extends SimpleEnvironment<K, String, Probability> {
 		public BasicEnvironment(Executor exec, StoreControl<K, String, K, Probability, Probability, Probability, Probability> sctl) {
 			super(exec, sctl);
+			this.highscore_hack = Probability.MAX_VALUE;
 		}
 	}
 

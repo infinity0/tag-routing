@@ -83,8 +83,6 @@ extends LayerService<QueryProcess<I, ?, A, ?, ?, S, Z>, Contact.State, Contact.M
 	}
 
 	protected void makePTable() {
-		proc.log("makePTable");
-
 		TaskService<I, PTable<A, S>, IOException> srv = proc.env.makePTableService();
 		try {
 			Map<I, Z> id_score = proc.env.getTrustedIDs(proc.id);
@@ -124,6 +122,7 @@ extends LayerService<QueryProcess<I, ?, A, ?, ?, S, Z>, Contact.State, Contact.M
 		for (A addr: Maps.domain(MultiParts.iterIndexes(source.MapV0().values()))) {
 			h.put(addr, mod_ptb_cmp.composePTableHNode(source, addr));
 		}
+		proc.log(String.format("composePTable: %d tgraphs, %d indexes", g.size(), h.size()));
 		return new PTable<A, S>(g, h);
 	}
 
