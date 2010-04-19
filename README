@@ -54,10 +54,28 @@ python-futures
 :	Get it from the SVN repo (r67) and put trunk/python2/futures into src/
 	(resulting in src/futures)
 
-## Format
+
+## Generating data
+
+1. Make sure you have a flickr API key.
+2. Pick a directory to store scrape data
+3. Then, run "src/scrape.py -d $BASEDIR" through each of the rounds in order.
+4. Run "src/fix_attr -d $BASEDIR"
+5. Test it out
+
+### Format
 
 2.4.2 Declaring GraphML-Attributes
 :	http://graphml.graphdrawing.org/primer/graphml-primer.html#AttributesDefinition">
 
 Node, Edge and Graph Attributes
 :	http://www.graphviz.org/doc/info/attrs.html
+
+
+## Searching
+
+- TODO
+
+
+
+

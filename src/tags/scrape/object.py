@@ -214,7 +214,7 @@ class Producer(object):
 		self.rep_t = None # representative tags
 		self.rpp_t = None # representative tags
 
-	def __getstate__(self, level=5):
+	def __getstate__(self, level=3):
 		with TemporaryFile() as fp:
 			self.docgr.write_graphml(fp)
 			fp.seek(0)

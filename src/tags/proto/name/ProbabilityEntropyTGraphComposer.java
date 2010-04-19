@@ -66,7 +66,9 @@ public class ProbabilityEntropyTGraphComposer<T, A> implements TGraphComposer<T,
 	** #arc_alpha_1} of 2^-4 and an {@link #arc_alpha_2} of 2^-1.
 	*/
 	public ProbabilityEntropyTGraphComposer() {
-		this(0.0625, 0.0625, 0.5);
+		//this(0.0625, 0.0625, 0.5);
+		//this(0.8, 0.8, 1.0); // FIXME NOW refactor this so it's easier to edit
+		this(1.0, 1.0, 1.0);
 	}
 
 	/**

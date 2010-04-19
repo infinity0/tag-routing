@@ -1,6 +1,8 @@
 == Tasks ==
 
-./run.sh -d../scrape -s51114580@N00 -i1000 -n64 -v google
+- move SampleGenerator and SampleWriter to sample.py
+- have a SampleStats class
+
 
 FIXME NOW:
 - make a better ValueComposer, turns out Mean*Composer is actually pretty shit
@@ -9,7 +11,7 @@ FIXME NOW:
 - add this to the analysis
 - security implications here...
 
-scraper has scalability issues;
+scraper has deadlock issues
 - photo round on "test_large" is deadlocking with 7 items to go, WTF??
 
 (cleanup)

@@ -272,6 +272,10 @@ def infer_arcs(mem, total, inverse=False, ratio=None):
 	than expected of a random target set of the same size. (Note that this is
 	asymmetric.)
 
+	OPT HIGH this could be made a LOT quicker (for large data sets) if we have
+	an inverse item:sets map, because then we wouldn't have to iterate across
+	all sets looking for a match.
+
 	@param mem: [[item]] - list of item-sets
 	@param total: number of possible items; this is assumed to be correct
 	@param inverse: whether to return the inverse relationship

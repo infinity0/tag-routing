@@ -1,0 +1,44 @@
+./run.sh -d../scrape -s51114580@N00 -i1000 -n64 -v2 google
+./run.sh -d../scrape -s8072015@N04 -i1000 -n256 -v3 google
+
+examine(tag):
+- photos tagged with this tag: [] (n, 0.xxx of total)
+- related tags:
+	- rtag: intersection / total photos of rtag
+	- etc..
+	- can construct "true" address scheme from this
+
+- compare inferred address scheme with true address scheme
+- test whether these match our expectations (nodes further out are "more general")
+
+
+examine(id):
+- some measure of how "big" or "well-connected" the id is
+
+examine(id, tag):
+- some measure of "how far" a given identity is from a given tag.
+
+
+
+query test
+- we have 4 dimensions:
+  1. score (relevance, recall, so could be 2 dimensions here)
+  2. steps to run the system
+  3. distance of id to tag
+  4. how big the id is
+
+(1) is dependent variable, it's what we're interested in
+(2) is not that interesting since we expect recall better, and
+(3) dependent variable
+(4) dependent variable
+
+plot (1) against (3) for a small set of (2), (4)
+plot (1) against (4) for a small set of (2), (3)
+
+set of (2) we can take to be (32, 64, 128, 256)
+
+score_results(tag, results):
+	return relevance and recall scores
+
+
+
