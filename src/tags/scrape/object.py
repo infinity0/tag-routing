@@ -4,6 +4,8 @@ import sys
 from igraph import Graph, IN, OUT
 from functools import partial
 from itertools import chain
+from zlib import compress, decompress
+from tempfile import TemporaryFile
 
 from tags.scrape.state import StateError, state_req, state_not, state_next
 from tags.scrape.util import (intern_force, geo_mean, union_ind, callable_wrap,
@@ -212,17 +214,25 @@ class Producer(object):
 		self.rep_t = None # representative tags
 		self.rpp_t = None # representative tags
 
-	def __getstate__(self):
-		return (self.nsid, self.state, self.docgr, self.id_d, self.id_t, self.id_p,
+	def __getstate__(self, level=5):
+		with TemporaryFile() as fp:
+			self.docgr.write_graphml(fp)
+			fp.seek(0)
+			graph_bytes = compress(fp.read(), level)
+		return (self.nsid, self.state, graph_bytes, self.id_d, self.id_t, self.id_p,
 		  self.base_d, self.base_t, self.base_s, self.base_p,
 		  self.rep_d, self.rpp_d, self.rep_t, self.rpp_t,
 		)
 
 	def __setstate__(self, state):
-		(self.nsid, self.state, self.docgr, self.id_d, self.id_t, self.id_p,
+		(self.nsid, self.state, graph_bytes, self.id_d, self.id_t, self.id_p,
 		  self.base_d, self.base_t, self.base_s, self.base_p,
 		  self.rep_d, self.rpp_d, self.rep_t, self.rpp_t,
 		) = state
+		with TemporaryFile() as fp:
+			fp.write(decompress(graph_bytes))
+			fp.seek(0)
+			self.docgr = Graph.Read_GraphML(fp)
 
 
 	@state_req(P_NEW, E_NOTNEW)

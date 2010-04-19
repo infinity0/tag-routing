@@ -142,16 +142,16 @@ class Scraper(object):
 	def db(self, name, writeback=False):
 		dbf = os.path.join(self.base, "%s.db" % name)
 		try:
-			#if writeback:
-			from shelve import BsdDbShelf
-			from bsddb import btopen
-			db = BsdDbShelf(btopen(dbf), writeback=writeback)
-			#else:
-			#	import bsddb.dbshelve, bsddb.db
-			#	db = bsddb.dbshelve.open(dbf, filetype=bsddb.db.DB_BTREE)
-		except Exception:
-			import shelve
-			db = shelve.open(dbf, writeback=writeback)
+			from dbsqlite import SQLFileShelf
+			db = SQLFileShelf(dbf, writeback=writeback)
+		except:
+			try:
+				from shelve import BsdDbShelf
+				from bsddb import btopen
+				db = BsdDbShelf(btopen(dbf), writeback=writeback)
+			except Exception:
+				import shelve
+				db = shelve.open(dbf, writeback=writeback)
 		self.respush(dbf, db, 'rw')
 		return db
 

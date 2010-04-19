@@ -405,7 +405,6 @@ class SampleGenerator(object):
 				rels = self.inferRelProds(prod)
 				pmap_a = dict((rnsid, self.inferProdArc(prod, self.phdb[rnsid])) for rnsid in rels)
 				prod.initProdArcs(pmap_a)
-				del pmap_a
 				self.phdb[nsid] = prod
 			self.phsb[nsid] = prod.state
 		# OPT HIGH the lambda is inefficient, we should store this state in a smaller+faster db
