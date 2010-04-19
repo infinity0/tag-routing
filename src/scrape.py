@@ -273,9 +273,11 @@ class Scraper(object):
 		tcdb = self.db("tc")
 
 		phdb = self.db("ph")
+		phsb = self.db("phs")
 		pgdb = self.db("pg")
+		pgsb = self.db("pgs")
 
-		sg = SampleGenerator(socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, pgdb)
+		sg = SampleGenerator(socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, phsb, pgdb, pgsb)
 		sg.generateIndexes()
 		sg.prodgr.write(self.outfp("idx.graphml"))
 		sg.generateTGraphs()
@@ -320,7 +322,9 @@ class Scraper(object):
 		tcdb = self.db("tc")
 
 		phdb = self.db("ph")
+		phsb = self.db("phs")
 		pgdb = self.db("pg")
+		pgsb = self.db("pgs")
 
 		code.interact(banner=self.banner(locals()), local=locals())
 

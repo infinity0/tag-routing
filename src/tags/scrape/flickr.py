@@ -13,7 +13,7 @@ from xml.etree.ElementTree import dump
 from flickrapi import FlickrAPI, FlickrError
 from igraph import Graph
 
-from tags.scrape.object import Node, NodeSample, Producer, ProducerSample, NID, AAT
+from tags.scrape.object import Node, NodeSample, Producer, ProducerSample, NID, AAT, P_ARC
 from tags.scrape.util import (intern_force, union_ind, geo_prog_range, infer_arcs,
   edge_array, graph_copy, undirect_and_simplify, invert_seq, invert_multimap,
   enumerate_cb, exec_unique, repr_call)
@@ -346,7 +346,7 @@ class SafeFlickrAPI(FlickrAPI):
 class SampleGenerator(object):
 
 
-	def __init__(self, socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, pgdb):
+	def __init__(self, socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, phsb, pgdb, pgsb):
 		"""
 		Create a new SampleGenerator from the given arguments
 
@@ -357,16 +357,22 @@ class SampleGenerator(object):
 		@param ptdb: an open database of {photo:[tag]}
 		@param tcdb: an open database of {tag:[cluster]}
 		@param phdb: an open database of {nsid:Producer} (for indexes)
+		@param phsb: an open database of {nsid:Producer.state} (for indexes)
 		@param pgdb: an open database of {prid:Producer} (for tgraphs)
+		@param pgsb: an open database of {prid:Producer.state} (for tgraphs)
 		"""
 		self.socgr = socgr
 		self.gumap = gumap
+
 		self.ppdb = ppdb
 		self.pcdb = pcdb
 		self.ptdb = ptdb
 		self.tcdb = tcdb
+
 		self.phdb = phdb
+		self.phsb = phsb
 		self.pgdb = pgdb
+		self.pgsb = pgsb
 
 		self.prodgr = None
 		self.sprdgr = None
@@ -389,7 +395,8 @@ class SampleGenerator(object):
 			prod.repDoc()
 			prod.repTag()
 			self.phdb[nsid] = prod
-		exec_unique(self.ppdb.iterkeys(), self.phdb, run_p, None, "%s db: producers" % name, LOG.info)
+			self.phsb[nsid] = prod.state
+		exec_unique(self.ppdb.iterkeys(), self.phsb, run_p, None, "%s db: producers" % name, LOG.info)
 
 		# generate content arcs between producers
 		def run_r(nsid):
@@ -397,8 +404,9 @@ class SampleGenerator(object):
 			pmap_a = dict((rnsid, self.inferProdArc(prod, self.phdb[rnsid])) for rnsid in self.inferRelProds(prod))
 			prod.initProdArcs(pmap_a)
 			self.phdb[nsid] = prod
+			self.phsb[nsid] = prod.state
 		# OPT HIGH the lambda is inefficient, we should store this state in a smaller+faster db
-		exec_unique(self.phdb.iterkeys(), lambda nsid: self.phdb[nsid].base_p is not None,
+		exec_unique(self.phdb.iterkeys(), lambda nsid: self.phsb[nsid] >= P_ARC,
 		  run_r, None, "%s db: relations" % name, LOG.info, steps=0x10000)
 
 		total = len(self.phdb)
@@ -524,7 +532,8 @@ class SampleGenerator(object):
 			prod.inferScores()
 			prod.repTag(cover=0) # TWEAK
 			self.pgdb[nsid] = prod
-		exec_unique(pmap, self.pgdb, run_p, None, "%s db: producers" % name, LOG.info)
+			self.pgsb[nsid] = prod.state
+		exec_unique(pmap, self.pgsb, run_p, None, "%s db: producers" % name, LOG.info)
 
 		tot_p = len(self.prodgr.vs)
 		tot_s = len(self.comm)
@@ -552,8 +561,9 @@ class SampleGenerator(object):
 			del pmap, pmap_a, pmap_t
 			gc.collect()
 			self.pgdb[nsid] = prod
+			self.pgsb[nsid] = prod.state
 		# OPT HIGH the lambda is inefficient, we should store this state in a smaller+faster db
-		exec_unique(self.pgdb.iterkeys(), lambda nsid: self.pgdb[nsid].base_p is not None,
+		exec_unique(self.pgdb.iterkeys(), lambda nsid: self.pgsb[nsid] >= P_ARC,
 		  run_r, None, "%s db: relations" % name, LOG.info, steps=0x10000)
 
 

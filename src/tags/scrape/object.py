@@ -18,7 +18,6 @@ NAA = "score" # label for arc attributes from a node
 
 class NodeSample(object):
 
-
 	def __init__(self, f=None):
 		self._node = {}
 		self.idmap = {}
@@ -29,10 +28,8 @@ class NodeSample(object):
 		else:
 			self.graph = Graph.Read(f)
 
-
 	def __contains__(self, id):
 		return id in self._node
-
 
 	def __len__(self):
 		return len(self._node)
@@ -151,7 +148,6 @@ class Node(object):
 
 	__slots__ = ["id", "out", "attr"]
 
-
 	def __init__(self, id, out, attr=None):
 		"""
 		@param id: Unique identifier
@@ -162,40 +158,37 @@ class Node(object):
 		self.out = out
 		self.attr = attr
 
-
 	def __getstate__(self):
 		return (self.id, self.out, self.attr)
-
 
 	def __setstate__(self, state):
 		(self.id, self.out, self.attr) = state
 
-
 	def __repr__(self):
 		return "Node(%r, %r, %r)" % self.__getstate__()
-
 
 	def __str__(self):
 		return "<Node %s: %s (%s out-neighbours)>" % (self.id, self.attr, len(self.out))
 
 
 
+P_NEW, P_CONTENT, P_SCORES, P_ARC = 0, 1, 2, 3
+E_NOTNEW = "initContent already called"
+E_NEW = "initContent not yet called"
+E_NOTARC = "initProdArcs not yet called"
+E_ARC = "initProdArcs already called"
+E_SCORE = "inferScores not yet called"
+EE_SCORE = {P_NEW:E_SCORE, P_CONTENT:E_SCORE, P_ARC:E_ARC}
+EE_CONTENT = {P_NEW:E_NEW, P_ARC:E_ARC}
+
+
 class Producer(object):
 
-	__slots__ = ["nsid", "docgr", "id_d", "id_t", "id_p",
+	__slots__ = ["nsid", "state", "docgr",
+	  "id_d", "id_t", "id_p",
 	  "base_d", "base_t", "base_s", "base_p",
 	  "rep_d", "rpp_d", "rep_t", "rpp_t",
 	]
-
-	P_NEW, P_CONTENT, P_SCORES, P_ARC = 0, 1, 2, 3
-
-	E_NOTNEW = "initContent already called"
-	E_NEW = "initContent not yet called"
-	E_NOTARC = "initProdArcs not yet called"
-	E_ARC = "initProdArcs already called"
-	E_SCORE = "inferScores not yet called"
-	EE_SCORE = {P_NEW:E_SCORE, P_CONTENT:E_SCORE, P_ARC:E_ARC}
-	EE_CONTENT = {P_NEW:E_NEW, P_ARC:E_ARC}
 
 	def __init__(self, nsid):
 		"""
@@ -219,16 +212,14 @@ class Producer(object):
 		self.rep_t = None # representative tags
 		self.rpp_t = None # representative tags
 
-
 	def __getstate__(self):
-		return (self.nsid, self.docgr, self.id_d, self.id_t, self.id_p,
+		return (self.nsid, self.state, self.docgr, self.id_d, self.id_t, self.id_p,
 		  self.base_d, self.base_t, self.base_s, self.base_p,
 		  self.rep_d, self.rpp_d, self.rep_t, self.rpp_t,
 		)
 
-
 	def __setstate__(self, state):
-		(self.nsid, self.docgr, self.id_d, self.id_t, self.id_p,
+		(self.nsid, self.state, self.docgr, self.id_d, self.id_t, self.id_p,
 		  self.base_d, self.base_t, self.base_s, self.base_p,
 		  self.rep_d, self.rpp_d, self.rep_t, self.rpp_t,
 		) = state
@@ -275,18 +266,14 @@ class Producer(object):
 	def drange(self):
 		return xrange(0, len(self.id_d))
 
-
 	def trange(self):
 		return xrange(self.base_t, self.base_t + len(self.id_t))
-
 
 	def srange(self):
 		return xrange(self.base_s, self.base_p)
 
-
 	def prange(self):
 		return xrange(self.base_p, self.base_p + len(self.id_p))
-
 
 	def size(self):
 		"""
@@ -615,7 +602,6 @@ class Producer(object):
 
 
 class ProducerSample(object):
-
 
 	def __init__(self, phdb, pgdb):
 		self.pgdb = pgdb
