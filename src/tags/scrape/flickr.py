@@ -401,9 +401,12 @@ class SampleGenerator(object):
 		# generate content arcs between producers
 		def run_r(nsid):
 			prod = self.phdb[nsid]
-			pmap_a = dict((rnsid, self.inferProdArc(prod, self.phdb[rnsid])) for rnsid in self.inferRelProds(prod))
-			prod.initProdArcs(pmap_a)
-			self.phdb[nsid] = prod
+			if prod.state != P_ARC:
+				rels = self.inferRelProds(prod)
+				pmap_a = dict((rnsid, self.inferProdArc(prod, self.phdb[rnsid])) for rnsid in rels)
+				prod.initProdArcs(pmap_a)
+				del pmap_a
+				self.phdb[nsid] = prod
 			self.phsb[nsid] = prod.state
 		# OPT HIGH the lambda is inefficient, we should store this state in a smaller+faster db
 		exec_unique(self.phdb.iterkeys(), lambda nsid: self.phsb[nsid] >= P_ARC,
@@ -553,14 +556,15 @@ class SampleGenerator(object):
 		#gc.set_debug(gc.DEBUG_LEAK)
 		def run_r(nsid):
 			prod = self.pgdb[nsid]
-			rprod = g.vs.select(g.successors(id_p[nsid]))[NID]
-			pmap = [(rnsid, self.inferProdArc(prod, self.pgdb[rnsid], show_tag=True)) for rnsid in rprod]
-			self.pgdb.sync()
-			pmap_a, pmap_t = izip(*(((rnsid, arc_a), (rnsid, node_a)) for rnsid, (arc_a, node_a) in pmap)) if pmap else ([], [])
-			prod.initProdArcs(dict(pmap_a), dict(pmap_t))
-			del pmap, pmap_a, pmap_t
-			gc.collect()
-			self.pgdb[nsid] = prod
+			if prod.state != P_ARC:
+				rprod = g.vs.select(g.successors(id_p[nsid]))[NID]
+				pmap = [(rnsid, self.inferProdArc(prod, self.pgdb[rnsid], show_tag=True)) for rnsid in rprod]
+				self.pgdb.sync()
+				pmap_a, pmap_t = izip(*(((rnsid, arc_a), (rnsid, node_a)) for rnsid, (arc_a, node_a) in pmap)) if pmap else ([], [])
+				prod.initProdArcs(dict(pmap_a), dict(pmap_t))
+				del pmap, pmap_a, pmap_t
+				gc.collect()
+				self.pgdb[nsid] = prod
 			self.pgsb[nsid] = prod.state
 		# OPT HIGH the lambda is inefficient, we should store this state in a smaller+faster db
 		exec_unique(self.pgdb.iterkeys(), lambda nsid: self.pgsb[nsid] >= P_ARC,

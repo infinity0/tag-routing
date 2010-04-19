@@ -478,6 +478,29 @@ def dict_load(fp=sys.stdin):
 	return dict(parse_pair(l) for l in fp.readlines())
 
 
+def cleanup_db(database, start=None, fp=sys.stderr):
+	rem, tot = 0, 0
+	it = database.iterkeys()
+	if start:
+		if start not in database:
+			raise ValueError("start %s not in database" % start)
+		for key in it:
+			if key == start:
+				break
+		print >>fp, "starting cleanup from key %s (exclusive)" % start
+
+	for key in it:
+		try:
+			print >>fp, "\raccess key %s                " % key, # no line break
+			val = database[key]
+		except ValueError:
+			del database[key]
+			print >>fp, "\rremoved key %s                " % key
+			rem += 1
+		tot += 1
+	print >>fp, "\rfinished cleanup; %s/%s keys removed" % (rem, tot)
+
+
 ###############################################################################
 # IPC, execution management, threads, signals, etc
 ###############################################################################

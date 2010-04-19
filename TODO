@@ -10,7 +10,6 @@ FIXME NOW:
 - security implications here...
 
 scraper has scalability issues;
-- don't check "self.base_p", have a separate database for counting state
 - photo round on "test_large" is deadlocking with 7 items to go, WTF??
 
 (cleanup)

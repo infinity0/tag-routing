@@ -6,7 +6,7 @@ from tags.scrape.util import callable_wrap
 class StateError(RuntimeError):
 
 	def __init__(self, msg=None, cur=None):
-		RuntimeError.__init__(msg)
+		RuntimeError.__init__(self, msg)
 		self.msg = msg # str
 		self.cur = cur # state
 
