@@ -14,9 +14,9 @@ from flickrapi import FlickrAPI, FlickrError
 from igraph import Graph
 
 from tags.scrape.object import Node, NodeSample, Producer, ProducerSample, NID, AAT
-from tags.scrape.util import (StateError, intern_force, infer_arcs, repr_call,
-  enumerate_cb, exec_unique, union_ind, geo_prog_range, invert_seq, edge_array,
-  graph_copy, undirect_and_simplify, invert_multimap)
+from tags.scrape.util import (intern_force, union_ind, geo_prog_range, infer_arcs,
+  edge_array, graph_copy, undirect_and_simplify, invert_seq, invert_multimap,
+  enumerate_cb, exec_unique, repr_call)
 
 
 LOG = logging.getLogger(__name__)

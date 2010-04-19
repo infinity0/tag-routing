@@ -490,8 +490,16 @@ from itertools import ifilterfalse
 DEFAULT_MAX_THREADS = 36
 
 
-class StateError(RuntimeError):
-	pass
+def callable_wrap(item):
+	"""
+	Return a callable of one parameter, from a callable, map, or constant.
+	"""
+	if callable(item):
+		return item
+	elif hasattr(item, "__getitem__"):
+		return lambda k: item[k]
+	else:
+		return lambda k: item
 
 
 def enumerate_cb(iterable, callback, message=None, steps=0x100, every=None, expected_length=None):

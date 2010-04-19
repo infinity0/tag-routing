@@ -5,7 +5,8 @@ from igraph import Graph, IN, OUT
 from functools import partial
 from itertools import chain
 
-from tags.scrape.util import (StateError, intern_force, geo_mean, union_ind,
+from tags.scrape.state import StateError, state_req, state_not, state_next
+from tags.scrape.util import (intern_force, geo_mean, union_ind, callable_wrap,
   sort_v, edge_array, infer_arcs, iterconverge, representatives, graph_copy)
 
 
@@ -87,12 +88,8 @@ class NodeSample(object):
 
 		if not keep:
 			pass
-		elif callable(node_attr):
-			attr_cb = node_attr
-		elif hasattr(node_attr, "__getitem__"):
-			attr_cb = lambda id: node_attr[id]
 		else:
-			attr_cb = lambda id: node_attr
+			attr_cb = callable_wrap(node_attr)
 
 		# init nodes
 		v_id, v_attr, idmap = zip(*((id, node.attr, (id, i)) for i, (id, node) in enumerate(self._node.iteritems()))) if self._node else ([], [], [])
@@ -190,12 +187,22 @@ class Producer(object):
 	  "rep_d", "rpp_d", "rep_t", "rpp_t",
 	]
 
+	P_NEW, P_CONTENT, P_SCORES, P_ARC = 0, 1, 2, 3
+
+	E_NOTNEW = "initContent already called"
+	E_NEW = "initContent not yet called"
+	E_NOTARC = "initProdArcs not yet called"
+	E_ARC = "initProdArcs already called"
+	E_SCORE = "inferScores not yet called"
+	EE_SCORE = {P_NEW:E_SCORE, P_CONTENT:E_SCORE, P_ARC:E_ARC}
+	EE_CONTENT = {P_NEW:E_NEW, P_ARC:E_ARC}
 
 	def __init__(self, nsid):
 		"""
 		Creates a new producer
 		"""
 		self.nsid = nsid
+		self.state = P_NEW
 
 		self.docgr = None
 		self.id_d = None # {doc:vid}
@@ -227,6 +234,8 @@ class Producer(object):
 		) = state
 
 
+	@state_req(P_NEW, E_NOTNEW)
+	@state_next(P_CONTENT)
 	def initContent(self, dset, ptdb, store_node_attr=False):
 		"""
 		Initialises the doc-tag graph from the given document set and the given
@@ -236,9 +245,6 @@ class Producer(object):
 		@param ptdb: an open database of {doc:[tag]}
 		@param store_node_attr: whether to calculate and store node attributes
 		"""
-		if self.docgr is not None:
-			raise StateError("initContent already called")
-
 		def outdict(doc):
 			tags = ptdb[doc]
 			attr = len(tags)**-0.5 if tags else 0 # formula pulled out of my ass
@@ -289,6 +295,7 @@ class Producer(object):
 		return self.base_t
 
 
+	@state_not(P_NEW, E_NEW)
 	def tagsForDoc(self, doc):
 		"""
 		Returns a map of tags to their doc-tag weights, for the given doc.
@@ -310,6 +317,7 @@ class Producer(object):
 		return dict((g.vs[e.source][NID], e[AAT]) for e in eseq)
 
 
+	@state_not(P_NEW, E_NEW)
 	def docsForTag(self, tag):
 		"""
 		Returns a map of docs to their doc-tag weights, for the given tag.
@@ -331,18 +339,14 @@ class Producer(object):
 		return dict((g.vs[e.target][NID], e[AAT]) for e in eseq)
 
 
+	@state_not((P_NEW, P_ARC), EE_CONTENT)
+	@state_next(P_SCORES)
 	def inferScores(self, init=0.5):
 		"""
 		Infer scores for docs and tags.
 
 		DOCUMENT more detail
 		"""
-		if self.docgr is None:
-			raise StateError("initContent not called yet")
-
-		if self.base_p is not None:
-			raise StateError("initProdArcs already called")
-
 		g = self.docgr
 
 		# doc-tag weight is P(t|d)
@@ -381,6 +385,7 @@ class Producer(object):
 		self.docgr.vs[NAA] = sc_d + sc_t
 
 
+	@state_not((P_NEW, P_ARC), EE_CONTENT)
 	def debugScores(self, fp=sys.stderr):
 		"""
 		Tests the scoreNodes() algorithm for different values of <init>.
@@ -409,6 +414,7 @@ class Producer(object):
 			print >>fp, ""
 
 
+	@state_req(P_SCORES, EE_SCORE)
 	def repDoc(self, store_res=False, prop=0.25, thres=0.96, cover=1):
 		"""
 		Generates a set of representative docs for this producer. The results
@@ -419,15 +425,6 @@ class Producer(object):
 
 		@param store_res: whether to store the result parameters
 		"""
-		if self.docgr is None:
-			raise StateError("initContent not called yet")
-
-		if NAA not in self.docgr.vertex_attributes():
-			raise StateError("inferScores not called yet")
-
-		if self.base_p is not None:
-			raise StateError("initProdArcs already called")
-
 		g = self.docgr
 		cand = dict((g.vs[id][NID], (g.vs[id][NAA], g.predecessors(id))) for id in self.drange())
 		self.rep_d, rpp_d = representatives(cand, self.trange(), prop, thres, cover)
@@ -436,6 +433,7 @@ class Producer(object):
 		return self.rep_d
 
 
+	@state_req(P_SCORES, EE_SCORE)
 	def repTag(self, store_res=False, prop=0.25, thres=0.50, cover=1):
 		"""
 		Generates a set of representative tags for this producer. The results
@@ -446,15 +444,6 @@ class Producer(object):
 
 		@param store_res: whether to store the result parameters
 		"""
-		if self.docgr is None:
-			raise StateError("initContent not called yet")
-
-		if NAA not in self.docgr.vertex_attributes():
-			raise StateError("inferScores not called yet")
-
-		if self.base_p is not None:
-			raise StateError("initProdArcs already called")
-
 		g = self.docgr
 		cand = dict((g.vs[id][NID], (g.vs[id][NAA], g.successors(id))) for id in self.trange())
 		self.rep_t, rpp_t = representatives(cand, self.drange(), prop, thres, cover)
@@ -463,6 +452,7 @@ class Producer(object):
 		return self.rep_t
 
 
+	@state_req((P_SCORES, P_ARC), E_SCORE)
 	def tagScore(self, tag):
 		"""
 		Returns the score for a tag.
@@ -470,12 +460,6 @@ class Producer(object):
 		@param tags: [tag]
 		@return: {tag:score}
 		"""
-		if self.docgr is None:
-			raise StateError("initContent not called yet")
-
-		if NAA not in self.docgr.vertex_attributes():
-			raise StateError("inferScores not called yet")
-
 		s = self.docgr.vs[self.id_t[tag]][NAA] if tag in self.id_t else 0
 		return s if s is not None else 0
 
@@ -488,6 +472,8 @@ class Producer(object):
 		return float(len(doc)) / self.size()
 
 
+	@state_req(P_SCORES, EE_SCORE)
+	@state_next(P_ARC)
 	def initProdArcs(self, pmap_a, pmap_t=None):
 		"""
 		Initialises the doc-tag graph with the given prod<-tag arcs.
@@ -496,12 +482,6 @@ class Producer(object):
 		@param pmap_t: {nsid:{rtag:tags}} map (optional; this must have the
 		       same keys and subkeys as pmap_a)
 		"""
-		if self.docgr is None:
-			raise StateError("initContent not called yet")
-
-		if self.base_p is not None:
-			raise StateError("initProdArcs already called")
-
 		g = self.docgr
 
 		if pmap_t and NAT not in g.vertex_attributes():
@@ -549,6 +529,7 @@ class Producer(object):
 		g.es[eend:][AAT] = e_attr
 
 
+	@state_req(P_ARC, E_NOTARC)
 	def createTGraph(self, totalsize, pgdb, display=False, node_attr={
 	  "style": ("filled", "filled"),
 	  "fillcolor":("firebrick1", "limegreen"),
@@ -567,8 +548,6 @@ class Producer(object):
 		       an effect if <display> is True
 		       an effect if <display> is True
 		"""
-		if self.base_p is None:
-			raise StateError("initProdArcs not yet called")
 
 		# estimate total size from producer's own perspective
 		# the formula is pulled out of my ass but should give passable results
@@ -603,6 +582,7 @@ class Producer(object):
 		return gg
 
 
+	@state_req(P_ARC, E_NOTARC)
 	def createIndex(self, display=False, node_attr={
 	  "style": ("filled", "filled", "filled"),
 	  "fillcolor":("deepskyblue", "firebrick1", "limegreen"),
@@ -618,9 +598,6 @@ class Producer(object):
 		       holds the attribute value for the respective type of node; this
 		       only has an effect if <display> is True
 		"""
-		if self.base_p is None:
-			raise StateError("initProdArcs not yet called")
-
 		gg = graph_copy(self.docgr)
 		del gg.vs[NAA]
 		gg["base_d"] = self.base_d
@@ -645,7 +622,10 @@ class ProducerSample(object):
 		self.phdb = phdb
 
 
-	def make_tgraph_node(self, g, tag):
+	def makeTGraphNode(self, g, tag):
+		"""
+		Make a Node object out of a tag in a tgraph.
+		"""
 		return Node(tag, dict((g.vs[e.target][NID], g.es[e.index][AAT])
 		  for e in g.es.select(g.adjacent(g.vs.select(id=tag)[0].index))), g.vs.select(id=tag)[0][NAT])
 

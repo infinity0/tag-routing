@@ -16,6 +16,11 @@ import java.util.Set;
 */
 public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, A, W> {
 
+	/**
+	** {@inheritDoc}
+	**
+	** DOCUMENT
+	*/
 	public String formatResults(Map<A, W> results) {
 		StringBuilder s = new StringBuilder();
 		s.append("[ ");
@@ -26,6 +31,11 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 		return s.toString();
 	}
 
+	/**
+	** {@inheritDoc}
+	**
+	** DOCUMENT
+	*/
 	public String[] formatLookups(Map<A, Set<T>> lookups, Set<T> tags) {
 		String[] out = new String[tags.size()+4];
 		out[0] = String.format("Lookups over %d idx, %d tag", lookups.size(), tags.size());
@@ -55,6 +65,11 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 		return out;
 	}
 
+	/**
+	** {@inheritDoc}
+	**
+	** DOCUMENT
+	*/
 	public String[] formatAddressScheme(AddressScheme<T, A, W> scheme) {
 		String[] out = new String[scheme.indexMap().size()+2];
 		out[0] = "Address scheme for " + scheme.seedTag();
@@ -76,6 +91,10 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 		return out;
 	}
 
+	/**
+	** Return the width of the biggest {@link Object#toString()} value in the
+	** given iterable.
+	*/
 	public static <T> int maxSize(Iterable<T> it) {
 		int max = 0;
 		for (T o: it) {
@@ -85,11 +104,22 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 		return max;
 	}
 
+	/**
+	** Return the width of a positive integer's representation in base 10.
+	*/
 	public static int positiveNumberWidth(int i) {
 		if (i < 0) { throw new IllegalArgumentException(); }
 		return i < 10? 1: i < 100? 2: i < 1000? 3: i < 10000? 4: i < 100000? 5: 6;
 	}
 
+	/**
+	** Return a string of characters representing the indicator function of a
+	** subset of a parent set. Characters are ordered as per the iterator of
+	** the parent set.
+	**
+	** @param slots The parent set
+	** @param items The subset
+	*/
 	public static <T> char[] formatIndicatorVector(Set<T> slots, Set<T> items, char present, char absent) {
 		char[] vec = new char[slots.size()];
 		int i = 0;
