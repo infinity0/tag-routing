@@ -227,10 +227,14 @@ def invert_map(map):
 	return invert(map.iteritems(), lambda (k, v): v, lambda (k, v): k)
 
 
-def invert_multimap(lmap, rmap=None):
+def invert_multimap(kvvit, rmap=None):
+	"""
+	@param kvvit: an iterator of (key,[items])
+	@param rmap: map to populate (defaults to a new empty map)
+	"""
 	if rmap is None:
 		rmap = {}
-	for k, vs in lmap.iteritems():
+	for k, vs in kvvit:
 		for v in vs:
 			if v in rmap:
 				rmap[v].append(k)
@@ -242,6 +246,8 @@ def invert_multimap(lmap, rmap=None):
 def sort_v(kvit, reverse=False):
 	"""
 	Returns a list of (k, v) tuples, sorted by v.
+
+	@param kvit: an iterator of (k, v) tuples
 	"""
 	return ((k, v) for (v, k) in sorted(((v, k) for k, v in kvit), reverse=reverse))
 

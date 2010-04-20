@@ -10,7 +10,8 @@ futures_patch_nonblocking()
 logging.basicConfig(format="%(asctime)s.%(msecs)03d | %(levelno)02d | %(message)s", datefmt="%s")
 
 from igraph import Graph
-from tags.scrape.flickr import SafeFlickrAPI, SampleGenerator, SampleWriter
+from tags.scrape.flickr import SafeFlickrAPI
+from tags.scrape.sample import SampleGenerator, SampleWriter, SampleStats
 from tags.scrape.object import NodeSample, Node
 from tags.scrape.util import signal_dump, dict_load, dict_save
 from xml.etree.ElementTree import dump
@@ -47,10 +48,8 @@ def fmt_pydoc(sss):
 
 def main(round, *args, **kwargs):
 
-	import tags.scrape.flickr
-
 	signal_dump()
-	tags.scrape.flickr.LOG.setLevel(kwargs.pop("v"))
+	logging.getLogger("").setLevel(kwargs.pop("v"))
 
 	with Scraper(**kwargs) as scr:
 
@@ -320,13 +319,17 @@ class Scraper(object):
 		ptdb = self.db("pt")
 		tpdb = self.db("tp")
 		tcdb = self.db("tc")
+		totalsize = int(self.infp("pt.len").read())
 
 		phdb = self.db("ph")
 		phsb = self.db("phs")
 		pgdb = self.db("pg")
 		pgsb = self.db("pgs")
 
-		code.interact(banner=self.banner(locals()), local=locals())
+		stats = SampleStats(ptdb, tpdb, totalsize)
+
+		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
+		else: print >>sys.stderr, "cli param parsing not implemented yet; use -i to enter interactive mode"
 
 
 

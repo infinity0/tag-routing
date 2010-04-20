@@ -626,3 +626,45 @@ class ProducerSample(object):
 		  for e in g.es.select(g.adjacent(g.vs.select(id=tag)[0].index))), g.vs.select(id=tag)[0][NAT])
 
 
+
+class TagInfo(object):
+
+	__slots__ = ["tag", "photos", "rel", "worldsize"]
+
+	def __init__(self, tag, photos=None, rel=None, worldsize=None):
+		"""
+		@param photos: a list of photos for this tag
+		@param worldsize: total number of photos in the world, if known
+		@param rel: a map of {rtag:(rintersect,rtotal)} defining related tags
+		"""
+		self.tag = tag
+		self.photos = [] if photos is None else photos
+		self.rel = {} if rel is None else rel
+		self.worldsize = worldsize
+
+	def __str__(self):
+		return '"%s": %s photos, %s relatives' % (self.tag, len(self.photos), len(self.rel))
+
+	def __repr__(self):
+		return "TagInfo(%r, %r, %r, %r)" % (self.tag, self.photos, self.rel, self.worldsize)
+
+	def by_relevance(self):
+		"""
+		@return: a sorted list of {rtag:(relevance,rtotal)} for related tags,
+		         where relevance = intersect/rtag.total
+		"""
+		return list(sort_v(((k, (float(a)/len(self.photos), b)) for k, (a, b) in self.rel.iteritems()), reverse=True))
+
+	def by_recall(self):
+		"""
+		@return: a sorted list of {rtag:(recall,rtotal)}, for related tags,
+		         where recall = intersect/tag.total
+		"""
+		return list(sort_v(((k, (float(a)/b, b)) for k, (a, b) in self.rel.iteritems()), reverse=True))
+
+	def by_intersect(self):
+		"""
+		@return: a sorted list of {rtag:(intersection)}, for related tags.
+		"""
+		return list(sort_v(((k, a) for k, (a, b) in self.rel.iteritems()), reverse=True))
+
