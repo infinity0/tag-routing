@@ -11,3 +11,4 @@ test/tags/store/StoreGenerator.java
 sample.*.txt
 sample-data-*.tar.bz2
 *.pyc
+flickr.key

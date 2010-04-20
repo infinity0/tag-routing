@@ -50,7 +50,7 @@ def main(round, *args, **kwargs):
 	import tags.scrape.flickr
 
 	signal_dump()
-	tags.scrape.flickr.LOG.setLevel(kwargs.pop("verbose"))
+	tags.scrape.flickr.LOG.setLevel(kwargs.pop("v"))
 
 	with Scraper(**kwargs) as scr:
 
@@ -60,7 +60,7 @@ def main(round, *args, **kwargs):
 			rinfo = Scraper.rounds[round]
 			print >>sys.stderr, fmt_pydoc(f.__doc__)
 			print >>sys.stderr, "These rounds must already have been executed: %s" % ", ".join(rinfo.dep)
-			print >>sys.stderr, "These files will be written to: %s" % ", ".join(os.path.join(kwargs["basedir"], ext) for ext in rinfo.out)
+			print >>sys.stderr, "These files will be written to: %s" % ", ".join(os.path.join(kwargs["base"], ext) for ext in rinfo.out)
 			return 0
 
 		else:
@@ -97,14 +97,14 @@ class Scraper(object):
 	roundlist = [k for k, r in _rounds]
 
 
-	def __init__(self, api_key, secret, token, basedir="scrape", interact=False):
+	def __init__(self, api_key, secret, token=None, base="scrape", interact=False):
 		self.ff = SafeFlickrAPI(api_key, secret, token)
 		self.res = {}
-		self.base = basedir
+		self.base = base
 		self.interact = interact
 
-		self.dir_idx = os.path.join(basedir, "idx")
-		self.dir_tgr = os.path.join(basedir, "tgr")
+		self.dir_idx = os.path.join(base, "idx")
+		self.dir_tgr = os.path.join(base, "tgr")
 
 		for path in [self.base, self.dir_idx, self.dir_tgr]:
 			if not os.path.isdir(path):
@@ -339,23 +339,40 @@ if __name__ == "__main__":
 	  version = VERSION,
 	)
 
-	config.add_option("-d", "--basedir", type="string", metavar="BASEDIR", default="scrape",
+	exstr = " (See ./flickr.key.example for an example)" if os.path.exists("./flickr.key.example") else ""
+
+	config.add_option("-d", "--base", type="string", metavar="DIR", default="scrape",
 	  help = "Base output directory")
 	config.add_option("-i", "--interact", action="store_true", dest="interact",
 	  help = "Go into interactive mode after performing a round, to examine the objects created")
-	config.add_option("-k", "--api-key", type="string", metavar="APIKEY",
-	  help = "Flickr API key")
-	config.add_option("-s", "--secret", type="string", metavar="SECRET",
-	  help = "Flickr API secret")
-	config.add_option("-t", "--token", type="string", metavar="TOKEN",
-	  help = "Flickr API authentication token")
-	config.add_option("-v", "--verbose", type="int", metavar="VERBOSE", default=0,
-	  help = "Verbosity level (1 to 50, 1 most verbose)")
+	config.add_option("-k", "--key", type="string", metavar="FILE", default="flickr.key",
+	  help = 'File with Flickr API authentication details. Each line must read "key: value", '
+	         'and the file must define keys "api_key" and "secret", and optionally "token".%s' % exstr)
+	config.add_option("-v", type="int", metavar="LEVEL", default=0,
+	  help = "Verbosity level (1-50; 1 most verbose)")
 
 	(opts, args) = config.parse_args()
+
+	kwargs = opts.__dict__
+	with open(opts.key) as fp:
+		try:
+			keys = dict_load(fp)
+			for k in ["api_key", "secret"]:
+				if k in keys:
+					kwargs[k] = keys[k]
+				else:
+					raise ValueError('key "%s" not found' % k)
+			for k in ["token"]:
+				if k in keys:
+					kwargs[k] = keys[k]
+		except ValueError, e:
+			print >>sys.stderr, "bad keyfile format in %s: %r" % (opts.key, e)
+			sys.exit(1)
+
+	del opts.key
 
 	if len(args) < 1:
 		config.print_help()
 		sys.exit(2)
 	else:
-		sys.exit(main(*args, **opts.__dict__))
+		sys.exit(main(*args, **kwargs))

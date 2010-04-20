@@ -478,7 +478,12 @@ def dict_load(fp=sys.stdin):
 	"""
 	def parse_pair(line):
 		p = line.split(':', 1)
-		return literal_eval(p[0]), literal_eval(p[1].strip())
+		key, val = p[0].strip(), p[1].strip()
+		try: key = literal_eval(key)
+		except (ValueError, SyntaxError): pass
+		try: val = literal_eval(val)
+		except (ValueError, SyntaxError): pass
+		return key, val
 	return dict(parse_pair(l) for l in fp.readlines())
 
 
