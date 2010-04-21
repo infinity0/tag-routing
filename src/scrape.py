@@ -16,7 +16,7 @@ from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.sample import SampleGenerator, SampleWriter, SampleStats
 from tags.scrape.object import NodeSample, Node
 from tags.scrape.util import signal_dump, dict_load, dict_save
-from tags.scrape.lrudict import LRUDict
+from tags.scrape.lrudict import shelve_attach_cache
 
 NAME = "scrape.py"
 VERSION = 0.01
@@ -144,10 +144,6 @@ class Scraper(object):
 	def db(self, name, writeback=False, lrusize=0):
 		dbf = os.path.join(self.base, "%s.db" % name)
 
-		lrusize = int(lrusize)
-		if lrusize:
-			writeback = True
-
 		try:
 			from dbsqlite import SQLFileShelf
 			db = SQLFileShelf(dbf, writeback=writeback)
@@ -160,8 +156,9 @@ class Scraper(object):
 				import shelve
 				db = shelve.open(dbf, writeback=writeback)
 
+		lrusize = int(lrusize)
 		if lrusize:
-			db.cache = LRUDict(capacity=lrusize)
+			shelve_attach_cache(db, lrusize)
 
 		self.respush(dbf, db, 'rw')
 		return db
@@ -346,6 +343,9 @@ class Scraper(object):
 			stats = SampleStats(ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
 		except IOError:
 			pass
+		finally:
+			print pgdb.cache.report_stats()
+			print phdb.cache.report_stats()
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 		else: print >>sys.stderr, "cli param parsing not implemented yet; use -i to enter interactive mode"
