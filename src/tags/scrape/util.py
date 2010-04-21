@@ -674,6 +674,8 @@ def thread_dump(hash=False):
 	from hashlib import md5
 	from binascii import crc32
 	code = ["# Thread dump @ %.4f\n" % time.time()]
+	if not hash:
+		code = ["#"*79+"\n", code[0], "#"*79+"\n", "\n"]
 	for thid, stack in sorted(sys._current_frames().items()):
 		lines = format_stack(stack)
 		if hash:
@@ -795,7 +797,10 @@ def futures_patch_nonblocking(response_interval=0.25, verbose=False):
 
 	# add a method to Executor to return first result completed for any input,
 	# rather than wait for the next input's result
+	# yes, this is a total hack but that is because python threading is so shit
+	# (and so is python-futures) and i don't have time to do anything better
 	from Queue import Queue
+	from futures._base import ExecutionException
 	def run_to_results_any(self, calls):
 
 		res_queue = Queue()
@@ -803,15 +808,24 @@ def futures_patch_nonblocking(response_interval=0.25, verbose=False):
 		res_queue.not_full = LooseCondition(res_queue.mutex)
 
 		def run(call):
-			res = call()
+			try:
+				res = call()
+			except Exception, e:
+				res = ExecutionException(sys.exc_info())
 			res_queue.put(res)
 			return res
+
+		def get(res):
+			if type(res) == ExecutionException:
+				raise res
+			else:
+				return res
 
 		fs = self.run_to_futures((partial(run, call) for call in calls), return_when=RETURN_IMMEDIATELY)
 
 		yielded = 0
 		while yielded < len(fs):
-			yield res_queue.get()
+			yield get(res_queue.get())
 			yielded += 1
 	futures._base.Executor.run_to_results_any = run_to_results_any
 
