@@ -4,9 +4,10 @@ import sys, logging, os
 from itertools import chain, izip
 from igraph import Graph
 
-from tags.scrape.object import Producer, ProducerSample, TagInfo, NID, AAT, P_ARC
-from tags.scrape.util import (union_ind, geo_prog_range, infer_arcs, edge_array,
-  graph_copy, undirect_and_simplify, invert_seq, invert_multimap, exec_unique)
+from tags.scrape.object import Producer, ProducerSample, TagInfo, IDInfo, NID, AAT, P_ARC
+from tags.scrape.util import (union_ind, geo_prog_range, split_asc, infer_arcs,
+  edge_array, graph_copy, undirect_and_simplify, invert_seq, invert_multimap,
+  exec_unique)
 
 
 LOG = logging.getLogger(__name__)
@@ -399,10 +400,16 @@ class SampleWriter(ProducerSample):
 
 class SampleStats(object):
 
-	def __init__(self, ptdb, tpdb, totalsize):
+	def __init__(self, ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr):
 		self.ptdb = ptdb
 		self.tpdb = tpdb
 		self.totalsize = totalsize
+		self.ptabgr = ptabgr
+		self.prodgr = prodgr
+		self.sprdgr = sprdgr
+
+		self.id_p = dict((intern(nsid), vid) for vid, nsid in enumerate(self.ptabgr.vs[NID]))
+		self.id_h = dict((intern(nsid), vid) for vid, nsid in enumerate(self.prodgr.vs[NID]))
 
 
 	def getTagInfo(self, tag):
@@ -421,7 +428,19 @@ class SampleStats(object):
 		"""
 		DOCUMENT
 		"""
-		pass
+		out = self.ptabgr.successors(self.id_p[id])
+		soc, idx, tgr = split_asc(out, (self.ptabgr["base_z"], self.ptabgr["base_h"], self.ptabgr["base_g"]))
+		rel_h = [intern(self.prodgr.vs[id][NID]) for id in set(chain(*(self.prodgr.successors(self.id_h[self.ptabgr.vs[id][NID]]) for id in idx)))]
+
+		return IDInfo(self.ptabgr.vs.select(soc)[NID], self.ptabgr.vs.select(idx)[NID],
+		  self.ptabgr.vs.select(tgr)[NID], rel_h)
+		'''
+		- closeness centrality w.r.t. index graph:
+		  - closeness(set) = sum[v in G] { 2 ^ -mean_path_len(set, v) }
+		  - mean_path_len(set, v) = weighted_mean[s in set] { path_len(s, v) }
+		  - set is just ptable(id).indexes
+		TODO put weights on edges in idx.graphml
+		'''
 
 
 	def getIDTagInfo(self, id, tag):

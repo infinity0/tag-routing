@@ -8,8 +8,9 @@ from zlib import compress, decompress
 from tempfile import TemporaryFile
 
 from tags.scrape.state import StateError, state_req, state_not, state_next
-from tags.scrape.util import (intern_force, geo_mean, union_ind, callable_wrap,
-  sort_v, edge_array, infer_arcs, iterconverge, representatives, graph_copy)
+from tags.scrape.util import (intern_force, geo_mean, union_ind, f1_score,
+  sort_v, edge_array, infer_arcs, iterconverge, representatives, graph_copy,
+  callable_wrap)
 
 
 NID = "id" # label for node id in graphs
@@ -629,10 +630,13 @@ class ProducerSample(object):
 
 class TagInfo(object):
 
-	__slots__ = ["tag", "photos", "rel", "worldsize"]
+	#__slots__ = ["tag", "photos", "rel", "worldsize"]
 
 	def __init__(self, tag, photos=None, rel=None, worldsize=None):
 		"""
+		TODO NORM should support more advanced techniques that take into
+		account the weights given to each tag-photo relationship.
+
 		@param photos: a list of photos for this tag
 		@param worldsize: total number of photos in the world, if known
 		@param rel: a map of {rtag:(rintersect,rtotal)} defining related tags
@@ -643,28 +647,61 @@ class TagInfo(object):
 		self.worldsize = worldsize
 
 	def __str__(self):
-		return '"%s": %s photos, %s relatives' % (self.tag, len(self.photos), len(self.rel))
+		return '"%s": %s photos%s, %s relatives' % (self.tag, len(self.photos),
+		  " (out of %s total)" % self.worldsize if self.worldsize else "", len(self.rel))
 
 	def __repr__(self):
 		return "TagInfo(%r, %r, %r, %r)" % (self.tag, self.photos, self.rel, self.worldsize)
 
-	def by_relevance(self):
+	def by_precision(self):
 		"""
-		@return: a sorted list of {rtag:(relevance,rtotal)} for related tags,
-		         where relevance = intersect/rtag.total
+		@return: a sorted list of {rtag:(precision,rtotal)} for related tags,
+		         where precision = intersect/rtag.total
 		"""
-		return list(sort_v(((k, (float(a)/len(self.photos), b)) for k, (a, b) in self.rel.iteritems()), reverse=True))
+		return list(sort_v(((k, (float(ix)/len(self.photos), tot)) for k, (ix, tot) in self.rel.iteritems()), reverse=True))
 
 	def by_recall(self):
 		"""
 		@return: a sorted list of {rtag:(recall,rtotal)}, for related tags,
 		         where recall = intersect/tag.total
 		"""
-		return list(sort_v(((k, (float(a)/b, b)) for k, (a, b) in self.rel.iteritems()), reverse=True))
+		return list(sort_v(((k, (float(ix)/tot, tot)) for k, (ix, tot) in self.rel.iteritems()), reverse=True))
 
 	def by_intersect(self):
 		"""
-		@return: a sorted list of {rtag:(intersection)}, for related tags.
+		@return: a sorted list of {rtag:intersection}, for related tags.
 		"""
-		return list(sort_v(((k, a) for k, (a, b) in self.rel.iteritems()), reverse=True))
+		return list(sort_v(((k, ix) for k, (ix, tot) in self.rel.iteritems()), reverse=True))
+
+	def by_f1_score(self):
+		"""
+		@return: a sorted list of {rtag:f1score}, for related tags.
+		"""
+		return list(sort_v(((k, f1_score(len(self.photos), tot, ix)) for k, (ix, tot) in self.rel.iteritems()), reverse=True))
+
+	def f1_score(self, results):
+		"""
+		@return: F1 score between the tag's photos and the given results set.
+		"""
+		return f1_score(set(self.photos), set(results))
+
+
+
+class IDInfo(object):
+
+	#__slots__ = ["id", "soc", "tgr", "idx", "rel_h"]
+
+	def __init__(self, id, soc, tgr, idx, rel_h):
+		self.id = id
+		self.soc = soc
+		self.tgr = tgr
+		self.idx = idx
+		self.rel_h = rel_h
+
+	def nb_size():
+		"""
+		@return: number of nodes up to one hop away in the indexes graph
+		"""
+		return len(rel_h)
+
 

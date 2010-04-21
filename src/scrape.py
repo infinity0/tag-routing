@@ -326,7 +326,11 @@ class Scraper(object):
 		pgdb = self.db("pg")
 		pgsb = self.db("pgs")
 
-		stats = SampleStats(ptdb, tpdb, totalsize)
+		ptabgr = Graph.Read(self.infp("ptb.graphml"))
+		prodgr = Graph.Read(self.infp("idx.graphml"))
+		sprdgr = Graph.Read(self.infp("tgr.graphml"))
+
+		stats = SampleStats(ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 		else: print >>sys.stderr, "cli param parsing not implemented yet; use -i to enter interactive mode"

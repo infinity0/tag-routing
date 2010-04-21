@@ -74,6 +74,23 @@ def union_ind(it, total=None):
 		return 1.0 - reduce(lambda x,y : x*y, (1.0-i for i in it), 1.0)
 
 
+def f1_score(real, test, ix=None):
+	"""
+	Returns the F1-score of two sets. (see wikipedia:F1_score)
+
+	@param ix: size of intersection; if this is None then <real>, <test> must
+	       be sets; otherwise all three parameters should be integers.
+	"""
+	if ix is None:
+		ix = len(real.intersection(test))
+		precision = float(ix)/len(test)
+		recall = float(ix)/len(real)
+	else:
+		precision = float(ix)/test
+		recall = float(ix)/real
+	return float(2*precision*recall)/(precision+recall)
+
+
 def intern_force(sss):
 	"""
 	Interns the given string, or its UTF-8 encoding if it's a unicde string.
@@ -134,6 +151,7 @@ from math import log
 from random import random
 from array import array
 from igraph import Graph
+from bisect import bisect_left
 
 
 class azip(object):
@@ -194,7 +212,7 @@ def choice_dist(dist, total=None):
 
 def freq(it):
 	"""
-	Returns a frequency histogram for the items in the iterable.
+	Return a frequency histogram for the items in the iterable.
 	"""
 	cmap = {}
 	for i in it:
@@ -202,9 +220,20 @@ def freq(it):
 	return cmap
 
 
+def split_asc(list, cuts):
+	"""
+	Split an ascending list of integers by the given integer cut points (which
+	must also be ascending).
+	"""
+	if not list:
+		return [[]] * len(cuts)
+	ind = [bisect_left(list, cut) for cut in cuts]
+	return [list[lo:hi] for lo, hi in izip(ind, ind[1:]+[len(list)])]
+
+
 def invert(it, fkey, fval=lambda x: x):
 	"""
-	Inverts a sequence by some given key, val metrics.
+	Invert a sequence by some given key, val metrics.
 
 	@param fkey: callable which retrieves the key
 	@param fval: callable which retrieves the values

@@ -1,9 +1,5 @@
 == Tasks ==
 
-- move SampleGenerator and SampleWriter to sample.py
-- have a SampleStats class
-
-
 FIXME NOW:
 - make a better ValueComposer, turns out Mean*Composer is actually pretty shit
 - needs to give bigger weight to arcs/nodes defined by *lots of people* (cf.
