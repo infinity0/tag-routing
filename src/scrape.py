@@ -340,12 +340,12 @@ class Scraper(object):
 			prodgr = Graph.Read(self.infp("idx.graphml"))
 			sprdgr = Graph.Read(self.infp("tgr.graphml"))
 
-			stats = SampleStats(ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
+			stats = SampleStats(ppdb, pcdb, ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
 		except IOError:
 			pass
 		finally:
-			print pgdb.cache.report_stats()
-			print phdb.cache.report_stats()
+			if hasattr(pgdb.cache, "report_stats"): print pgdb.cache.report_stats()
+			if hasattr(phdb.cache, "report_stats"): print phdb.cache.report_stats()
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 		else: print >>sys.stderr, "cli param parsing not implemented yet; use -i to enter interactive mode"
@@ -365,7 +365,7 @@ if __name__ == "__main__":
 
 	config.add_option("-d", "--base", type="string", metavar="DIR", default="scrape",
 	  help = "Base output directory")
-	config.add_option("-c", "--cache", type="int", metavar="SIZE",
+	config.add_option("-c", "--cache", type="int", metavar="SIZE", default=0,
 	  help = "Cache size for database objects (only sometimes used, eg. pgdb, phdb in round 'generate')")
 	config.add_option("-i", "--interact", action="store_true", dest="interact",
 	  help = "Go into interactive mode after performing a round, to examine the objects created")

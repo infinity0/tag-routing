@@ -653,54 +653,66 @@ class ProducerSample(object):
 
 class TagInfo(object):
 
-	#__slots__ = ["tag", "photos", "rel", "worldsize"]
+	#__slots__ = ["tag", "photos", "rtag", "prod", "worldsize"]
 
-	def __init__(self, tag, photos=None, rel=None, worldsize=None):
+	RANK = ["rtag", "prod"]
+	SCORE = ["precision", "recall", "intersect", "f1_score"]
+
+	def __init__(self, tag, photos=None, rtag=None, prod=None, worldsize=None):
 		"""
 		TODO NORM should support more advanced techniques that take into
 		account the weights given to each tag-photo relationship.
 
 		@param photos: a list of photos for this tag
+		@param rtag: a map of {rtag:(ritx,rtotal)} defining related tags
+		@param prod: a map of {nsid:(ritx,rtotal)} defining related producers
 		@param worldsize: total number of photos in the world, if known
-		@param rel: a map of {rtag:(rintersect,rtotal)} defining related tags
 		"""
 		self.tag = tag
 		self.photos = [] if photos is None else photos
-		self.rel = {} if rel is None else rel
+		self.rtag = {} if rtag is None else rtag
+		self.prod = {} if prod is None else prod
 		self.worldsize = worldsize
 
 	def __str__(self):
-		return '"%s": %s photos%s, %s relatives' % (self.tag, len(self.photos),
-		  " (out of %s total)" % self.worldsize if self.worldsize else "", len(self.rel))
+		return '"%s": %s photos%s, %s related tags, %s related producers' % (self.tag, len(self.photos),
+		  " (out of %s total)" % self.worldsize if self.worldsize else "", len(self.rtag), len(self.prod))
 
 	def __repr__(self):
-		return "TagInfo(%r, %r, %r, %r)" % (self.tag, self.photos, self.rel, self.worldsize)
+		return "TagInfo(%r, %r, %r, %r, %r)" % (self.tag, self.photos, self.rtag, self.prod, self.worldsize)
 
-	def by_precision(self):
+	def rank_matches(self, rel, score):
+		if rel not in TagInfo.RANK:
+			raise ValueError("bad rel (%s); must be one of %s" % (rel, ", ".join(TagInfo.RANK)))
+		if score not in TagInfo.SCORE:
+			raise ValueError("bad score (%s); must be one of %s" % (score, ", ".join(TagInfo.SCORE)))
+		return getattr(self, "by_"+score)(getattr(self, rel))
+
+	def by_precision(self, map):
 		"""
 		@return: a sorted list of {rtag:(precision,rtotal)} for related tags,
 		         where precision = intersect/rtag.total
 		"""
-		return list(sort_v(((k, (float(ix)/len(self.photos), tot)) for k, (ix, tot) in self.rel.iteritems()), reverse=True))
+		return list(sort_v(((k, (float(ix)/tot, tot)) for k, (ix, tot) in map.iteritems()), reverse=True))
 
-	def by_recall(self):
+	def by_recall(self, map):
 		"""
 		@return: a sorted list of {rtag:(recall,rtotal)}, for related tags,
 		         where recall = intersect/tag.total
 		"""
-		return list(sort_v(((k, (float(ix)/tot, tot)) for k, (ix, tot) in self.rel.iteritems()), reverse=True))
+		return list(sort_v(((k, (float(ix)/len(self.photos), tot)) for k, (ix, tot) in map.iteritems()), reverse=True))
 
-	def by_intersect(self):
+	def by_intersect(self, map):
 		"""
 		@return: a sorted list of {rtag:intersection}, for related tags.
 		"""
-		return list(sort_v(((k, ix) for k, (ix, tot) in self.rel.iteritems()), reverse=True))
+		return list(sort_v(((k, ix) for k, (ix, tot) in map.iteritems()), reverse=True))
 
-	def by_f1_score(self):
+	def by_f1_score(self, map):
 		"""
 		@return: a sorted list of {rtag:f1score}, for related tags.
 		"""
-		return list(sort_v(((k, f1_score(len(self.photos), tot, ix)) for k, (ix, tot) in self.rel.iteritems()), reverse=True))
+		return list(sort_v(((k, f1_score(len(self.photos), tot, ix)) for k, (ix, tot) in map.iteritems()), reverse=True))
 
 	def f1_score(self, results):
 		"""
@@ -721,10 +733,10 @@ class IDInfo(object):
 		self.idx = idx
 		self.rel_h = rel_h
 
-	def nb_size():
+	def nb_size(self):
 		"""
 		@return: number of nodes up to one hop away in the indexes graph
 		"""
-		return len(rel_h)
+		return len(self.rel_h)
 
 

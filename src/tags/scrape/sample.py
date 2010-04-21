@@ -111,7 +111,8 @@ class SampleGenerator(object):
 		representative photos set of the given source producer.
 		"""
 		rel = invert_multimap((phid, self.pcdb[phid]) for phid in prod.rep_d)
-		del rel[prod.nsid]
+		if rel:
+			del rel[prod.nsid] # if it's not empty, then it must refer back to itself
 		return dict((nsid, float(len(photos))/len(self.ppdb[nsid])) for nsid, photos in rel.iteritems())
 
 
@@ -387,7 +388,9 @@ class SampleWriter(ProducerSample):
 
 class SampleStats(object):
 
-	def __init__(self, ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr):
+	def __init__(self, ppdb, pcdb, ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr):
+		self.ppdb = ppdb
+		self.pcdb = pcdb
 		self.ptdb = ptdb
 		self.tpdb = tpdb
 		self.totalsize = totalsize
@@ -406,21 +409,25 @@ class SampleStats(object):
 		@return: (photos, totalsize, [rtag:(intersect,total)])
 		"""
 		photos = self.tpdb[tag]
-		inv = invert_multimap((pid, self.ptdb[pid]) for pid in photos)
-		rel = dict((tag, (len(intersect), len(self.tpdb[tag]))) for tag, intersect in inv.iteritems())
-		return TagInfo(tag, photos, rel, self.totalsize)
+		rel = dict((tag, (len(intersect), len(self.tpdb[tag]))) for tag, intersect in
+		  invert_multimap((pid, self.ptdb[pid]) for pid in photos).iteritems())
+		prod = dict((prod, (len(ps), len(self.ppdb[prod]))) for prod, ps in
+		  invert_multimap((pid, self.pcdb[pid]) for pid in photos).iteritems())
+		return TagInfo(tag, photos, rel, prod, self.totalsize)
 
 
 	def getIDInfo(self, id):
 		"""
 		DOCUMENT
 		"""
-		out = self.ptabgr.successors(self.id_p[id])
-		soc, idx, tgr = split_asc(out, (self.ptabgr["base_z"], self.ptabgr["base_h"], self.ptabgr["base_g"]))
-		rel_h = [intern(self.prodgr.vs[id][NID]) for id in set(chain(*(self.prodgr.successors(self.id_h[self.ptabgr.vs[id][NID]]) for id in idx)))]
+		gr_p = self.ptabgr
+		gr_h = self.prodgr
 
-		return IDInfo(self.ptabgr.vs.select(soc)[NID], self.ptabgr.vs.select(idx)[NID],
-		  self.ptabgr.vs.select(tgr)[NID], rel_h)
+		out = gr_p.successors(self.id_p[id])
+		soc, idx, tgr = split_asc(out, (gr_p["base_z"], gr_p["base_h"], gr_p["base_g"]))
+		idx_h = [self.id_h[nsid] for nsid in gr_p.vs.select(idx)[NID]]
+		rel_h = gr_h.vs.select(set(chain(*(gr_h.successors(id) for id in idx_h))))[NID]
+		return IDInfo(id, gr_p.vs.select(soc)[NID], gr_p.vs.select(tgr)[NID], gr_p.vs.select(idx)[NID], rel_h)
 		'''
 		- closeness centrality w.r.t. index graph:
 		  - closeness(set) = sum[v in G] { 2 ^ -mean_path_len(set, v) }
@@ -428,6 +435,38 @@ class SampleStats(object):
 		  - set is just ptable(id).indexes
 		TODO put weights on edges in idx.graphml
 		'''
+
+
+	def closeness(self, id, tag=None):
+		"""
+		Get the residual closeness between the set of indexes pointed to by an
+		ID's ptable, and the set of indexes pointing to a tag (or the entire
+		graph, if the tag is None). This provides a measure of how quickly
+		information can flow from one area of the graph to another, assuming
+		only the structure of the graph, and perfect conditions.
+
+		[1] provides a definition of closeness:
+
+		  C(s) = sum[t in G] { 2 ^ -d(s,t) }
+
+		where s,t are vertices, and d(s,t) is the length of the shortest path
+		between them. We extend this to subsets of vertices:
+
+		  C(S, T) = sum[t in T] { 2 ^ -D(S, t) }
+		  D(S, t) = mean[s in S] { d(s,t) }
+
+		The values in our graph are probabilities, which is a multiplicative
+		distance metric. Converting this to an additive metric means taking the
+		negative log (ie. converting to entropy), giving us with:
+
+		  C(S, T) = sum[t in T] { P(S, t) }
+		  P(S, t) = geo_mean[s in S] { p(s,t) }
+
+		where -log p(s,t) = d(s,t). This is the form we actually calculate.
+
+		[2] Dangalchev, C. Residual closeness in networks, 2006.
+		"""
+		pass
 
 
 	def getIDTagInfo(self, id, tag):
