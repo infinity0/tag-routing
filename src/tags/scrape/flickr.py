@@ -1,6 +1,7 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
 import sys, socket, logging
+from time import sleep
 from collections import deque
 from functools import partial
 from itertools import chain
@@ -40,6 +41,8 @@ class SafeFlickrAPI(FlickrAPI):
 
 		def wrapper(**args):
 			i = 0
+			code_ignore = args.get("code_ignore", [])
+
 			while True:
 				err = None
 
@@ -50,8 +53,8 @@ class SafeFlickrAPI(FlickrAPI):
 					if code == 0 or code == 112: # FIXME LOW only when "unknown" is returned as the method called
 						err = e
 					else:
-						log = LOG.warning if code > 99 else LOG.debug
-						log("SafeFlickrAPI: ABORT %s due to %r" % (repr_call(attrib, **args), e))
+						if code not in code_ignore:
+							LOG.warning("SafeFlickrAPI: ABORT %s due to %r" % (repr_call(attrib, **args), e))
 						raise
 				except (URLError, IOError, ImproperConnectionState, HTTPException), e:
 					err = e
@@ -235,7 +238,8 @@ class SafeFlickrAPI(FlickrAPI):
 		"""
 		def run(gid):
 			try:
-				photos = list(chain(*(self.data_walker(self.groups_pools_getPhotos, group_id=gid, user_id=nsid, per_page=500) for nsid in gumap[gid])))
+				userphotos = (self.data_walker(self.groups_pools_getPhotos, group_id=gid, user_id=nsid, per_page=500, code_ignore=[2]) for nsid in gumap[gid])
+				photos = list(chain(*userphotos))
 			except FlickrError, e:
 				if FlickrError_code(e) == 2:
 					photos = []

@@ -8,7 +8,7 @@ FIXME NOW:
 - security implications here...
 
 scraper has deadlock issues
-- photo round on "test_large" is deadlocking with 7 items to go, WTF??
+- commitGroupPhotos is leaking, but not commitUserPhotos...
 
 (cleanup)
 - review Maps.viewSubMap

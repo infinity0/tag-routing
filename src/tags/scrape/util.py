@@ -522,12 +522,12 @@ def dict_load(fp=sys.stdin):
 	return dict(parse_pair(l) for l in fp.readlines())
 
 
-def cleanup_db(database, start=None, fp=sys.stderr):
+def cleanup_db(db_i, start=None, fp=sys.stderr):
 	rem, tot = 0, 0
-	it = database.iterkeys()
+	it = db_i.iterkeys()
 	if start:
-		if start not in database:
-			raise ValueError("start %s not in database" % start)
+		if start not in db_i:
+			raise ValueError("start %s not in db_i" % start)
 		for key in it:
 			if key == start:
 				break
@@ -535,14 +535,29 @@ def cleanup_db(database, start=None, fp=sys.stderr):
 
 	for key in it:
 		try:
-			print >>fp, "\raccess key %s                " % key, # no line break
-			val = database[key]
-		except ValueError:
-			del database[key]
-			print >>fp, "\rremoved key %s                " % key
+			print >>fp, "                \raccess key %s" % key, # no line break
+			val = db_i[key]
+		except Exception:
+			del db_i[key]
+			print >>fp, "                \rremoved key %s" % key
 			rem += 1
 		tot += 1
-	print >>fp, "\rfinished cleanup; %s/%s keys removed" % (rem, tot)
+	print >>fp, "                \rfinished cleanup; %s/%s keys removed" % (rem, tot)
+
+
+def copy_db(db_i, db_o, fp=sys.stderr):
+	rem, tot = 0, 0
+	for key in db_i.iterkeys():
+		if key in db_o:
+			continue
+		try:
+			db_o[key] = db_i[key]
+			print >>fp, "                \rcopied key %s" % key, # no line break
+		except Exception:
+			print >>fp, "                \rfailed key %s" % key
+			rem += 1
+		tot += 1
+	print >>fp, "                \rfinished copy; %s/%s keys failed" % (rem, tot)
 
 
 ###############################################################################

@@ -311,26 +311,29 @@ class Scraper(object):
 		"""
 		Examine objects through the python interactive interpreter.
 		"""
-		socgr = Graph.Read(self.infp("soc.graphml"))
-		gumap = dict_load(self.infp("gu.map"))
+		try:
+			socgr = Graph.Read(self.infp("soc.graphml"))
+			gumap = dict_load(self.infp("gu.map"))
 
-		ppdb = self.db("pp")
-		pcdb = self.db("pc")
-		ptdb = self.db("pt")
-		tpdb = self.db("tp")
-		tcdb = self.db("tc")
-		totalsize = int(self.infp("pt.len").read())
+			ppdb = self.db("pp")
+			pcdb = self.db("pc")
+			ptdb = self.db("pt")
+			tpdb = self.db("tp")
+			tcdb = self.db("tc")
+			totalsize = int(self.infp("pt.len").read())
 
-		phdb = self.db("ph")
-		phsb = self.db("phs")
-		pgdb = self.db("pg")
-		pgsb = self.db("pgs")
+			phdb = self.db("ph")
+			phsb = self.db("phs")
+			pgdb = self.db("pg")
+			pgsb = self.db("pgs")
 
-		ptabgr = Graph.Read(self.infp("ptb.graphml"))
-		prodgr = Graph.Read(self.infp("idx.graphml"))
-		sprdgr = Graph.Read(self.infp("tgr.graphml"))
+			ptabgr = Graph.Read(self.infp("ptb.graphml"))
+			prodgr = Graph.Read(self.infp("idx.graphml"))
+			sprdgr = Graph.Read(self.infp("tgr.graphml"))
 
-		stats = SampleStats(ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
+			stats = SampleStats(ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
+		except IOError:
+			pass
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 		else: print >>sys.stderr, "cli param parsing not implemented yet; use -i to enter interactive mode"
