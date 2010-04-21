@@ -1,9 +1,9 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
 import sys, logging, os
-from math import log
+from math import log, exp
 from itertools import chain, izip
-from igraph import Graph
+from igraph import Graph, IN
 
 from tags.scrape.object import (Producer, ProducerSample, ProducerRelation,
   TagInfo, IDInfo, NID, NAA, NAT, AAT, P_ARC)
@@ -453,20 +453,42 @@ class SampleStats(object):
 		between them. We extend this to subsets of vertices:
 
 		  C(S, T) = sum[t in T] { 2 ^ -D(S, t) }
-		  D(S, t) = mean[s in S] { d(s,t) }
+		  D(S, t) = min[s in S] { d(s,t) }
 
 		The values in our graph are probabilities, which is a multiplicative
 		distance metric. Converting this to an additive metric means taking the
-		negative log (ie. converting to entropy), giving us with:
+		negative log (ie. converting to entropy), giving d(s,t) = -log p(s,t).
+		This is the form we actually calculate.
 
-		  C(S, T) = sum[t in T] { P(S, t) }
-		  P(S, t) = geo_mean[s in S] { p(s,t) }
+		TODO needs tweaking, why min/sum/max/etc/whatever? and also normalise
+		against "size" of tag
 
-		where -log p(s,t) = d(s,t). This is the form we actually calculate.
-
-		[2] Dangalchev, C. Residual closeness in networks, 2006.
+		[1] Dangalchev, C. Residual closeness in networks, 2006.
 		"""
-		pass
+
+		idi = self.getIDInfo(id)
+		src = sorted([self.id_h[nsid] for nsid in set(idi.idx+idi.soc)])
+		dst = range(0, len(self.prodgr.vs)) if tag is None else sorted([
+		  self.id_h[nsid] for nsid in self.getTagInfo(tag).prod.iterkeys()])
+
+		g = self.prodgr
+		if "logweight" not in g.es:
+			g.es["logweight"] = [-log(attr) for attr in g.es[AAT]]
+			#print g.es["logweight"]
+
+		if not src: return 0.0
+		total = 0
+		for lengths in g.vs.select(dst).shortest_paths(weights="logweight", mode=IN):
+			#total += exp(-reduce(lambda x, y: x+y, (lengths[i] for i in src), 0.0) / len(src))
+			#total += reduce(lambda x, y: x+y, (exp(-lengths[i]) for i in src), 0.0)
+			total += exp(-min(lengths[i] for i in src))
+
+		return total
+
+
+	def getAllCloseness(self):
+		g = self.ptabgr
+		return dict((nsid, self.closeness(nsid)) for nsid in g.vs.select(xrange(0, g["base_h"]))[NID])
 
 
 	def getIDTagInfo(self, id, tag):

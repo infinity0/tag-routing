@@ -14,7 +14,6 @@ query test
   1. score (relevance, recall, so could be 2 dimensions here)
   2. steps to run the system
   3. distance of id to tag
-  4. how big the id is
 
 (1) is dependent variable, it's what we're interested in
 (2) is not that interesting since we expect recall better, and
