@@ -8,6 +8,7 @@ from threading import local as ThreadLocal
 from urllib2 import URLError
 from httplib import HTTPConnection, ImproperConnectionState, HTTPException
 from xml.etree.ElementTree import dump
+from xml.parsers.expat import ExpatError
 
 from flickrapi import FlickrAPI, FlickrError
 
@@ -54,6 +55,9 @@ class SafeFlickrAPI(FlickrAPI):
 						raise
 				except (URLError, IOError, ImproperConnectionState, HTTPException), e:
 					err = e
+				except ExpatError, e:
+					LOG.warning("SafeFlickrAPI: ABORT %s due to %r" % (repr_call(attrib, **args), e))
+					raise
 
 				LOG.warning("SafeFlickrAPI: wait %.4fs to retry %s due to %r" % (1.2**i, repr_call(attrib, **args), err))
 				sleep(1.2**i)
@@ -348,3 +352,21 @@ FlickrAPI._FlickrAPI__flickr_call = SafeFlickrAPI._SafeFlickrAPI__flickr_call
 
 # Don't bother looking up host every time
 #FlickrAPI.flickr_host = socket.gethostbyname(FlickrAPI.flickr_host)
+
+# Fix up pyexpat not being able to handle bad unicode chars
+# code from http://bugs.python.org/issue5166
+import re, flickrapi
+_char_tail = u'%s-%s' % (unichr(0x10000), unichr(min(sys.maxunicode, 0x10FFFF))) if sys.maxunicode > 0x10000 else ''
+_nontext_sub = re.compile(ur'[^\x09\x0A\x0D\x20-\uD7FF\uE000-\uFFFC%s]' % _char_tail, re.U).sub
+
+def replace_nontext(text, replacement=u'\uFFFD'):
+	return _nontext_sub(replacement, text)
+
+def parse_etree(self, rest_xml):
+	try:
+		return FlickrAPI.parse_etree(self, rest_xml)
+	except ExpatError:
+		rest_xml = replace_nontext(rest_xml.decode("utf-8"), '_').encode("utf-8")
+		return FlickrAPI.parse_etree(self, rest_xml)
+flickrapi.rest_parsers['etree'] = parse_etree
+
