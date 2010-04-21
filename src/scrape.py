@@ -5,16 +5,18 @@ import sys, logging, code, os
 from time import time, ctime
 from itertools import chain
 
+from igraph import Graph
+from xml.etree.ElementTree import dump
+
 from tags.scrape.util import futures_patch_nonblocking
 futures_patch_nonblocking()
 logging.basicConfig(format="%(asctime)s.%(msecs)03d | %(levelno)02d | %(message)s", datefmt="%s")
 
-from igraph import Graph
 from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.sample import SampleGenerator, SampleWriter, SampleStats
 from tags.scrape.object import NodeSample, Node
 from tags.scrape.util import signal_dump, dict_load, dict_save
-from xml.etree.ElementTree import dump
+from tags.scrape.lrudict import LRUDict
 
 NAME = "scrape.py"
 VERSION = 0.01
@@ -96,11 +98,12 @@ class Scraper(object):
 	roundlist = [k for k, r in _rounds]
 
 
-	def __init__(self, api_key, secret, token=None, base="scrape", interact=False):
+	def __init__(self, api_key, secret, token=None, base="scrape", interact=False, cache=0):
 		self.ff = SafeFlickrAPI(api_key, secret, token)
 		self.res = {}
 		self.base = base
 		self.interact = interact
+		self.cache = int(cache)
 
 		self.dir_idx = os.path.join(base, "idx")
 		self.dir_tgr = os.path.join(base, "tgr")
@@ -138,8 +141,13 @@ class Scraper(object):
 		return fp
 
 
-	def db(self, name, writeback=False):
+	def db(self, name, writeback=False, lrusize=0):
 		dbf = os.path.join(self.base, "%s.db" % name)
+
+		lrusize = int(lrusize)
+		if lrusize:
+			writeback = True
+
 		try:
 			from dbsqlite import SQLFileShelf
 			db = SQLFileShelf(dbf, writeback=writeback)
@@ -151,6 +159,10 @@ class Scraper(object):
 			except Exception:
 				import shelve
 				db = shelve.open(dbf, writeback=writeback)
+
+		if lrusize:
+			db.cache = LRUDict(capacity=lrusize)
+
 		self.respush(dbf, db, 'rw')
 		return db
 
@@ -271,9 +283,9 @@ class Scraper(object):
 		ptdb = self.db("pt")
 		tcdb = self.db("tc")
 
-		phdb = self.db("ph")
+		phdb = self.db("ph", lrusize=self.cache)
 		phsb = self.db("phs")
-		pgdb = self.db("pg")
+		pgdb = self.db("pg", lrusize=self.cache)
 		pgsb = self.db("pgs")
 
 		sg = SampleGenerator(socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, phsb, pgdb, pgsb)
@@ -353,6 +365,8 @@ if __name__ == "__main__":
 
 	config.add_option("-d", "--base", type="string", metavar="DIR", default="scrape",
 	  help = "Base output directory")
+	config.add_option("-c", "--cache", type="int", metavar="SIZE",
+	  help = "Cache size for database objects (only sometimes used, eg. pgdb, phdb in round 'generate')")
 	config.add_option("-i", "--interact", action="store_true", dest="interact",
 	  help = "Go into interactive mode after performing a round, to examine the objects created")
 	config.add_option("-k", "--key", type="string", metavar="FILE", default="flickr.key",

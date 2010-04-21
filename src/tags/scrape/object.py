@@ -186,6 +186,14 @@ EE_CONTENT = {P_NEW:E_NEW, P_ARC:E_ARC}
 
 
 class Producer(object):
+	"""
+	This makes use of the NAA attribute in two different ways:
+
+	- the NAA of a tag T, measures how relevant the tag is to this Producer.
+	  ie. tag-arcs to this Producer should have this NAA as its AAT.
+	- the NAA of a producer P, aggregates all tag arcs to P. ie. in the overall
+	  index graph, this Producer should point to P with this NAA as its AAT.
+	"""
 
 	__slots__ = ["nsid", "state", "docgr",
 	  "id_d", "id_t", "id_p",
@@ -472,37 +480,35 @@ class Producer(object):
 
 	@state_req(P_SCORES, EE_SCORE)
 	@state_next(P_ARC)
-	def initProdArcs(self, pmap_a, pmap_t=None):
+	def initProdArcs(self, pmap, has_tags=False):
 		"""
 		Initialises the doc-tag graph with the given prod<-tag arcs.
 
-		@param pmap_a: {nsid:{rtag:attr}} map
-		@param pmap_t: {nsid:{rtag:tags}} map (optional; this must have the
-		       same keys and subkeys as pmap_a)
+		@param pmap: {nsid:ProducerRelation} map
 		"""
 		g = self.docgr
 
-		if pmap_t and NAT not in g.vertex_attributes():
-			raise ValueError("<pmap> not None but initContent was not called with <store_node_attr=False>")
+		if has_tags and NAT not in g.vertex_attributes():
+			raise ValueError("<has_tags> specified but initContent was not called with <store_node_attr=False>")
 
 		self.base_s = len(g.vs)
-		# add tags in pmap_a that aren't in self.id_t
-		newtags = list(set(chain(*((tag for tag in tmap.iterkeys() if tag not in self.id_t) for tmap in pmap_a.itervalues()))))
+		# add tags in pmap that aren't in self.id_t
+		newtags = list(set(chain(*((tag for tag in rel.arcs.iterkeys() if tag not in self.id_t) for rel in pmap.itervalues()))))
 		self.id_t.update((tag, self.base_s+i) for i, tag in enumerate(newtags))
 		g.add_vertices(len(newtags))
 		g.vs[self.base_s:][NID] = newtags
 
 		# init nodes
 		self.base_p = len(self.id_d) + len(self.id_t)
-		self.id_p = dict((nsid, self.base_p+i) for i, nsid in enumerate(pmap_a.iterkeys()))
+		self.id_p = dict((nsid, self.base_p+i) for i, nsid in enumerate(pmap.iterkeys()))
 
 		# add node attributes for tags
 		# TODO NORM atm this just adds srange(), maybe we should mix in values
 		# for other tags too?
-		if pmap_t:
+		if has_tags:
 			rtags = {}
-			for nsid, tmap in pmap_t.iteritems():
-				for rtag, tags in tmap.iteritems():
+			for nsid, rel in pmap.iteritems():
+				for rtag, tags in rel.tags.iteritems():
 					if rtag in rtags:
 						rtags[rtag].update(tags)
 					else:
@@ -512,16 +518,17 @@ class Producer(object):
 
 		# init arcs
 		arc_s, arc_t, edges, e_attr = edge_array(len(self.id_t), 'd')
-		for i, (nsid, tmap) in enumerate(pmap_a.iteritems()):
+		for i, (nsid, rel) in enumerate(pmap.iteritems()):
 			pid = self.base_p+i
-			for tag, attr in tmap.iteritems():
+			for tag, attr in rel.arcs.iteritems():
 				arc_s.append(self.id_t[tag])
 				arc_t.append(pid)
 				e_attr.append(attr)
 
 		# add all to graph
-		g.add_vertices(len(pmap_a))
-		g.vs[self.base_p:][NID] = list(pmap_a.iterkeys())
+		g.add_vertices(len(pmap))
+		g.vs[self.base_p:][NID] = list(pmap.iterkeys())
+		g.vs[self.base_p:][NAA] = [rel.attr for rel in pmap.itervalues()]
 		eend = len(g.es)
 		g.add_edges(edges)
 		g.es[eend:][AAT] = e_attr
@@ -609,6 +616,22 @@ class Producer(object):
 				gg.vs[attr] = [val[0] for i in self.drange()] + [val[1] for i in self.trange()] + [val[2] for i in self.prange()]
 
 		return gg
+
+
+
+class ProducerRelation(object):
+
+	__slots__ = ["attr", "arcs", "tags"]
+
+	def __init__(self, attr, arcs, tags=None):
+		"""
+		@param attr: score of Producer (see Producer doc for details)
+		@param arcs: a map of {rtag:attr}
+		@param tags: a map of {rtag:tags} with the same key as <arcs>, or None
+		"""
+		self.attr = attr
+		self.arcs = arcs
+		self.tags = tags
 
 
 

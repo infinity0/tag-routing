@@ -1,10 +1,12 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
 import sys, logging, os
+from math import log
 from itertools import chain, izip
 from igraph import Graph
 
-from tags.scrape.object import Producer, ProducerSample, TagInfo, IDInfo, NID, AAT, P_ARC
+from tags.scrape.object import (Producer, ProducerSample, ProducerRelation,
+  TagInfo, IDInfo, NID, NAA, NAT, AAT, P_ARC)
 from tags.scrape.util import (union_ind, geo_prog_range, split_asc, infer_arcs,
   edge_array, graph_copy, undirect_and_simplify, invert_seq, invert_multimap,
   exec_unique)
@@ -72,8 +74,9 @@ class SampleGenerator(object):
 			prod = self.phdb[nsid]
 			if prod.state != P_ARC:
 				rels = self.inferRelProds(prod)
-				pmap_a = dict((rnsid, self.inferProdArc(prod, self.phdb[rnsid])) for rnsid in rels)
-				prod.initProdArcs(pmap_a)
+				pmap = dict((rnsid, ProducerRelation(rattr, self.inferProdArc(prod,
+				  self.phdb[rnsid]))) for rnsid, rattr in rels.iteritems())
+				prod.initProdArcs(pmap)
 				self.phdb[nsid] = prod
 			self.phsb[nsid] = prod.state
 		# OPT HIGH the lambda is inefficient, we should store this state in a smaller+faster db
@@ -86,16 +89,17 @@ class SampleGenerator(object):
 		id_p = dict(id_p)
 
 		# generate producer graph
-		arc_s, arc_t, edges = edge_array(total)
+		arc_s, arc_t, edges, score = edge_array(total, 'd')
 		for i, prod in enumerate(self.phdb.itervalues()):
-			for nsid in prod.docgr.vs.select(prod.prange())[NID]:
+			for vx in prod.docgr.vs.select(prod.prange()):
 				arc_s.append(i)
-				arc_t.append(id_p[nsid])
+				arc_t.append(id_p[vx[NID]])
+				score.append(vx[NAA])
 
 		sz = [log(prod.size()) for prod in self.phdb.itervalues()]
-		v_attr = {NID: list(self.phdb.iterkeys()), "label": lab_p, "height": sz, "width": sz}
+		v_attr = {NID: list(self.phdb.iterkeys()), "label": lab_p, NAT: sz, AAT: sz}
 
-		self.prodgr = Graph(total, edges=list(edges), directed=True, vertex_attrs=v_attr)
+		self.prodgr = Graph(total, edges=list(edges), directed=True, vertex_attrs=v_attr, edge_attrs={AAT: score})
 		LOG.info("%s db: generated producer graph" % name)
 
 
@@ -103,23 +107,12 @@ class SampleGenerator(object):
 		"""
 		Infer a set of related producers for the given producer.
 
-		This implementation uses selectProdsForPhotos() on the producer's
-		representative photos.
+		This implementation selects producers that hold the photos in the
+		representative photos set of the given source producer.
 		"""
-		rel = self.selectProdsForPhotos(prod.rep_d)
-		rel.discard(prod.nsid)
-		return rel
-
-
-	def selectProdsForPhotos(self, photos):
-		"""
-		Selects a set of "related" producers from all the producers that hold
-		any of the photos in the given set.
-		"""
-		rel = set()
-		for phid in photos:
-			rel.update(self.pcdb[phid])
-		return rel
+		rel = invert_multimap((phid, self.pcdb[phid]) for phid in prod.rep_d)
+		del rel[prod.nsid]
+		return dict((nsid, float(len(photos))/len(self.ppdb[nsid])) for nsid, photos in rel.iteritems())
 
 
 	def inferProdArc(self, prod_s, prod_t, show_tag=False):
@@ -219,19 +212,13 @@ class SampleGenerator(object):
 		LOG.info("%s db: generated producer graph" % name)
 
 		# generate content arcs between producers
-		# FIXME HIGH this uses up too much memory :/
-		import gc
-		#gc.set_debug(gc.DEBUG_LEAK)
 		def run_r(nsid):
 			prod = self.pgdb[nsid]
 			if prod.state != P_ARC:
 				rprod = g.vs.select(g.successors(id_p[nsid]))[NID]
-				pmap = [(rnsid, self.inferProdArc(prod, self.pgdb[rnsid], show_tag=True)) for rnsid in rprod]
-				self.pgdb.sync()
-				pmap_a, pmap_t = izip(*(((rnsid, arc_a), (rnsid, node_a)) for rnsid, (arc_a, node_a) in pmap)) if pmap else ([], [])
-				prod.initProdArcs(dict(pmap_a), dict(pmap_t))
-				del pmap, pmap_a, pmap_t
-				gc.collect()
+				pmap = dict((rnsid, ProducerRelation(None,
+				  *self.inferProdArc(prod, self.pgdb[rnsid], show_tag=True))) for rnsid in rprod)
+				prod.initProdArcs(pmap, has_tags=True)
 				self.pgdb[nsid] = prod
 			self.pgsb[nsid] = prod.state
 		# OPT HIGH the lambda is inefficient, we should store this state in a smaller+faster db
