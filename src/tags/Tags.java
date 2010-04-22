@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.logging.Level;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
 ** Entry point for the tag-routing suite.
@@ -81,8 +83,8 @@ public class Tags {
 		String[] tags = line.getArgs();
 		if (tags.length == 0) { System.exit(0); }
 
-		System.out.println("basedir=" + basedir + "; seedid=" + seedid + "; steps=" + steps + "; interval=" + interval + "; verbose=" + verbose);
-		System.out.println("tags=" + java.util.Arrays.asList(tags));
+		System.out.println("basedir=" + basedir + "; steps=" + steps + "; interval=" + interval + "; verbose=" + verbose);
+		System.out.println("id=" + seedid + "; tags=" + java.util.Arrays.asList(tags));
 		runQueries(basedir, env, agt, seedid, tags, steps);
 
 		System.exit(0);
@@ -96,7 +98,7 @@ public class Tags {
 	public static <K> void runQueries(
 	  String basedir, BasicEnvironment<K> env, BasicAgent<K> agt,
 	  K id, String[] tags, int steps
-	) {
+	) throws IOException {
 		agt.log.info("----");
 
 		for (String tag: tags) {
@@ -109,26 +111,44 @@ public class Tags {
 		}
 	}
 
-	public static int[] selectSteps(int n) {
-		// TODO NOW
-		throw null;
+	public static int[] selectSteps(int steps) {
+		int[] ii = new int[0x20];
+		int i;
+		for (i=0; i<32; ++i) {
+			ii[i] = steps-1;
+			steps >>= 1;
+			if (steps == 0) { break; }
+		}
+		return Arrays.copyOfRange(ii, 0, i+1);
 	}
 
 	public static class FileResultsReporter implements ResultsReporter {
 
-		public FileResultsReporter(File basedir, Query<?, ?> query) {
-			//
+		final protected FileWriter out;
+
+		public FileResultsReporter(File basedir, Query<?, ?> query) throws IOException {
+			out = new FileWriter(new File(new File(basedir, "res"), query.id + "." + query.tag + ".res"));
+			out.write("Query results for " + query + "\n\f");
+			out.flush();
 		}
-		public FileResultsReporter(String basedir, Query<?, ?> query) {
+
+		public FileResultsReporter(String basedir, Query<?, ?> query) throws IOException {
 			this(new File(basedir), query);
 		}
 
 		@Override public void addReport(String report) {
-			// write
+			try {
+				out.write(report);
+				out.write('\f');
+				out.flush();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 
-		public void finalize() {
-			// close file
+		@Override public void finalize() throws IOException {
+			out.flush();
+			out.close();
 		}
 
 	}

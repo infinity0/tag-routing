@@ -107,8 +107,9 @@ class Scraper(object):
 
 		self.dir_idx = os.path.join(base, "idx")
 		self.dir_tgr = os.path.join(base, "tgr")
+		self.dir_res = os.path.join(base, "res")
 
-		for path in [self.base, self.dir_idx, self.dir_tgr]:
+		for path in [self.base, self.dir_idx, self.dir_tgr, self.dir_res]:
 			if not os.path.isdir(path):
 				os.mkdir(path)
 
@@ -316,7 +317,7 @@ class Scraper(object):
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
 
-	def round_examine(self):
+	def round_examine(self, *args):
 		"""
 		Examine objects through the python interactive interpreter.
 		"""
@@ -341,6 +342,20 @@ class Scraper(object):
 			sprdgr = Graph.Read(self.infp("tgr.graphml"))
 
 			stats = SampleStats(ppdb, pcdb, ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
+
+			for arg in args:
+				with open(os.path.join(self.dir_res, arg)) as fp:
+					sec = []
+					cur = []
+					for line in fp:
+						if line[0] == '\f':
+							sec.append(cur)
+							cur = [line[1:]]
+						else:
+							cur.append(line)
+					sec.append(cur)
+					#print repr([s[0] for s in sec])
+
 		except IOError:
 			pass
 		finally:

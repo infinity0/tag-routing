@@ -76,7 +76,7 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 
 			// report
 			if (report != null && Arrays.binarySearch(rsteps, i) >= 0) {
-				report.addReport(prepareReport(proc));
+				report.addReport(prepareReport(proc, i));
 			}
 
 			// don't log same status twice
@@ -116,11 +116,15 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 		//log.finest("idx: " + fmt.formatResults(res.K1Map()));
 	}
 
-	public String prepareReport(QueryProcess<I, T, A, U, W, S, Z> proc) {
+	public String prepareReport(QueryProcess<I, T, A, U, W, S, Z> proc, int step) {
 		MapQueue<A, W> sres = sorted(proc.getResults().K0Map());
-		String report = "results (doc): " + sres;
-		// TODO NOW
-		return report;
+		StringBuilder report = new StringBuilder();
+		report.append("# report at step ").append(step).append(":\n\n");
+		for (String line: fmt.formatAddressScheme(proc.naming.getAddressScheme())) {
+			report.append(line).append('\n');
+		}
+		report.append("\nresults (doc): ").append(sres).append("\n\n");
+		return report.toString();
 	}
 
 	public MapQueue<A, W> sorted(Map<A, W> resmap) {
