@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
+import tags.util.ProxyIterable;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
@@ -78,6 +79,14 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 		return node_map;
 	}
 
+	@Override public Iterable<Integer> indexes(final Iterable<T> tags) {
+		return new ProxyIterable<T, Integer>(tags) {
+			@Override public Integer nextFor(T tag) {
+				return node_map.K0Map().get(tag);
+			}
+		};
+	}
+
 	@Override public U2Map<T, A, List<T>> pathMap() {
 		// FIXME NORM should really be immutable view
 		return path;
@@ -86,6 +95,11 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 	@Override public U2Map<T, A, Set<T>> ancestorMap() {
 		// FIXME NORM should really be immutable view
 		return ancestor;
+	}
+
+	@Override public U2Map<T, A, Set<T>> incomingMap() {
+		// FIXME NORM should really be immutable view
+		return incoming;
 	}
 
 	@Override public boolean isIncomplete() {

@@ -12,17 +12,17 @@ import tags.QueryTypes;
 import tags.QueryTypes.BasicProcess;
 import tags.QueryTypes.BasicEnvironment;
 import tags.QueryTypes.BasicAgent;
+import tags.proto.Query;
 import tags.store.GraphMLStoreControl;
 import tags.store.ProbabilityProxyStoreControl;
 
-import tags.util.MapQueue;
-import tags.util.BaseMapQueue;
-import tags.util.Probability;
+import tags.ui.ResultsReporter;
+
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.logging.Level;
+
+import java.io.File;
 
 /**
 ** Entry point for the tag-routing suite.
@@ -31,7 +31,7 @@ import java.util.logging.Level;
 */
 public class Tags {
 
-	final private static List<Level> levels = Arrays.asList(new Level[]{Level.OFF, Level.INFO, Level.FINE, Level.ALL});
+	final private static Level[] levels = new Level[]{Level.OFF, Level.INFO, Level.FINE, Level.ALL};
 
 	public static void main(String[] args) throws Throwable {
 
@@ -71,7 +71,7 @@ public class Tags {
 		    new GraphMLStoreControl<String, Double, Double, Double>(basedir)
 		  )
 		);
-		BasicAgent<String> agt = QueryTypes.makeProtoAgent(levels.get(verbose));
+		BasicAgent<String> agt = QueryTypes.makeProtoAgent(Tags.levels[verbose]);
 
 		String interval = line.getOptionValue('i');
 		if (interval != null) {
@@ -83,7 +83,7 @@ public class Tags {
 
 		System.out.println("basedir=" + basedir + "; seedid=" + seedid + "; steps=" + steps + "; interval=" + interval + "; verbose=" + verbose);
 		System.out.println("tags=" + java.util.Arrays.asList(tags));
-		runQueries(env, agt, seedid, tags, steps);
+		runQueries(basedir, env, agt, seedid, tags, steps);
 
 		System.exit(0);
 	}
@@ -94,9 +94,8 @@ public class Tags {
 	}
 
 	public static <K> void runQueries(
-	  BasicEnvironment<K> env, BasicAgent<K> agt,
-	  K id, String[] tags,
-	  int steps
+	  String basedir, BasicEnvironment<K> env, BasicAgent<K> agt,
+	  K id, String[] tags, int steps
 	) {
 		agt.log.info("----");
 
@@ -104,13 +103,34 @@ public class Tags {
 			BasicProcess<K> proc = QueryTypes.makeProtoProcess(id, tag, env);
 			proc.attachLogger(agt.log);
 			agt.log.info("Starting query " + proc);
-			agt.runUntilAfter(proc, steps);
+			agt.runUntilAfter(proc, steps, new FileResultsReporter(basedir, proc), selectSteps(steps));
 			agt.log.info("----");
-			MapQueue<K, Probability> queue = new BaseMapQueue<K, Probability>(Collections.<Probability>reverseOrder(), false);
-			queue.addAll(proc.getResults().K0Map());
-			agt.log.info("results (doc): " + queue);
 			agt.log.info("----");
 		}
+	}
+
+	public static int[] selectSteps(int n) {
+		// TODO NOW
+		throw null;
+	}
+
+	public static class FileResultsReporter implements ResultsReporter {
+
+		public FileResultsReporter(File basedir, Query<?, ?> query) {
+			//
+		}
+		public FileResultsReporter(String basedir, Query<?, ?> query) {
+			this(new File(basedir), query);
+		}
+
+		@Override public void addReport(String report) {
+			// write
+		}
+
+		public void finalize() {
+			// close file
+		}
+
 	}
 
 }

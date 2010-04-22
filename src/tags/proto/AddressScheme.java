@@ -23,37 +23,47 @@ public interface AddressScheme<T, A, W> extends Comparator<W> {
 	public T seedTag();
 
 	/**
-	** Returns the set of tags contained within this scheme, excluding the
+	** Return the set of tags contained within this scheme, excluding the
 	** incomplete tag, if there is one.
 	*/
 	public Set<T> tagSet();
 
 	/**
-	** Returns a map of tags to their arc-attributes, relative to the seed tag.
+	** Return a map of tags to their arc-attributes, relative to the seed tag.
 	*/
 	public Map<T, W> arcAttrMap();
 
 	/**
-	** Returns a list of nodes in ascending order from their shortest distance
-	** to the seed tag.
+	** Return a list of nodes in ascending order from their shortest distance
+	*\* to the seed tag.
 	*/
 	public List<U2<T, A>> nodeList();
 
 	/**
-	** Returns a map of nodes to their orderings in the shortest-distance list.
+	** Return a map of nodes to their orderings in the shortest-distance list.
 	*/
 	public U2Map<T, A, Integer> indexMap();
 
 	/**
-	** Returns a map of nodes to the shortest path between it and the seed tag.
+	** Return an iterable of orderings for the tags in the given iterable.
+	*/
+	public Iterable<Integer> indexes(Iterable<T> tags);
+
+	/**
+	** Return a map of nodes to the shortest path between it and the seed tag.
 	** The path starts from the seed tag, and does not contain the node itself.
 	*/
 	public U2Map<T, A, List<T>> pathMap();
 
 	/**
-	** Returns a map of nodes to the set of all its ancestors.
+	** Return a map of nodes to the set of all its ancestors.
 	*/
 	public U2Map<T, A, Set<T>> ancestorMap();
+
+	/**
+	** Return a map of nodes to the set of all its incoming neighbours.
+	*/
+	public U2Map<T, A, Set<T>> incomingMap();
 
 	/**
 	** Whether the scheme is complete for the backing graph. If this is {@code
@@ -78,7 +88,7 @@ public interface AddressScheme<T, A, W> extends Comparator<W> {
 	public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map);
 
 	/**
-	** Returns the tag with the highest arc-attribute (ie. opposite of default
+	** Return the tag with the highest arc-attribute (ie. opposite of default
 	** java sort order), or {@code null} if none of the tags have an attribute
 	** defined.
 	**
@@ -88,6 +98,9 @@ public interface AddressScheme<T, A, W> extends Comparator<W> {
 	*/
 	public Map.Entry<T, W> getMostRelevant(Set<T> tags);
 
+	/**
+	** Return the nearest {@link TGraph} to the seed tag.
+	*/
 	public A getNearestTGraph();
 
 }

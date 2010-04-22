@@ -3,9 +3,14 @@ package tags.ui;
 
 import tags.proto.Query;
 import tags.proto.QueryProcess;
-import tags.util.Maps.U2Map;
 import tags.util.exec.MessageRejectedException;
 
+import tags.util.BaseMapQueue;
+import tags.util.MapQueue;
+import tags.util.Maps.U2Map;
+import java.util.Map;
+import java.util.Collections;
+import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
@@ -19,7 +24,7 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 	/** The {@link QueryStateFormatter} used. */
 	final public QueryStateFormatter<T, A, W> fmt;
 
-	protected int interval = 250; // TODO getter & setter methods for these
+	protected int interval = 250;
 
 	public QueryAgent(Logger log, QueryStateFormatter<T, A, W> fmt) {
 		this.log = log;
@@ -27,26 +32,61 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 	}
 
 	/**
-	** Run until the first results are obtained, then run for {@code n} more
-	** steps.
+	** Set the time interval between successive steps of the algorithm.
+	*/
+	public void setInterval(int interval) {
+		if (interval < 10) {
+			throw new IllegalArgumentException("interval must be >=10: " + interval);
+		}
+		this.interval = interval;
+	}
+
+	/**
+	** @see #runUntilAfter(QueryProcess, int, ResultsReporter, int[])
 	*/
 	public void runUntilAfter(QueryProcess<I, T, A, U, W, S, Z> proc, int n) {
+		runUntilAfter(proc, n, null, null);
+	}
+
+	/**
+	** Run until the initial address scheme is obtained, then run for {@code n}
+	** more steps.
+	**
+	** @param proc The process to run
+	** @param n Number of steps to run after the first address scheme
+	** @param report Reporter to send reports to
+	** @param rsteps Steps at which to send reports
+	*/
+	public void runUntilAfter(QueryProcess<I, T, A, U, W, S, Z> proc, int n, ResultsReporter report, int[] rsteps) {
 		// get some results
 		while (proc.getResults() == null || proc.getResults().isEmpty()) {
 			nextStep(proc);
 		}
 		showResults(proc.getResults(), proc);
 
+		if (rsteps == null) {
+			rsteps = new int[]{n-1};
+		} else {
+			Arrays.sort(rsteps);
+		}
+
 		U2Map<A, A, W> res = proc.getResults();
 		for (int i=0; i<n; ++i) {
 			nextStep(proc);
+
+			// report
+			if (report != null && Arrays.binarySearch(rsteps, i) >= 0) {
+				report.addReport(prepareReport(proc));
+			}
+
+			// don't log same status twice
 			if (proc.getResults() == res) { continue; }
 
 			res = proc.getResults();
 			log.info(proc + " " + proc.getStatus() + " " + proc.getStats());
 			showResults(res, proc);
-			String[] lines;
 
+			String[] lines;
 			log.finer("================");
 			lines = fmt.formatAddressScheme(proc.naming.getAddressScheme());
 			for (String line: lines) { log.finer(line); }
@@ -55,12 +95,6 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 			for (String line: lines) { log.finer(line); }
 			log.finer("================");
 		}
-	}
-
-	public void showResults(U2Map<A, A, W> res, Query<I, T> query) {
-		log.info("Query " + query + " results: " + res.K0Map().size() + " doc, " + res.K1Map().size() + " idx");
-		//log.finest("doc: " + fmt.formatResults(res.K0Map()));
-		//log.finest("idx: " + fmt.formatResults(res.K1Map()));
 	}
 
 	public void nextStep(QueryProcess<I, T, A, U, W, S, Z> proc) {
@@ -76,11 +110,23 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 		try { Thread.sleep(interval); } catch (InterruptedException e) { }
 	}
 
-	public void setInterval(int interval) {
-		if (interval < 10) {
-			throw new IllegalArgumentException("interval must be >=10: " + interval);
-		}
-		this.interval = interval;
+	public void showResults(U2Map<A, A, W> res, Query<I, T> query) {
+		log.info("Query " + query + " results: " + res.K0Map().size() + " doc, " + res.K1Map().size() + " idx");
+		//log.finest("doc: " + fmt.formatResults(res.K0Map()));
+		//log.finest("idx: " + fmt.formatResults(res.K1Map()));
+	}
+
+	public String prepareReport(QueryProcess<I, T, A, U, W, S, Z> proc) {
+		MapQueue<A, W> sres = sorted(proc.getResults().K0Map());
+		String report = "results (doc): " + sres;
+		// TODO NOW
+		return report;
+	}
+
+	public MapQueue<A, W> sorted(Map<A, W> resmap) {
+		MapQueue<A, W> sorted = new BaseMapQueue<A, W>(Collections.<W>reverseOrder(), false);
+		sorted.addAll(resmap);
+		return sorted;
 	}
 
 }

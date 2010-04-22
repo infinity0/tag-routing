@@ -4,6 +4,7 @@ package tags.ui;
 import tags.proto.AddressScheme;
 
 import tags.util.Union.U2;
+import tags.util.ProxyIterable;
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.Map;
@@ -71,22 +72,34 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 	** DOCUMENT
 	*/
 	public String[] formatAddressScheme(AddressScheme<T, A, W> scheme) {
-		String[] out = new String[scheme.indexMap().size()+2];
+		final int columns = 5;
+		int sz = scheme.indexMap().size();
+		String[] out = new String[sz+2];
 		out[0] = "Address scheme for " + scheme.seedTag();
 		out[1] = "----";
 
-		int d = positiveNumberWidth(scheme.nodeList().size()-1);
-		int w = maxSize(scheme.indexMap().K0Map().keySet());
+		String[][] tab = new String[sz][];
 		int i = 0;
 		for (U2<T, A> node: scheme.nodeList()) {
-			out[i+2] = String.format("%"+d+"d %-"+w+"s (%6.4s) %s", i, node.val.toString(),
-			  scheme.arcAttrMap().get(node.val), scheme.pathMap().get(node).toString());
+			tab[i] = new String[] {
+			  Integer.toString(i),
+			  node.val.toString(),
+			  String.format("%6.4s", scheme.arcAttrMap().get(node.val)),
+			  join(",", scheme.indexes(scheme.incomingMap().get(node))),
+			  join("->", scheme.indexes(scheme.pathMap().get(node)))
+			};
+			assert tab[i].length == columns;
 			++i;
 		}
 		if (scheme.isIncomplete()) {
-			char[] pad = new char[d];
+			char[] pad = new char[tab[sz-1][0].length()];
 			Arrays.fill(pad, '#');
-			out[i+1] = new String(pad) + out[i+1].substring(d);
+			tab[sz-1][0] = new String(pad);
+		}
+
+		int[] cols = colsize(Arrays.asList(tab), columns);
+		for (i=0; i<sz; ++i) {
+			out[i+2] = String.format("%"+cols[0]+"s | %-"+cols[1]+"s | %s | %-"+cols[3]+"s | %-"+cols[4]+"s", (Object[])tab[i]);
 		}
 		return out;
 	}
@@ -128,6 +141,28 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 			++i;
 		}
 		return vec;
+	}
+
+	public static String join(String sep, Iterable<?> items) {
+		StringBuilder sb = new StringBuilder();
+		for (Object item: items) {
+			sb.append(item).append(sep);
+		}
+		int len = sb.length();
+		return len == 0? "": sb.substring(0, len-sep.length());
+	}
+
+	public static int[] colsize(final Iterable<String[]> rect, int cols) {
+		int[] col = new int[cols];
+		for (int i=0; i<cols; ++i) {
+			final int curcol = i;
+			col[curcol] = maxSize(new ProxyIterable<String[], String>(rect) {
+				@Override public String nextFor(String[] row) {
+					return row[curcol];
+				}
+			});
+		}
+		return col;
 	}
 
 }

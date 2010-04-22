@@ -29,7 +29,7 @@ import java.io.IOException;
 public class QueryEnvironment<I, T, A, U, W, S, Z> {
 
 	// interval for Thread.sleep in the control-loops in Contact/Naming/Routing
-	final public int interval = 1000;
+	final public int interval = 250;
 
 	// TODO NORM this is a hack, make a better way of doing this
 	final public int parallel_idx_lku = 0x10;

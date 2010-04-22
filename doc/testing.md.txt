@@ -5,28 +5,25 @@
 - test whether these match our expectations (nodes further out are "more general")
 - basically, some measure of how similar two graphs are?
 
-examine(id, tag):
-- some measure of "how far" a given identity is from a given tag.
 
 
-query test
-- we have 4 dimensions:
-  1. score (relevance, recall, so could be 2 dimensions here)
-  2. steps to run the system
-  3. distance of id to tag
+
+
+query test:
+
+1. score (f1_score, precision, recall)
+2. steps to run the algorithm
+3. closeness(id, tag)
 
 (1) is dependent variable, it's what we're interested in
 (2) is not that interesting since we expect recall better, and
-(3) dependent variable
-(4) dependent variable
+(3) independent variable
 
-plot (1) against (3) for a small set of (2), (4)
-plot (1) against (4) for a small set of (2), (3)
+plot (1) against (3) for a small set of (2)
+set of (2) we can take to be [32, 64, 128, 256]
 
-set of (2) we can take to be (32, 64, 128, 256)
 
-score_results(tag, results):
-	return relevance and recall scores
+more sophisticated score would take into account the distance between results docs and actual docs
 
 
 
