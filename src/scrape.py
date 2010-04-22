@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
-import sys, logging, code, os
+import sys, logging, code, os, re
 from time import time, ctime
 from itertools import chain
 
@@ -14,8 +14,8 @@ logging.basicConfig(format="%(asctime)s.%(msecs)03d | %(levelno)02d | %(message)
 
 from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.sample import SampleGenerator, SampleWriter, SampleStats
-from tags.scrape.object import NodeSample, Node
-from tags.scrape.util import signal_dump, dict_load, dict_save
+from tags.scrape.object import NodeSample, Node, Results
+from tags.scrape.util import signal_dump, dict_load, dict_save, read_chapters
 from tags.scrape.lrudict import shelve_attach_cache
 
 NAME = "scrape.py"
@@ -343,18 +343,11 @@ class Scraper(object):
 
 			stats = SampleStats(ppdb, pcdb, ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
 
+			results = []
 			for arg in args:
 				with open(os.path.join(self.dir_res, arg)) as fp:
-					sec = []
-					cur = []
-					for line in fp:
-						if line[0] == '\f':
-							sec.append(cur)
-							cur = [line[1:]]
-						else:
-							cur.append(line)
-					sec.append(cur)
-					#print repr([s[0] for s in sec])
+					results.append(Results.from_chapters(read_chapters(fp)))
+
 
 		except IOError:
 			pass

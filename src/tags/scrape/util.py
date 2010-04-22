@@ -488,6 +488,26 @@ def repr_call(fname, *args, **kwargs):
 	return "%s(%s)" % (fname, ", ".join(chain((repr(arg) for arg in args), ("%s=%r" % (k,v) for k, v in kwargs.iteritems()))))
 
 
+def read_chapters(fp=sys.stdin):
+	chp = []
+	sec = []
+	cur = []
+	for line in fp:
+		if line[0] == '\f':
+			if cur: sec.append(cur)
+			cur = [line[1:]]
+			if sec: chp.append(sec)
+			sec = []
+		elif line[0] == '\n':
+			if cur: sec.append(cur)
+			cur = []
+		else:
+			cur.append(line)
+	if cur: sec.append(cur)
+	if sec: chp.append(sec)
+	return chp
+
+
 def write_histogram(it, header=None, fp=sys.stdout, reverse=False):
 	if header:
 		print >>fp, "# %s" % header

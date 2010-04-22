@@ -84,7 +84,7 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 			tab[i] = new String[] {
 			  Integer.toString(i),
 			  node.val.toString(),
-			  String.format("%6.4s", scheme.arcAttrMap().get(node.val)),
+			  String.format("%10.8s", scheme.arcAttrMap().get(node.val)),
 			  join(",", scheme.indexes(scheme.incomingMap().get(node))),
 			  join("->", scheme.indexes(scheme.pathMap().get(node)))
 			};

@@ -1,11 +1,13 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
-import sys
-from igraph import Graph, IN, OUT
+import sys, re
 from functools import partial
 from itertools import chain
+from ast import literal_eval
+
 from zlib import compress, decompress
 from tempfile import TemporaryFile
+from igraph import Graph, IN, OUT
 
 from tags.scrape.state import StateError, state_req, state_not, state_next
 from tags.scrape.util import (intern_force, geo_mean, union_ind, f1_score,
@@ -738,5 +740,50 @@ class IDInfo(object):
 		@return: number of nodes up to one hop away in the indexes graph
 		"""
 		return len(self.rel_h)
+
+
+
+class Results(object):
+
+
+	def __init__(self, id, tag, report):
+		self.id = id
+		self.tag = tag
+		self.report = report
+
+
+	@classmethod
+	def from_chapters(klass, chapters):
+		intro = chapters.pop(0)
+		id, tag = re.search(r"\[(.*?):(.*?)\]", intro[0][0]).groups()
+
+		report = {}
+		for head, addr, res in chapters:
+			step = int(re.search(r"step (\d+):", head[0]).group(1))
+
+			nodes = []
+			for line in addr[2:]:
+				index, tag, score, pred, path = line.split(' | ')
+
+				index = len(nodes) if index[0] == '#' else int(index)
+				tag = tag.strip()
+				score = None if score.strip() == "null" else float(score)
+				pred = [int(n) for n in pred.split(',')] if pred.strip() else []
+				#path = [int(n) for n in path.split('->')] # ignore for now, we don't need it
+
+				if index != len(nodes):
+					raise ValueError()
+
+				nodes.append((tag, score, pred))
+
+			tags, scores, preds = zip(*nodes) if nodes else ([], [], [])
+			edges = list(chain(*([(pred, i) for pred in pp] for i, pp in enumerate(preds))))
+
+			res = [str(doc) for doc in literal_eval(res[0].split(':')[1].strip())]
+			g_addr = Graph(len(nodes), edges, directed=True, vertex_attrs={NID: tags, NAT: scores})
+
+			report[step] = (g_addr, res)
+
+		return Results(id, tag, report)
 
 
