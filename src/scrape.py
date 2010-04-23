@@ -20,6 +20,7 @@ from tags.scrape.cache import shelve_attach_cache
 
 NAME = "scrape.py"
 VERSION = 0.01
+LOG = logging.getLogger(__name__)
 
 
 def first_nonwhite(line):
@@ -66,9 +67,9 @@ def main(round, *args, **kwargs):
 
 		else:
 			t = time()
-			print >>sys.stderr, "%s at %s" % (Scraper.rounds[round].desc, ctime())
+			LOG.info("%s at %s" % (Scraper.rounds[round].desc, ctime()))
 			ret = f(*args)
-			print >>sys.stderr, "completed in %.4fs" % (time()-t)
+			LOG.info('Round "%s" completed in %.4fs' % (round, time()-t))
 			return ret
 
 
@@ -102,6 +103,8 @@ class Scraper(object):
 		self.base = base
 		self.ff = SafeFlickrAPI(api_key, secret, token)
 		self.interact = bool(interact)
+		# TODO NORM use a decorator to do this, somehow...
+		# needs to be able to access previous stack frame's locals!
 		self.cache = int(cache)
 		self.pretty = bool(pretty)
 
@@ -125,7 +128,7 @@ class Scraper(object):
 	def __exit__(self, type, value, traceback):
 		for path, res in self.res.iteritems():
 			res.close()
-			print >>sys.stderr, "%s closed" % (path)
+			LOG.info("%s closed" % (path))
 
 
 	def banner(self, local):
@@ -172,9 +175,9 @@ class Scraper(object):
 	def respush(self, path, res, mode):
 		if path in self.res:
 			self.res.pop(path).close()
-			print >>sys.stderr, "%s closed" % (path)
+			LOG.info("%s closed" % (path))
 		self.res[path] = res
-		print >>sys.stderr, "%s opened (%s)" % (path, mode)
+		LOG.info("%s opened (%s)" % (path, mode))
 
 
 	def round_social(self, seed, size):
@@ -325,43 +328,35 @@ class Scraper(object):
 		"""
 		Examine objects through the python interactive interpreter.
 		"""
-		try:
-			socgr = Graph.Read(self.infp("soc.graphml"))
-			gumap = dict_load(self.infp("gu.map"))
+		socgr = Graph.Read(self.infp("soc.graphml"))
+		gumap = dict_load(self.infp("gu.map"))
 
-			ppdb = self.db("pp")
-			pcdb = self.db("pc")
-			ptdb = self.db("pt")
-			tpdb = self.db("tp")
-			tcdb = self.db("tc")
-			totalsize = int(self.infp("pt.len").read())
+		ppdb = self.db("pp")
+		pcdb = self.db("pc")
+		ptdb = self.db("pt")
+		tpdb = self.db("tp")
+		tcdb = self.db("tc")
+		totalsize = int(self.infp("pt.len").read())
 
-			phdb = self.db("ph")
-			phsb = self.db("phs")
-			pgdb = self.db("pg")
-			pgsb = self.db("pgs")
+		phdb = self.db("ph")
+		phsb = self.db("phs")
+		pgdb = self.db("pg")
+		pgsb = self.db("pgs")
 
-			ptabgr = Graph.Read(self.infp("ptb.graphml"))
-			prodgr = Graph.Read(self.infp("idx.graphml"))
-			sprdgr = Graph.Read(self.infp("tgr.graphml"))
+		ptabgr = Graph.Read(self.infp("ptb.graphml"))
+		prodgr = Graph.Read(self.infp("idx.graphml"))
+		sprdgr = Graph.Read(self.infp("tgr.graphml"))
 
-			stats = SampleStats(ppdb, pcdb, ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
+		stats = SampleStats(ppdb, pcdb, ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
 
-			reports = []
-			for arg in args:
-				with open(os.path.join(self.dir_res, arg)) as fp:
-					reports.append(QueryReport.from_chapters(read_chapters(fp)))
+		reports = []
+		for arg in args:
+			with open(os.path.join(self.dir_res, arg)) as fp:
+				reports.append(QueryReport.from_chapters(read_chapters(fp)))
 
-			stats.printReports(reports, pretty=self.pretty)
-
-		except IOError:
-			pass
-		finally:
-			if hasattr(pgdb.cache, "report_stats"): print pgdb.cache.report_stats()
-			if hasattr(phdb.cache, "report_stats"): print phdb.cache.report_stats()
+		stats.printReports(reports, pretty=self.pretty)
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
-		else: print >>sys.stderr, "cli param parsing not implemented yet; use -i to enter interactive mode"
 
 
 
@@ -385,8 +380,8 @@ if __name__ == "__main__":
 	  help = "Go into interactive mode after performing a round, to examine the objects created")
 	config.add_option("-c", "--cache", type="int", metavar="SIZE", default=0,
 	  help = "Cache size for database objects (only sometimes used, eg. pgdb, phdb in round 'generate')")
-	config.add_option("-v", type="int", metavar="LEVEL", default=0,
-	  help = "Verbosity level (1-50; 1 most verbose)")
+	config.add_option("-v", type="int", metavar="LEVEL", default=100,
+	  help = 'Verbosity level (1-50; 1 most verbose, 20 standard)')
 	config.add_option("-p", "--pretty", action="store_true", dest="pretty",
 	  help = "Pretty print (only for some outputs)")
 

@@ -11,7 +11,6 @@ from tags.scrape.util import (union_ind, geo_prog_range, split_asc, sort_v,
   infer_arcs, edge_array, graph_copy, graph_prune_arcs, undirect_and_simplify,
   invert_seq, invert_multimap, write_align_column, exec_unique)
 
-
 LOG = logging.getLogger(__name__)
 
 

@@ -5,10 +5,15 @@ PYTHON="python2.6"
 case $1 in
 -p | --profile )
 	PYTHON="/usr/lib/$PYTHON/cProfile.py -o profile.log -s time"
+	echo "wrapper: using $PYTHON"
 	shift
 	;;
 -d | --debug )
 	PYTHON="/usr/lib/$PYTHON/pdb.py"
+	echo "wrapper: using $PYTHON"
+	shift
+	;;
+-- )
 	shift
 	;;
 -h | --help )
@@ -20,9 +25,11 @@ case $1 in
 	Options:
 	  -p, --profile        use the python profiler
 	  -d, --debug          use the python debugger
+	  --                   use the standard python interpreter
 
 	----
 	EOF
+	;;
 esac
 
 THREAD_DUMP_FILE="dump.log" exec $PYTHON src/scrape.py "$@"
