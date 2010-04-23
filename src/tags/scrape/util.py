@@ -536,6 +536,16 @@ def write_histogram(it, header=None, fp=sys.stdout, reverse=False):
 		print >>fp, k, v
 
 
+def write_align_column(lines, cols, fp=sys.stdout, sep=' | ', csep='-', xsep='-+-'):
+	csz = tuple(max(len(str(line[i])) for line in lines if line is not None) for i in xrange(0, cols))
+	fmt = tuple(("%%%ds" % sz) for sz in csz)
+	for line in lines:
+		if line is None:
+			print >>fp, xsep.join(csep*csz[i] for i in xrange(0, cols))
+		else:
+			print >>fp, sep.join(fmt[i] % line[i] for i in xrange(0, cols))
+
+
 def dict_save(d, fp=sys.stdout):
 	"""
 	Saves a dictionary to disk. Format: "k: v\n"* where k, v are data literals

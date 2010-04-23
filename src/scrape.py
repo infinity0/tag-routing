@@ -14,7 +14,7 @@ logging.basicConfig(format="%(asctime)s.%(msecs)03d | %(levelno)02d | %(message)
 
 from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.sample import SampleGenerator, SampleWriter, SampleStats
-from tags.scrape.object import NodeSample, Node, Results
+from tags.scrape.object import NodeSample, Node, QueryReport
 from tags.scrape.util import signal_dump, dict_load, dict_save, read_chapters
 from tags.scrape.cache import shelve_attach_cache
 
@@ -98,12 +98,15 @@ class Scraper(object):
 	roundlist = [k for k, r in _rounds]
 
 
-	def __init__(self, api_key, secret, token=None, base="scrape", interact=False, cache=0):
-		self.ff = SafeFlickrAPI(api_key, secret, token)
-		self.res = {}
+	def __init__(self, base, api_key, secret, token=None, interact=False, cache=0, pretty=False):
 		self.base = base
-		self.interact = interact
+		self.ff = SafeFlickrAPI(api_key, secret, token)
+		self.interact = bool(interact)
 		self.cache = int(cache)
+		self.pretty = bool(pretty)
+
+		if not os.path.isdir(str(base)):
+			raise ValueError("not a directory: %s" % base)
 
 		self.dir_idx = os.path.join(base, "idx")
 		self.dir_tgr = os.path.join(base, "tgr")
@@ -112,6 +115,7 @@ class Scraper(object):
 		for path in [self.base, self.dir_idx, self.dir_tgr, self.dir_res]:
 			if not os.path.isdir(path):
 				os.mkdir(path)
+		self.res = {}
 
 
 	def __enter__(self):
@@ -343,10 +347,12 @@ class Scraper(object):
 
 			stats = SampleStats(ppdb, pcdb, ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
 
-			results = []
+			reports = []
 			for arg in args:
 				with open(os.path.join(self.dir_res, arg)) as fp:
-					results.append(Results.from_chapters(read_chapters(fp)))
+					reports.append(QueryReport.from_chapters(read_chapters(fp)))
+
+			stats.printReports(reports, pretty=self.pretty)
 
 		except IOError:
 			pass
@@ -370,17 +376,19 @@ if __name__ == "__main__":
 
 	exstr = " (See ./flickr.key.example for an example)" if os.path.exists("./flickr.key.example") else ""
 
-	config.add_option("-d", "--base", type="string", metavar="DIR", default="scrape",
+	config.add_option("-d", "--base", type="string", metavar="DIR",
 	  help = "Base output directory")
-	config.add_option("-c", "--cache", type="int", metavar="SIZE", default=0,
-	  help = "Cache size for database objects (only sometimes used, eg. pgdb, phdb in round 'generate')")
-	config.add_option("-i", "--interact", action="store_true", dest="interact",
-	  help = "Go into interactive mode after performing a round, to examine the objects created")
 	config.add_option("-k", "--key", type="string", metavar="FILE", default="flickr.key",
 	  help = 'File with Flickr API authentication details. Each line must read "key: value", '
 	         'and the file must define keys "api_key" and "secret", and optionally "token".%s' % exstr)
+	config.add_option("-i", "--interact", action="store_true", dest="interact",
+	  help = "Go into interactive mode after performing a round, to examine the objects created")
+	config.add_option("-c", "--cache", type="int", metavar="SIZE", default=0,
+	  help = "Cache size for database objects (only sometimes used, eg. pgdb, phdb in round 'generate')")
 	config.add_option("-v", type="int", metavar="LEVEL", default=0,
 	  help = "Verbosity level (1-50; 1 most verbose)")
+	config.add_option("-p", "--pretty", action="store_true", dest="pretty",
+	  help = "Pretty print (only for some outputs)")
 
 	(opts, args) = config.parse_args()
 

@@ -9,7 +9,7 @@ from tags.scrape.object import (Node, NodeSample, Producer, ProducerSample,
   ProducerRelation, TagInfo, IDInfo, AddrSchemeEval, NID, NAA, NAT, AAT, P_ARC)
 from tags.scrape.util import (union_ind, geo_prog_range, split_asc, sort_v,
   infer_arcs, edge_array, graph_copy, graph_prune_arcs, undirect_and_simplify,
-  invert_seq, invert_multimap, exec_unique)
+  invert_seq, invert_multimap, write_align_column, exec_unique)
 
 
 LOG = logging.getLogger(__name__)
@@ -557,5 +557,23 @@ class SampleStats(object):
 		world.vs[NAA] = [nattr(trail[i]) if i in trail else None for i in xrange(0, len(world.vs))]
 
 		return AddrSchemeEval(prune, local, world)
+
+
+	def printReports(self, reports, pretty=False, steplo=0x08, fp=sys.stdout):
+		lines = [('closeness', 'addr_scheme_score', 'results_score')]
+		for rep in reports:
+			close = self.closeness(rep.id, rep.tag)
+			tinfo = self.getTagInfo(rep.tag)
+			for s, stepr in rep.steps.iteritems():
+				if s < steplo: continue
+				lines.append((close, self.evaluateScheme(stepr.scheme).score_world(), tinfo.f1_score(stepr.results)))
+
+		if pretty:
+			lines.insert(1, None)
+			write_align_column(lines, 3, fp=fp)
+		else:
+			print '#',
+			for line in lines:
+				print >>fp, ' '.join(str(v) for v in line)
 
 

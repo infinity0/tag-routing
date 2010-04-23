@@ -715,9 +715,9 @@ class IDInfo(namedtuple('IDInfo', 'id soc tgr idx rel_h')):
 
 
 
-Report = namedtuple('Report', 'scheme results')
+StepReport = namedtuple('StepReport', 'scheme results')
 
-class Results(namedtuple('Results', 'id tag report')):
+class QueryReport(namedtuple('QueryReport', 'id tag steps')):
 
 	__slots__ = ()
 
@@ -726,7 +726,7 @@ class Results(namedtuple('Results', 'id tag report')):
 		intro = chapters.pop(0)
 		id, tag = re.search(r"\[(.*?):(.*?)\]", intro[0][0]).groups()
 
-		report = {}
+		steps = {}
 		for head, addr, res in chapters:
 			step = int(re.search(r"step (\d+):", head[0]).group(1))
 
@@ -751,9 +751,9 @@ class Results(namedtuple('Results', 'id tag report')):
 			res = [str(doc) for doc in literal_eval(res[0].split(':')[1].strip())]
 			g_addr = Graph(len(nodes), edges, directed=True, vertex_attrs={NID: tags, NAA: scores})
 
-			report[step] = Report(g_addr, res)
+			steps[step] = StepReport(g_addr, res)
 
-		return Results(id, tag, report)
+		return QueryReport(id, tag, steps)
 
 
 
@@ -768,7 +768,8 @@ class AddrSchemeEval(namedtuple('AddrSchemeEval', 'subj local world')):
 		"""
 		a = set(self.local.get_edgelist())
 		b = set(self.subj.get_edgelist())
-		return float(len(a&b))/len(a|b)
+		div = len(a|b)
+		return float(len(a&b))/div if div != 0 else 0
 
 	def score_world(self):
 		"""
@@ -777,6 +778,7 @@ class AddrSchemeEval(namedtuple('AddrSchemeEval', 'subj local world')):
 		"""
 		a = set(self.local.get_edgelist())
 		b = set(self.subj.get_edgelist())
-		return float(len(a&b))/len(a|b)
+		div = len(a|b)
+		return float(len(a&b))/div if div != 0 else 0
 
 
