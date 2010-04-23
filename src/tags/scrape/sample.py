@@ -5,8 +5,8 @@ from math import log, exp
 from itertools import chain, izip
 from igraph import Graph, IN
 
-from tags.scrape.object import (Producer, ProducerSample, ProducerRelation,
-  TagInfo, IDInfo, NID, NAA, NAT, AAT, P_ARC)
+from tags.scrape.object import (Node, NodeSample, Producer, ProducerSample,
+  ProducerRelation, TagInfo, IDInfo, NID, NAA, NAT, AAT, P_ARC)
 from tags.scrape.util import (union_ind, geo_prog_range, split_asc, infer_arcs,
   edge_array, graph_copy, undirect_and_simplify, invert_seq, invert_multimap,
   exec_unique)
@@ -491,10 +491,24 @@ class SampleStats(object):
 		return dict((nsid, self.closeness(nsid)) for nsid in g.vs.select(xrange(0, g["base_h"]))[NID])
 
 
-	def getIDTagInfo(self, id, tag):
+	def evaluateScheme(self, scheme):
 		"""
-		DOCUMENT
+		Evaluate the given address scheme against the perfect address scheme
+		from the complete data of the world.
 		"""
-		pass
+		prune = graph_copy(scheme)
+		prune.delete_vertices(v.index for v in prune.vs.select(lambda vx: vx[NAA] is None))
+
+		ss = NodeSample()
+		for tag in prune.vs[NID]:
+			ti = self.getTagInfo(tag)
+			out = dict((k, s) for k, (s, t) in ti.by_precision(ti.rtag))
+			attr = ti.rel_size()
+			ss.add_node(Node(tag, out, attr))
+
+		gg = ss.build(keep_dangle=True, complete=False)
+		assert prune.vs[NID] == gg.vs[NID][:len(prune.vs)]
+
+		return prune, gg
 
 

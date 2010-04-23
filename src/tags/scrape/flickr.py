@@ -137,7 +137,7 @@ class SafeFlickrAPI(FlickrAPI):
 			if id is not None:
 				LOG.info("id sample: %s/%s (added %s)" % (len(s), size, id))
 
-		s.build(False)
+		s.build()
 		return s
 
 

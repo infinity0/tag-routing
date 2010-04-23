@@ -348,7 +348,6 @@ class Scraper(object):
 				with open(os.path.join(self.dir_res, arg)) as fp:
 					results.append(Results.from_chapters(read_chapters(fp)))
 
-
 		except IOError:
 			pass
 		finally:

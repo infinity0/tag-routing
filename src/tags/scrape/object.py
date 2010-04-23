@@ -23,29 +23,21 @@ NAA = "score" # label for arc attributes from a node
 
 class NodeSample(object):
 
-	def __init__(self, f=None):
-		self._node = {}
-		self.idmap = {}
+	def __init__(self, nodes=[]):
 		self.order = None
 		self.extra = None
-		if not f:
-			self.graph = None
-		else:
-			self.graph = Graph.Read(f)
+		self.graph = None
+
+		self._keys = set(node.id for node in nodes)
+		self._list = [node for node in nodes]
+		if len(self._keys) != len(self._list):
+			raise ValueError("duplicate node(s)")
 
 	def __contains__(self, id):
-		return id in self._node
+		return id in self._keys
 
 	def __len__(self):
-		return len(self._node)
-
-
-	def add_nodes(self, nodes):
-		if self.graph is not None:
-			raise StateError("sample already finalised")
-
-		self._node = dict((node.id, node) for node in nodes)
-		return self
+		return len(self._list)
 
 
 	def add_node(self, node):
@@ -55,14 +47,15 @@ class NodeSample(object):
 		if self.graph is not None:
 			raise StateError("sample already finalised")
 
-		if node.id in self._node:
+		if node.id in self._keys:
 			raise KeyError
 
-		self._node[node.id] = node
+		self._keys.add(node.id)
+		self._list.append(node)
 		return self
 
 
-	def build(self, keep, bipartite=False, node_attr=None, inverse=False):
+	def build(self, keep_dangle=False, bipartite=False, node_attr=None, inverse=False, complete=True):
 		"""
 		Build a graph out of the sample.
 
@@ -75,47 +68,47 @@ class NodeSample(object):
 		if kept (see <keep>), the total number of dangling nodes will be stored
 		in self.extra.
 
-		@param keep: whether to keep or discard dangling nodes; dangling nodes
-		       will have vertex ids greater than explicit nodes
-		@param bipartite: if this is True, then raise an error if an explicit
-		       node points to another explicit node
-		@param node_attr: if keep is True, this sets the attribute for dangling
-		       nodes. if this is callable or a dictionary, the node id is input
-		       to it and the output is used as the value; otherwise it is
-		       treated as a constant value for all nodes
-		@param inverse: Whether to invert edge directions
+		@param keep_dangle: whether to keep dangling nodes; if so, these nodes
+		       will have vertex ids greater than explicit nodes. <bipartite>
+		       and <node_attr> will only have an effect if this is True.
+		@param bipartite: whether to raise an error if an explicit node points
+		       to another explicit node
+		@param node_attr: this is passed through callable_wrap() to give a
+		       mapping from dangling nodes to node attributes
+		@param inverse: whether to invert edge directions
+		@param complete: whether to store the built graph in self.graph and
+		       discard the cache. it will then be impossible to add new nodes,
+		       and future calls to this method will always return self.graph
 		@return: The built graph
 		"""
 		if self.graph is not None: return self.graph
 
-		if not keep:
-			pass
-		else:
+		if keep:
 			attr_cb = callable_wrap(node_attr)
 
 		# init nodes
-		v_id, v_attr, idmap = zip(*((id, node.attr, (id, i)) for i, (id, node) in enumerate(self._node.iteritems()))) if self._node else ([], [], [])
-		v_id, v_attr = list(v_id), list(v_attr)
-		self.idmap = dict(idmap)
-		self.order = j = len(self._node)
+		v_id = [node.id for node in self._list]
+		v_attr = [node.attr for node in self._list]
+		id_v = dict((node.id, i) for i, node in enumerate(self._list))
+		self.order = j = len(self._list)
 
 		# init edges
-		arc_s, arc_t, edges, e_attr = edge_array(len(self._node), 'd', inverse)
+		arc_s, arc_t, edges, e_attr = edge_array(j, 'd', inverse)
 
-		for (i, node) in enumerate(self._node.itervalues()):
+		for (i, node) in enumerate(self._list):
 			for (dst, attr) in node.out.iteritems():
-				if dst in self._node:
+				if dst in self._keys:
 					if keep and bipartite:
 						raise ValueError("non-bipartite graph: %s - %s" % (node.id, dst))
 					arc_s.append(i)
-					arc_t.append(self.idmap[dst])
+					arc_t.append(id_v[dst])
 					e_attr.append(attr)
 
 				elif keep:
-					if dst in self.idmap:
-						x = self.idmap[dst]
+					if dst in id_v:
+						x = id_v[dst]
 					else:
-						x = self.idmap[dst] = j
+						x = id_v[dst] = j
 						v_id.append(dst)
 						v_attr.append(attr_cb(dst))
 						j += 1
@@ -126,10 +119,9 @@ class NodeSample(object):
 				else:
 					pass
 
-		assert j == len(self.idmap) == len(v_id) == len(v_attr)
+		assert j == len(id_v) == len(v_id) == len(v_attr)
 		if keep:
 			self.extra = j - self.order
-		del self._node
 
 		# igraph can't handle utf-8 output, see launchpad bug #545663
 		for (i, id) in enumerate(v_id):
@@ -142,10 +134,16 @@ class NodeSample(object):
 			va[NAT] = v_attr
 
 		# build graph
-		self.graph = Graph(n=j, directed=True, vertex_attrs=va)
-		self.graph.add_edges(edges)
-		self.graph.es[AAT] = e_attr
-		return self.graph
+		gg = Graph(n=j, directed=True, vertex_attrs=va)
+		gg.add_edges(edges)
+		gg.es[AAT] = e_attr
+
+		if complete:
+			self.graph = gg
+			self._keys = None
+			self._list = None
+
+		return gg
 
 
 
@@ -264,14 +262,14 @@ class Producer(object):
 			# TODO HIGH decide whether this is actually a good idea, or just use a constant 1
 			return dict((tag, attr) for tag in tags)
 
-		ss = NodeSample().add_nodes(Node(doc, outdict(doc)) for doc in dset)
-		g = ss.build(True, bipartite=True, inverse=True)
+		ss = NodeSample(Node(doc, outdict(doc)) for doc in dset)
+		g = ss.build(keep_dangle=True, bipartite=True, inverse=True)
 		g.vs[NAT] = [float(d)/ss.order for d in g.outdegree()]
 		self.docgr = g
 
 		id_d = {} # {doc:id}
 		id_t = {} # {tag:id}
-		for id, vid in ss.idmap.iteritems():
+		for vid, id in enumerate(g.vs[NID]):
 			if vid < ss.order:
 				id_d[id] = vid
 			else:
@@ -683,6 +681,9 @@ class TagInfo(object):
 	def __repr__(self):
 		return "TagInfo(%r, %r, %r, %r, %r)" % (self.tag, self.photos, self.rtag, self.prod, self.worldsize)
 
+	def rel_size(self):
+		return float(len(self.photos))/self.worldsize
+
 	def rank_matches(self, rel, score):
 		if rel not in TagInfo.RANK:
 			raise ValueError("bad rel (%s); must be one of %s" % (rel, ", ".join(TagInfo.RANK)))
@@ -780,7 +781,7 @@ class Results(object):
 			edges = list(chain(*([(pred, i) for pred in pp] for i, pp in enumerate(preds))))
 
 			res = [str(doc) for doc in literal_eval(res[0].split(':')[1].strip())]
-			g_addr = Graph(len(nodes), edges, directed=True, vertex_attrs={NID: tags, NAT: scores})
+			g_addr = Graph(len(nodes), edges, directed=True, vertex_attrs={NID: tags, NAA: scores})
 
 			report[step] = (g_addr, res)
 
