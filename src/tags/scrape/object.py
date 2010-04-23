@@ -3,6 +3,7 @@
 import sys, re
 from functools import partial
 from itertools import chain
+from collections import namedtuple
 from ast import literal_eval
 
 from zlib import compress, decompress
@@ -147,31 +148,31 @@ class NodeSample(object):
 
 
 
-class Node(object):
+class Node(namedtuple('Node', 'id out attr')):
 
-	__slots__ = ["id", "out", "attr"]
-
-	def __init__(self, id, out, attr=None):
+	__slots__ = ()
+	def __new__(cls, id, out, attr=None):
 		"""
 		@param id: Unique identifier
 		@param out: { id: arc-attribute } of out-neighbours
 		@param attr: Node-attribute
 		"""
-		self.id = id
-		self.out = out
-		self.attr = attr
+		return super(Node, cls).__new__(cls, id, out, attr)
 
-	def __getstate__(self):
-		return (self.id, self.out, self.attr)
 
-	def __setstate__(self, state):
-		(self.id, self.out, self.attr) = state
 
-	def __repr__(self):
-		return "Node(%r, %r, %r)" % self.__getstate__()
+class ProducerSample(object):
 
-	def __str__(self):
-		return "<Node %s: %s (%s out-neighbours)>" % (self.id, self.attr, len(self.out))
+	def __init__(self, phdb, pgdb):
+		self.pgdb = pgdb
+		self.phdb = phdb
+
+	def makeTGraphNode(self, g, tag):
+		"""
+		Make a Node object out of a tag in a tgraph.
+		"""
+		return Node(tag, dict((g.vs[e.target][NID], g.es[e.index][AAT])
+		  for e in g.es.select(g.adjacent(g.vs.select(id=tag)[0].index))), g.vs.select(id=tag)[0][NAT])
 
 
 
@@ -184,7 +185,6 @@ E_SCORE = "inferScores not yet called"
 EE_SCORE = {P_NEW:E_SCORE, P_CONTENT:E_SCORE, P_ARC:E_ARC}
 EE_CONTENT = {P_NEW:E_NEW, P_ARC:E_ARC}
 
-
 class Producer(object):
 	"""
 	This makes use of the NAA attribute in two different ways:
@@ -195,11 +195,9 @@ class Producer(object):
 	  index graph, this Producer should point to P with this NAA as its AAT.
 	"""
 
-	__slots__ = ["nsid", "state", "docgr",
-	  "id_d", "id_t", "id_p",
-	  "base_d", "base_t", "base_s", "base_p",
-	  "rep_d", "rpp_d", "rep_t", "rpp_t",
-	]
+	__slots__ = ("nsid", "state", "docgr", "id_d", "id_t", "id_p",
+	  "base_d", "base_t", "base_s", "base_p", "rep_d", "rpp_d", "rep_t", "rpp_t",
+	)
 
 	def __init__(self, nsid):
 		"""
@@ -619,46 +617,26 @@ class Producer(object):
 
 
 
-class ProducerRelation(object):
+class ProducerRelation(namedtuple('ProducerRelation', 'attr arcs tags')):
 
-	__slots__ = ["attr", "arcs", "tags"]
-
-	def __init__(self, attr, arcs, tags=None):
+	__slots__ = ()
+	def __new__(cls, attr, arcs, tags=None):
 		"""
 		@param attr: score of Producer (see Producer doc for details)
 		@param arcs: a map of {rtag:attr}
 		@param tags: a map of {rtag:tags} with the same key as <arcs>, or None
 		"""
-		self.attr = attr
-		self.arcs = arcs
-		self.tags = tags
+		return super(ProducerRelation, cls).__new__(cls, attr, arcs, tags)
 
 
 
-class ProducerSample(object):
-
-	def __init__(self, phdb, pgdb):
-		self.pgdb = pgdb
-		self.phdb = phdb
-
-
-	def makeTGraphNode(self, g, tag):
-		"""
-		Make a Node object out of a tag in a tgraph.
-		"""
-		return Node(tag, dict((g.vs[e.target][NID], g.es[e.index][AAT])
-		  for e in g.es.select(g.adjacent(g.vs.select(id=tag)[0].index))), g.vs.select(id=tag)[0][NAT])
-
-
-
-class TagInfo(object):
-
-	#__slots__ = ["tag", "photos", "rtag", "prod", "worldsize"]
+class TagInfo(namedtuple('TagInfo', 'tag photos rtag prod worldsize')):
 
 	RANK = ["rtag", "prod"]
 	SCORE = ["precision", "recall", "intersect", "f1_score"]
 
-	def __init__(self, tag, photos=None, rtag=None, prod=None, worldsize=None):
+	__slots__ = ()
+	def __new__(cls, tag, photos=None, rtag=None, prod=None, worldsize=None):
 		"""
 		TODO NORM should support more advanced techniques that take into
 		account the weights given to each tag-photo relationship.
@@ -668,11 +646,7 @@ class TagInfo(object):
 		@param prod: a map of {nsid:(ritx,rtotal)} defining related producers
 		@param worldsize: total number of photos in the world, if known
 		"""
-		self.tag = tag
-		self.photos = [] if photos is None else photos
-		self.rtag = {} if rtag is None else rtag
-		self.prod = {} if prod is None else prod
-		self.worldsize = worldsize
+		return super(TagInfo, cls).__new__(cls, tag, photos or [], rtag or {}, prod or {}, worldsize)
 
 	def __str__(self):
 		return '"%s": %s photos%s, %s related tags, %s related producers' % (self.tag, len(self.photos),
@@ -729,16 +703,9 @@ class TagInfo(object):
 
 
 
-class IDInfo(object):
+class IDInfo(namedtuple('IDInfo', 'id soc tgr idx rel_h')):
 
-	#__slots__ = ["id", "soc", "tgr", "idx", "rel_h"]
-
-	def __init__(self, id, soc, tgr, idx, rel_h):
-		self.id = id
-		self.soc = soc
-		self.tgr = tgr
-		self.idx = idx
-		self.rel_h = rel_h
+	__slots__ = ()
 
 	def nb_size(self):
 		"""
@@ -748,17 +715,14 @@ class IDInfo(object):
 
 
 
-class Results(object):
+Report = namedtuple('Report', 'scheme results')
 
+class Results(namedtuple('Results', 'id tag report')):
 
-	def __init__(self, id, tag, report):
-		self.id = id
-		self.tag = tag
-		self.report = report
-
+	__slots__ = ()
 
 	@classmethod
-	def from_chapters(klass, chapters):
+	def from_chapters(cls, chapters):
 		intro = chapters.pop(0)
 		id, tag = re.search(r"\[(.*?):(.*?)\]", intro[0][0]).groups()
 
@@ -787,8 +751,32 @@ class Results(object):
 			res = [str(doc) for doc in literal_eval(res[0].split(':')[1].strip())]
 			g_addr = Graph(len(nodes), edges, directed=True, vertex_attrs={NID: tags, NAA: scores})
 
-			report[step] = (g_addr, res)
+			report[step] = Report(g_addr, res)
 
 		return Results(id, tag, report)
+
+
+
+class AddrSchemeEval(namedtuple('AddrSchemeEval', 'subj local world')):
+
+	__slots__ = ()
+
+	def score_local(self):
+		"""
+		Return the jaccard index (intsx/union) of the arcs of the subject and
+		local schemes.
+		"""
+		a = set(self.local.get_edgelist())
+		b = set(self.subj.get_edgelist())
+		return float(len(a&b))/len(a|b)
+
+	def score_world(self):
+		"""
+		Return the jaccard index (intsx/union) of the arcs of the subject and
+		world schemes.
+		"""
+		a = set(self.local.get_edgelist())
+		b = set(self.subj.get_edgelist())
+		return float(len(a&b))/len(a|b)
 
 

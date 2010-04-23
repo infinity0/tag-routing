@@ -6,7 +6,7 @@ DEFAULT_CAP = 16
 
 class _Node(object):
 
-	__slots__ = ["key", "val", "prev", "next"]
+	__slots__ = ("key", "val", "prev", "next")
 
 	def __init__(self, key, val):
 		object.__init__(self)
@@ -17,7 +17,7 @@ class _Node(object):
 
 class LRUDict(MutableMapping):
 
-	__slots__ = ["__dict", "__head", "__tail", "capacity"]
+	__slots__ = ("__dict", "__head", "__tail", "capacity")
 
 	def __init__(self, items=(), capacity=DEFAULT_CAP):
 		# Check arguments
@@ -96,7 +96,7 @@ class LRUDict(MutableMapping):
 
 class StatLRUDict(LRUDict):
 
-	__slots__ = ["c_hit", "c_miss", "c_drop"]
+	__slots__ = ("c_hit", "c_miss", "c_drop")
 
 	def __init__(self, items=(), capacity=DEFAULT_CAP):
 		LRUDict.__init__(self, items, capacity)

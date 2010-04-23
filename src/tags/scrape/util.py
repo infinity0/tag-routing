@@ -156,7 +156,7 @@ from bisect import bisect_left
 
 class azip(object):
 
-	__slots__ = ["args"]
+	__slots__ = ("args")
 
 
 	def __init__(self, *args):
@@ -171,7 +171,7 @@ class azip(object):
 
 class lazydict(dict):
 
-	__slots__ = []
+	__slots__ = ()
 
 	def __getitem__(self, key):
 		val = dict.__getitem__(self, key)
@@ -372,7 +372,6 @@ def graph_prune_arcs(graph, vlist):
 
 	OPT HIGH current complexity is O(n) in len(vlist)
 	"""
-	print vlist
 	if len(set(vlist)) != len(vlist):
 		raise ValueError("duplicate node ids: %r" % vlist)
 

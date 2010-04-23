@@ -6,7 +6,7 @@ from itertools import chain, izip
 from igraph import Graph, IN
 
 from tags.scrape.object import (Node, NodeSample, Producer, ProducerSample,
-  ProducerRelation, TagInfo, IDInfo, NID, NAA, NAT, AAT, P_ARC)
+  ProducerRelation, TagInfo, IDInfo, AddrSchemeEval, NID, NAA, NAT, AAT, P_ARC)
 from tags.scrape.util import (union_ind, geo_prog_range, split_asc, sort_v,
   infer_arcs, edge_array, graph_copy, graph_prune_arcs, undirect_and_simplify,
   invert_seq, invert_multimap, exec_unique)
@@ -510,8 +510,9 @@ class SampleStats(object):
 
 		MAX = float("inf")
 		def dist(arc, graph):
-			return -log(arc[AAT]*graph.vs[arc.target][NAT]/graph.vs[arc.source][NAT]) if (
-			  graph.vs[arc.target][NAT] is not None) else MAX
+			return -log(arc[AAT]*graph.vs[arc.target][NAT]/graph.vs[arc.source][NAT])
+		def nattr(dist):
+			return exp(-dist)
 
 		# build address scheme of input tags
 		local = ss.build(complete=False)
@@ -519,6 +520,7 @@ class SampleStats(object):
 		local.es[AAT_AD] = [dist(arc, local) for arc in local.es]
 		path = local.shortest_paths(0, weights=AAT_AD)[0]
 		graph_prune_arcs(local, [k for k,v in sort_v(enumerate(path))])
+		local.vs[NAA] = [nattr(d) for d in path]
 
 		# build address scheme of n tags from world data, where n = len(input tags)
 		# OPT LOW this rebuilds the entire graph each time, not optimal, but means
@@ -527,7 +529,7 @@ class SampleStats(object):
 		tinfo = self.getTagInfo(prune.vs[0][NID])
 		sw.add_node(tinfo.build_node())
 		visit = set([0]) # visited nodes, sw vids
-		trail = [0] # trail of visited nodes, ss vids
+		trail = [(0, 0.0)] # trail of visited nodes, ss vids
 		for i in xrange(0, len(prune.vs)-1): # n-1 because root already added
 			for rtag in tinfo.rtag.iterkeys():
 				if rtag not in sw:
@@ -538,21 +540,22 @@ class SampleStats(object):
 
 			# get next tag in world addr scheme
 			npath = [MAX if i in visit else v for i, v in enumerate(path)]
-			index = npath.index(min(npath))
+			d = min(npath)
+			index = npath.index(d)
 			tinfo = self.getTagInfo(world.vs[index][NID])
 			visit.add(index)
 			if tinfo.tag not in ss:
-				trail.append(len(ss))
+				trail.append((len(ss), d))
 				ss.add_node(tinfo.build_node())
 			else:
-				trail.append(prune.vs[NID].index(tinfo.tag)) # OPT LOW
+				trail.append((prune.vs[NID].index(tinfo.tag),d)) # OPT LOW
 
 		world = ss.build()
 		assert len(trail) == len(local.vs)
-		graph_prune_arcs(world, trail)
+		graph_prune_arcs(world, [vid for vid, dist in trail])
+		trail = dict(trail)
+		world.vs[NAA] = [nattr(trail[i]) if i in trail else None for i in xrange(0, len(world.vs))]
 
-		# TODO compare these
-
-		return prune, local, world
+		return AddrSchemeEval(prune, local, world)
 
 

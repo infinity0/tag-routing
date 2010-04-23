@@ -16,7 +16,7 @@ from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.sample import SampleGenerator, SampleWriter, SampleStats
 from tags.scrape.object import NodeSample, Node, Results
 from tags.scrape.util import signal_dump, dict_load, dict_save, read_chapters
-from tags.scrape.lrudict import shelve_attach_cache
+from tags.scrape.cache import shelve_attach_cache
 
 NAME = "scrape.py"
 VERSION = 0.01
