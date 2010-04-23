@@ -65,8 +65,8 @@ class NodeSample(object):
 		(and implicitly has no out-dict of its own).
 
 		The total number of explicit nodes will be stored in self.order, and
-		if kept (see <keep>), the total number of dangling nodes will be stored
-		in self.extra.
+		if kept (see <keep_dangle>), the total number of dangling nodes will be
+		stored in self.extra.
 
 		@param keep_dangle: whether to keep dangling nodes; if so, these nodes
 		       will have vertex ids greater than explicit nodes. <bipartite>
@@ -83,7 +83,7 @@ class NodeSample(object):
 		"""
 		if self.graph is not None: return self.graph
 
-		if keep:
+		if keep_dangle:
 			attr_cb = callable_wrap(node_attr)
 
 		# init nodes
@@ -98,13 +98,13 @@ class NodeSample(object):
 		for (i, node) in enumerate(self._list):
 			for (dst, attr) in node.out.iteritems():
 				if dst in self._keys:
-					if keep and bipartite:
+					if keep_dangle and bipartite:
 						raise ValueError("non-bipartite graph: %s - %s" % (node.id, dst))
 					arc_s.append(i)
 					arc_t.append(id_v[dst])
 					e_attr.append(attr)
 
-				elif keep:
+				elif keep_dangle:
 					if dst in id_v:
 						x = id_v[dst]
 					else:
@@ -120,7 +120,7 @@ class NodeSample(object):
 					pass
 
 		assert j == len(id_v) == len(v_id) == len(v_attr)
-		if keep:
+		if keep_dangle:
 			self.extra = j - self.order
 
 		# igraph can't handle utf-8 output, see launchpad bug #545663
@@ -683,6 +683,10 @@ class TagInfo(object):
 
 	def rel_size(self):
 		return float(len(self.photos))/self.worldsize
+
+	def build_node(self):
+		out = dict((k, s) for k, (s, t) in self.by_precision(self.rtag))
+		return Node(self.tag, out, self.rel_size())
 
 	def rank_matches(self, rel, score):
 		if rel not in TagInfo.RANK:

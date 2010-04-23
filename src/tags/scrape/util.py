@@ -150,7 +150,7 @@ def iterconverge(func, range=(-FLOAT.max, FLOAT.max), init=None, eps=FLOAT.epsil
 from math import log
 from random import random
 from array import array
-from igraph import Graph
+from igraph import Graph, IN
 from bisect import bisect_left
 
 
@@ -363,6 +363,28 @@ def infer_arcs(mem, total, inverse=False, ratio=None):
 def graph_copy(g):
 	return Graph(len(g.vs), g.get_edgelist(), g.is_directed(), dict((attr, g[attr]) for attr in g.attributes()),
 	  dict((attr, g.vs[attr]) for attr in g.vertex_attributes()), dict((attr, g.es[attr]) for attr in g.edge_attributes()))
+
+
+def graph_prune_arcs(graph, vlist):
+	"""
+	Prunes arcs from the given graph. A node is only allowed to have incoming
+	arcs from nodes before them in the given <vlist>.
+
+	OPT HIGH current complexity is O(n) in len(vlist)
+	"""
+	print vlist
+	if len(set(vlist)) != len(vlist):
+		raise ValueError("duplicate node ids: %r" % vlist)
+
+	cut = []
+	for vid in xrange(0, len(graph.vs)):
+		try:
+			allowed = set(vlist[0:vlist.index(vid)])
+		except ValueError:
+			allowed = set()
+		cut.extend(eid for eid in graph.adjacent(vid, IN) if graph.es[eid].source not in allowed)
+	graph.delete_edges(cut)
+	return graph
 
 
 def undirect_and_simplify(g, combiners={}, count_attr=None, sum_attrs={}):
