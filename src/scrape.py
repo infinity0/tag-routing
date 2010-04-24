@@ -17,7 +17,7 @@ logging.basicConfig(format="%(asctime)s.%(msecs)03d | %(levelno)02d | %(message)
 from tags.scrape.flickr import SafeFlickrAPI
 from tags.scrape.sample import SampleGenerator, SampleWriter, SampleStats
 from tags.scrape.object import NodeSample, Node, QueryReport
-from tags.scrape.util import signal_dump, dict_load, dict_save, read_chapters
+from tags.scrape.util import signal_dump, dict_load, dict_save, read_chapters, db_open
 from tags.scrape.cache import shelve_attach_cache
 
 NAME = "scrape.py"
@@ -151,20 +151,13 @@ class Scraper(object):
 		return fp
 
 
+	def df(self, name):
+		return os.path.join(self.base, "%s.db" % name)
+
+
 	def db(self, name, writeback=False, lrusize=0):
 		dbf = os.path.join(self.base, "%s.db" % name)
-
-		try:
-			from dbsqlite import SQLFileShelf
-			db = SQLFileShelf(dbf, writeback=writeback)
-		except:
-			try:
-				from shelve import BsdDbShelf
-				from bsddb import btopen
-				db = BsdDbShelf(btopen(dbf), writeback=writeback)
-			except Exception:
-				import shelve
-				db = shelve.open(dbf, writeback=writeback)
+		db = db_open(dbf, writeback)
 
 		lrusize = int(lrusize)
 		if lrusize:
@@ -292,10 +285,12 @@ class Scraper(object):
 
 		phdb = self.db("p_idx", lrusize=self.cache)
 		phsb = self.db("p_idx_s")
+		phfn = self.df("p_idx")
 		pgdb = self.db("p_tgr", lrusize=self.cache)
 		pgsb = self.db("p_tgr_s")
+		pgfn = self.df("p_tgr")
 
-		sg = SampleGenerator(socgr, gumap, pddb, dppb, dtdb, tcdb, phdb, phsb, pgdb, pgsb)
+		sg = SampleGenerator(socgr, gumap, pddb, dppb, dtdb, tcdb, phdb, phsb, phfn, pgdb, pgsb, pgfn)
 		sg.generateIndexes()
 		sg.prodgr.write(self.outfp("idx.graphml"))
 		sg.generateTGraphs()

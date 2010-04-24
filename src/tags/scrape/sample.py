@@ -16,7 +16,7 @@ LOG = logging.getLogger(__name__)
 
 class SampleGenerator(object):
 
-	def __init__(self, socgr, gumap, pddb, dppb, dtdb, tcdb, phdb, phsb, pgdb, pgsb):
+	def __init__(self, socgr, gumap, pddb, dppb, dtdb, tcdb, phdb, phsb, phfn, pgdb, pgsb, pgfn):
 		"""
 		Create a new SampleGenerator from the given arguments
 
@@ -41,8 +41,10 @@ class SampleGenerator(object):
 
 		self.phdb = phdb
 		self.phsb = phsb
+		self.phfn = phfn
 		self.pgdb = pgdb
 		self.pgsb = pgsb
+		self.pgfn = pgfn
 
 		self.prodgr = None
 		self.sprdgr = None

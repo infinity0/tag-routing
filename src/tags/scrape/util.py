@@ -574,7 +574,21 @@ def dict_load(fp=sys.stdin):
 	return dict(parse_pair(l) for l in fp.readlines())
 
 
-def cleanup_db(db_i, start=None, fp=sys.stderr):
+def db_open(dbf, writeback=False):
+	try:
+		from dbsqlite import SQLFileShelf
+		return SQLFileShelf(dbf, writeback=writeback)
+	except:
+		try:
+			from shelve import BsdDbShelf
+			from bsddb import btopen
+			return BsdDbShelf(btopen(dbf), writeback=writeback)
+		except Exception:
+			import shelve
+			return shelve.open(dbf, writeback=writeback)
+
+
+def db_cleanup(db_i, start=None, fp=sys.stderr):
 	rem, tot = 0, 0
 	it = db_i.iterkeys()
 	if start:
@@ -597,7 +611,7 @@ def cleanup_db(db_i, start=None, fp=sys.stderr):
 	print >>fp, "                \rfinished cleanup; %s/%s keys removed" % (rem, tot)
 
 
-def copy_db(db_i, db_o, fp=sys.stderr):
+def db_copy(db_i, db_o, fp=sys.stderr):
 	rem, tot = 0, 0
 	for key in db_i.iterkeys():
 		if key in db_o:
