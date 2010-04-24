@@ -115,6 +115,14 @@ $u$             node attribute (tag weight)
 Details about these object types, their structure and semantics, are contained
 in the design document.
 
+
+# Interface
+
+Clicking the arrows next to the menus will toggle the visibility of their
+children. Shift-clicking will do this recursively for all descendents at all
+levels.
+
+
 # About
 
 These documents were prepared in [pandoc markdown](http://johnmacfarlane.net/pandoc/).

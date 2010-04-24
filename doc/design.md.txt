@@ -1,6 +1,24 @@
 % Design and architecture
 % Ximin Luo
 
+
+# Introduction
+
+## Background
+
+search system etc
+
+## Related systems
+
+p2p, blah blah blah blah
+
+related work, etc
+
+## Approach
+
+ideas i developed, etc
+
+
 # Overview
 
 Distributed network of data structures maintained by multiple independent
@@ -721,14 +739,6 @@ of a single node, or its out-arcs.
 
 - eg. when updating $\breveG$ from $\breveG_*$, we should only need to
   recalculate the parts that are affected by the updated....
-
-
-## UI
-
-### Components
-
-### Behaviour
-
 
 
 # Design

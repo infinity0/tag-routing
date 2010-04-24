@@ -1,0 +1,37 @@
+% Construction and implementation
+% Ximin Luo
+
+# Routing system
+
+java, blah blah blah
+
+description of java packages
+
+- heavy use of generics
+- proxy objects, etc. java collections framework very flexible, extend this.
+- abstraction - QueryAgent, QueryEnvironment, QueryProcess
+- message passing
+
+
+# Data generation
+
+## Crawler
+
+python, flickrapi, etc
+
+description of python modules
+- threading for quick development, python-futures
+- libraries used: flickrapi, igraph, sqlite3
+- heavy optimisation, use of databases, tmpfs, custom pickle formats
+
+- development speed & availability of libraries vs optimisation
+
+## Data format
+
+- data format used - GraphML, no good java libraries, heavy subclassing and
+  hack an existing library (JUNG) to read attribute types. required reading
+  a significant part of the GraphML specification.
+
+- luckily igraph is good at both reading and writing
+- used Graphviz for visualising graphs, convert to .dot format
+
