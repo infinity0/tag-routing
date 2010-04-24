@@ -113,3 +113,47 @@ set of (2) we can take to be [32, 64, 128, 256]
 more sophisticated score would take into account the distance between results docs and actual docs
 
 
+
+
+## Test networks
+
+### Inter-node properties
+
+- neighbour count (ie. degree) distribution
+- neighbour semantic relation distribution
+
+### Intra-node properties
+
+- semantic unity (how "related" its tags are)
+- semantic specialty (how "general" its tags are)
+
+### Generation algorithms
+
+- Use network formed by extracted data ("real world")
+- Barabási-Albert model (preferential attachment)
+  - scale-free
+  - not small-world; according to wikipedia:
+    - clustering coefficient is power-law, similar to hierarchical networks
+    - small-world networks have constant clustering coefficient
+- TODO etc. read up on network theory.
+- hierarchies
+- other structures?
+
+Ideally we want a single algorithm which takes as input, various parameters for
+the properties listed in the previous two sections, and outputs a random graph
+with those properties.
+
+## Simulation
+
+### Request models
+
+### Network conditions
+
+- perfect conditions
+- random failure
+- malicious attacks - under the assumptions of "abstract storage network", only
+  attacks vs the entire network can occur on the naming / routing planes.
+  attacks vs individuals on the social plane is a separate topic, ignore here
+	- attacks vs most well-connected nodes
+	- MORE
+
