@@ -1,0 +1,95 @@
+% Meta-documentation
+% Ximin Luo
+
+# Meta
+
+## Terminology
+
+arc
+:	a directed relation $e = (v_s, v_t)$ from node $v_s$ to node $v_t$.
+document
+:	a storage object that can be the target of some query. This could include
+	(eg.) multimedia or software; for simplicity, we'll refer to these all as
+	"document".
+identity
+:	a user / node on the social network
+in-arc, in-degree, in-node
+:	Respectively: (an incoming arc, the total number of incoming arcs, a
+	neighbour on the other side of an incoming arc) of the subject node.
+local view
+:	for a remote storage object $x$, the local view $\ddotx$ holds the parts of
+	$x$ that have been retrieved from the network, ie. data that is immediately
+	available to the local system. If $x$ is a container object, then $\ddotx$
+	can distinguish between items found not to exist in $x$, and items not yet
+	loaded.
+neighbour
+:	this refers to a node separated from the subject node by a single arc
+node
+:	in the context of a graph or a network, an object that can be connected to
+	another node by an arc.
+out-arc, out-degree, out-node
+:	Respectively: (an outgoing arc, the total number of outgoing arcs, a
+	neighbour on the other side of an outgoing arc) of the subject node.
+semantics
+:	this term is used in two different senses; hopefully the context should
+	give enough disambiguation: the meaning of tags, wrt. the end-user; or the
+	meaning of some concept, wrt. the theory of this system.
+tag
+:	a phrase that can be semantically related to a storage object
+
+## Symbols
+
+With no other context, the following symbols refer to the following object
+types; capitalised symbols refer to the set of all objects of the given type.
+
+- $d$ -- document
+- $t$ -- tag
+- $g$ -- `tgraph`
+- $h$ -- `index`
+- $p$ -- `ptable`
+- $z$ -- identity
+- $w$ -- weight, identity score
+
+## Notation
+
+- For any set $E = V_s \times V_t$ of arcs, define:
+	- $\src E = \{ v_s \in V_s : \exists v_t . (v_s, v_t) \in E \}$ ie. the set
+	  of nodes that the arcs point from.
+	- $\dst E = \{ v_t \in V_t : \exists v_s . (v_s, v_t) \in E \}$ ie. the set
+	  of nodes that the arcs point to.
+	- $\rft E = \src E \cup \dst E$ ie. the set of nodes that E refers to.
+- We deal with two types of data structures:
+	- A map $V_A : V \to A$ of nodes to their attributes.
+	- A map $E_A : E \to A$ of arcs to their attributes. For convenience, define:
+		- $\src E_A = \src E$
+		- $\dst E_A = \dst E$
+		- $\rft E_A = \rft E$
+- $f \subseteq X \to Y$ -- $f$ is a partial function from set $X$ to set $Y$.
+	- This is non-standard but $f : X \to Y$ is confusing.
+
+### Data structures
+
+In the below notation, $\cdots$ denotes some additional predicate after a
+subject, that serves as a specifier or definition for it.
+
+Map $M = \{ x \cdots \mapsto y_x \cdots \} \quad | \quad M = \{ x_i \cdots \mapsto y_i \cdots \}_{i\cdots}$
+:	A data structure that maps^[This is equivalent to a partial function: $M =
+	\{ x_i \in X : y_i \in Y \}_i$ means the same thing as $M \subseteq X \to
+	Y$; however (in my opinion) the former is easier for an implementor to
+	read.] $x$ to $y_x$, or $x_i$ to $y_i$. In the second style, $i$ is a dummy
+	variable used only to specify $x$, $y$ from the same pair; the actual value
+	is unimportant and both $x_i$, $y_i$ are independent from it.
+List $L = [ x_i \cdots ]_{i\cdots}$
+:	A data structure that imposes an ordering $i$ on a collection of items
+	$x_i$.
+
+All data structures discussed from here onwards are implicitly finite in size.
+
+## TODO and related tags
+
+- `DIAG`: draw appropriate diagram here
+- `TODO`: open issue; resolve or explain why we leave it open
+- `MORE`: expand
+- `EXTN`: a pointer to an external research topic, either potential or existing
+- `REF`: add references for
+
