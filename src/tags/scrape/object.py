@@ -245,17 +245,17 @@ class Producer(object):
 
 	@state_req(P_NEW, E_NOTNEW)
 	@state_next(P_CONTENT)
-	def initContent(self, dset, ptdb, store_node_attr=False):
+	def initContent(self, dset, dtdb, store_node_attr=False):
 		"""
 		Initialises the doc-tag graph from the given document set and the given
 		doc-tag database.
 
 		@param dset: a collection of documents
-		@param ptdb: an open database of {doc:[tag]}
+		@param dtdb: an open database of {doc:[tag]}
 		@param store_node_attr: whether to calculate and store node attributes
 		"""
 		def outdict(doc):
-			tags = ptdb[doc]
+			tags = dtdb[doc]
 			attr = len(tags)**-0.5 if tags else 0 # formula pulled out of my ass
 			# however it follows the principle of "more tags there are, less important each one is"
 			# TODO HIGH decide whether this is actually a good idea, or just use a constant 1
@@ -542,7 +542,7 @@ class Producer(object):
 		"""
 		Creates a graph representing this producer as a tgraph.
 
-		@param totalsize: total number of photos in the entire world
+		@param totalsize: total number of documents in the entire world
 		@param pgdb: an open database of {prid:Producer} (for tgraphs)
 		@param display: whether to generate for display (adds attributes to
 		       pretty up the graph)
@@ -631,33 +631,33 @@ class ProducerRelation(namedtuple('ProducerRelation', 'attr arcs tags')):
 
 
 
-class TagInfo(namedtuple('TagInfo', 'tag photos rtag prod worldsize')):
+class TagInfo(namedtuple('TagInfo', 'tag docs rtag prod worldsize')):
 
 	RANK = ["rtag", "prod"]
 	SCORE = ["precision", "recall", "intersect", "f1_score"]
 
 	__slots__ = ()
-	def __new__(cls, tag, photos=None, rtag=None, prod=None, worldsize=None):
+	def __new__(cls, tag, docs=None, rtag=None, prod=None, worldsize=None):
 		"""
 		TODO NORM should support more advanced techniques that take into
-		account the weights given to each tag-photo relationship.
+		account the weights given to each tag-doc relationship.
 
-		@param photos: a list of photos for this tag
+		@param docs: a list of documents for this tag
 		@param rtag: a map of {rtag:(ritx,rtotal)} defining related tags
 		@param prod: a map of {nsid:(ritx,rtotal)} defining related producers
-		@param worldsize: total number of photos in the world, if known
+		@param worldsize: total number of documents in the world, if known
 		"""
-		return super(TagInfo, cls).__new__(cls, tag, photos or [], rtag or {}, prod or {}, worldsize)
+		return super(TagInfo, cls).__new__(cls, tag, docs or [], rtag or {}, prod or {}, worldsize)
 
 	def __str__(self):
-		return '"%s": %s photos%s, %s related tags, %s related producers' % (self.tag, len(self.photos),
+		return '"%s": %s documents%s, %s related tags, %s related producers' % (self.tag, len(self.docs),
 		  " (out of %s total)" % self.worldsize if self.worldsize else "", len(self.rtag), len(self.prod))
 
 	def __repr__(self):
-		return "TagInfo(%r, %r, %r, %r, %r)" % (self.tag, self.photos, self.rtag, self.prod, self.worldsize)
+		return "TagInfo(%r, %r, %r, %r, %r)" % (self.tag, self.docs, self.rtag, self.prod, self.worldsize)
 
 	def rel_size(self):
-		return float(len(self.photos))/self.worldsize
+		return float(len(self.docs))/self.worldsize
 
 	def build_node(self):
 		out = dict((k, s) for k, (s, t) in self.by_precision(self.rtag))
@@ -682,7 +682,7 @@ class TagInfo(namedtuple('TagInfo', 'tag photos rtag prod worldsize')):
 		@return: a sorted list of {rtag:(recall,rtotal)}, for related tags,
 		         where recall = intersect/tag.total
 		"""
-		return list(sort_v(((k, (float(ix)/len(self.photos), tot)) for k, (ix, tot) in map.iteritems()), reverse=True))
+		return list(sort_v(((k, (float(ix)/len(self.docs), tot)) for k, (ix, tot) in map.iteritems()), reverse=True))
 
 	def by_intersect(self, map):
 		"""
@@ -694,13 +694,13 @@ class TagInfo(namedtuple('TagInfo', 'tag photos rtag prod worldsize')):
 		"""
 		@return: a sorted list of {rtag:f1score}, for related tags.
 		"""
-		return list(sort_v(((k, f1_score(len(self.photos), tot, ix)) for k, (ix, tot) in map.iteritems()), reverse=True))
+		return list(sort_v(((k, f1_score(len(self.docs), tot, ix)) for k, (ix, tot) in map.iteritems()), reverse=True))
 
 	def f1_score(self, results):
 		"""
-		@return: F1 score between the tag's photos and the given results set.
+		@return: F1 score between the tag's documents and the results set.
 		"""
-		return f1_score(set(self.photos), set(results))
+		return f1_score(set(self.docs), set(results))
 
 
 

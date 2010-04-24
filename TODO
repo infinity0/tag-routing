@@ -9,6 +9,7 @@ FIXME NOW:
 
 scraper has deadlock issues
 - commitGroupPhotos is leaking, but not commitUserPhotos...
+- put all the database stuff into a "Sample" class
 
 (cleanup)
 - review Maps.viewSubMap

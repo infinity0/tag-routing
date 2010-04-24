@@ -87,13 +87,13 @@ class Scraper(object):
 
 	_rounds = [
 		("social", Round("Scraping social network", [], ["soc.graphml"])),
-		("group", Round("Scraping groups", ["social"], ["gu.map"])),
-		("photo", Round("Scraping photos", ["group"], ["pp.db"]+["gu.map"]+["soc.graphml"])),
-		("invertp", Round("Inverting producer mapping", ["photo"], ["pc.db"])),
-		("tag", Round("Scraping tags", ["photo"], ["pt.db", "pt.len"])),
-		("invertt", Round("Inverting tag mapping", ["tag"], ["tp.db"])),
-		("cluster", Round("Scraping clusters", ["tag"], ["tc.db"])),
-		("generate", Round("Generating data", ["invertp", "cluster"], ["ph.db", "pg.db"])),
+		("group", Round("Scraping groups", ["social"], ["group-user.map"])),
+		("photo", Round("Scraping photos", ["group"], ["prod-doc.db"]+["group-user.map"]+["soc.graphml"])),
+		("inv_pd", Round("Inverting producer-document mapping", ["photo"], ["doc-prod.db"])),
+		("tag", Round("Scraping tags", ["photo"], ["doc-tag.db", "doc-tag.len"])),
+		("inv_dt", Round("Inverting document-tag mapping", ["tag"], ["tag-doc.db"])),
+		("cluster", Round("Scraping clusters", ["tag"], ["tag-cluster.db"])),
+		("generate", Round("Generating data", ["inv_pd", "cluster"], ["p_idx.db", "p_tgr.db"])),
 		("writeall", Round("Writing objects", ["generate"], [])),
 		("examine", Round("Examine data", [], [])),
 	]
@@ -204,7 +204,7 @@ class Scraper(object):
 		users = Graph.Read(self.infp("soc.graphml")).vs["id"]
 
 		gumap = self.ff.scrapeGroups(users)
-		dict_save(gumap, self.outfp("gu.map"))
+		dict_save(gumap, self.outfp("group-user.map"))
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -214,15 +214,15 @@ class Scraper(object):
 		Scrape photos of the collected producers.
 		"""
 		socgr = Graph.Read(self.infp("soc.graphml"))
-		gumap = dict_load(self.infp("gu.map"))
+		gumap = dict_load(self.infp("group-user.map"))
 
-		ppdb = self.db("pp")
-		self.ff.commitUserPhotos(socgr.vs["id"], ppdb)
-		self.ff.commitGroupPhotos(gumap, ppdb)
+		pddb = self.db("prod-doc")
+		self.ff.commitUserPhotos(socgr.vs["id"], pddb)
+		self.ff.commitGroupPhotos(gumap, pddb)
 
-		self.ff.pruneProducers(socgr, gumap, ppdb)
+		self.ff.pruneProducers(socgr, gumap, pddb)
 		socgr.write_graphml(self.outfp("soc.graphml"))
-		dict_save(gumap, self.outfp("gu.map"))
+		dict_save(gumap, self.outfp("group-user.map"))
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -231,10 +231,10 @@ class Scraper(object):
 		"""
 		Invert the producer-photo mapping.
 		"""
-		ppdb = self.db("pp")
-		pcdb = self.db("pc", writeback=True)
+		pddb = self.db("prod-doc")
+		dppb = self.db("doc-prod", writeback=True)
 
-		self.ff.invertMap(ppdb, pcdb, "context")
+		self.ff.invertMap(pddb, dppb, "context")
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -243,12 +243,12 @@ class Scraper(object):
 		"""
 		Scrape tags of the collected photos.
 		"""
-		ppdb = self.db("pp")
-		ptdb = self.db("pt")
+		pddb = self.db("prod-doc")
+		dtdb = self.db("doc-tag")
 
-		photos = chain(*ppdb.itervalues())
-		self.ff.commitPhotoTags(photos, ptdb)
-		print >>self.outfp("pt.len"), len(ptdb)
+		photos = chain(*pddb.itervalues())
+		self.ff.commitPhotoTags(photos, dtdb)
+		print >>self.outfp("doc-tag.len"), len(dtdb)
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -257,10 +257,10 @@ class Scraper(object):
 		"""
 		Invert the photo-tag mapping.
 		"""
-		ptdb = self.db("pt")
-		tpdb = self.db("tp", writeback=True)
+		dtdb = self.db("doc-tag")
+		tddb = self.db("tag-doc", writeback=True)
 
-		self.ff.invertMap(ptdb, tpdb, "tag-photo")
+		self.ff.invertMap(dtdb, tddb, "tag-photo")
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -269,10 +269,10 @@ class Scraper(object):
 		"""
 		Scrape clusters of the collected tags.
 		"""
-		ptdb = self.db("pt")
-		tcdb = self.db("tc")
+		dtdb = self.db("doc-tag")
+		tcdb = self.db("tag-cluster")
 
-		tags = chain(*ptdb.itervalues())
+		tags = chain(*dtdb.itervalues())
 		self.ff.commitTagClusters(tags, tcdb)
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
@@ -283,19 +283,19 @@ class Scraper(object):
 		Generate objects from the scraped data.
 		"""
 		socgr = Graph.Read(self.infp("soc.graphml"))
-		gumap = dict_load(self.infp("gu.map"))
+		gumap = dict_load(self.infp("group-user.map"))
 
-		ppdb = self.db("pp")
-		pcdb = self.db("pc")
-		ptdb = self.db("pt")
-		tcdb = self.db("tc")
+		pddb = self.db("prod-doc")
+		dppb = self.db("doc-prod")
+		dtdb = self.db("doc-tag")
+		tcdb = self.db("tag-cluster")
 
-		phdb = self.db("ph", lrusize=self.cache)
-		phsb = self.db("phs")
-		pgdb = self.db("pg", lrusize=self.cache)
-		pgsb = self.db("pgs")
+		phdb = self.db("p_idx", lrusize=self.cache)
+		phsb = self.db("p_idx_s")
+		pgdb = self.db("p_tgr", lrusize=self.cache)
+		pgsb = self.db("p_tgr_s")
 
-		sg = SampleGenerator(socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, phsb, pgdb, pgsb)
+		sg = SampleGenerator(socgr, gumap, pddb, dppb, dtdb, tcdb, phdb, phsb, pgdb, pgsb)
 		sg.generateIndexes()
 		sg.prodgr.write(self.outfp("idx.graphml"))
 		sg.generateTGraphs()
@@ -313,11 +313,11 @@ class Scraper(object):
 		Write objects from the generated data.
 		"""
 		socgr = Graph.Read(self.infp("soc.graphml"))
-		gumap = dict_load(self.infp("gu.map"))
+		gumap = dict_load(self.infp("group-user.map"))
 
-		totalsize = int(self.infp("pt.len").read())
-		phdb = self.db("ph")
-		pgdb = self.db("pg")
+		totalsize = int(self.infp("doc-tag.len").read())
+		phdb = self.db("p_idx")
+		pgdb = self.db("p_tgr")
 
 		ss = SampleWriter(phdb, pgdb, totalsize)
 		ss.writeIndexes(self.dir_idx)
@@ -331,25 +331,25 @@ class Scraper(object):
 		Examine objects through the python interactive interpreter.
 		"""
 		socgr = Graph.Read(self.infp("soc.graphml"))
-		gumap = dict_load(self.infp("gu.map"))
+		gumap = dict_load(self.infp("group-user.map"))
 
-		ppdb = self.db("pp")
-		pcdb = self.db("pc")
-		ptdb = self.db("pt")
-		tpdb = self.db("tp")
-		tcdb = self.db("tc")
-		totalsize = int(self.infp("pt.len").read())
+		pddb = self.db("prod-doc")
+		dppb = self.db("doc-prod")
+		dtdb = self.db("doc-tag")
+		tddb = self.db("tag-doc")
+		tcdb = self.db("tag-cluster")
+		totalsize = int(self.infp("doc-tag.len").read())
 
-		phdb = self.db("ph")
-		phsb = self.db("phs")
-		pgdb = self.db("pg")
-		pgsb = self.db("pgs")
+		phdb = self.db("p_idx")
+		phsb = self.db("p_idx_s")
+		pgdb = self.db("p_tgr")
+		pgsb = self.db("p_tgr_s")
 
 		ptabgr = Graph.Read(self.infp("ptb.graphml"))
 		prodgr = Graph.Read(self.infp("idx.graphml"))
 		sprdgr = Graph.Read(self.infp("tgr.graphml"))
 
-		stats = SampleStats(ppdb, pcdb, ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr)
+		stats = SampleStats(pddb, dppb, dtdb, tddb, totalsize, ptabgr, prodgr, sprdgr)
 
 		reports = []
 		for arg in args:

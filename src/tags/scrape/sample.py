@@ -16,27 +16,27 @@ LOG = logging.getLogger(__name__)
 
 class SampleGenerator(object):
 
-	def __init__(self, socgr, gumap, ppdb, pcdb, ptdb, tcdb, phdb, phsb, pgdb, pgsb):
+	def __init__(self, socgr, gumap, pddb, dppb, dtdb, tcdb, phdb, phsb, pgdb, pgsb):
 		"""
 		Create a new SampleGenerator from the given arguments
 
 		@param socgr: social network graph
 		@param gumap: {group:[user]} map
-		@param ppdb: an open database of {producer:[photo]}
-		@param pcdb: an open database of {photo:[producer]}
-		@param ptdb: an open database of {photo:[tag]}
+		@param pddb: an open database of {producer:[doc]}
+		@param dppb: an open database of {doc:[producer]}
+		@param dtdb: an open database of {doc:[tag]}
 		@param tcdb: an open database of {tag:[cluster]}
-		@param phdb: an open database of {nsid:Producer} (for indexes)
-		@param phsb: an open database of {nsid:Producer.state} (for indexes)
-		@param pgdb: an open database of {prid:Producer} (for tgraphs)
-		@param pgsb: an open database of {prid:Producer.state} (for tgraphs)
+		@param phdb: an open database of {nsid:Producer} for indexes
+		@param phsb: an open database of {nsid:Producer.state} for indexes
+		@param pgdb: an open database of {prid:Producer} for tgraphs
+		@param pgsb: an open database of {prid:Producer.state} for tgraphs
 		"""
 		self.socgr = socgr
 		self.gumap = gumap
 
-		self.ppdb = ppdb
-		self.pcdb = pcdb
-		self.ptdb = ptdb
+		self.pddb = pddb
+		self.dppb = dppb
+		self.dtdb = dtdb
 		self.tcdb = tcdb
 
 		self.phdb = phdb
@@ -60,13 +60,13 @@ class SampleGenerator(object):
 		# generate Producer objects
 		def run_p(nsid):
 			prod = Producer(nsid)
-			prod.initContent(self.ppdb[nsid], self.ptdb)
+			prod.initContent(self.pddb[nsid], self.dtdb)
 			prod.inferScores()
 			prod.repDoc()
 			prod.repTag()
 			self.phdb[nsid] = prod
 			self.phsb[nsid] = prod.state
-		exec_unique(self.ppdb.iterkeys(), self.phsb, run_p, None, "%s db: producers" % name, LOG.info)
+		exec_unique(self.pddb.iterkeys(), self.phsb, run_p, None, "%s db: producers" % name, LOG.info)
 
 		# generate content arcs between producers
 		def run_r(nsid):
@@ -105,13 +105,13 @@ class SampleGenerator(object):
 		"""
 		Infer a set of related producers for the given producer.
 
-		This implementation selects producers that hold the photos in the
-		representative photos set of the given source producer.
+		This implementation selects producers that hold the documents in the
+		representative documents set of the given source producer.
 		"""
-		rel = invert_multimap((phid, self.pcdb[phid]) for phid in prod.rep_d)
+		rel = invert_multimap((doc, self.dppb[doc]) for doc in prod.rep_d)
 		if rel:
 			del rel[prod.nsid] # if it's not empty, then it must refer back to itself
-		return dict((nsid, float(len(photos))/len(self.ppdb[nsid])) for nsid, photos in rel.iteritems())
+		return dict((nsid, float(len(docs))/len(self.pddb[nsid])) for nsid, docs in rel.iteritems())
 
 
 	def inferProdArc(self, prod_s, prod_t, show_tag=False):
@@ -191,7 +191,7 @@ class SampleGenerator(object):
 
 		def run_p(nsid):
 			prod = Producer(nsid)
-			prod.initContent(set(chain(*(self.ppdb[self.prodgr.vs[p][NID]] for p in pmap[nsid]))), self.ptdb, True)
+			prod.initContent(set(chain(*(self.pddb[self.prodgr.vs[p][NID]] for p in pmap[nsid]))), self.dtdb, True)
 			prod.inferScores()
 			prod.repTag(cover=0) # TWEAK
 			self.pgdb[nsid] = prod
@@ -390,11 +390,11 @@ AAT_AD = "logdist" # additive arc-attribute (distance measure)
 
 class SampleStats(object):
 
-	def __init__(self, ppdb, pcdb, ptdb, tpdb, totalsize, ptabgr, prodgr, sprdgr):
-		self.ppdb = ppdb
-		self.pcdb = pcdb
-		self.ptdb = ptdb
-		self.tpdb = tpdb
+	def __init__(self, pddb, dppb, dtdb, tddb, totalsize, ptabgr, prodgr, sprdgr):
+		self.pddb = pddb
+		self.dppb = dppb
+		self.dtdb = dtdb
+		self.tddb = tddb
 		self.totalsize = totalsize
 		self.ptabgr = ptabgr
 		self.prodgr = prodgr
@@ -408,14 +408,14 @@ class SampleStats(object):
 		"""
 		DOCUMENT
 
-		@return: (photos, totalsize, [rtag:(intersect,total)])
+		@return: (documents, totalsize, [rtag:(intersect,total)])
 		"""
-		photos = self.tpdb[tag]
-		rel = dict((tag, (len(intersect), len(self.tpdb[tag]))) for tag, intersect in
-		  invert_multimap((pid, self.ptdb[pid]) for pid in photos).iteritems())
-		prod = dict((prod, (len(ps), len(self.ppdb[prod]))) for prod, ps in
-		  invert_multimap((pid, self.pcdb[pid]) for pid in photos).iteritems())
-		return TagInfo(tag, photos, rel, prod, self.totalsize)
+		docs = self.tddb[tag]
+		rel = dict((tag, (len(intersect), len(self.tddb[tag]))) for tag, intersect in
+		  invert_multimap((doc, self.dtdb[doc]) for doc in docs).iteritems())
+		prod = dict((prod, (len(ps), len(self.pddb[prod]))) for prod, ps in
+		  invert_multimap((doc, self.dppb[doc]) for doc in docs).iteritems())
+		return TagInfo(tag, docs, rel, prod, self.totalsize)
 
 
 	def getIDInfo(self, id):

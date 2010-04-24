@@ -184,13 +184,12 @@ class SafeFlickrAPI(FlickrAPI):
 		return spmap
 
 
-	def commitPhotoTags(self, photos, ptdb):
+	def commitPhotoTags(self, photos, dtdb):
 		"""
 		Gets the tags of the given photos and saves these to a database
 
 		@param photos: a list of photo ids
-		@param ptdb: an open database of {photo:[tag]}
-		@param conc_m: max concurrent threads to run
+		@param dtdb: an open database of {photo:[tag]}
 		"""
 		def run(phid):
 			tags = self.tags_getListPhoto(photo_id=phid).getchildren()[0].getchildren()[0].getchildren()
@@ -198,18 +197,17 @@ class SafeFlickrAPI(FlickrAPI):
 
 		def post(phid, i, tags):
 			# filter out "machine-tags"
-			ptdb[phid] = [intern_force(tag.text) for tag in tags if tag.text and ":" not in tag.text]
+			dtdb[phid] = [intern_force(tag.text) for tag in tags if tag.text and ":" not in tag.text]
 
-		exec_unique(photos, ptdb, run, post, "photo-tag db", LOG.info, workers=True)
+		exec_unique(photos, dtdb, run, post, "photo-tag db", LOG.info, workers=True)
 
 
-	def commitUserPhotos(self, users, ppdb):
+	def commitUserPhotos(self, users, pddb):
 		"""
 		Gets the photos of the given users and saves these to a database
 
 		@param users: a list of user ids
-		@param ppdb: an open database of {producer:[photo]}
-		@param conc_m: max concurrent threads to run
+		@param pddb: an open database of {producer:[photo]}
 		"""
 		if type(users) != set and len(users) > 16: users = set(users) # efficient membership test
 		def run(nsid):
@@ -222,18 +220,17 @@ class SafeFlickrAPI(FlickrAPI):
 			photos = [p.get(NID) for p in chain(stream, faves)]
 			if len(photos) >= 4096:
 				LOG.info("producer db (user): got %s photos for user %s" % (len(photos), nsid))
-			ppdb[nsid] = photos
+			pddb[nsid] = photos
 
-		exec_unique(users, ppdb, run, post, "producer db (user)", LOG.info, workers=True)
+		exec_unique(users, pddb, run, post, "producer db (user)", LOG.info, workers=True)
 
 
-	def commitGroupPhotos(self, gumap, ppdb):
+	def commitGroupPhotos(self, gumap, pddb):
 		"""
 		Gets the photos of the given pools and saves these to a database
 
 		@param gumap: a map of {group:[user]}
-		@param ppdb: an open database of {producer:[photo]}
-		@param conc_m: max concurrent threads to run
+		@param pddb: an open database of {producer:[photo]}
 		"""
 		def run(gid):
 			try:
@@ -249,18 +246,18 @@ class SafeFlickrAPI(FlickrAPI):
 		def post(gid, i, photos):
 			if len(photos) >= 4096:
 				LOG.info("producer db (group): got %s photos for group %s" % (len(photos), gid))
-			ppdb[gid] = [p.get(NID) for p in photos]
+			pddb[gid] = [p.get(NID) for p in photos]
 
-		exec_unique(gumap, ppdb, run, post, "producer db (group)", LOG.info, workers=True)
+		exec_unique(gumap, pddb, run, post, "producer db (group)", LOG.info, workers=True)
 
 
-	def pruneProducers(self, socgr, gumap, ppdb, cutoff=1):
+	def pruneProducers(self, socgr, gumap, pddb, cutoff=1):
 		"""
 		Removes producers with less than the given number of photos.
 
 		@param socgr: graph of users
 		@param groups: list of groups
-		@param ppdb: an open database of {producer:[photo]}
+		@param pddb: an open database of {producer:[photo]}
 		@param cutoff: producers with this many photos or less will be pruned
 		       (default 1)
 		"""
@@ -270,18 +267,18 @@ class SafeFlickrAPI(FlickrAPI):
 		#point to this user
 		delu = []
 		#for u in socgr.vs[NID]:
-		#	if u in ppdb:
-		#		if len(ppdb[u]) > cutoff:
+		#	if u in pddb:
+		#		if len(pddb[u]) > cutoff:
 		#			continue
-		#		del ppdb[u]
+		#		del pddb[u]
 		#	delu.append(u)
 
 		delg = []
 		for g in gumap:
-			if g in ppdb:
-				if len(ppdb[g]) > cutoff:
+			if g in pddb:
+				if len(pddb[g]) > cutoff:
 					continue
-				del ppdb[g]
+				del pddb[g]
 			delg.append(g)
 
 		#socgr.delete_vertices([v.index for v in socgr.vs.select(id_in=set(delu))])
@@ -321,7 +318,6 @@ class SafeFlickrAPI(FlickrAPI):
 
 		@param tags: a list of tags
 		@param tcdb: an open database of {tag:[cluster]}
-		@param conc_m: max concurrent threads to run
 		"""
 		def run(tag):
 			try:
