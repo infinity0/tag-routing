@@ -503,6 +503,7 @@ repr_s.maxarray = 2
 repr_s.maxlong = 20
 repr_s.maxstring = 20
 repr_s.maxother = 15
+TMP_RAM = "/dev/shm" if os.access("/dev/shm", os.W_OK) else None
 
 
 def repr_call(fname, *args, **kwargs):
@@ -620,7 +621,7 @@ from functools import partial
 from itertools import ifilterfalse
 
 DEFAULT_MAX_THREADS = 36
-def max_procs()
+def max_procs():
 	try:
 		from multiprocessing import cpu_count
 		c = cpu_count()

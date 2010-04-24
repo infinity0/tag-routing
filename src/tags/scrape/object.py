@@ -1,6 +1,6 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
-import sys, re
+import sys, re, os
 from functools import partial
 from itertools import chain
 from collections import namedtuple
@@ -13,7 +13,7 @@ from igraph import Graph, IN, OUT
 from tags.scrape.state import StateError, state_req, state_not, state_next
 from tags.scrape.util import (intern_force, geo_mean, union_ind, f1_score,
   sort_v, edge_array, infer_arcs, iterconverge, representatives, graph_copy,
-  callable_wrap)
+  callable_wrap, TMP_RAM)
 
 
 NID = "id" # label for node id in graphs
@@ -223,7 +223,7 @@ class Producer(object):
 		self.rpp_t = None # representative tags
 
 	def __getstate__(self, level=3):
-		with TemporaryFile() as fp:
+		with TemporaryFile(dir=TMP_RAM) as fp:
 			self.docgr.write_graphml(fp)
 			fp.seek(0)
 			graph_bytes = compress(fp.read(), level)
@@ -237,7 +237,7 @@ class Producer(object):
 		  self.base_d, self.base_t, self.base_s, self.base_p,
 		  self.rep_d, self.rpp_d, self.rep_t, self.rpp_t,
 		) = state
-		with TemporaryFile() as fp:
+		with TemporaryFile(dir=TMP_RAM) as fp:
 			fp.write(decompress(graph_bytes))
 			fp.seek(0)
 			self.docgr = Graph.Read_GraphML(fp)
