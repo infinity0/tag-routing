@@ -29,8 +29,9 @@ class NodeSample(object):
 		self.extra = None
 		self.graph = None
 
-		self._keys = set(node.id for node in nodes)
-		self._list = [node for node in nodes]
+		# nodes might be a generator, in which case we can't iterate over it twice
+		self._list = list(nodes)
+		self._keys = set(node.id for node in self._list)
 		if len(self._keys) != len(self._list):
 			raise ValueError("duplicate node(s)")
 
@@ -260,7 +261,7 @@ class Producer(object):
 			# TODO HIGH decide whether this is actually a good idea, or just use a constant 1
 			return dict((tag, attr) for tag in tags)
 
-		ss = NodeSample(Node(doc, outdict(doc)) for doc in dset)
+		ss = NodeSample(Node(doc, outdict(doc)) for doc in set(dset))
 		g = ss.build(keep_dangle=True, bipartite=True, inverse=True)
 		g.vs[NAT] = [float(d)/ss.order for d in g.outdegree()]
 		self.docgr = g

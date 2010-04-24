@@ -140,5 +140,5 @@ def shelve_attach_cache(db, capacity, cachetype=LRUDict):
 	def sync(self):
 		self.writeback=False
 		osync()
-	db.sync = sync.__get__(db.__class__, db)
+	db.sync = sync.__get__(db, db.__class__)
 
