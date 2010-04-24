@@ -1,9 +1,9 @@
 % Meta-documentation
 % Ximin Luo
 
-# Meta
+# Notation
 
-## Terminology
+## Glossary
 
 arc
 :	a directed relation $e = (v_s, v_t)$ from node $v_s$ to node $v_t$.
@@ -12,84 +12,110 @@ document
 	(eg.) multimedia or software; for simplicity, we'll refer to these all as
 	"document".
 identity
-:	a user / node on the social network
-in-arc, in-degree, in-node
-:	Respectively: (an incoming arc, the total number of incoming arcs, a
+:	a node ("user") on the social network
+in-arc, in-degree, in-node (of a subject node)
+:	respectively: (an incoming arc, the total number of incoming arcs, a
 	neighbour on the other side of an incoming arc) of the subject node.
 local view
-:	for a remote storage object $x$, the local view $\ddotx$ holds the parts of
-	$x$ that have been retrieved from the network, ie. data that is immediately
-	available to the local system. If $x$ is a container object, then $\ddotx$
-	can distinguish between items found not to exist in $x$, and items not yet
-	loaded.
-neighbour
-:	this refers to a node separated from the subject node by a single arc
+:	for a remote object $x$, the local view $\ddotx$ holds the parts of $x$
+	that have been retrieved from the network, ie. data that is immediately
+	available to the local system. $\ddotx$ has the ability to distinguish
+	between items found not to exist in $x$, and items not yet loaded.
+neighbour (of a subject node)
+:	a node separated from the subject node by a single arc
 node
-:	in the context of a graph or a network, an object that can be connected to
-	another node by an arc.
-out-arc, out-degree, out-node
-:	Respectively: (an outgoing arc, the total number of outgoing arcs, a
+:	in the context of a graph or a network, a unique individual
+out-arc, out-degree, out-node (of a subject node)
+:	respectively: (an outgoing arc, the total number of outgoing arcs, a
 	neighbour on the other side of an outgoing arc) of the subject node.
 semantics
 :	this term is used in two different senses; hopefully the context should
-	give enough disambiguation: the meaning of tags, wrt. the end-user; or the
-	meaning of some concept, wrt. the theory of this system.
+	give enough disambiguation: the meaning of tags, w.r.t. the end-user; or
+	the meaning of some concept, wrt. the theory of this system.
 tag
-:	a phrase that can be semantically related to a storage object
+:	a semantic unit used to describe documents in a useful way to end users.
 
-## Symbols
-
-With no other context, the following symbols refer to the following object
-types; capitalised symbols refer to the set of all objects of the given type.
-
-- $d$ -- document
-- $t$ -- tag
-- $g$ -- `tgraph`
-- $h$ -- `index`
-- $p$ -- `ptable`
-- $z$ -- identity
-- $w$ -- weight, identity score
-
-## Notation
-
-- For any set $E = V_s \times V_t$ of arcs, define:
-	- $\src E = \{ v_s \in V_s : \exists v_t . (v_s, v_t) \in E \}$ ie. the set
-	  of nodes that the arcs point from.
-	- $\dst E = \{ v_t \in V_t : \exists v_s . (v_s, v_t) \in E \}$ ie. the set
-	  of nodes that the arcs point to.
-	- $\rft E = \src E \cup \dst E$ ie. the set of nodes that E refers to.
-- We deal with two types of data structures:
-	- A map $V_A : V \to A$ of nodes to their attributes.
-	- A map $E_A : E \to A$ of arcs to their attributes. For convenience, define:
-		- $\src E_A = \src E$
-		- $\dst E_A = \dst E$
-		- $\rft E_A = \rft E$
-- $f \subseteq X \to Y$ -- $f$ is a partial function from set $X$ to set $Y$.
-	- This is non-standard but $f : X \to Y$ is confusing.
-
-### Data structures
+## Data structures
 
 In the below notation, $\cdots$ denotes some additional predicate after a
-subject, that serves as a specifier or definition for it.
+subject, that serves as a specifier or definition for it. Additionally, all
+data structures discussed are implicitly finite.
 
-Map $M = \{ x \cdots \mapsto y_x \cdots \} \quad | \quad M = \{ x_i \cdots \mapsto y_i \cdots \}_{i\cdots}$
-:	A data structure that maps^[This is equivalent to a partial function: $M =
-	\{ x_i \in X : y_i \in Y \}_i$ means the same thing as $M \subseteq X \to
-	Y$; however (in my opinion) the former is easier for an implementor to
-	read.] $x$ to $y_x$, or $x_i$ to $y_i$. In the second style, $i$ is a dummy
-	variable used only to specify $x$, $y$ from the same pair; the actual value
-	is unimportant and both $x_i$, $y_i$ are independent from it.
-List $L = [ x_i \cdots ]_{i\cdots}$
-:	A data structure that imposes an ordering $i$ on a collection of items
-	$x_i$.
+Partial function $f \subseteq X \to Y$
+:	This is non-standard, but $f : X \to Y$ is ambiguous - existing literature
+	uses it to mean both a partial or a total function, depending on author.
 
-All data structures discussed from here onwards are implicitly finite in size.
+### Simple objects
 
-## TODO and related tags
+Map $M$
+:	- $\{ x \cdots \mapsto y_x \cdots \}$
+:	- $\{ x_i \cdots \mapsto y_i \cdots \}_{i\cdots}$
+:	A container that maps[^mapfn] $x$ to $y_x$, or $x_i$ to $y_i$. (In the
+	latter style, $i$ is a dummy variable used only to specify $x$, $y$ from
+	the same pair; the actual value is unimportant and both $x_i$, $y_i$ are
+	independent from it.)
+List $L$
+:	- $[ x_i \cdots ]_{i\cdots}$
+:	A container that imposes an ordering $i$ on a collection of items $x_i$.
 
-- `DIAG`: draw appropriate diagram here
-- `TODO`: open issue; resolve or explain why we leave it open
-- `MORE`: expand
-- `EXTN`: a pointer to an external research topic, either potential or existing
-- `REF`: add references for
+[^mapfn]: This is equivalent to a partial function: $M = \{ x_i \in X \mapsto
+y_i \in Y \}_i$ means the same thing as $M \subseteq X \to Y$; however, the
+former is a better description of a static data structure.
+
+### Composite objects
+
+We make heavy use of these container objects:
+
+- A map $V_A : V \to A$ of nodes to their attributes.
+- A map $E_A : E \to A$ of arcs to their attributes.
+
+These are used in various combinations to represent graphs, inverted indexes,
+etc.
+
+For any set $E = V_s \times V_t$ of arcs, define:
+
+- $\src E = \{ v_s \in V_s : \exists v_t . (v_s, v_t) \in E \}$ ie. the set
+  of nodes that the arcs point from.
+- $\dst E = \{ v_t \in V_t : \exists v_s . (v_s, v_t) \in E \}$ ie. the set
+  of nodes that the arcs point to.
+- $\rft E = \src E \cup \dst E$ ie. the set of nodes that E refers to.
+
+For convenience, let this also apply to arc-attribute maps, ie. $\rft E_A =
+\rft E$.
+
+### System-relevant objects
+
+With no other context or indication, the following single-letter symbols refer
+to the following object types. Capitalised symbols refer to the set of all
+objects of the given type; this is also partly reflected in the source code.
+
+-----------------------------------------------------------------------
+Symbol          Object type
+--------------- -------------------------------------------------------
+$d$             document
+
+$t$             tag
+
+$g$             `tgraph`
+
+$h$             `index`
+
+$p$             `ptable`
+
+$z$             identity
+
+$s$             arc attribute (identity score)
+
+$w$             arc attribute (tag-tag weight or tag-doc weight)
+
+$u$             node attribute (tag weight)
+
+------------------------------------------------------------------------
+
+Details about these object types, their structure and semantics, are contained
+in the design document.
+
+# About
+
+These documents were prepared in [pandoc markdown](http://johnmacfarlane.net/pandoc/).
 

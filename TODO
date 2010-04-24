@@ -64,10 +64,13 @@ run:
 - we also need to extend MessageReceiver.recv() to accept a "sender" argument, or something
 - this is so that Contact knows who to send replies back to...
 
-== Observations ==
+== Documentation ==
 
-In Kleinberg's model, geographic location is a uniting factor. In this model,
-language is a uniting factor.
+## TODO and related tags
 
-Dynamic following of hyperlinks...
+- `DIAG`: draw appropriate diagram here
+- `TODO`: open issue; resolve or explain why we leave it open
+- `MORE`: expand
+- `EXTN`: a pointer to an external research topic, either potential or existing
+- `REF`: add references for
 
