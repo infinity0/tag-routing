@@ -619,8 +619,15 @@ from traceback import format_stack
 from functools import partial
 from itertools import ifilterfalse
 
-
 DEFAULT_MAX_THREADS = 36
+def max_procs()
+	try:
+		from multiprocessing import cpu_count
+		c = cpu_count()
+		return c-2 if c>3 else 2 if c==3 else 1
+	except:
+		return 1
+DEFAULT_MAX_PROCS = max_procs()
 
 
 def callable_wrap(item):
@@ -672,8 +679,8 @@ def enumerate_cb(iterable, callback, message=None, steps=0x100, every=None, expe
 
 
 def exec_unique(items, done, run, post=lambda it, i, res: None, name="exec_unique",
-  logcb=lambda line: sys.stderr.write("%s\n", line), logcb_p=None, max_threads=None,
-  assume_unique=False, **kwargs):
+  logcb=lambda line: sys.stderr.write("%s\n", line), logcb_p=None, workers=None,
+  init_target=None, term_target=None, assume_unique=False, **kwargs):
 	"""
 	Executes the given jobs in parallel, excluding jobs that have already been
 	done.
@@ -686,12 +693,15 @@ def exec_unique(items, done, run, post=lambda it, i, res: None, name="exec_uniqu
 	       callable that takes a single <item> parameter
 	@param name: name of the batch, used in logging messages
 	@param run: job for worker threads; takes (item) parameter
-	@param post: job for main thread; takes (item, i, res) parameters; if this
-	       is None, jobs are done in the same thread as the caller
+	@param post: job for main thread; takes (item, i, res) parameters
 	@param logcb: a logging callback for overall info
 	@param logcb_p: a logging callback for progress info (defaults to overall)
-	@param max_threads: max worker threads to run; if this is 0, jobs are done
-	       in the same thread as the caller
+	@param workers: if this is 0 or None, the caller's thread is used. if this
+	       is >0 or True, threads are used. if this is <0 or False, processes
+	       are used. the magnitude determines the number of workers; or if it
+	       is a boolean, then the default number for that worker type is used
+	@param max_procs: max worker processes to run; this is superseded by
+	       <max_threads>; if both are None then the caller's thread is used
 	@param assume_unique: whether to assume <item> is unique
 	"""
 	#print "got here 0"
@@ -705,21 +715,29 @@ def exec_unique(items, done, run, post=lambda it, i, res: None, name="exec_uniqu
 	kwargs["expected_length"] = total
 	logcb("%s: %s submitted, %s accepted" % (name, len(items), total))
 
-	if logcb_p is None:
-		logcb_p = logcb
+	if logcb_p is None: logcb_p = logcb
+	if post is None: post = lambda it, i, res: None
 
-	if post is None:
-		max_threads = 0
-		post = lambda it, i, res: None
-
-	if max_threads is None:
-		max_threads = DEFAULT_MAX_THREADS
+	if workers is True:
+		workers = DEFAULT_MAX_THREADS
+	elif workers is False:
+		workers = -DEFAULT_MAX_PROCS
+	elif workers is None:
+		workers = 0
+	workers = int(workers)
 
 	i = -1
-	if max_threads > 0:
+	if workers > 0:
 		from futures import ThreadPoolExecutor
 		with ThreadPoolExecutor(max_threads=max_threads) as x:
 			for i, (it, res) in enumerate_cb(x.run_to_results_any(partial(lambda it: (it, run(it)), it) for it in todo),
+			  logcb_p, "%s: %%(i1)s/%s %%(it)s" % (name, total), **kwargs):
+				post(it, i, res)
+
+	elif workers < 0:
+		from contextprocess import ContextPool, ctx_process, ctx_worker
+		with ContextPool(processes=-workers, process=ctx_process(init_target, ctx_worker, term_target)) as pool:
+			for i, (it, res) in enumerate_cb(pool.imap_unordered(lambda it: (it, run(it)), todo),
 			  logcb_p, "%s: %%(i1)s/%s %%(it)s" % (name, total), **kwargs):
 				post(it, i, res)
 

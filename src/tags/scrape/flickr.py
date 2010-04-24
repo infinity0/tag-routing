@@ -160,7 +160,7 @@ class SafeFlickrAPI(FlickrAPI):
 				else:
 					gumap[gid] = [nsid]
 
-		exec_unique(users, gumap, run, post, "gid sample db", LOG.info)
+		exec_unique(users, gumap, run, post, "gid sample db", LOG.info, workers=True)
 		return gumap
 
 
@@ -200,7 +200,7 @@ class SafeFlickrAPI(FlickrAPI):
 			# filter out "machine-tags"
 			ptdb[phid] = [intern_force(tag.text) for tag in tags if tag.text and ":" not in tag.text]
 
-		exec_unique(photos, ptdb, run, post, "photo-tag db", LOG.info)
+		exec_unique(photos, ptdb, run, post, "photo-tag db", LOG.info, workers=True)
 
 
 	def commitUserPhotos(self, users, ppdb):
@@ -224,7 +224,7 @@ class SafeFlickrAPI(FlickrAPI):
 				LOG.info("producer db (user): got %s photos for user %s" % (len(photos), nsid))
 			ppdb[nsid] = photos
 
-		exec_unique(users, ppdb, run, post, "producer db (user)", LOG.info)
+		exec_unique(users, ppdb, run, post, "producer db (user)", LOG.info, workers=True)
 
 
 	def commitGroupPhotos(self, gumap, ppdb):
@@ -251,7 +251,7 @@ class SafeFlickrAPI(FlickrAPI):
 				LOG.info("producer db (group): got %s photos for group %s" % (len(photos), gid))
 			ppdb[gid] = [p.get(NID) for p in photos]
 
-		exec_unique(gumap, ppdb, run, post, "producer db (group)", LOG.info)
+		exec_unique(gumap, ppdb, run, post, "producer db (group)", LOG.info, workers=True)
 
 
 	def pruneProducers(self, socgr, gumap, ppdb, cutoff=1):
@@ -338,7 +338,7 @@ class SafeFlickrAPI(FlickrAPI):
 		def post(tag, i, clusters):
 			tcdb[tag] = [[intern_force(t.text) for t in cluster.getchildren()] for cluster in clusters]
 
-		exec_unique(tags, tcdb, run, post, "cluster db", LOG.info)
+		exec_unique(tags, tcdb, run, post, "cluster db", LOG.info, workers=True)
 
 
 def FlickrError_code(e):

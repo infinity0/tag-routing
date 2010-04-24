@@ -10,6 +10,8 @@ from xml.etree.ElementTree import dump
 
 from tags.scrape.util import futures_patch_nonblocking
 futures_patch_nonblocking()
+#from tags.scrape.contextprocess import multiprocessing_patch_nonblocking
+#multiprocessing_patch_nonblocking()
 logging.basicConfig(format="%(asctime)s.%(msecs)03d | %(levelno)02d | %(message)s", datefmt="%s")
 
 from tags.scrape.flickr import SafeFlickrAPI

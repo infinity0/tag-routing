@@ -78,9 +78,8 @@ class SampleGenerator(object):
 				prod.initProdArcs(pmap)
 				self.phdb[nsid] = prod
 			self.phsb[nsid] = prod.state
-		# OPT HIGH the lambda is inefficient, we should store this state in a smaller+faster db
-		exec_unique(self.phdb.iterkeys(), lambda nsid: self.phsb[nsid] >= P_ARC,
-		  run_r, None, "%s db: relations" % name, LOG.info, steps=0x10000)
+		exec_unique(self.phdb.iterkeys(), lambda nsid: self.phsb[nsid] >= P_ARC, run_r, None,
+		  "%s db: relations" % name, LOG.info, steps=0x10000)
 
 		total = len(self.phdb)
 		lab_p, id_p = zip(*(("%s (%s)\\n%s" % (nsid, prod.size(), '\\n'.join(prod.rep_t[0:4])),
@@ -221,9 +220,8 @@ class SampleGenerator(object):
 				prod.initProdArcs(pmap, has_tags=True)
 				self.pgdb[nsid] = prod
 			self.pgsb[nsid] = prod.state
-		# OPT HIGH the lambda is inefficient, we should store this state in a smaller+faster db
-		exec_unique(self.pgdb.iterkeys(), lambda nsid: self.pgsb[nsid] >= P_ARC,
-		  run_r, None, "%s db: relations" % name, LOG.info, steps=0x10000)
+		exec_unique(self.pgdb.iterkeys(), lambda nsid: self.pgsb[nsid] >= P_ARC, run_r, None,
+		  "%s db: relations" % name, LOG.info, steps=0x10000)
 
 
 	def selectCommunities(self):
