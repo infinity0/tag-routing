@@ -91,7 +91,7 @@ peer-to-peer networks: Search methods, _Computer Networks_, **Volume 50**,
 
 # Preparation
 
-## Areas of work
+## Objectives
 
 We intend to build a system that can at least offer similar functionality to
 existing search providers, if not as sophisticated or efficient. Core aspects
@@ -130,7 +130,7 @@ beyond the limit of human perceptibility.
 
 Existing large service providers might have little incentive to participate in
 a co-operatiave search system, since they are each competing for control over
-the market. However, this is less of a factor for smaller providers, who would
+the market. However, this is less of a factor for smaller providers who would
 otherwise be unable to attract many users, since their intention is only to
 provide search capabilities. In principle, this is no different from displaying
 links to other websites to help your visitors find what they want - linking to
@@ -140,27 +140,64 @@ It is widely thought that decentralised systems are hard to design to be both
 secure and scalable, but nothing indicates that this impossible. Recent
 approaches based on social networks have been promising.<MORE>
 
-## Observations to initial ideas
+## Initial observations
 
-ideas, address scheme, uniting factor
-Addresses are binary keys, which provide a well-defined address space with a
-coherent notion of "distance", over which to route.
+DHTs are very efficient and scalable, most systems giving O(log n) performance
+(eg. expected number of hops for a lookup) in the size of the network. These
+use binary keys for addresses, which can represent well-defined address spaces
+with distance metrics, which allow for fairly simple routing algorithms.
 
-Spam etc,
-detect from network structure, eg. PageRank, recent sybil detection methods
-that use random walks
-Routing between your friends thought to be harder to block on a nationwide
-scale than a central provider which must act according to the law.
+A basic reason for this is that a numerical address space can be partitioned
+hierarchically, eg. by taking successively larger prefixes of an address. This
+allows greedy routing to work effectively, ie. by finding the neighbour which
+shares the smallest partition with the desired target node (in IP routing, this
+is just "longest-prefix-match", which we are all familiar with).
 
+<DIAG> of hierarchical partitioning
 
-building on existing systems on Freenet, etc
+One approach to efficient semantic routing is to use an address space that can
+support similar routing methods. This turned out to be a non-trivial problem,
+and we ended up using a significant amount of our time to develop a theoretical
+model of a partitionable and navigable space over tags.
 
-iterative vs recursive
+We did not have any specific initial ideas on how to ensure the global reach of
+a search request. However, our DHT-inspired approach of using a global address
+scheme should allow further development in this area. (If the relationship from
+addresses to objects is deterministic, a global address scheme implies global
+reachability, but our final design does not satisfy the former requirement.)
+
+Research has shown that analysing social network structure can be effective in
+resisting malicious information. This is because social relationships are much
+more expensive to attack than naive indexing algorithms, such as TF-IDF (term
+frequency–inverse document frequency). Existing examples include Google's
+PageRank algorithm<REF> which measures a node's importance, trust metrics such
+as Advogato<REF>, and sybil detection algorithms such as SybilInfer<REF>.
 
 ## Design assumptions
 
-(move stuff from sections below)
+Since the aim of the project is fairly ambitious, we want to repeat as little
+work as possible. Therefore, we make various assumptions about the environment
+that our system will run under. Some of these are reasonable, and some of these
+are fairly restrictive; however, we feel they are prudent and necessary in the
+context of this project.
 
+Locating known objects is essentially a solved problem: the internet and DHTs
+both offer ways to retrieve objects based on a globally unique address. Without
+this primitive we cannot continue at all; data has to be stored somewhere, and
+it has to be accessible to an arbitrary subset of the network.
+
+Additionally, we will assume that objects are always available. In a real
+network, this can be implemented with proxy services (eg. servers which hire
+storage space out and guarantee continuous access to this), or it might be a
+property of the storage network (eg. DHTs). This simplifies our design, since
+it allows us to avoid dealing with the issue of churn, by delegating it to an
+independent external component.
+
+This also forces us to consider an iterative routing algorithm rather than a
+recursive one. Since data cannot respond to queries, a client must retrieve the
+data, process it themselves, determine which objects to retrieve next, then
+retrieve those, etc. Hopefully, our system can be adapted into a recursive one
+without much effort, but we won't give special consideration to this.
 
 # Overview
 
@@ -180,6 +217,39 @@ other.
 - routing plane - see the `index` section
 - naming plane - see the `tgraph` section
 - contact plane - see the `ptable` section
+
+## Model
+
+
+### Contact space
+
+<reduce>
+
+The initialisation algorithm assumes an abstract lower-level social network
+where it can look for friends to query for pointers onto the naming and routing
+planes.
+
+There are various existing strategies for bootstrapping a social network, such
+as sending invites through existing networks. This is the case for all social
+networks and is independent from the objectives of our project; we will assume
+that a well-established social network already exists.
+
+The network is modelled as a directed weighted graph; arcs represent a degree
+of trust by the source node in the target node, and arc weights are restricted
+to the interval $[0,1]$.
+
+This model is sufficiently general for our purposes. Many social networking
+websites only recognise mutual friendship; this is a degenerate form of the
+model, where all weights are constant and all arcs have a reverse-direction
+counterpart.
+
+### Naming space
+
+tgraph semantics
+
+### Routing space
+
+index semantics
 
 
 # Specification
@@ -885,62 +955,6 @@ of a single node, or its out-arcs.
 
 
 # Design
-
-## Objectives
-
-## Assumptions
-
-### Abstract storage network
-
-Our search system assumes that its data objects are located on some abstract
-lower-level storage network. Data objects can always be retrieved, instead of
-being stored locally with its maintainer, who may be offline. This simplifies
-our design, since it allows us to avoid dealing with the issue of churn by
-delegating it to an independent component. [EXTN]
-
-This also forces us to consider a iterative routing algorithm rather than a
-recursive one, since data objects are "dumb" and cannot respond to dynamic
-queries. Instead, a requestor must retrieve the data, process it themselves,
-then pull in further data, etc.
-
-Any distributed storage network that has a global address scheme (such as a
-binary-key address space) would be suitable, since pointers to objects can be
-represented simply as its address. This includes all Distributed Hash Tables
-(DHTs), as well as more complex cryptokey-based addresses such as Freenet's
-Signed Subspace Keys network.
-
-### Underlying social network
-
-The initialisation algorithm assumes an abstract lower-level social network
-where it can look for friends to query for pointers onto the naming and routing
-planes.
-
-Any system which has a social network as a major component, needs a method
-of constructing such a network and sustaining its growth. Fortunately, such
-systems are already widely deployed on the www; new networks can bootstrap
-themselves by extracting social data from existing networks, through invites,
-etc. [EXTN]
-
-The network is modelled as a directed weighted graph; arcs represent a degree
-of trust by the source node in the target node, and arc weights are restricted
-to the interval $[0,1]$.
-
-This model is sufficiently general for our purposes. Many social networking
-websites only recognise mutual friendship; this is a degenerate form of the
-model, where all weights are constant and all arcs have a reverse-direction
-counterpart.
-
-The naming and routing planes also form what is essentially a social network -
-`tgraph`s and `index`es effectively contain pointers to each other, through
-their arc targets. However, these also carry semantic information (each arc has
-a source tag) and are intrinsic to our search system; by constrast, the social
-network used for initialisation carries no semantic information and is
-independent of our system. To highlight this difference, we refer to a node on
-the social network as an "identity", and arc weights as "identity scores".
-
-MORE talk about churn, virtual social networks (WoT on Freenet's SSK), etc
-
-MORE proxy services
 
 ## `tgraph` semantics
 
