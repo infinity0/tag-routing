@@ -1,22 +1,79 @@
 % Design and architecture
 % Ximin Luo
 
-
 # Introduction
 
 ## Background
 
-search system etc
+Searching for information is an essential component of any network. Without it,
+there might as well not be a network in the first place.
+
+The world wide web is the largest information network ever created; currently,
+search is a service; providers employ crawlers to navigate this network, and
+extract and summarise information from the documents visited, into a form which
+is suitable for insertion into a database. "Searching the web" usually means
+querying these pre-built databases, rather than dynamically routing your way
+through the web's content.
+
+Preparing and maintaining the database is extremely resource-intensive for a
+large network, which results in high barriers to entry. The utility of a search
+service increases with how much of the network it covers; new providers must
+recreate a database of comparable size before consumers will make the switch,
+or else use indexing algorithms that produce decidedly better results than
+existing alternatives.
+
+This creates conditions of oligopoly, which is inherently vulnerable to both
+abuse and attack. Large providers are trusted by a great number of consumers,
+so more people are affected when this trust is broken. We have already seen
+cases of providers censoring their search results, both voluntarily[^censor1]
+and under coercion[^censor2]. Privacy is also a concern: providers can monitor
+consumer usage of the service, and build up a profile of personal activities.
+
+[^censor1]: Google stopped returning results to CNET's website, because they
+published an article that the CEO disliked. <REF>
+
+[^censor2]: Google was also forced by the Chinese government to censor many
+search results from its service in China. <REF>
+
+Another issue is the depth and granularity of search topics. Most of us don't
+use a search provider for every item of information we need; instead, we often
+issue a query that gives us a selection of related sites from all over the web,
+then manually browse within these sites to target our needs more precisely.
+Furthermore, some websites have non-public information, or special data that
+generic search algorithms aren't able to index effectively.
+
+One approach which addresses the above issues is...
+
+The idea is to dynamically route between content, much like an internet router
+will dynamically route packets using IP addresses. Imagine a browser acting as
+a router; you type in a search term and it automatically follows links between
+web pages to reach what you want. Of course, this is a long way off, and it
+may well be beyond the capabilities of current hardware and networks, but this
+project hopefully provides a foundation for further developing such methods.
+
+A major barrier is that there is currently no method or protocol for performing
+queries co-operatively over many autonomous indexes. Large service providers
+have little incentive to implement this, since they are competing for control
+over the market. However, there might be an incentive to do this for smaller
+providers, who otherwise be unable to attract enough users.
 
 ## Related systems
 
-p2p, blah blah blah blah
+Many decentralised networks currently exist. Search
 
-related work, etc
+p2p, distributed hash tables, key-based routing
 
-## Approach
+related work, etc, small world
 
-ideas i developed, etc
+## Initial ideas
+
+ideas, address scheme, uniting factor, di
+
+Spam etc,
+detect from network structure, eg. PageRank, recent sybil detection methods
+that use random walks
+Routing between your friends thought to be harder to block on a nationwide
+scale than a central provider which must act according to the law.
 
 
 # Overview

@@ -116,6 +116,14 @@ Details about these object types, their structure and semantics, are contained
 in the design document.
 
 
+# Bibliography
+
+etc etc etc
+
+
+
+
+
 # Interface
 
 Clicking the arrows next to the menus will toggle the visibility of their
