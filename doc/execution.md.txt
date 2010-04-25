@@ -35,3 +35,8 @@ description of python modules
 - luckily igraph is good at both reading and writing
 - used Graphviz for visualising graphs, convert to .dot format
 
+
+# Running the tests
+
+results observed...
+
