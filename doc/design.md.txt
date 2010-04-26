@@ -153,7 +153,7 @@ allows greedy routing to work effectively, ie. by finding the neighbour which
 shares the smallest partition with the desired target node (in IP routing, this
 is just "longest-prefix-match", which we are all familiar with).
 
-<DIAG> of hierarchical partitioning
+<DIAG> of hierarchical partitioning, <REF> kleinberg
 
 One approach to efficient semantic routing is to use an address space that can
 support similar routing methods. This turned out to be a non-trivial problem,

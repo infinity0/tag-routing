@@ -588,7 +588,7 @@ def db_open(dbf, writeback=False):
 			return shelve.open(dbf, writeback=writeback)
 
 
-def db_cleanup(db_i, start=None, fp=sys.stderr):
+def db_clean(db_i, start=None, fp=sys.stderr):
 	rem, tot = 0, 0
 	it = db_i.iterkeys()
 	if start:
@@ -611,10 +611,10 @@ def db_cleanup(db_i, start=None, fp=sys.stderr):
 	print >>fp, "                \rfinished cleanup; %s/%s keys removed" % (rem, tot)
 
 
-def db_copy(db_i, db_o, fp=sys.stderr):
+def db_copy(db_i, db_o, fp=sys.stderr, skip_done=True):
 	rem, tot = 0, 0
 	for key in db_i.iterkeys():
-		if key in db_o:
+		if skip_done and key in db_o:
 			continue
 		try:
 			db_o[key] = db_i[key]

@@ -196,7 +196,7 @@ class Producer(object):
 	  index graph, this Producer should point to P with this NAA as its AAT.
 	"""
 
-	__slots__ = ("nsid", "state", "docgr", "id_d", "id_t", "id_p",
+	__slots__ = ("nsid", "state", "_docgr", "__docgr", "__t_naa", "id_d", "id_t", "id_p",
 	  "base_d", "base_t", "base_s", "base_p", "rep_d", "rpp_d", "rep_t", "rpp_t",
 	)
 
@@ -207,7 +207,10 @@ class Producer(object):
 		self.nsid = nsid
 		self.state = P_NEW
 
-		self.docgr = None
+		self._docgr = None # field
+		self.__docgr = None # cache
+		self.__t_naa = None # cache
+
 		self.id_d = None # {doc:vid}
 		self.id_t = None # {tag:vid}
 		self.id_p = None # {pid:vid}
@@ -222,25 +225,52 @@ class Producer(object):
 		self.rep_t = None # representative tags
 		self.rpp_t = None # representative tags
 
+	@property
+	def docgr(self):
+		if self.__docgr is not None:
+			with TemporaryFile(dir=TMP_RAM) as fp:
+				fp.write(decompress(self.__docgr))
+				fp.seek(0)
+				self._docgr = Graph.Read_GraphML(fp)
+				print "marshalling graph for %s" % self.nsid
+				self.__docgr = None
+				self.__t_naa = None
+		return self._docgr
+
+	@docgr.setter
+	def docgr(self, val):
+		self._docgr = val
+		self.__docgr = None
+		self.__t_naa = None
+
+	@docgr.deleter
+	def docgr(self):
+		assert False # prevent deletion
+
 	def __getstate__(self, level=3):
-		with TemporaryFile(dir=TMP_RAM) as fp:
-			self.docgr.write_graphml(fp)
-			fp.seek(0)
-			graph_bytes = compress(fp.read(), level)
+		if self.__docgr is None and self._docgr is not None:
+			tag_scores = self._docgr.vs[NAA]
+			with TemporaryFile(dir=TMP_RAM) as fp:
+				self._docgr.write_graphml(fp)
+				fp.seek(0)
+				graph_bytes = compress(fp.read(), level)
+		else:
+			assert (self.__docgr is None and self.__t_naa is None) or (self.__docgr is not None and self.__t_naa is not None)
+			graph_bytes = self.__docgr
+			tag_scores = self.__t_naa
+
 		return (self.nsid, self.state, graph_bytes, self.id_d, self.id_t, self.id_p,
 		  self.base_d, self.base_t, self.base_s, self.base_p,
 		  self.rep_d, self.rpp_d, self.rep_t, self.rpp_t,
+		  tag_scores
 		)
 
 	def __setstate__(self, state):
-		(self.nsid, self.state, graph_bytes, self.id_d, self.id_t, self.id_p,
+		(self.nsid, self.state, self.__docgr, self.id_d, self.id_t, self.id_p,
 		  self.base_d, self.base_t, self.base_s, self.base_p,
 		  self.rep_d, self.rpp_d, self.rep_t, self.rpp_t,
-		) = state
-		with TemporaryFile(dir=TMP_RAM) as fp:
-			fp.write(decompress(graph_bytes))
-			fp.seek(0)
-			self.docgr = Graph.Read_GraphML(fp)
+		  self.__t_naa
+		) = state #if len(state) == 15 else state + (None,) # uncomment to perform back-compat maintenance
 
 
 	@state_req(P_NEW, E_NOTNEW)
@@ -465,8 +495,10 @@ class Producer(object):
 		@param tags: [tag]
 		@return: {tag:score}
 		"""
-		s = self.docgr.vs[self.id_t[tag]][NAA] if tag in self.id_t else 0
-		return s if s is not None else 0
+		if tag not in self.id_t:
+			return 0
+		id = self.id_t[tag]
+		return (self.docgr.vs[id][NAA] if self.__t_naa is None else self.__t_naa[id]) or 0.0
 
 
 	def __scoreTags(self, tags):
