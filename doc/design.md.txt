@@ -155,10 +155,11 @@ is just "longest-prefix-match", which we are all familiar with).
 
 <DIAG> of hierarchical partitioning, <REF> kleinberg
 
-One approach to efficient semantic routing is to use an address space that can
-support similar routing methods. This turned out to be a non-trivial problem,
-and we ended up using a significant amount of our time to develop a theoretical
-model of a partitionable and navigable space over tags.
+We were impressed by this efficiency of structured address spaces, and decided
+to use draw upon this basic idea for our system design. Semantic tags are not
+as naturally structured as numerical addresses however, and a significant part
+of our time would be spent in developing a theoretical model of a partitionable
+and navigable space over tags.
 
 We did not have any specific initial ideas on how to ensure the global reach of
 a search request. However, our DHT-inspired approach of using a global address
@@ -194,12 +195,34 @@ it allows us to avoid dealing with the issue of churn, by delegating it to an
 independent external component.
 
 This also forces us to consider an iterative routing algorithm rather than a
-recursive one. Since data cannot respond to queries, a client must retrieve the
-data, process it themselves, determine which objects to retrieve next, then
-retrieve those, etc. Hopefully, our system can be adapted into a recursive one
-without much effort, but we won't give special consideration to this.
+recursive one. Since data cannot forward queries onto other pieces of data, a
+lient must process it themselves, determine which objects to retrieve next,
+then retrieve those, etc. Hopefully, our design can be adapted into a recursive
+one without much effort, but we won't give special consideration to this.
 
-# Overview
+# Theory
+
+Here, we discuss the theoretical ideas behind the system. We experimented with
+many different ideas before the code development began, and during development
+we weeded out the ones which seemed to lead to a dead end. After development,
+the surviving ideas were explored further, and were simplified or generalised.
+
+For example, originally the problem of information aggregation was considered
+separately for only the naming and routing layers, and was completely ignored
+for the social layer. During implementation it was realised that trust metrics
+are unable to deal with conflicts between `ptable`s, and after implementation
+we formulated the theoretical expression of the general problem, given below.
+The discussion on the various issues of aggregation as related to our design
+(eg. <LINK>) was actually done during the preparation stage, but it was only
+afterwards that we realised how this fit into the general theory.
+
+As such, there are a few aspects of our system design which may seem inelegant
+or imperfect in the context of the theories described below. Unfortunatly, we
+didn't have enough time to go back and refine them; but we have tried to point
+these out in the following discussions. None of these flaws, we think, are
+serious enough to defeat the entire work of the final design.
+
+## System design
 
 Distributed network of data structures maintained by multiple independent
 parties.
@@ -207,19 +230,6 @@ parties.
 Most of the routing power of the system is delegated to the underlying social
 network and the innate information-retrieval heuristics we have as humans,
 rather than being inherently built into the system.
-
-How the properties of the system (performance, scalability, robustness) change
-with the structure of the network forms the basis of the [analysis](#analysis).
-
-The system has three main networks / planes of information that link to each
-other.
-
-- routing plane - see the `index` section
-- naming plane - see the `tgraph` section
-- contact plane - see the `ptable` section
-
-## Model
-
 
 ### Contact space
 
@@ -251,8 +261,18 @@ tgraph semantics
 
 index semantics
 
+## Information aggregation
 
-# Specification
+Generic problem. statement.
+
+most of the "design" section (except tgraph semantics) will be added here
+
+## Structured address space
+
+tgraph semantics, and discussion about it.
+
+
+# Architecture
 
 ## Data structures
 

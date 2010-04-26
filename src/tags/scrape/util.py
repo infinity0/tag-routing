@@ -611,7 +611,7 @@ def db_clean(db_i, start=None, fp=sys.stderr):
 	print >>fp, "                \rfinished cleanup; %s/%s keys removed" % (rem, tot)
 
 
-def db_copy(db_i, db_o, fp=sys.stderr, skip_done=True):
+def db_copy(db_i, db_o, skip_done=True, fp=sys.stderr):
 	rem, tot = 0, 0
 	for key in db_i.iterkeys():
 		if skip_done and key in db_o:
@@ -619,8 +619,8 @@ def db_copy(db_i, db_o, fp=sys.stderr, skip_done=True):
 		try:
 			db_o[key] = db_i[key]
 			print >>fp, "                \rcopied key %s" % key, # no line break
-		except Exception:
-			print >>fp, "                \rfailed key %s" % key
+		except Exception, e:
+			print >>fp, "                \rfailed key %s: %r" % (key, e)
 			rem += 1
 		tot += 1
 	print >>fp, "                \rfinished copy; %s/%s keys failed" % (rem, tot)

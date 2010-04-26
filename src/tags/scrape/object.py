@@ -232,7 +232,7 @@ class Producer(object):
 				fp.write(decompress(self.__docgr))
 				fp.seek(0)
 				self._docgr = Graph.Read_GraphML(fp)
-				print "marshalling graph for %s" % self.nsid
+				#print "marshalling graph for %s" % self.nsid
 				self.__docgr = None
 				self.__t_naa = None
 		return self._docgr
@@ -270,7 +270,7 @@ class Producer(object):
 		  self.base_d, self.base_t, self.base_s, self.base_p,
 		  self.rep_d, self.rpp_d, self.rep_t, self.rpp_t,
 		  self.__t_naa
-		) = state #if len(state) == 15 else state + (None,) # uncomment to perform back-compat maintenance
+		) = state
 
 
 	@state_req(P_NEW, E_NOTNEW)
