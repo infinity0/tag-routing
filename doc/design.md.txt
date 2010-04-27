@@ -65,7 +65,7 @@ in that direction.
 
 There are many existing systems which use decentralised, co-operative, dynamic
 routing algorithms, such as the internet and various peer-to-peer overlay
-networks. There is a great variety of different assumptions, objectives, and
+networks. There are a great variety of different objectives, approaches, and
 models, but some common themes include:
 
 Key-based routing
@@ -79,14 +79,16 @@ Social relationships
 	properties, and a more predictable network structure. (OneSwarm, Freenet)
 
 A more comprehensive survey of peer-to-peer search systems is presented in
-[^p2psurvey]. Using the terminology of that paper, this project develops and
+[^surv1]. Using the terminology of that paper, this project develops and
 evaluates a _probability-based model_ of information retrieval intended to
-support _comprehensive keyword search_^[as opposed to partial keyword search].
+support _comprehensive keyword search_[^surv2].
 
-[^p2psurvey]: John Risson, Tim Moors, Survey of research towards robust
+[^surv1]: John Risson, Tim Moors, Survey of research towards robust
 peer-to-peer networks: Search methods, _Computer Networks_, **Volume 50**,
 **Issue 17**, 5 December 2006, Pages 3485-3521, ISSN 1389-1286, DOI:
 [10.1016/j.comnet.2006.02.001](http://www.sciencedirect.com/science/article/B6VRG-4JD0XYW-1/2/07e1ec0ba8cbe65f8f094cd99612b149).
+
+[^surv2]: as opposed to _partial keyword search_
 
 There is some existing research into p2p semantic search systems, eg. [^sem1]
 [^sem2]. However, none of these are currently deployed in real systems, and we
@@ -124,9 +126,9 @@ reach all relevant data on the network.
 
 ## Potential issues
 
-Here, we briefly discuss issues surrounding a decentralised architecture, and
+_Here, we briefly discuss issues surrounding a decentralised architecture, and
 present ways of addressing these issues, or else explain why we think they are
-not a significant problem in the context of this project.
+not a significant problem in the context of this project._
 
 A system which must route queries between autonomous providers will obviously
 be slower than a system that only needs to query a single provider. At present,
@@ -177,7 +179,7 @@ is just "longest-prefix-match", which we are all familiar with).
 
 Two of these ideas seemed to fit well together - if we made the query-shifting
 aspect of "human" routing more precise, by using the idea of a structured
-address space, then maybe this would allow for a simple routing algorithm too.
+address space, then this could also allow for a simple routing algorithm.
 Semantic tags are not as naturally structured as numerical addresses however,
 and a significant part of our time would be spent in developing a theoretical
 model of a partitionable and navigable space over tags.
@@ -226,19 +228,11 @@ one without much effort, but we won't give special consideration to this.
 
 # Theory
 
-Here, we discuss the theoretical ideas behind the system. We experimented with
-many different ideas before the code development began, and during development
-we weeded out the ones which seemed to lead to a dead end. After development,
-the surviving ideas were explored further, and were simplified or generalised.
-
-For example, originally the problem of information aggregation was considered
-separately for only the naming and routing layers, and was completely ignored
-for the social layer. During implementation it was realised that trust metrics
-are unable to deal with conflicts between `ptable`s, and after implementation
-we formulated the theoretical expression of the general problem, given below.
-The discussion on the various issues of aggregation as related to our design
-(eg. [LINK]) was actually done during the preparation stage, but it was only
-afterwards that we realised how this fit into the general theory.
+_In this chapter we discuss the theoretical ideas behind the system. We
+experimented with many different ideas before the code development began, and
+during development we weeded out the ones which seemed to lead to a dead end.
+Afterwards, the surviving ideas were explored further, and simplified or
+generalised.[^simp]_
 
 As such, there are a few aspects of our system design which may seem inelegant
 or imperfect in the context of the theories described below. Unfortunatly, we
@@ -247,7 +241,21 @@ these out in the appropriate parts of the architecture section. None of these
 flaws, we think, are serious enough to defeat the basic purpose of the design
 that we implemented.
 
+[^simp]: For example, originally the problem of information aggregation was
+considered only for the naming and routing layers, and was completely ignored
+for the social layer. During implementation it was realised that trust metrics
+could not resolve conflicts between `ptable` entries, and after implementation
+we formulated the theoretical expression of the general problem, given below.
+The discussion on the various issues of aggregation as related to our design
+(eg. [LINK]) was actually done during the preparation stage, but it was only
+afterwards that we realised how this fit into the general theory.
+
 ## System design
+
+_This section describes the overall concepts of our system, and the reasoning
+for our design choices. More precise details, such as the exact contents of the
+various objects introduced, and how the search algorithm processes these
+objects, are given in the [architecture](#architecture) section._
 
 We start off with the analogy of an index being a routing table. Tags are
 addresses, documents are hosts, and routes are semantic relationships between
@@ -259,20 +267,22 @@ possible relevant tags, but it should seek to summarise this information.
 Instead of listing an index under entries for several dozen instances of (eg.)
 strategy games, it could instead list only for the tag "strategy games".
 
-A consistent and efficient model for this is developed in [structured address
+A clear and consistent model for this is developed in [structured address
 space](#structured-address-space). From that, we get another type of object, a
-tgraph, which defines relationships between tags. Following the principle of
-compacting information again, we need some way to route between these tgraphs.
-Now, at this point, you might worry that we'll continue with this ad-infinitum,
-inventing further layers of meta-objects; but no we stop here, and actually we
-use tgraphs to route between themselves. In other words, tgraphs also use tags
-as addresses, and list related tgraphs under entries for the appropriate tags.
+tag graph, or tgraph, which defines relationships between tags. Following the
+principle of compacting information again, we need some way to route between
+these tgraphs. At this point, you might worry that we'll continue with this
+ad-infinitum, inventing further layers of meta-objects; but no we stop here,
+and actually we use tgraphs to route between themselves. That is, tgraphs also
+use tags for addresses, and list related tgraphs under entries for appropriate
+tags.
 
 To explain why this isn't a problem:
 
 - The set of documents is much larger than the set of semantically distinct
   tags. Therefore, a map of tags to related _tags_ gives us more information
-  about the entire network, than a map of tags to related _documents_.
+  about the entire network, than a (similarly-sized) map of tags to related
+  _documents_.
 - More people are likely to have an idea of what a tag's related tags are,
   since this is part of everyday communication. So a neighbourhood of tgraphs
   will cover a larger section of the network.
@@ -281,49 +291,120 @@ To explain why this isn't a problem:
   system can just ask the user to supply their own "related tags".
 
 This principle can be summed up as "language unites". Just as the ubiquity of
-mathematics allows numerical addresses to be routed over, we exploit the semi-
-ubiquity of language to allow tags to be routed over.
+mathematics allows numerical addresses to be routed over, we exploit the
+semi-ubiquity of language to allow tags to be routed over.
 
 Since we are routing between documents, rather than people or hosts, we split
-the social network from the indexes network and the tgraphs network. This has
-other advantages, etc... [MORE]
+the social network from the indexes network and the tgraphs network. This gives
+us several advantages. It allows for space reductions - people often agree
+about things, so identical parts of indexes can be spun off into another index
+and pointed to instead of repeated. This model is also more general; anything
+that applies to it must also apply to the case of one-index-per-person. It's
+also arguably more realistic, since we often agree with someone's judgements,
+without trusting them as friends.
 
-There are various existing strategies for bootstrapping a social network, such
-as sending invites through existing networks. This is the case for all social
-networks and is independent from the objectives of our project; we will assume
-that a well-established social network already exists. [LESS]
-
-The network is modelled as a directed weighted graph; arcs represent a degree
-of trust by the source node in the target node, and arc weights are restricted
-to the interval $[0,1]$. [LESS]
-
-This model is sufficiently general for our purposes. Many social networking
-websites only recognise mutual friendship; this is a degenerate form of the
-model, where all weights are constant and all arcs have a reverse-direction
-counterpart. [LESS]
-
-[MORE] immutable data structures, etc
+Each identity on the social network defines a preference table, or ptable,
+listing the indexes and tgraphs that it values highly, and other identities
+whom it trusts. By exploring this network, we can infer a set of trusted
+objects from which to initiate our search.
 
 ## Information aggregation
 
 Trust metrics and sybil detection algorithms are useful, but cannot support
-applications that must obtain value judgements *about data* from agents.
-Define:
+applications that must obtain value judgements _about resources_ from other
+agents. Define:
 
 Agent
-:	an entity which can give and receive score judgements
-Object
+:	an entity which can give (and receive) score judgements
+Resource
 :	an entity which can only receive value judgements
 
-Each agent is associated with two maps: an agent-score map, and an object-value
-map. This is a generalisation of the idea of trust metrics, which considers
-only the agent-score map.
+Each agent is associated with two maps: an agent-score map $\{ a : s \}$, and
+a resource-value map $\{ r : v \}$, which define their subjective judgements.
+The problem of information aggregation can then be formulated as:
 
-The general problem of information aggregation can then be formulated as:
+Given
+:	- a set of agents, with their agent-score and resource-value maps:
+	  $$
+	  a : (\{ a : s \} , \{ r : v \})
+	  $$
+	- a seed agent-score map:
+	  $$
+	  a : s
+	  $$
+Return
+:	- a target resource-value map, aggregated from the given information
+	  $$
+	  r : v
+	  $$
 
+This is a generalisation of the idea of trust metrics, which has no conception
+of resources. Most trust metrics instead return an aggregated agent-score map,
+and with an implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$
+(i.e. a single root agent mapped to the maximum score).
 
+### Reduction
+
+The above formulation of the problem can be usefully divided up into two
+components:
+
+**Inferring scores for all agents**:
+
+Given
+:	- a set of agents, with their agent-score maps
+	- a seed agent-score map
+Return
+:	- a target agent-score map, that covers all agents in the input
+
+and
+
+**Aggregating values for all resources, from the scored agents**:
+
+Given
+:	- a set of agents, with their inferred score, and resource-value maps
+Return
+:	- a target resource-value map
+
+Our prototype implementation of the system follows this approach, and uses
+fairly simple and naive algorithms to solve each of the two components.
+
+### As applied to our design
+
+In the context of our system design:
+
+---------------------------------------------------------------------------
+layer       agent                           resource
+----------- ------------------------------- -------------------------------
+social      identities and their ptables    indexes, tgraphs
+
+naming      tgraphs                         tags, tag-tag relationships
+
+routing     indexes                         tag-document relationships
+---------------------------------------------------------------------------
+
+[MORE] discussion here maybe?
+
+One can see here that indexes and tgraphs take the position of both agent and
+resource. This affects the theoretical model for inferring the scores of those
+objects; this is discussed below.[LINK]
+
+### Attributes
+
+[MOVE] from "weights"
+
+### Mutability of objects
+
+[MORE] immutable data structures, etc
+git submodules vs. URL links
+
+We implicitly considered objects to be immutable, for example, we intended
+the sharing of index objects via ptables to be a space-saving measure, not
+an act of delegation. However, this is not enforced by our system, which may
+become an issue when a real implementation is deployed.
 
 most of the "design" section (except tgraph semantics) will be added here
+
+
 
 ## Structured address space
 
@@ -1206,10 +1287,6 @@ far nodes; and we also have the option of constructing local overrides against
 the attacks that are detected.
 
 TODO make an actual estimate... $2^{-4}$. [EXTN]
-
-### Mutable vs immutable objects
-
-security / trust issues
 
 ## Weights
 
