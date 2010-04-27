@@ -240,7 +240,7 @@ class SampleGenerator(object):
 		labels = zip(*(self.prodgr.community_label_propagation().membership for i in xrange(0, 4)))
 		ddd = dict((o, i) for i, o in enumerate(set(labels)))
 		mem = self.prodgr.community_label_propagation(initial=[ddd[o] for o in labels],
-		  fixed=[False]*self.prodgr.vcount()) # fixed=[False]*V workaround igraph bug #570902
+		  fixed=[False]*self.prodgr.vcount()).membership # fixed=[False]*V workaround igraph bug #570902
 		comm.update(frozenset(community) for community in invert_seq(mem).itervalues())
 		# TODO repeat this several times?
 

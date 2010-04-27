@@ -308,6 +308,22 @@ listing the indexes and tgraphs that it values highly, and other identities
 whom it trusts. By exploring this network, we can infer a set of trusted
 objects from which to initiate our search.
 
+### Mutability of objects
+
+[MORE] immutable data structures, etc
+git submodules vs. URL links
+
+We have implicitly considered objects to be immutable. For example, we intended
+the sharing of index objects via ptables to be a space-saving measure, not an
+act of delegation. However, this is not enforced by our system, which may
+become an issue when a real implementation is deployed.
+
+### Data collection
+
+[MORE] our project only considers how routing is to be done, it doesn't
+consider how the routing tables would actually be formed. However, model is
+fairly simple, etc etc
+
 ## Information aggregation
 
 Trust metrics and sybil detection algorithms are useful, but cannot support
@@ -343,12 +359,12 @@ of resources. Most trust metrics instead return an aggregated agent-score map,
 with an implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$ (i.e. a
 single root agent mapped to the maximum score).
 
-### Reduction
+### Simplification
 
 The above formulation of the problem can be usefully divided up into two
 components:
 
-**Inferring scores for all agents**:
+**1. Inferring scores for all agents**:
 
 Given
 :	- a set of agents, with their agent-score maps
@@ -358,7 +374,7 @@ Return
 
 and
 
-**Aggregating values for all resources, from the scored agents**:
+**2. Aggregating values for all resources, from the scored agents**:
 
 Given
 :	- a set of agents, with their inferred score, and resource-value maps
@@ -368,7 +384,7 @@ Return
 Our prototype implementation of the system follows this approach, and uses
 fairly simple and naive algorithms to solve each of the two components.
 
-### As applied to our design
+### Use within our design
 
 In the context of our system design:
 
@@ -382,17 +398,18 @@ naming      tgraphs                         tags, tag-tag relationships
 routing     indexes                         tag-document relationships
 ---------------------------------------------------------------------------
 
-[MORE] discussion here maybe?
+[MORE] discussion here, discrepancy and score/value being mixed up
 
 One can see here that indexes and tgraphs take the position of both agent and
 resource. This affects the theoretical model for inferring the scores of those
-objects; this is discussed below.[LINK]
+objects.
+
+[MOVE] "links between objects" here
 
 ### Attributes
 
-In the above description there is no discussion on what the attributes should
-actually represent. In any usage scenario, they should at least satisfy the
-following properties:
+So far, we haven't discussed what the attributes should actually represent. In
+any usage scenario, they should at least satisfy the following properties:
 
 - The attribute should be some well-defined property that can be measured or
   estimated. Any single value of the attribute should mean the same thing to
@@ -412,21 +429,7 @@ this, but some sort of network structure analysis is a commonly-used strategy.
 The exact forms that we picked for our attributes are discussed elsewhere.[LINK]
 Generally, we used probability-based attributes, which are well-defined and can
 be estimated by agents. It also gives a simple way of combining attributes -
-multiplication, as well as a simple interval of values $[0, 1]$.
-
-### Mutability of objects
-
-[MORE] immutable data structures, etc
-git submodules vs. URL links
-
-We implicitly considered objects to be immutable, for example, we intended
-the sharing of index objects via ptables to be a space-saving measure, not
-an act of delegation. However, this is not enforced by our system, which may
-become an issue when a real implementation is deployed.
-
-
-[MOVE] most of the "design" section (except tgraph semantics) here, new sections
-
+multiplication, as well as a simple space of values - $[0, 1]$.
 
 ## Structured address space
 
