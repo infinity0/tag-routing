@@ -340,8 +340,8 @@ Return
 
 This is a generalisation of the idea of trust metrics, which has no conception
 of resources. Most trust metrics instead return an aggregated agent-score map,
-and with an implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$
-(i.e. a single root agent mapped to the maximum score).
+with an implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$ (i.e. a
+single root agent mapped to the maximum score).
 
 ### Reduction
 
@@ -390,7 +390,29 @@ objects; this is discussed below.[LINK]
 
 ### Attributes
 
-[MOVE] from "weights"
+In the above description there is no discussion on what the attributes should
+actually represent. In any usage scenario, they should at least satisfy the
+following properties:
+
+- The attribute should be some well-defined property that can be measured or
+  estimated. Any single value of the attribute should mean the same thing to
+  all agents, rather than being left up to agents' own interpretation.
+- Attribute values should not be treated as authoritative, since in our model
+  we only ever receive data from agents, whom we assume to have a limited view
+  of the entire network. There will always be inconsistency between different
+  agents; the system should account for this.
+
+In the case of perfectly honest agents, it is hoped that inconsistencies will
+work to cancel each other out. In the case of a system under attack, this will
+not be the case. However, only looking at the received values for attributes
+cannot distinguish between an attack and actual value changes; so this must be
+detected in some other way. Our project won't present any methods for doing
+this, but some sort of network structure analysis is a commonly-used strategy.
+
+The exact forms that we picked for our attributes are discussed elsewhere.[LINK]
+Generally, we used probability-based attributes, which are well-defined and can
+be estimated by agents. It also gives a simple way of combining attributes -
+multiplication, as well as a simple interval of values $[0, 1]$.
 
 ### Mutability of objects
 
@@ -402,8 +424,8 @@ the sharing of index objects via ptables to be a space-saving measure, not
 an act of delegation. However, this is not enforced by our system, which may
 become an issue when a real implementation is deployed.
 
-most of the "design" section (except tgraph semantics) will be added here
 
+[MOVE] most of the "design" section (except tgraph semantics) here, new sections
 
 
 ## Structured address space
@@ -414,41 +436,6 @@ tgraph semantics, and discussion about it.
 # Architecture
 
 ## Data structures
-
-### Weight attributes
-
-Structure
-:	$w \in W = [0,1]$
-Description
-:	Aids comparison and composition of multiple nodes or arcs.
-
-The precise meaning of a weight attribute is intrinsically linked with what the
-routing and the ranking algorithms do. Specific uses include:
-
-- priority of traversal of the routing and naming networks
-- ranking of query results
-
-Probability-based semantics seem quite robust and reliable, since these are
-objective properties and can (in theory) be estimated algorithmically. It also
-gives rise to a simple way of combining weights (multiplication), as well as a
-simple interval of values $[0, 1]$.^[Depending on the precise meaning of the
-weight, this could allow arcs with near-zero weights to be defined between
-nearly all pairs of nodes. However, there would be no point to this, since it
-would provide very little information (entropy). For a more in-depth discussion
-of this, see [zero-weight attributes](#zero-weight-attributes).]
-
-These weights allow algorithms to achieve a finer level of preference-choosing
-than would otherwise be possible. However, care must be taken not to depend on
-the precise values too much, or to treat the data as authoritative: even if
-malicious data can be excluded, and the weights are defined on some objective
-property, there will still be some degree of inconsistency between different
-objects, since each publisher can only calculate weights from their subjective
-(and limited) view of the entire network.
-
-The best practical solution would be to have an automatic way of calculating
-weight attributes. This would reduce the problem of human inaccuracy, as well
-as laziness: it's tedious to manually estimate a weight for every object we
-add to our collections. [EXTN]
 
 ### `index`
 
@@ -1361,14 +1348,6 @@ targeted acts of aggression.
   vector. (Otherwise, this was already possible with positive-only weights and
   the introduction of negative weights makes no difference.)
 - MORE
-
-### Corruption of weights
-
-Scoring systems are susceptible to manipulation... the usual path to corruption
-is that original semantics of the system are no longer reflected in algorithms
-for calculating and evaluating it. When this happens the system breaks...
-
-(eg. google's "trusted ads" are 2x likely to be corrupt)
 
 ## Combining data from multiple sources
 
