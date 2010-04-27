@@ -71,6 +71,7 @@ run:
 - `DIAG`: draw appropriate diagram here
 - `TODO`: open issue; resolve or explain why we leave it open
 - `MORE`: expand
+- `LESS`: reduce
 - `EXTN`: a pointer to an external research topic, either potential or existing
 - `REF`: add references for
 

@@ -29,10 +29,10 @@ under coercion[^censor2]. Privacy is also a concern: providers can monitor
 client usage of the service, and build up a profile of personal activities.
 
 [^censor1]: Google stopped returning results to CNET's website, because they
-published an article that the CEO disliked. <REF>
+published an article that the CEO disliked. [REF]
 
 [^censor2]: Google was also forced by the Chinese government to censor many
-search results from its service in China. <REF>
+search results from its service in China. [REF]
 
 Another issue is the depth and granularity of search topics. Most of us don't
 use a search provider for every item of information we need; instead, we often
@@ -88,6 +88,15 @@ peer-to-peer networks: Search methods, _Computer Networks_, **Volume 50**,
 **Issue 17**, 5 December 2006, Pages 3485-3521, ISSN 1389-1286, DOI:
 [10.1016/j.comnet.2006.02.001](http://www.sciencedirect.com/science/article/B6VRG-4JD0XYW-1/2/07e1ec0ba8cbe65f8f094cd99612b149).
 
+There is some existing research into p2p semantic search systems, eg. [^sem1]
+[^sem2]. However, none of these are currently deployed in real systems, and we
+were unaware of them during the initial stages of our project. A discussion of
+these systems and how they relate to our project is given in sections further
+below, after our system has been described first. [MORE]
+
+[^sem1]: [REF] REMINDIN'
+[^sem2]: [REF] Harnessing.
+
 
 # Preparation
 
@@ -138,14 +147,25 @@ useful content increases your own utility, even if this is not reciprocated.
 
 It is widely thought that decentralised systems are hard to design to be both
 secure and scalable, but nothing indicates that this impossible. Recent
-approaches based on social networks have been promising.<MORE>
+approaches based on social networks have been promising.[MORE]
 
 ## Initial observations
 
-DHTs are very efficient and scalable, most systems giving O(log n) performance
-(eg. expected number of hops for a lookup) in the size of the network. These
-use binary keys for addresses, which can represent well-defined address spaces
-with distance metrics, which allow for fairly simple routing algorithms.
+Our first ideas drew upon our experiences and pre-conceptions on how we humans
+try to locate things. Two themes stand out:
+
+- keeping knowledge on who knows what, and use this to direct query routes.
+- shifting the query subject to increase recall or precision - eg. broadening
+  increases the recall, and re-specialising increases the precision
+
+We also drew from our existing background knowledge on decentralised storage
+networks, such as Freenet and other Distributed Hash Tables. DHTs are very
+efficient and scalable, most systems giving O(log n) performance[^dhtperf] in
+the size of the network. These generally have a well-defined address space with
+a distance metric, where each address can be represented as a binary key. This
+allows for fairly simple, yet effective, routing algorithms.
+
+[^dhtperf]: eg. expected number of hops for a lookup
 
 A basic reason for this is that a numerical address space can be partitioned
 hierarchically, eg. by taking successively larger prefixes of an address. This
@@ -153,13 +173,14 @@ allows greedy routing to work effectively, ie. by finding the neighbour which
 shares the smallest partition with the desired target node (in IP routing, this
 is just "longest-prefix-match", which we are all familiar with).
 
-<DIAG> of hierarchical partitioning, <REF> kleinberg
+[DIAG] diagram of hierarchical partitioning, [REF] kleinberg "small world"
 
-We were impressed by this efficiency of structured address spaces, and decided
-to use draw upon this basic idea for our system design. Semantic tags are not
-as naturally structured as numerical addresses however, and a significant part
-of our time would be spent in developing a theoretical model of a partitionable
-and navigable space over tags.
+Two of these ideas seemed to fit well together - if we made the query-shifting
+aspect of "human" routing more precise, by using the idea of a structured
+address space, then maybe this would allow for a simple routing algorithm too.
+Semantic tags are not as naturally structured as numerical addresses however,
+and a significant part of our time would be spent in developing a theoretical
+model of a partitionable and navigable space over tags.
 
 We did not have any specific initial ideas on how to ensure the global reach of
 a search request. However, our DHT-inspired approach of using a global address
@@ -168,13 +189,13 @@ addresses to objects is deterministic, a global address scheme implies global
 reachability, but our final design does not satisfy the former requirement.)
 
 Research has shown that analysing social network structure can be effective in
-resisting malicious information. This is because social relationships are much
-more expensive to attack than naive indexing algorithms, such as TF-IDF (term
-frequency–inverse document frequency). Existing examples include Google's
-PageRank algorithm<REF> which measures a node's importance, trust metrics such
-as Advogato<REF>, and sybil detection algorithms such as SybilInfer<REF>.
+resisting malicious information. A major reason is because social relationships
+are much more expensive to attack than simple naive indexing algorithms, such
+as TF-IDF. Existing examples include Google's PageRank algorithm[REF], which
+measures a node's importance; trust metrics such as Advogato[REF]; and sybil
+detection algorithms such as SybilInfer[REF]. [MORE] restructure
 
-## Design assumptions
+## Working assumptions
 
 Since the aim of the project is fairly ambitious, we want to repeat as little
 work as possible. Therefore, we make various assumptions about the environment
@@ -200,6 +221,9 @@ lient must process it themselves, determine which objects to retrieve next,
 then retrieve those, etc. Hopefully, our design can be adapted into a recursive
 one without much effort, but we won't give special consideration to this.
 
+- style of query, keyword search ONLY [MORE]
+- nothing more complex, eg. intersections [MORE]
+
 # Theory
 
 Here, we discuss the theoretical ideas behind the system. We experimented with
@@ -213,57 +237,91 @@ for the social layer. During implementation it was realised that trust metrics
 are unable to deal with conflicts between `ptable`s, and after implementation
 we formulated the theoretical expression of the general problem, given below.
 The discussion on the various issues of aggregation as related to our design
-(eg. <LINK>) was actually done during the preparation stage, but it was only
+(eg. [LINK]) was actually done during the preparation stage, but it was only
 afterwards that we realised how this fit into the general theory.
 
 As such, there are a few aspects of our system design which may seem inelegant
 or imperfect in the context of the theories described below. Unfortunatly, we
 didn't have enough time to go back and refine them; but we have tried to point
-these out in the following discussions. None of these flaws, we think, are
-serious enough to defeat the entire work of the final design.
+these out in the appropriate parts of the architecture section. None of these
+flaws, we think, are serious enough to defeat the basic purpose of the design
+that we implemented.
 
 ## System design
 
-Distributed network of data structures maintained by multiple independent
-parties.
+We start off with the analogy of an index being a routing table. Tags are
+addresses, documents are hosts, and routes are semantic relationships between
+a tag (address) and a document (host). Scalable routing tables must compact
+information together. Instead of defining a route to every single host on the
+network, it is divided up into subnets, and a single route defined for the
+entire subnet. Similarly, indexes shouldn't point to other indexes using all
+possible relevant tags, but it should seek to summarise this information.
+Instead of listing an index under entries for several dozen instances of (eg.)
+strategy games, it could instead list only for the tag "strategy games".
 
-Most of the routing power of the system is delegated to the underlying social
-network and the innate information-retrieval heuristics we have as humans,
-rather than being inherently built into the system.
+A consistent and efficient model for this is developed in [structured address
+space](#structured-address-space). From that, we get another type of object, a
+tgraph, which defines relationships between tags. Following the principle of
+compacting information again, we need some way to route between these tgraphs.
+Now, at this point, you might worry that we'll continue with this ad-infinitum,
+inventing further layers of meta-objects; but no we stop here, and actually we
+use tgraphs to route between themselves. In other words, tgraphs also use tags
+as addresses, and list related tgraphs under entries for the appropriate tags.
 
-### Contact space
+To explain why this isn't a problem:
 
-<reduce>
+- The set of documents is much larger than the set of semantically distinct
+  tags. Therefore, a map of tags to related _tags_ gives us more information
+  about the entire network, than a map of tags to related _documents_.
+- More people are likely to have an idea of what a tag's related tags are,
+  since this is part of everyday communication. So a neighbourhood of tgraphs
+  will cover a larger section of the network.
+- The previous observation also applies to the initiator - most queries are
+  made with some understanding of what the tag means. In the worst case, the
+  system can just ask the user to supply their own "related tags".
 
-The initialisation algorithm assumes an abstract lower-level social network
-where it can look for friends to query for pointers onto the naming and routing
-planes.
+This principle can be summed up as "language unites". Just as the ubiquity of
+mathematics allows numerical addresses to be routed over, we exploit the semi-
+ubiquity of language to allow tags to be routed over.
+
+Since we are routing between documents, rather than people or hosts, we split
+the social network from the indexes network and the tgraphs network. This has
+other advantages, etc... [MORE]
 
 There are various existing strategies for bootstrapping a social network, such
 as sending invites through existing networks. This is the case for all social
 networks and is independent from the objectives of our project; we will assume
-that a well-established social network already exists.
+that a well-established social network already exists. [LESS]
 
 The network is modelled as a directed weighted graph; arcs represent a degree
 of trust by the source node in the target node, and arc weights are restricted
-to the interval $[0,1]$.
+to the interval $[0,1]$. [LESS]
 
 This model is sufficiently general for our purposes. Many social networking
 websites only recognise mutual friendship; this is a degenerate form of the
 model, where all weights are constant and all arcs have a reverse-direction
-counterpart.
+counterpart. [LESS]
 
-### Naming space
-
-tgraph semantics
-
-### Routing space
-
-index semantics
+[MORE] immutable data structures, etc
 
 ## Information aggregation
 
-Generic problem. statement.
+Trust metrics and sybil detection algorithms are useful, but cannot support
+applications that must obtain value judgements *about data* from agents.
+Define:
+
+Agent
+:	an entity which can give and receive score judgements
+Object
+:	an entity which can only receive value judgements
+
+Each agent is associated with two maps: an agent-score map, and an object-value
+map. This is a generalisation of the idea of trust metrics, which considers
+only the agent-score map.
+
+The general problem of information aggregation can then be formulated as:
+
+
 
 most of the "design" section (except tgraph semantics) will be added here
 
@@ -1367,5 +1425,14 @@ $$
 
 Generally, the behaviour of $\alpha_i$ are likely to depend highly on the use
 context, so this should be an additional parameter to the algorithm.
+
+
+# Comparison
+
+Our design differs considerably from these; for example, REMINDIN's design is
+more ontology focused, whereas ours draws from existing non-semantic routing
+principles, DHTs in particular. Our design also has a well-defined (albeit
+underdeveloped) model of the address space (unlike Harnessing). [MORE] also
+move this to a better place...
 
 
