@@ -95,7 +95,7 @@ class NodeSample(object):
 		self.order = j = len(self._list)
 
 		# init edges
-		arc_s, arc_t, edges, e_attr = edge_array(j, 'd', inverse)
+		arc_s, arc_t, edges, e_attr = edge_array(0x10001 if keep_dangle else j, 'd', inverse)
 
 		for (i, node) in enumerate(self._list):
 			for (dst, attr) in node.out.iteritems():

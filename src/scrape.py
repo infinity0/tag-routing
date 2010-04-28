@@ -93,7 +93,7 @@ class Scraper(object):
 		("tag", Round("Scraping tags", ["photo"], ["doc-tag.db", "doc-tag.len"])),
 		("inv_dt", Round("Inverting document-tag mapping", ["tag"], ["tag-doc.db"])),
 		("cluster", Round("Scraping clusters", ["tag"], ["tag-cluster.db"])),
-		("generate", Round("Generating data", ["inv_pd", "cluster"], ["p_idx.db", "p_tgr.db"])),
+		("generate", Round("Generating data", ["inv_pd", "cluster"], ["p_idx.db", "idx.graphml", "communities.map", "p_tgr.db", "tgr.graphml"])),
 		("writeall", Round("Writing objects", ["generate"], [])),
 		("examine", Round("Examine data", [], [])),
 	]
@@ -137,18 +137,23 @@ class Scraper(object):
 		return "[Scraper interactive console]\n>>> locals().keys()\n%r\n>>> self.ff\n%r" % (sorted(local.keys()), self.ff)
 
 
-	def outfp(self, name):
+	def fp_o(self, name):
 		fn = os.path.join(self.base, name)
 		fp = open(fn, 'w')
 		self.respush(fn, fp, 'w')
 		return fp
 
 
-	def infp(self, name):
+	def fp_i(self, name):
 		fn = os.path.join(self.base, name)
 		fp = open(fn)
 		self.respush(fn, fp, 'r')
 		return fp
+
+
+	def fp_exists(self, name):
+		fn = os.path.join(self.base, name)
+		return os.path.exists(fn)
 
 
 	def df(self, name):
@@ -185,7 +190,7 @@ class Scraper(object):
 		size = int(size)
 
 		socgr = self.ff.scrapeIDs(seed, size).graph
-		socgr.write_graphml(self.outfp("soc.graphml"))
+		socgr.write_graphml(self.fp_o("soc.graphml"))
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -194,10 +199,10 @@ class Scraper(object):
 		"""
 		Scrape the group network from the social network.
 		"""
-		users = Graph.Read(self.infp("soc.graphml")).vs["id"]
+		users = Graph.Read(self.fp_i("soc.graphml")).vs["id"]
 
 		gumap = self.ff.scrapeGroups(users)
-		dict_save(gumap, self.outfp("group-user.map"))
+		dict_save(gumap, self.fp_o("group-user.map"))
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -206,16 +211,16 @@ class Scraper(object):
 		"""
 		Scrape photos of the collected producers.
 		"""
-		socgr = Graph.Read(self.infp("soc.graphml"))
-		gumap = dict_load(self.infp("group-user.map"))
+		socgr = Graph.Read(self.fp_i("soc.graphml"))
+		gumap = dict_load(self.fp_i("group-user.map"))
 
 		pddb = self.db("prod-doc")
 		self.ff.commitUserPhotos(socgr.vs["id"], pddb)
 		self.ff.commitGroupPhotos(gumap, pddb)
 
 		self.ff.pruneProducers(socgr, gumap, pddb)
-		socgr.write_graphml(self.outfp("soc.graphml"))
-		dict_save(gumap, self.outfp("group-user.map"))
+		socgr.write_graphml(self.fp_o("soc.graphml"))
+		dict_save(gumap, self.fp_o("group-user.map"))
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -241,7 +246,7 @@ class Scraper(object):
 
 		photos = chain(*pddb.itervalues())
 		self.ff.commitPhotoTags(photos, dtdb)
-		print >>self.outfp("doc-tag.len"), len(dtdb)
+		print >>self.fp_o("doc-tag.len"), len(dtdb)
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -275,8 +280,8 @@ class Scraper(object):
 		"""
 		Generate objects from the scraped data.
 		"""
-		socgr = Graph.Read(self.infp("soc.graphml"))
-		gumap = dict_load(self.infp("group-user.map"))
+		socgr = Graph.Read(self.fp_i("soc.graphml"))
+		gumap = dict_load(self.fp_i("group-user.map"))
 
 		pddb = self.db("prod-doc")
 		dppb = self.db("doc-prod")
@@ -285,20 +290,33 @@ class Scraper(object):
 
 		phdb = self.db("p_idx", lrusize=self.cache)
 		phsb = self.db("p_idx_s")
-		phfn = self.df("p_idx")
 		pgdb = self.db("p_tgr", lrusize=self.cache)
 		pgsb = self.db("p_tgr_s")
-		pgfn = self.df("p_tgr")
 
-		sg = SampleGenerator(socgr, gumap, pddb, dppb, dtdb, tcdb, phdb, phsb, phfn, pgdb, pgsb, pgfn)
-		sg.generateIndexes()
-		sg.prodgr.write(self.outfp("idx.graphml"))
-		sg.generateTGraphs()
-		sg.sprdgr.write(self.outfp("tgr.graphml"))
+		sg = SampleGenerator(socgr, gumap, pddb, dppb, dtdb, tcdb, phdb, phsb, pgdb, pgsb)
+
+		if not self.fp_exists("idx.graphml"):
+			sg.generateIndexes()
+			sg.prodgr.write(self.fp_o("idx.graphml"))
+		else:
+			sg.prodgr = Graph.Read(self.fp_i("idx.graphml"))
+
+		if not self.fp_exists("communities.map"):
+			sg.generateCommunities()
+			dict_save(dict(enumerate(sg.comm)), self.fp_o("communities.map"))
+		else:
+			sg.comm = [v for k, v in sorted(dict_load(self.fp_i("communities.map")).iteritems())]
+
+		if not self.fp_exists("tgr.graphml"):
+			sg.generateTGraphs()
+			sg.sprdgr.write(self.fp_o("tgr.graphml"))
+		else:
+			sg.sprdgr = Graph.Read(self.fp_i("tgr.graphml"))
+
 		sg.generatePTables()
-		sg.ptabgr.write(self.outfp("ptb.graphml"))
+		sg.ptabgr.write(self.fp_o("ptb.graphml"))
 
-		dict_save(sg.ptbmap, self.outfp("ptables.map"))
+		dict_save(sg.ptbmap, self.fp_o("ptables.map"))
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
@@ -307,10 +325,10 @@ class Scraper(object):
 		"""
 		Write objects from the generated data.
 		"""
-		socgr = Graph.Read(self.infp("soc.graphml"))
-		gumap = dict_load(self.infp("group-user.map"))
+		socgr = Graph.Read(self.fp_i("soc.graphml"))
+		gumap = dict_load(self.fp_i("group-user.map"))
 
-		totalsize = int(self.infp("doc-tag.len").read())
+		totalsize = int(self.fp_i("doc-tag.len").read())
 		phdb = self.db("p_idx")
 		pgdb = self.db("p_tgr")
 
@@ -325,24 +343,24 @@ class Scraper(object):
 		"""
 		Examine objects through the python interactive interpreter.
 		"""
-		socgr = Graph.Read(self.infp("soc.graphml"))
-		gumap = dict_load(self.infp("group-user.map"))
+		socgr = Graph.Read(self.fp_i("soc.graphml"))
+		gumap = dict_load(self.fp_i("group-user.map"))
 
 		pddb = self.db("prod-doc")
 		dppb = self.db("doc-prod")
 		dtdb = self.db("doc-tag")
 		tddb = self.db("tag-doc")
 		tcdb = self.db("tag-cluster")
-		totalsize = int(self.infp("doc-tag.len").read())
+		totalsize = int(self.fp_i("doc-tag.len").read())
 
 		phdb = self.db("p_idx")
 		phsb = self.db("p_idx_s")
 		pgdb = self.db("p_tgr")
 		pgsb = self.db("p_tgr_s")
 
-		ptabgr = Graph.Read(self.infp("ptb.graphml"))
-		prodgr = Graph.Read(self.infp("idx.graphml"))
-		sprdgr = Graph.Read(self.infp("tgr.graphml"))
+		ptabgr = Graph.Read(self.fp_i("ptb.graphml"))
+		prodgr = Graph.Read(self.fp_i("idx.graphml"))
+		sprdgr = Graph.Read(self.fp_i("tgr.graphml"))
 
 		stats = SampleStats(pddb, dppb, dtdb, tddb, totalsize, ptabgr, prodgr, sprdgr)
 

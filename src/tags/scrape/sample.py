@@ -16,7 +16,7 @@ LOG = logging.getLogger(__name__)
 
 class SampleGenerator(object):
 
-	def __init__(self, socgr, gumap, pddb, dppb, dtdb, tcdb, phdb, phsb, phfn, pgdb, pgsb, pgfn):
+	def __init__(self, socgr, gumap, pddb, dppb, dtdb, tcdb, phdb, phsb, pgdb, pgsb):
 		"""
 		Create a new SampleGenerator from the given arguments
 
@@ -41,10 +41,8 @@ class SampleGenerator(object):
 
 		self.phdb = phdb
 		self.phsb = phsb
-		self.phfn = phfn
 		self.pgdb = pgdb
 		self.pgsb = pgsb
-		self.pgfn = pgfn
 
 		self.prodgr = None
 		self.sprdgr = None
@@ -187,29 +185,24 @@ class SampleGenerator(object):
 		"""
 		name = "tgraphs"
 
-		# generate docsets for new producers
-		self.comm = self.selectCommunities()
-		pmap = dict(("%04d" % i, pset) for i, pset in enumerate(self.comm))
+		tot_s = len(self.comm)
+		id_p = dict(("%04d" % i, i) for i in xrange(0, tot_s))
 
+		# generate docsets for new producers
 		def run_p(nsid):
 			prod = Producer(nsid)
-			prod.initContent(set(chain(*(self.pddb[self.prodgr.vs[p][NID]] for p in pmap[nsid]))), self.dtdb, True)
+			prod.initContent(set(chain(*(self.pddb[self.prodgr.vs[p][NID]] for p in self.comm[id_p[nsid]]))), self.dtdb, True)
 			prod.inferScores()
 			prod.repTag(cover=0) # TWEAK
 			self.pgdb[nsid] = prod
 			self.pgsb[nsid] = prod.state
-		exec_unique(pmap, self.pgsb, run_p, None, "%s db: producers" % name, LOG.info)
+		exec_unique(id_p, self.pgsb, run_p, None, "%s db: producers" % name, LOG.info)
 
 		tot_p = len(self.prodgr.vs)
-		tot_s = len(self.comm)
 		edges, arc_a = infer_arcs(self.comm, tot_p, ratio=2*log(1+tot_p)) # TWEAK # relax for tgraphs
-
-		id_p = dict(("%04d" % i, i) for i in xrange(0, tot_s))
 		self.sprdgr = Graph(tot_s, list(edges), directed=True,
 		  vertex_attrs={NID:list("%04d" % i for i in xrange(0, tot_s)), "label":[len(com) for com in self.comm]})
 		g = self.sprdgr
-		#g.write_dot("sprdgr.dot")
-		#g.write("sprdgr.graphml")
 		LOG.info("%s db: generated producer graph" % name)
 
 		# generate content arcs between producers
@@ -226,7 +219,7 @@ class SampleGenerator(object):
 		  "%s db: relations" % name, LOG.info, steps=0x10000)
 
 
-	def selectCommunities(self):
+	def generateCommunities(self):
 		"""
 		Generates a bunch of communities using various community detection
 		algorithms on the underlying producer graph, and selects the non-tiny
@@ -282,7 +275,8 @@ class SampleGenerator(object):
 
 		total = len(self.prodgr.vs)
 		# don't generate too big or too small
-		return [com for com in comm if log(1+total) <= len(com) <= total/log(1+total)]
+		self.comm = [list(com) for com in comm if log(1+total) <= len(com) <= total/log(1+total)]
+		return self.comm
 
 
 	def generatePTables(self):
