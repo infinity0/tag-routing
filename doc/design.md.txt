@@ -529,32 +529,41 @@ The system is partitioned into several layers, each dependent on the one below
 it. These layers (contact, naming, routing) correspond to the data planes
 introduced previously.
 
-Each layer follows a basic skeleton structure. It contains these components:
+Each layer follows a basic skeleton structure:
 
-- A set of data sources (agents' judgements). We allow for these being large
-  pieces of data, and so follow a model where only the parts relevant to the
-  query are loaded - the "local view" of the data source.
+- A set of data sources (agents and their judgements). We allow for these being
+  large pieces of data, and so follow a model where only the parts relevant to
+  the query are loaded - the "local view" of the data source.
 
-- Various algorithmic components to generate output for upper layers, which
-  includes at least a resource-value map. The components therefore include at
+- As input from lower layers, a seed map of data sources to their scores. For
+  the bottom layer (contact), this is implicitly $\{ a_0 : s_{max} \}$, as
+  described in [information aggregation](#information-aggregation). (Other
+  input might also be needed, depending on the specific layer.)
+
+- As output to upper layers, a resource-value map, or an object that is built
+  from such a map (in which case the map itself might not be made visible).
+
+- Various algorithmic components for constructing this output. These include at
   least a score-inferer and a value-composer (see [information aggregation -
   simplification](#simplification)).
 
-The upper layers are dependent on input data from lower layers, and can request
-more if necessary[^layerex]. The top layer (routing) receives requests from the
-user, and the bottom layer (contact) uses data from the social network only,
-independently of any query. Note that data retrieval can in theory proceed
-until the entire network has been searched. In practice, we only automatically
-send requests for more data until a set number of results have been returned;
-after that we wait for user input before retrieving more.
+Upper layers can request more input data from lower layers, if needed[^layex].
+The top layer (routing) receives requests from the user, and the bottom layer
+(contact) uses data from the social network only, independently of any query.
+Note that data retrieval can in theory proceed until the entire network has
+been searched. In practice, we only automatically send requests for more data
+until a set number of results have been returned; after that we wait for user
+input before retrieving more.
 
-[^layerex]: eg. if all available seed indexes have been exhausted, and nothing
+[^layex]: eg. if all available seed indexes have been exhausted, and nothing
 useful returned, we need to ask for more.
 
 The interaction between layers is co-ordinated by implementing each layer as a
 state machine - it can only receive requests when it's not already processing a
 previous one. This simplifies the execution logic, and reduces the number of
-critical objects that need to be synchronised on.
+critical objects that need to be synchronised on. The state machines generally
+follow the pattern of `[NEW --> AWAIT_INPUT <-> IDLE]`; specific cases are
+discussed below.
 
 DIAG information flow diagram
 
