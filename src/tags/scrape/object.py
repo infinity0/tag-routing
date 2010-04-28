@@ -247,7 +247,7 @@ class Producer(object):
 	def docgr(self):
 		assert False # prevent deletion
 
-	def __getstate__(self, level=3):
+	def __getstate__(self, level=9):
 		if self.__docgr is None and self._docgr is not None:
 			tag_scores = self._docgr.vs[NAA]
 			with TemporaryFile(dir=TMP_RAM) as fp:

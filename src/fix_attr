@@ -1,9 +1,33 @@
-#!/bin/sh
+#!/bin/bash
 
-while getopts d: opt
+set -o pipefail # forces us to use bash
+
+# test for q[n]
+echo "" | sed -e 'q169' > /dev/null
+if [ ! "$?" = "169" ]; then echo "You need GNU sed, or one that supports the q[n] command."; exit 254; fi
+
+# test for echo -e
+# if dash ever implements pipefail, we'll use dash, which doesn't have echo -e
+if [ -z "$(echo -e)" ]; then ECHO="echo -e"; else ECHO="echo"; fi
+CR="                \r"
+
+FIXUP=fixup
+REPWR=wrap
+REPGZ='gzip -c'
+REPMV='mv'
+REPEX='s/attr\.name="base_\(\w\)" attr\.type="double"/attr.name="base_\1" attr.type="int"/g'
+
+while getopts czd: opt
 do
 	case $opt in
 	d )	basedir=$OPTARG;;
+	z ) FIXUP=fixup_gz;;
+	c )
+		REPWR=wrap_co
+		REPGZ='tail -n0' # for some reason the stream needs to stay open
+		REPMV=true
+		REPEX=''
+		;;
 	esac
 done
 shift $(expr $OPTIND - 1)
@@ -11,11 +35,29 @@ shift $(expr $OPTIND - 1)
 if [ -n "$basedir" ]; then
 	if [ ! -d "$basedir" ]; then echo "not a directory: $basdir"; exit 1; fi
 	echo "patching ptables"; $0 "$basedir/ptb.graphml"
-	echo "patching tgraphs"; $0 "$basedir/tgr/"*
-	echo "patching indexes"; $0 "$basedir/idx/"*
+	echo "patching tgraphs"; $0 -z "$basedir/tgr/"*
+	echo "patching indexes"; $0 -z "$basedir/idx/"*
 	exit
 fi
 
-# igraph writes integer attributes as double attributes.
-# this changes all attribute names of the form base_? from double to int type
-exec sed -i 's/attr\.name="base_\(\w\)" attr\.type="double"/attr.name="base_\1" attr.type="int"/g' "$@"
+fixup() {
+	# igraph writes integer attributes as double attributes.
+	# this changes all attribute names of the form base_? from double to int type
+	# also, verifies last line is "</graphml>"
+	sed -e "$REPEX" -e '/<\/graphml>/,$ {q}' -e '$q1' "$@"
+}
+
+fixup_gz() { zcat "$1" | fixup | $REPGZ; }
+wrap() { $FIXUP "$1" > "$1.tmp"; }
+wrap_co() { $FIXUP "$1" > /dev/null; }
+
+for i in "$@"; do
+	$ECHO -n "${CR}processing $i"
+	if $REPWR "$i"; then
+		$REPMV "$i.tmp" "$i"
+	else
+		$ECHO "${CR}$i is corrupt"
+	fi
+done
+
+$ECHO "${CR}all files processed"
