@@ -105,6 +105,7 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 			switch (msg) {
 			case REQ_MORE_DATA:
 				if (scheme.isIncomplete() /* TODO HIGH or maybe if its distance is above some threshold */) {
+					// TODO HIGH possibly compare distance with scheme.getNearestTGraph()
 					// complete the next tag in the address scheme
 					execute(new Runnable() {
 						@Override public void run() {

@@ -358,6 +358,8 @@ Return
 	  r : v
 	  $$
 
+This can be represented as a table. [DIAG] cols = resources, rows = agents
+
 This is a generalisation of the idea of trust metrics, which has no conception
 of resources. Most trust metrics instead return an aggregated agent-score map,
 with an implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$ (i.e. a
@@ -529,23 +531,28 @@ The system is partitioned into several layers, each dependent on the one below
 it. These layers (contact, naming, routing) correspond to the data planes
 introduced previously.
 
-Each layer follows a basic skeleton structure:
+Each layer follows a basic skeletal structure:
 
 - A set of data sources (agents and their judgements). We allow for these being
   large pieces of data, and so follow a model where only the parts relevant to
-  the query are loaded - the "local view" of the data source.
+  the query are loaded - the "local view" of the data source. [MORE] maybe
 
 - As input from lower layers, a seed map of data sources to their scores. For
-  the bottom layer (contact), this is implicitly $\{ a_0 : s_{max} \}$, as
-  described in [information aggregation](#information-aggregation). (Other
-  input might also be needed, depending on the specific layer.)
+  the bottom layer (contact), this is implicitly $\{ a_0 : s_{max} \}$[^layin].
+  Other input might also be needed, depending on the specific layer.
+
+- An algorithm for reaching more agents and resources. Generally, this is done
+  by traversing out-arcs, starting with our seed data sources and the query
+  subject tag. The specific choice of which paths to follow first, depends on
+  both the layer and the implementation.
 
 - As output to upper layers, a resource-value map, or an object that is built
   from such a map (in which case the map itself might not be made visible).
 
 - Various algorithmic components for constructing this output. These include at
   least a score-inferer and a value-composer (see [information aggregation -
-  simplification](#simplification)).
+  simplification](#simplification)). These components are independent from the
+  layer itself, and may be replaced with more sophisticated components.
 
 Upper layers can request more input data from lower layers, if needed[^layex].
 The top layer (routing) receives requests from the user, and the bottom layer
@@ -555,102 +562,179 @@ been searched. In practice, we only automatically send requests for more data
 until a set number of results have been returned; after that we wait for user
 input before retrieving more.
 
-[^layex]: eg. if all available seed indexes have been exhausted, and nothing
-useful returned, we need to ask for more.
-
 The interaction between layers is co-ordinated by implementing each layer as a
 state machine - it cannot receive requests during a state transition (ie. when
 it is currently processing a previous request). This simplifies the execution
 logic, and reduces the number of critical objects that need to be synchronised
 on. The state machines generally follow the pattern of `[NEW --> AWAIT_INPUT
-<-> IDLE]`; specific cases are discussed below.
+<-> IDLE]`; specific cases are discussed in the _traversing objects_ sections
+of the various layers, below.
 
-DIAG information flow diagram
+[^layin]: as noted in [information aggregation](#information-aggregation)
 
-TODO rewrite this key for the new diagram
+[^layex]: eg. if all available seed indexes have been exhausted, and nothing
+useful returned, we need to ask for more.
 
-(Dot-arrow)
-:	Synchronous flow of information. When data is updated in the source node,
-	the target node is updated automatically.
-(Cirle-arrow)
-:	Event-triggered flow of information. When data is updated in the source
-	node, the target node is updated only when explicitly requested, or when
-	certain conditions are met.
-(Square-arrow)
-:	Asynchronous flow of information. When data is updated in the source node,
-	the target node is updated automatically, but the operation completes only
-	when all required data from the network has been downloaded.
+To give an overview of the layers and how they fit together, below is a table
+of the inputs and outputs of each layer:
 
-The integrity of the system can be observed in the diagram: information only
-move from lower layers to higher ones; within each layer, there are no cycles
-that consist solely of synchronous data flows (ie. no infinite loops).
+-------------------------------------------------------------------------------
+layer           requires                        provides
+--------------- ------------------------------- -------------------------------
+routing         seed indexes $H_s$              results table $\breveh$
+                address scheme $\breveT$
 
----------------------------------------------------
-                requires    stores      provides
---------------- ----------- ----------- -----------
-routing         $H_s$,      $\breveQ$,  $\breveh$
-                $\breveT$   $\breveR$,
-                $\breveg$   $\breveH$,
-                            $\breveH_*$
+naming          seed tgraphs $G_s$              $\breveT$
+                query subject tag $t_0$
 
-naming          $t_0$,      $\breveG$,  $\breveT$,
-                $G_s$       $\breveG_*$ $\breveg$
+contact         own identity $z_0$              $G_s$, $H_s$
+-------------------------------------------------------------------------------
 
-contact         $z$         $P_s$       $G_s$,
-                                        $H_s$
----------------------------------------------------
-
-Table: Data dependency between layers
-
-TODO maybe talk about sending/receiving requests, making this parallel, etc
+Table: data dependency between layers [DIAG] pandoc table formatting not-so-good here
 
 ### Contact
 
 Requires
-:	- $z$ from the user
+:	- implicit $z_0$, from the user
 Provides
 :	- $G_s$ to [naming](#naming)
 	- $H_s$ to [routing](#routing)
 
-MORE blah blah, why etc
+#### Aggregating information
 
-Note that this layer is independent of any query, so this can be done in the
-background at any time. We can cache data for the layers above, which will
-help to increase performance for future queries. etc...
+Agent
+:	social identities
+Resource
+:	tgraphs, indexes
+Seed map
+:	the input seed identity $z_0$ mapped to the maximum score.
+Score-inferer
+:	just a trust metric [MORE]
+	Inferring attacks from the link structure of a social network is outside the
+	scope of this project. More advanced algorithms exist; a real implementation of
+	this system would be able to use the latest available techniques. [REF][EXTN]
+Value-composer
+:	uses mean value-composer; see "practical details" [LINK]
 
-MORE on incremental updates etc.
+#### Constructing output
 
-#### Obtaining initial ptables
+We have two outputs to send to two different layers; we just split up our
+aggregate resource-value map by object type.
 
-Assume a given identity is already connected to the social network. MORE
+#### Traversing objects
 
-For our purposes, we need an algorithm which takes our own identity as input,
-and outputs a set of seed identities for our routing algorithm, with a score
-associated with each identity.
+This is done by the trust metric algorithm. [MORE][REF][EXTN]
+
+### Naming
+
+Requires
+:	- $t_0$ from the user
+	- $G_s$ from [contact](#contact)
+Provides
+:	- $\breveT$ to [routing](#routing)
+
+#### Aggregating information
+
+Agent
+:	tgraphs
+Resource
+:	tags (nodes), tag-tag relationships (arcs)
+Seed map
+:	the input map $G_s$
+Score-inferer
+:	see [object-object links](#object-object-links) [MORE]
+Value-composer
+:	uses mean value-composer; see "practical details" [LINK]
+
+#### Constructing output
+
+We have two outputs to send to two different layers; we just split up our
+aggregate resource-value map by object type.
+
+[Rewrite]
+:	Our prototype uses Dijkstra's algorithm. Each step $n$ adds a node to
+	$\breveT$; for this, we need to know the distances to all the out-nodes of
+	the shortest-path tree so far, ie. $t_i$ must be complete in $\breveg$ for
+	all $i < n$. TODO could split this into another module, allowing other
+	methods of ranking to be used.
+
+	1. If we reach a $t$ for which we don't have the data to continue, we pause
+	   the algorithm, and give the routing layer the option to request that we
+	   add another tag to $\breveT$ (by completing $t$ and continuing).
+	2. For each `tgraph` node $g$ in $\breveT$, we give the routing layer the
+	   option to request $g$ be added as a data source.
+
+Distance metric
 
 Given
-:	- our own identity
+:	- an arc $e = (v_s, v_t)$, and its weight $w_e$
+	- a node $v_s$, and its weight $u_s$
+	- a node $v_t$, and its weight $u_t$
 Return
-:	- a set of seed identities, with corresponding scores
+:	- a "distance" metric $d(v_s, v_t)$.
 
-A basic implementation of this would be to return all nodes up to 2 hops away
-from our own node. This would grab a decent number of nodes whilst offering
-a basic level of protection against the most common and simple attacks. A
-variation would be to filter out the 2-hop nodes that share very few mutual
-1-hop friends with us (by some standard); this would be slightly harder to
-attack.
+The distance metric should give some indication of how much $v_s$, $v_t$ are
+related to each other, with lower values representing a closer relationship.
+Furthermore, this should be additive, meaning that given $e_1 = (v_0, v_1)$,
+$e_2 = (v_1, v_2)$, and no further information (ie. assuming that $(e_2, v_0)$,
+$(e_1, v_2)$ are pairwise independent), then $d(v_0, v_2) = d(e_0) + d(e_1)$.
 
-Inferring attacks from the link structure of a social network is outside the
-scope of this project. More advanced algorithms exist; a real implementation of
-this system would be able to use the latest available techniques. [REF][EXTN]
+see [`tgraph` semantics](#tgraph-semantics) - want to maximise $u_t.w_e$, etc
 
-#### Combining `ptable` objects
+so for any $e = (t_0, t)$, let $d(e) = -\log(w_e.u_t)$. MORE pad this out
+
+#### Traversing objects
+
+see "practical details" [LINK]
+
+### Routing
+
+DIAG
+
+Requires
+:	- $H_s$ from [contact](#contact)
+	- $\breveT$ from [naming](#naming)
+Provides
+:	- $\breveh$ to the user
+
+#### Aggregating information
+
+Agent
+:	indexes
+Resource
+:	tag-document relationships (arcs)
+Seed map
+:	the input map $H_s$
+Score-inferer
+:	see [object-object links](#object-object-links) [MORE]
+Value-composer
+:	uses mean value-composer; see "practical details" [LINK]
+
+#### Constructing output
+
+ranking...
 
 Given
-:	- a map $P_s = \{p \mapsto u_p\}$ of `ptable`s to their identity scores
+:	- $\breveg = \{ t \mapsto w \}$
+	- $\breveH = \{ h \mapsto w \}$
+	- $\breveR = \{ h \mapsto \{ t \mapsto \{ d \mapsto w \} \} \}$
 Return
-:	- a `ptable` $p_s$ that "combines" this information, with $\dom p_s =
-	  \bigcup \dom p$.
+:	- $\breveh = \{(d, w_d)\}$, a results map of documents to their weights.
+
+TODO
+
+#### Traversing objects
+
+see "practical details" [LINK]
+
+
+# Practical details
+
+## System components
+
+### Using the naive value-composer
+
+#### On ptables
 
 Define $G_s = \dom p_s \cap G$ and $H_s = \dom p_s \cap H$. (Note that $G_s +
 H_s = \dom p_s$).
@@ -692,20 +776,73 @@ Due to these reasons, for our prototype we simply use a low constant, $2^{-4}$.
 This is **not** theoretically sound, but should work adequately in the majority
 of cases, where there are few disagreements or malicious attacks.
 
-### Naming
+#### On tgraphs
 
-DIAG
+Given
+:	- $\breveG$
+	- a node $v$, or an arc $e$
+Return
+:	- the combined weight $w_v$ or $w_e$, to be used in $\breveg$.
 
-Requires
-:	- $t_0$ from the user
-	- $G_s$ from [contact](#contact)
-Provides
-:	- $\breveT$ to [routing](#routing)
-	- $\breveg$ to [routing](#routing)
+A basic implementation is just to calculate the score-weighted average value of
+$v$ or $t$.
 
-The purpose of the naming layer is to provide a routing scheme to the routing
-layer. This scheme is dynamic, and updates are requesting by the routing layer
-when it needs more information. The query state consists of these objects:
+TODO semantics of tag-tgraph arcs
+
+There are two cases to consider:
+
+Weight of a node $v$
+:	With `tgraph`s, the absolute weight of a single node does not determine
+	its usefulness to the naming layer, but the "distance" between that node
+	and the given query tag $t_0$. To this end, `tgraph`s are *supposed* to
+	include any tag it knows about, including low-weight ones. Therefore, we
+	assume that the absence of a tag *always* means "missing information", and
+	let $\alpha_1(g, v) = 0$.
+
+	We need to justify that the distribution of weight estimates is roughly
+	even. TODO (see incorporate notes from below)
+
+Weight of an arc $e$
+:	We use the standard [mean weight](#mean-weight-of-an-arc) algorithm. This
+	requires us to provide an $\alpha_1, \alpha_2$; these take low, high values
+	respectively - see the [analysis](#zero-weight-attributes) for details.
+
+	We need to justify that the distribution of weight estimates is roughly
+	even. TODO
+
+For node-weights, the "important" thing is not the value itself, but rather
+where the most significant bit occurs. In other words, the outcome-entropy of
+(D tagged by v), equal to -log(P(D tagged by v)).
+
+When we combine saturations from various sources, then I think it's more
+"correct" to take the mean of the entropy, and not the saturation. I'm not sure
+how to justify this rigorously, but intuitively:
+
+- if we have 3 sources giving saturations of (1, epsilon, epsilon), the mean
+saturation is 1/3, whereas the actual value is likely to be nearer epsilon.
+
+Is there a more formal way of saying this?
+
+Also, "mean entropy" is theoretically open to manipulation, since entropy can
+go all the way to infinity. But I don't think this is too much of a problem,
+because:
+
+- there is no incentive to manipulate these node-weights, since a tag must be
+well-related to other tags for the search algorithm to be affected; and
+arc-weights are not susceptible to this kind of manipulation
+- CPUs practically have finite-size representations of numbers, which limits
+the entropy to be proportional to the width (in bits) of the representation.
+Also, we could do this manually.
+
+#### On indexes
+
+...[MORE]
+
+### Traversing objects
+
+#### Naming layer
+
+[REWRITE] this section
 
 $\breveG_* = \{ g \mapsto \ddotg \}$
 :	- a map of **data sources**, to the local view of each source.
@@ -798,125 +935,9 @@ Sync: $\breveG \to^{\breveG_*} \breveg$
 
 Sync: $\breveg \to \breveT$
 
-:	Our prototype uses Dijkstra's algorithm. Each step $n$ adds a node to
-	$\breveT$; for this, we need to know the distances to all the out-nodes of
-	the shortest-path tree so far, ie. $t_i$ must be complete in $\breveg$ for
-	all $i < n$. TODO could split this into another module, allowing other
-	methods of ranking to be used.
-
-	1. If we reach a $t$ for which we don't have the data to continue, we pause
-	   the algorithm, and give the routing layer the option to request that we
-	   add another tag to $\breveT$ (by completing $t$ and continuing).
-	2. For each `tgraph` node $g$ in $\breveT$, we give the routing layer the
-	   option to request $g$ be added as a data source.
-
 	(The numberings correspond to the "event trigger" specs above.)
 
-#### Combining `tgraph` objects
-
-Given
-:	- $\breveG$
-	- a node $v$, or an arc $e$
-Return
-:	- the combined weight $w_v$ or $w_e$, to be used in $\breveg$.
-
-A basic implementation is just to calculate the score-weighted average value of
-$v$ or $t$.
-
-TODO semantics of tag-tgraph arcs
-
-There are two cases to consider:
-
-Weight of a node $v$
-:	With `tgraph`s, the absolute weight of a single node does not determine
-	its usefulness to the naming layer, but the "distance" between that node
-	and the given query tag $t_0$. To this end, `tgraph`s are *supposed* to
-	include any tag it knows about, including low-weight ones. Therefore, we
-	assume that the absence of a tag *always* means "missing information", and
-	let $\alpha_1(g, v) = 0$.
-
-	We need to justify that the distribution of weight estimates is roughly
-	even. TODO (see incorporate notes from below)
-
-Weight of an arc $e$
-:	We use the standard [mean weight](#mean-weight-of-an-arc) algorithm. This
-	requires us to provide an $\alpha_1, \alpha_2$; these take low, high values
-	respectively - see the [analysis](#zero-weight-attributes) for details.
-
-	We need to justify that the distribution of weight estimates is roughly
-	even. TODO
-
-For node-weights, the "important" thing is not the value itself, but rather
-where the most significant bit occurs. In other words, the outcome-entropy of
-(D tagged by v), equal to -log(P(D tagged by v)).
-
-When we combine saturations from various sources, then I think it's more
-"correct" to take the mean of the entropy, and not the saturation. I'm not sure
-how to justify this rigorously, but intuitively:
-
-- if we have 3 sources giving saturations of (1, epsilon, epsilon), the mean
-saturation is 1/3, whereas the actual value is likely to be nearer epsilon.
-
-Is there a more formal way of saying this?
-
-Also, "mean entropy" is theoretically open to manipulation, since entropy can
-go all the way to infinity. But I don't think this is too much of a problem,
-because:
-
-- there is no incentive to manipulate these node-weights, since a tag must be
-well-related to other tags for the search algorithm to be affected; and
-arc-weights are not susceptible to this kind of manipulation
-- CPUs practically have finite-size representations of numbers, which limits
-the entropy to be proportional to the width (in bits) of the representation.
-Also, we could do this manually.
-
-#### Distance between tags
-
-Given
-:	- an arc $e = (v_s, v_t)$, and its weight $w_e$
-	- a node $v_s$, and its weight $u_s$
-	- a node $v_t$, and its weight $u_t$
-Return
-:	- a "distance" metric $d(v_s, v_t)$.
-
-The distance metric should give some indication of how much $v_s$, $v_t$ are
-related to each other, with lower values representing a closer relationship.
-Furthermore, this should be additive, meaning that given $e_1 = (v_0, v_1)$,
-$e_2 = (v_1, v_2)$, and no further information (ie. assuming that $(e_2, v_0)$,
-$(e_1, v_2)$ are pairwise independent), then $d(v_0, v_2) = d(e_0) + d(e_1)$.
-
-see [`tgraph` semantics](#tgraph-semantics) - want to maximise $u_t.w_e$, etc
-
-so for any $e = (t_0, t)$, let $d(e) = -\log(w_e.u_t)$. MORE pad this out
-
-#### Weight of new `tgraph`
-
-TODO resync spec with new routing layer architecture
-
-Given
-:	- $\breveG_*$
-	- $g \in \dom \breveG_* \notin \dom \breveG$
-Return
-:	- a weight $w_g$ to assign to $g$ in $\breveG$
-
-TODO
-
-see [object-object links](#object-object-links)
-
-### Routing
-
-DIAG
-
-Requires
-:	- $H_s$ from [contact](#contact)
-	- $\breveT$ from [naming](#naming)
-	- $\breveg$ from [naming](#naming)
-Provides
-:	- $\breveh$ to the user
-
-The purpose of the routing layer is to retrieve results and provide these to
-the user. The results set is dynamic, and updates are requested by the user
-when it needs more information. The query state consists of these objects:
+#### Routing layer
 
 $\breveH_* = \{ h \mapsto \ddoth_H \}$
 :	- a map of **data sources** to a partial local view of each source.
@@ -1016,29 +1037,6 @@ search queries succeed, independent of $w_e.u_t$.
 
 TODO rewrite this...
 
-#### Weight of new `index`
-
-Given
-:	- $\breveH_*$
-	- $h \in \dom \breveH_* \notin \dom \breveH$
-Return
-:	- a weight $w_h$ to assign to $h$ in $\breveH$
-
-TODO
-
-see [object-object links](#object-object-links)
-
-#### Ranking results
-
-Given
-:	- $\breveg = \{ t \mapsto w \}$
-	- $\breveH = \{ h \mapsto w \}$
-	- $\breveR = \{ h \mapsto \{ t \mapsto \{ d \mapsto w \} \} \}$
-Return
-:	- $\breveh = \{(d, w_d)\}$, a results map of documents to their weights.
-
-TODO
-
 ## Optimisation
 
 ### Data structures
@@ -1095,11 +1093,16 @@ of a single node, or its out-arcs.
 
 - eg. cache commonly-retrieved objects like `ptable`s
 
+The contact layer is independent of any query, so this can be done in the background
+at any time. We can cache data for the layers above, which will help to
+increase performance for future queries. etc...
+
+MORE on incremental updates etc.
+
 ### Incremental state updates
 
 - eg. when updating $\breveG$ from $\breveG_*$, we should only need to
   recalculate the parts that are affected by the updated....
-
 
 # Design
 
