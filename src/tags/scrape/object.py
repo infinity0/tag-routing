@@ -548,7 +548,7 @@ class Producer(object):
 			g.vs[self.base_s:][NAT] = n_attr
 
 		# init arcs
-		arc_s, arc_t, edges, e_attr = edge_array(len(self.id_t), 'd')
+		arc_s, arc_t, edges, e_attr = edge_array(self.base_p+len(self.id_p), 'd')
 		for i, (nsid, rel) in enumerate(pmap.iteritems()):
 			pid = self.base_p+i
 			for tag, attr in rel.arcs.iteritems():

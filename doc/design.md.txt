@@ -210,12 +210,12 @@ both offer ways to retrieve objects based on a globally unique address. Without
 this primitive we cannot continue at all; data has to be stored somewhere, and
 it has to be accessible to an arbitrary subset of the network.
 
-Additionally, we will assume that objects are always available. In a real
-network, this can be implemented with proxy services (eg. servers which hire
-storage space out and guarantee continuous access to this), or it might be a
-property of the storage network (eg. DHTs). This simplifies our design, since
-it allows us to avoid dealing with the issue of churn, by delegating it to an
-independent external component.
+Additionally, we assume that objects are always available. In a real network,
+this can be implemented with proxy services (eg. servers which hire storage
+space out and guarantee continuous access to this), or it might be a property
+of the storage network (eg. DHTs). This simplifies our design, since it allows
+us to avoid dealing with the issue of churn, by delegating it to an independent
+external component.
 
 This also forces us to consider an iterative routing algorithm rather than a
 recursive one. Since data cannot forward queries onto other pieces of data, a
@@ -318,11 +318,15 @@ the sharing of index objects via ptables to be a space-saving measure, not an
 act of delegation. However, this is not enforced by our system, which may
 become an issue when a real implementation is deployed.
 
+eg. on freenet, darknet is supposed to be an f2f network, but during the early
+stages of the network people added strangers as "friends" in the belief that it
+would increase network performance.
+
 ### Data collection
 
 [MORE] our project only considers how routing is to be done, it doesn't
-consider how the routing tables would actually be formed. However, model is
-fairly simple, etc etc
+consider how the routing tables would actually be created and maintained.
+However, model is fairly simple, etc etc [EXTN]
 
 ## Information aggregation
 
@@ -364,7 +368,7 @@ single root agent mapped to the maximum score).
 The above formulation of the problem can be usefully divided up into two
 components:
 
-**1. Inferring scores for all agents**:
+**1. Infer scores for all agents**:
 
 Given
 :	- a set of agents, with their agent-score maps
@@ -374,15 +378,17 @@ Return
 
 and
 
-**2. Aggregating values for all resources, from the scored agents**:
+**2. Compose values for all resources, from the scored agents**:
 
 Given
 :	- a set of agents, with their inferred score, and resource-value maps
 Return
 :	- a target resource-value map
 
-Our prototype implementation of the system follows this approach, and uses
-fairly simple and naive algorithms to solve each of the two components.
+We follow this approach in our project. Note however, that even these simpler
+problems are fairly deep, and developing robust techniques to solve them could
+take up a whole other project. Our prototype implemenation only attempts naive
+and simple solutions to each component. [EXTN]
 
 ### Use within our design
 
@@ -422,14 +428,14 @@ any usage scenario, they should at least satisfy the following properties:
 In the case of perfectly honest agents, it is hoped that inconsistencies will
 work to cancel each other out. In the case of a system under attack, this will
 not be the case. However, only looking at the received values for attributes
-cannot distinguish between an attack and actual value changes; so this must be
-detected in some other way. Our project won't present any methods for doing
-this, but some sort of network structure analysis is a commonly-used strategy.
+cannot distinguish between an attack and actual value differences; so this must
+be detected in some other way. Our project won't present any methods for doing
+this, but network structure analysis is a common approach type.[EXTN]
 
 The exact forms that we picked for our attributes are discussed elsewhere.[LINK]
-Generally, we used probability-based attributes, which are well-defined and can
+Generally, we use probability-based attributes, which are well-defined and can
 be estimated by agents. It also gives a simple way of combining attributes -
-multiplication, as well as a simple space of values - $[0, 1]$.
+multiplication - as well as a simple space of values - $[0, 1]$.
 
 ## Structured address space
 
@@ -464,18 +470,6 @@ A mapping indicates some semantic relevance between the tag and the document,
 and a subjective judgement that a person searching for the tag did intend to
 retrieve information provided by the document.
 
-The analogy to typical navigable networks is that each tag is like an address;
-and each `index` is like a routing table, mapping addresses to target entities.
-^[Most "addresses" in this network will have multiple targets, but this is an
-unimportant detail; eg. the internet has multicast addresses too.] So, we'll
-call the network of `index` objects the "routing" plane.
-
-Navigable networks have a well-defined addressing scheme, which enables routing
-through a series of addresses to reach the target. For example, numerical
-addresses (eg. IP) are naturally hierarchical, and can be prefix-matched upon
-in a routing table. Tags however, do not intrinsically encode such information,
-so we need an additional layer to provide it.
-
 ### `tgraph`
 
 DIAG
@@ -501,20 +495,6 @@ from a tag to a tag or `tgraph` indicates a semantic relationship between them,
 and a judgement that the target can be used in some appropriate way to satisfy
 a query for the source tag.
 
-From a given root tag, we can reach other tags and `tgraph`s by following the
-arcs between them. Weights on the arcs and nodes help us to adapt the traversal
-order to our purposes.
-
-The analogy to typical navigable networks is that the graph of tags provides
-the same service as an addressing scheme or a name resolution system: a method
-for navigating between related addresses. This works beyond the routing level,
-so we'll call the network of `tgraph` objects the "naming" plane.
-
-Conceptually, a tag can be thought of as a "pure" name - ie. the name carries
-no information about its referent, such as its location). IP addresses are the
-opposite, and DNS names are somewhere in between the two. DNS names need to be
-resolved; likewise, we have an additional system here for tags.
-
 ### `ptable`
 
 DIAG
@@ -538,9 +518,7 @@ indexes and tgraphs to use for routing purposes.
 This is intended to provide an attack-resistant "bootstrapping" path onto the
 routing and naming planes.
 
-MORE
-
-## Algorithms
+## Abstraction layers
 
 Since network latency is far greater than processing latency, we design these
 algorithms to be inherently concurrent. Operations involving retrieval of
@@ -548,24 +526,35 @@ remote objects are non-blocking and allow other work to be done whilst waiting
 for its results.
 
 The system is partitioned into several layers, each dependent on the one below
-it. The lower layers (contact, naming, routing) correspond to the data
-planes introduced previously; the top layer provides the results to the user's
-original query, and interacts directly with the user.
+it. These layers (contact, naming, routing) correspond to the data planes
+introduced previously.
 
-Each layer has an interface for interacting with the layer above it, and a
-framework that co-ordinates between the various tasks that make up the layer.
-Some are quite general and complex, and have a wide range of applications - so
-these are specified as upgradable modules. For our prototype, we only suggest
-some basic heuristics for these, and briefly comment on their reliability and
-usefulness; better solutions can be explored by future projects.[EXTN]
+Each layer follows a basic skeleton structure. It contains these components:
 
-The lower layers retrieve and process data from the appropriate plane. The
-underlying algorithms have no "natural" termination condition; data retrieval
-can theoretically proceed until the entire network has been searched. In
-practice, each layer does not do this spontaneously; instead, they respond to
-requests for data from the layer above. By default, we discontinue sending new
-requests in all layers after a given number of results have been returned, and
-allow the user to resume from the paused state, resources permitting.
+- A set of data sources (agents' judgements). We allow for these being large
+  pieces of data, and so follow a model where only the parts relevant to the
+  query are loaded - the "local view" of the data source.
+
+- Various algorithmic components to generate output for upper layers, which
+  includes at least a resource-value map. The components therefore include at
+  least a score-inferer and a value-composer (see [information aggregation -
+  simplification](#simplification)).
+
+The upper layers are dependent on input data from lower layers, and can request
+more if necessary[^layerex]. The top layer (routing) receives requests from the
+user, and the bottom layer (contact) uses data from the social network only,
+independently of any query. Note that data retrieval can in theory proceed
+until the entire network has been searched. In practice, we only automatically
+send requests for more data until a set number of results have been returned;
+after that we wait for user input before retrieving more.
+
+[^layerex]: eg. if all available seed indexes have been exhausted, and nothing
+useful returned, we need to ask for more.
+
+The interaction between layers is co-ordinated by implementing each layer as a
+state machine - it can only receive requests when it's not already processing a
+previous one. This simplifies the execution logic, and reduces the number of
+critical objects that need to be synchronised on.
 
 DIAG information flow diagram
 
@@ -1121,7 +1110,15 @@ Our first thought was to have arcs represent a relationship from a more
   `tgraph`s.^[Within a `tgraph`, arc sources ("reverse" pointers) could in
   theory be calculated quickly, depending on the implementation.]
 
-MORE
+The analogy to typical navigable networks is that each tag is like an address;
+and each `index` is like a routing table, mapping addresses to target entities.
+^[Most "addresses" in this network will have multiple targets, but this is an
+unimportant detail; eg. the internet has multicast addresses too.] So, we'll
+call the network of `index` objects the "routing" plane.
+(this is actually an important detail and why global reach is not guaranteed
+for our system).
+
+...
 
 The following model addresses these shortcomings.
 
