@@ -559,11 +559,11 @@ input before retrieving more.
 useful returned, we need to ask for more.
 
 The interaction between layers is co-ordinated by implementing each layer as a
-state machine - it can only receive requests when it's not already processing a
-previous one. This simplifies the execution logic, and reduces the number of
-critical objects that need to be synchronised on. The state machines generally
-follow the pattern of `[NEW --> AWAIT_INPUT <-> IDLE]`; specific cases are
-discussed below.
+state machine - it cannot receive requests during a state transition (ie. when
+it is currently processing a previous request). This simplifies the execution
+logic, and reduces the number of critical objects that need to be synchronised
+on. The state machines generally follow the pattern of `[NEW --> AWAIT_INPUT
+<-> IDLE]`; specific cases are discussed below.
 
 DIAG information flow diagram
 
