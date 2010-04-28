@@ -441,7 +441,105 @@ multiplication - as well as a simple space of values - $[0, 1]$.
 
 ## Structured address space
 
-tgraph semantics, and discussion about it.
+[LESS]
+
+The routing algorithm needs some way of inferring which tags (out of a related
+set) are more "general" or "specific".
+
+Our first thought was to have arcs represent a relationship from a more
+"specific" tag to a more "general" tag. However, this is problematic since:
+
+- The relationship is supposed to be transitive, but our graph can potentially
+  contain cycles, especially when pulling in data from several sources. We
+  don't want to be tied up devising a complex algorithm to resolve this.
+- We potentially would like to traverse from general to specific tags, as well
+  as vice versa; and arc targets are the only mechanism of doing this between
+  `tgraph`s.^[Within a `tgraph`, arc sources ("reverse" pointers) could in
+  theory be calculated quickly, depending on the implementation.]
+
+The analogy to typical navigable networks is that each tag is like an address;
+and each `index` is like a routing table, mapping addresses to target entities.
+^[Most "addresses" in this network will have multiple targets, but this is an
+unimportant detail; eg. the internet has multicast addresses too.] So, we'll
+call the network of `index` objects the "routing" plane.
+(this is actually an important detail and why global reach is not guaranteed
+for our system).
+
+...
+
+The following model addresses these shortcomings.
+
+For a given tag $t$, let $D(t) = \{ d \in D : d \textrm{ tagged with } t \}$.
+Define the "saturation" of $t$ to be $\frac{|D(t)|}{|D|}$, and the "relevance"
+of $t$ to $t_0$ to be $\frac{|D(t) \cap D(t_0)|}{|D(t)|}$. An equivalent model
+is to treat $D$ as a random variable, evenly distributed over all documents in
+the network. For a given tag $t$, the saturation of $t$ is equivalent to $P(D
+\textrm{ tagged with } t)$, which we shorten to $P(t)$ for convenience.
+Likewise, the relevance of $t$ to $t_0$ is equivalent to $P(t_0|t)$.
+
+We then use these to define:
+
+- the weight $u_t$ of a node $t$ to be $P(t)$, its saturation.
+- the weight $w_e$ of an arc $e = (t_0, t)$ to be $P(t_0|t)$, the relevance of
+  the target tag to the source tag.
+
+These values are straightforward to calculate, so this process can (in theory)
+be automated. Note also that given $u_{t_0}$, $u_t$ and $w_e$, the weight of
+$e^- = (t, t_0)$ can be derived using Bayes' theorem, as $w_e.u_t/u_{t_0}$. If
+the `tgraph` implementation allows quick lookups of an arc both by its source
+node and its target node, then it might be sensible to not explicitly define
+the weight of the reverse arc.
+
+We can think of `tgraph` $g$ (containing tags $t_i$), as a single tag over all
+documents tagged by any $t_i$, and define saturation and relevance accordingly.
+That is, $P(g) = P(\bigcup t_i)$ and $P(t_0|g) = P(t_0|\bigcup t_i)$. Note that
+these values give no information on how well-connected a `tgraph` is within the
+naming network. However, a `tgraph` consists of highly compressed data on a
+large section of the storage network, so in practice the vast majority of our
+naming needs should be satisfied by a small neighbourhood around our seed set.
+Choosing between `tgraph`s probably won't be very important, so for now we
+ignore this deficiency.[EXTN]
+
+Now for the analogy to typical navigable networks: a tag $t$ can be thought of
+as defining a subnetwork - the set of documents tagged with $t$. $P(t)$ tells
+us the size of this subnetwork, and $P(t_0|t)$ tells us the proximity between
+two subnetworks.
+
+For example, $P(t)$ roughly corresponds to the CIDR routing prefix used by the
+current internet. In ring-topology networks, such as some DHTs, neighbours are
+matched by the numerical value of the network address; by contrast, internet
+routers update each other with their nearest neighbours; and here, we provide
+this information in the form of $P(t_0|t)$.
+
+In routing terms, if our end target is $t_0$, then we want to pick a $t$ such
+that $P(t_0 \cap t)$ is maximised - for the above model, this is $u_t.w_e$.
+
+This raises the question of why we don't just define $w_e$ as $P(t_0 \cap t)$,
+which would also remove the need to define $u_t$. However, this would destroy
+our ability to quickly look up $P(t)$ and $P(t_0|t)$. On a distributed network,
+we need to be able to combine data from multiple sources; algorithms to do this
+may well need knowledge of the separate values.
+
+### Distance metric
+
+Given
+:	- an arc $e = (v_s, v_t)$, and its weight $w_e$
+	- a node $v_s$, and its weight $u_s$
+	- a node $v_t$, and its weight $u_t$
+Return
+:	- a "distance" metric $d(v_s, v_t)$.
+
+The distance metric should give some indication of how much $v_s$, $v_t$ are
+related to each other, with lower values representing a closer relationship.
+Furthermore, this should be additive, meaning that given $e_1 = (v_0, v_1)$,
+$e_2 = (v_1, v_2)$, and no further information (ie. assuming that $(e_2, v_0)$,
+$(e_1, v_2)$ are pairwise independent), then $d(v_0, v_2) = d(e_0) + d(e_1)$.
+
+see [`tgraph` semantics](#tgraph-semantics) - want to maximise $u_t.w_e$, etc
+
+so for any $e = (t_0, t)$, let $d(e) = -\log(w_e.u_t)$. MORE pad this out
+
+... scrape off the javadoc of ProbabilityDistanceMetric [MORE]
 
 
 # Architecture
@@ -607,19 +705,22 @@ Agent
 Resource
 :	tgraphs, indexes
 Seed map
-:	the input seed identity $z_0$ mapped to the maximum score.
+:	implicitly, the input seed identity $z_0$ mapped to the maximum score.
 Score-inferer
-:	just a trust metric [MORE]
-	Inferring attacks from the link structure of a social network is outside the
-	scope of this project. More advanced algorithms exist; a real implementation of
-	this system would be able to use the latest available techniques. [REF][EXTN]
+:	Here, the problem reduces down to that of a trust metric. Developing one
+	is outside the scope of this project, and various algorithms exist already
+	[REF]. A real deployment of this system would use the latest available
+	techniques; our prototype only returns an identity's immediate neighbours.
+	[EXTN]
 Value-composer
-:	uses mean value-composer; see "practical details" [LINK]
+:	Our prototype uses the naive mean-based value-composer. For a discussion on
+	what would be an appropriate $\alpha$ function to use, see [using the naive
+	value-composer: on ptables](#on-ptables).
 
 #### Constructing output
 
 We have two outputs to send to two different layers; we just split up our
-aggregate resource-value map by object type.
+aggregate resource-value map by object type, to get $G_s$, $H_s$.
 
 #### Traversing objects
 
@@ -644,44 +745,25 @@ Seed map
 Score-inferer
 :	see [object-object links](#object-object-links) [MORE]
 Value-composer
-:	uses mean value-composer; see "practical details" [LINK]
+:	Our prototype uses the naive mean-based value-composer. For a discussion on
+	what would be an appropriate $\alpha$ function to use, see [using the naive
+	value-composer: on tgraphs](#on-tgraphs).
 
 #### Constructing output
 
-We have two outputs to send to two different layers; we just split up our
-aggregate resource-value map by object type.
+This is done by applying Dijkstra's algorithm to the aggregate tgraph. The
+distance between nodes is given using the intersection-based distance metric
+discussed in [structured address space](#structured-address-space).
 
-[Rewrite]
-:	Our prototype uses Dijkstra's algorithm. Each step $n$ adds a node to
-	$\breveT$; for this, we need to know the distances to all the out-nodes of
-	the shortest-path tree so far, ie. $t_i$ must be complete in $\breveg$ for
-	all $i < n$. TODO could split this into another module, allowing other
-	methods of ranking to be used.
+In our prototype, we stop the algorithm when a node hasn't yet been loaded into
+all data sources. This somewhat arbitrary; we could continue with incomplete
+information by pretending the node doesn't exist, but we thought it would be
+more prudent to wait until all relevant data became available, since it might
+help to reduce instability in the output.
 
-	1. If we reach a $t$ for which we don't have the data to continue, we pause
-	   the algorithm, and give the routing layer the option to request that we
-	   add another tag to $\breveT$ (by completing $t$ and continuing).
-	2. For each `tgraph` node $g$ in $\breveT$, we give the routing layer the
-	   option to request $g$ be added as a data source.
-
-Distance metric
-
-Given
-:	- an arc $e = (v_s, v_t)$, and its weight $w_e$
-	- a node $v_s$, and its weight $u_s$
-	- a node $v_t$, and its weight $u_t$
-Return
-:	- a "distance" metric $d(v_s, v_t)$.
-
-The distance metric should give some indication of how much $v_s$, $v_t$ are
-related to each other, with lower values representing a closer relationship.
-Furthermore, this should be additive, meaning that given $e_1 = (v_0, v_1)$,
-$e_2 = (v_1, v_2)$, and no further information (ie. assuming that $(e_2, v_0)$,
-$(e_1, v_2)$ are pairwise independent), then $d(v_0, v_2) = d(e_0) + d(e_1)$.
-
-see [`tgraph` semantics](#tgraph-semantics) - want to maximise $u_t.w_e$, etc
-
-so for any $e = (t_0, t)$, let $d(e) = -\log(w_e.u_t)$. MORE pad this out
+What we end up with is a directed acyclic graph where nodes only have in-arcs
+from other nodes that have a smaller "shortest-distance"; this is passed along
+to the routing layer.
 
 #### Traversing objects
 
@@ -706,11 +788,13 @@ Seed map
 Score-inferer
 :	see [object-object links](#object-object-links) [MORE]
 Value-composer
-:	uses mean value-composer; see "practical details" [LINK]
+:	Our prototype uses the naive mean-based value-composer. For a discussion on
+	what would be an appropriate $\alpha$ function to use, see [using the naive
+	value-composer: on indexes](#on-indexes).
 
 #### Constructing output
 
-ranking...
+Constructing a results map out of an aggregate index and an address scheme.
 
 Given
 :	- $\breveg = \{ t \mapsto w \}$
@@ -1103,85 +1187,6 @@ MORE on incremental updates etc.
   recalculate the parts that are affected by the updated....
 
 # Design
-
-## `tgraph` semantics
-
-The routing algorithm needs some way of inferring which tags (out of a related
-set) are more "general" or "specific".
-
-Our first thought was to have arcs represent a relationship from a more
-"specific" tag to a more "general" tag. However, this is problematic since:
-
-- The relationship is supposed to be transitive, but our graph can potentially
-  contain cycles, especially when pulling in data from several sources. We
-  don't want to be tied up devising a complex algorithm to resolve this.
-- We potentially would like to traverse from general to specific tags, as well
-  as vice versa; and arc targets are the only mechanism of doing this between
-  `tgraph`s.^[Within a `tgraph`, arc sources ("reverse" pointers) could in
-  theory be calculated quickly, depending on the implementation.]
-
-The analogy to typical navigable networks is that each tag is like an address;
-and each `index` is like a routing table, mapping addresses to target entities.
-^[Most "addresses" in this network will have multiple targets, but this is an
-unimportant detail; eg. the internet has multicast addresses too.] So, we'll
-call the network of `index` objects the "routing" plane.
-(this is actually an important detail and why global reach is not guaranteed
-for our system).
-
-...
-
-The following model addresses these shortcomings.
-
-For a given tag $t$, let $D(t) = \{ d \in D : d \textrm{ tagged with } t \}$.
-Define the "saturation" of $t$ to be $\frac{|D(t)|}{|D|}$, and the "relevance"
-of $t$ to $t_0$ to be $\frac{|D(t) \cap D(t_0)|}{|D(t)|}$. An equivalent model
-is to treat $D$ as a random variable, evenly distributed over all documents in
-the network. For a given tag $t$, the saturation of $t$ is equivalent to $P(D
-\textrm{ tagged with } t)$, which we shorten to $P(t)$ for convenience.
-Likewise, the relevance of $t$ to $t_0$ is equivalent to $P(t_0|t)$.
-
-We then use these to define:
-
-- the weight $u_t$ of a node $t$ to be $P(t)$, its saturation.
-- the weight $w_e$ of an arc $e = (t_0, t)$ to be $P(t_0|t)$, the relevance of
-  the target tag to the source tag.
-
-These values are straightforward to calculate, so this process can (in theory)
-be automated. Note also that given $u_{t_0}$, $u_t$ and $w_e$, the weight of
-$e^- = (t, t_0)$ can be derived using Bayes' theorem, as $w_e.u_t/u_{t_0}$. If
-the `tgraph` implementation allows quick lookups of an arc both by its source
-node and its target node, then it might be sensible to not explicitly define
-the weight of the reverse arc.
-
-We can think of `tgraph` $g$ (containing tags $t_i$), as a single tag over all
-documents tagged by any $t_i$, and define saturation and relevance accordingly.
-That is, $P(g) = P(\bigcup t_i)$ and $P(t_0|g) = P(t_0|\bigcup t_i)$. Note that
-these values give no information on how well-connected a `tgraph` is within the
-naming network. However, a `tgraph` consists of highly compressed data on a
-large section of the storage network, so in practice the vast majority of our
-naming needs should be satisfied by a small neighbourhood around our seed set.
-Choosing between `tgraph`s probably won't be very important, so for now we
-ignore this deficiency.[EXTN]
-
-Now for the analogy to typical navigable networks: a tag $t$ can be thought of
-as defining a subnetwork - the set of documents tagged with $t$. $P(t)$ tells
-us the size of this subnetwork, and $P(t_0|t)$ tells us the proximity between
-two subnetworks.
-
-For example, $P(t)$ roughly corresponds to the CIDR routing prefix used by the
-current internet. In ring-topology networks, such as some DHTs, neighbours are
-matched by the numerical value of the network address; by contrast, internet
-routers update each other with their nearest neighbours; and here, we provide
-this information in the form of $P(t_0|t)$.
-
-In routing terms, if our end target is $t_0$, then we want to pick a $t$ such
-that $P(t_0 \cap t)$ is maximised - for the above model, this is $u_t.w_e$.
-
-This raises the question of why we don't just define $w_e$ as $P(t_0 \cap t)$,
-which would also remove the need to define $u_t$. However, this would destroy
-our ability to quickly look up $P(t)$ and $P(t_0|t)$. On a distributed network,
-we need to be able to combine data from multiple sources; algorithms to do this
-may well need knowledge of the separate values.
 
 ## Links between objects
 
