@@ -5,12 +5,12 @@
 
 /* Layout */
 
-body { padding-left: 18em; }
+body { padding-left: 16em; }
 
 #TOC {
 	box-sizing: border-box; -moz-box-sizing: border-box;
 	position: fixed; top: 0; left: 0;
-	height: 100%; width: 18em;
+	height: 100%; width: 16em;
 	overflow: auto;
 	padding-right: 0.8em;
 	margin: 0;

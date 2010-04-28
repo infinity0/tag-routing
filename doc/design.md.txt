@@ -689,8 +689,6 @@ see "practical details" [LINK]
 
 ### Routing
 
-DIAG
-
 Requires
 :	- $H_s$ from [contact](#contact)
 	- $\breveT$ from [naming](#naming)
