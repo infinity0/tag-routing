@@ -635,7 +635,11 @@ class Producer(object):
 		       only has an effect if <display> is True
 		"""
 		gg = graph_copy(self.docgr)
-		del gg.vs[NAA]
+		try:
+			del gg.vs[NAA]
+		except KeyError: # WORKAROUND igraph bug #571440
+			gg.vs[NID] = []
+			gg.vs[NAT] = []
 		gg["base_d"] = self.base_d
 		gg["base_t"] = self.base_t
 		gg["base_h"] = self.base_p

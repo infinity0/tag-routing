@@ -338,6 +338,8 @@ class SampleGenerator(object):
 
 
 
+FMT_EXT = "%s.graphmlz"
+
 class SampleWriter(ProducerSample):
 
 	def __init__(self, phdb, pgdb, totalsize):
@@ -349,8 +351,8 @@ class SampleWriter(ProducerSample):
 		def run(nsid):
 			prod = self.phdb[nsid]
 			g = prod.createIndex()
-			g.write(os.path.join(base, "%s.graphml" % nsid))
-		exec_unique(self.phdb.iterkeys(), lambda nsid: os.path.exists(os.path.join(base, "%s.graphml" % nsid)),
+			g.write(os.path.join(base, FMT_EXT % nsid))
+		exec_unique(self.phdb.iterkeys(), lambda nsid: os.path.exists(os.path.join(base, FMT_EXT % nsid)),
 		  run, None, "indexes db: object files", LOG.info)
 
 
@@ -358,8 +360,8 @@ class SampleWriter(ProducerSample):
 		def run(nsid):
 			prod = self.pgdb[nsid]
 			g = prod.createTGraph(self.totalsize, self.pgdb)
-			g.write(os.path.join(base, "%s.graphml" % nsid))
-		exec_unique(self.pgdb.iterkeys(), lambda nsid: os.path.exists(os.path.join(base, "%s.graphml" % nsid)),
+			g.write(os.path.join(base, FMT_EXT % nsid))
+		exec_unique(self.pgdb.iterkeys(), lambda nsid: os.path.exists(os.path.join(base, FMT_EXT % nsid)),
 		  run, None, "tgraphs db: object files", LOG.info)
 
 
