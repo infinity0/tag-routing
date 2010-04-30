@@ -185,10 +185,12 @@ and a significant part of our time would be spent in developing a theoretical
 model of a partitionable and navigable space over tags.
 
 We did not have any specific initial ideas on how to ensure the global reach of
-a search request. However, our DHT-inspired approach of using a global address
-scheme should allow further development in this area. (If the relationship from
-addresses to objects is deterministic, a global address scheme implies global
-reachability, but our final design does not satisfy the former requirement.)
+a search request. Using tags as addresses means that each address holds many
+resources; being able to reach all the resources for a single tag is equivalent
+to being able to reach any arbitrary resource for that tag. Our DHT-inspired
+design aims to support the latter; however, bounding the cost of finding extra
+resources is a more complex problem, which we didn't get the chance to explore.
+[EXTN]
 
 Research has shown that analysing social network structure can be effective in
 resisting malicious information. A major reason is because social relationships
@@ -489,13 +491,13 @@ carpet.[EXTN]
 
 ### Distance relation
 
-A distance relation over a set $S$ is a function $D : S \times S \to V$,
-satisfying $\forall a,b \in S : D(a,b) = I \iff a = b$, where $(V, \circ)$ is
-a group that has:
+Let $(M, \circ)$ be a **monoid** with a _linear ordering_ over $\sqsubseteq$,
+_identity element_ $I$, and which only contains _non-negative_ elements, ie.
+$\forall m \in M: I \sqsubseteq m$. A **distance relation** over a set $S$ is a
+partial function $D \subseteq S \times S \to M$ satisfying:
 
-- a linear ordering $\sqsubseteq$
-- an identity element $I$
-- only non-negative elements (ie. $\forall v \in V : I \sqsubseteq v$).
+Identity
+:	$\forall a,b \in S : D(a,b) = I \iff a = b$
 
 This is consistent with the intuitive notion that "adding components to a path
 never makes it shorter":
@@ -503,44 +505,43 @@ never makes it shorter":
 $$
 \begin{array} {rcll}
 \forall a,b,c \in S :\\
-             I & \sqsubseteq & D(b,c)              & \quad V \textrm{ non-negative } \\
-D(a,b) \circ I & \sqsubseteq & D(a,b) \circ D(b,c) & \quad V \textrm{ linearly ordered } \\
+             I & \sqsubseteq & D(b,c)              & \quad M \textrm{ non-negative } \\
+D(a,b) \circ I & \sqsubseteq & D(a,b) \circ D(b,c) & \quad M \textrm{ linearly ordered } \\
         D(a,b) & \sqsubseteq & D(a,b) \circ D(b,c) & \quad \textrm{ identity element } \\
 \end{array}
 $$
 
-A distance _metric_ also satisfies $\forall a,b,c \in S : D(a,c) \sqsubseteq
-D(a,b) \circ D(c,b)$, ie. symmetry ("forwards and backwards are equally long")
-and triangle inequality ("a direct path is shortest"); we won't consider these
+A **distance metric** also satisfies $\forall a,b,c \in S : D(a,c) \sqsubseteq
+D(a,b) \circ D(c,b)$, ie. _symmetry_ ("forwards backwards are equally long")
+and _triangle inequality_ ("direct path is shortest"); we won't consider these
 restrictions here.
 
-The tuple $(V, I, \sqsubseteq, \circ)$ we'll refer to as the _relation type_.
-A probability-based relation of type $([0, 1], 1, \geq, \times)$ can be
-converted into an entropy-based relation of type $([0, \infty), 0, \leq, +)$
-by taking the negative-log of each value, and vice-versa by taking the
-inverse-exponent.
+Refer to the tuple $(M, I, \sqsubseteq, \circ)$ as the _relation type_. A
+probability-based relation of type $([0, 1], 1, \geq, \times)$ can be converted
+into an entropy-based relation of type $([0, \infty), 0, \leq, +)$ by taking
+the negative-log of each value, and vice-versa by taking the inverse-exponent.
 
 We want to define a distance relation over tags, so that we can construct a
 routing scheme over them. One simple approach is $D[t_0, t_1] = P(t_1 | t_0)$,
 which forms a valid distance relation with the probability-based relation type
 $([0, 1], 1, \geq, \times)$, giving a path-distance formula of $D[t_i]_0^n =
-D[t_0, t_1].\cdots.D[t_{n-1}, t_n]$. It's unclear whether this has a "natural"
-interpretation, and unfortunately we didn't have enough time to explore this
-very deeply or look at alternatives. However, it does satisfy the distance
-relation axioms given above.
+D[t_0, t_1].\cdots.D[t_{n-1}, t_n]$.
 
-Note that it isn't a distance _metric_, as it doesn't satisfy symmetry nor the
-triangle inequality. We were (and still are) unaware of any theory that might
-comment on whether this is good or bad, from a routing perspective. However,
-the algorithm that we use to construct a routing scheme, Dijkstra's algorithm,
-only requires a distance relation rather than a metric.
+There are various flaws with this. In our view, a significant flaw is the lack
+of a "natural" interpretation as to what this thing represents. It also gives
+no information about tag triples, and hence cannot distinguish between cases
+where triple-intersections differ greatly; although this is really a problem
+with the tgraph design.[^addrdm]
 
-### Multicast and reachability
+[^addrdm]: Note also that it isn't a distance _metric_, as it satisfies neither
+symmetry nor the triangle inequality. We were (and still are) unaware of any
+theory that comments on if this is a bad thing, from a routing perspective.
+Dijkstra's algorithm, which we use to construct a routing scheme, only requires
+a distance relation rather than a metric.
 
-Most "addresses" in this network will have multiple targets, but this is an
-unimportant detail; eg. the internet has multicast addresses too.
-(this is actually an important detail and why global reach is not guaranteed
-for our system). [MOVE]
+Unfortunately, we didn't have enough time to explore these issues very deeply,
+or to come up with better alternatives. It does satisfy the distance relation
+axioms, so we decided to stick with it.
 
 
 # Architecture
