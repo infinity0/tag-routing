@@ -441,6 +441,10 @@ Generally, we use probability-based attributes, which are well-defined and can
 be estimated by agents. It also gives a simple way of combining attributes -
 multiplication - as well as a simple space of values - $[0, 1]$.
 
+TODO discuss more complex schemes that return "variance" for values. This would
+allow further refinement, eg. the more data sources that give a value judgement
+for some object $x$, the smaller the variance would be. [EXTN].
+
 ## Structured address space
 
 As discussed earlier, many routing schemes use a structured address space that
@@ -479,7 +483,7 @@ tgraph that wishes to refer to $g$ can represent it as a node in the graph,
 with size and similarity attributes following as for single tags.
 
 [^addrat]: In retrospect, it would probably be neater to use $P(t_0, t)$ as arc
-attributes and have an undirected graph. But theoretically they are equivalent.
+attributes and store an undirected graph; they contain the same information.
 
 [^addrlk]: This interpretation gives no information on how well-connected a
 tgraph is, which would also affect its usefulness. However, in general, tgraphs
@@ -547,6 +551,8 @@ axioms, so we decided to stick with it.
 # Architecture
 
 ## Data structures
+
+[TODO] review this section
 
 ### `index`
 
@@ -1190,15 +1196,8 @@ MORE on incremental updates etc.
 
 # Design
 
-## Links between objects
+## Object-object links
 
-### Identity-object links
-
-vs. all-data-in-identity and identity-identity pointers
-
-### Object-object links
-
-vs. identity-object links
 
 Scalability - decreases the number of identity-object pointers
 
@@ -1294,8 +1293,6 @@ TODO make an actual estimate... $2^{-4}$. [EXTN]
 
 ## Weights
 
-### Zero weight-attributes
-
 The current data structures can only represent the presence of an attribute,
 and not its absence. This is a problem: any distributed system has to be able
 to deal with incomplete information, but here there is no way to tell if the
@@ -1308,39 +1305,7 @@ We can either require that explicit "zero" weight-attributes are defined for
 every item encountered, no matter how insignificant; or we can try to generate
 heuristics for resolving this ambiguity, based on other implicit information.
 
-**For a node-map**, the former results in linear data growth in the number
-of items (nodes) encountered. This is not too bad, but can become inefficient
-if the vast majority of items encountered are assigned to zero weights, and the
-algorithms that process the data are designed to ignore them. With regards to
-our system, this probably affects `ptable`s more than `tgraph`s, where the
-algorithmic usefulness of a tag is largely unrelated to its weight.
-
-Within a single node-map, there is no information that could be used to perform
-any heuristic: a node not included in the map has no information relating to it
-in the map. However, it may be possible to extract information from other
-sources, such as the friends for a `ptable`. These are context-specific and
-are explored in the appropriate sections. [TODO add link]
-
-**For an arc-map**, the former approach results in quadratic data growth in the
-number of items (nodes) encountered, since we need to define _something_
-(either a relationship or its absence) between all _pairs_ of nodes. This is
-not scalable; fortunately an arc-map holds more information than a node-map,
-which allows for better ambiguity-resolution heuristics.
-
-Since the meaning of $e = (v_s, v_t)$ is fully determined by $\{v_s$, $v_t\}$,
-the maintainer has enough information to decide whether to include $e$ in $E$
-if it "knows about" both $v_s, v_t$. Roughly, we can represent this notion as
-$v \in \rft E$. In other words, if $e \notin \dom E$ but $v_s, v_t \in \rft E$,
-then either the maintainer has overlooked the relation between $(v_s, v_t)$, or
-there is no such relation (ie. a "zero weight"). The latter is more likely,
-since people generally review things before publishing, and the mistakes that
-do slip through are fixed over time.
-
-Specific examples of this general principle, as well as applications of it,
-are explored further in relevant sections of the [Algorithms](#algorithms)
-chapter.
-
-### Negative weight-attributes
+Save space, etc... context specific.
 
 A related idea is negative weight-attributes, which would represent a judgement
 that the subject is malicious (in some sense), rather than neutral or "useless".
@@ -1353,151 +1318,95 @@ interacting with other nodes is by publishing data objects for other nodes to
 read. We are unable to see other nodes' read requests, so it's impossible to
 attack a particular node. In this case then, negative weights are not useful.
 
-There are other complications with negative weights in general. These would be
-relevant if our search system is adapted into a form where one *can* perform
-targeted acts of aggression.
 
-- If positive weights are taken to be probabilities, it's not obvious what
-  negative weights should mean. If the semantics of the data structure are not
-  well-defined, the algorithms that use it cannot be, either.
-- Depending on the algorithm used to combine weights from multiple sources,
-  negative weights may allow the weight system itself to be used as an attack
-  vector. (Otherwise, this was already possible with positive-only weights and
-  the introduction of negative weights makes no difference.)
-- MORE
+## Value-composer
 
-## Combining data from multiple sources
+[MORE]
 
-Below, we describe algorithms for combining data from multiple sources. Our
-model is relatively simple: we have a list of sources with a weight judgement
-on how "good" each source is; in turn, each source specifies their own weight
-judgement for each object that it refers to. To avoid confusion, we will call
-source-weights "scores" and object-weights "values". Given a target object, we
-want to derive a "combined" value for that object, using the given information.
+It's impossible to determine the accuracy of the input data from only the data
+itself, since any input is potentially true. We need either a pre-existing
+expection of what the information should look like, or a model of how its
+meta-information (eg. its source agents) affects its accuracy. Both approaches
+are outside of the scope of this project.[EXTN]
 
-TODO discuss more complex schemes that return "variance" for values. This would
-allow further refinement, eg. the more data sources that give a value judgement
-for some object $x$, the smaller the variance would be. [EXTN].
+For our prototype, we use a very basic algorithm - the score-weighted mean of
+each agent's value judgement for that resource. In our case, both the score and
+the value are bounded, and it's hoped that this will annul some easy attacks
+against mean-based composers (eg. judging a value to be infinity).
 
-For our prototype, we use a very basic algorithm - the score-weighted mean
-value of the object. Generally, the arithmetic mean is susceptible to attacks
-and distortions. Let $k$ be the proportion of the total score that the attacker
-controls. Weights are [limited](#weight-attributes) to $[0, 1]$, so this will
-roughly be the same as the proportion of compromised nodes.
-
-If the value is evenly distributed, the effect of an attack will be limited in
-direct proportion to $k$ - the worst thing they can do is give a single value
-with $k$ influence in the final result. However, if the value is far from being
-evenly distributed, it would be possible for an attacker to introduce a value
-that has an extremely small probability $\epsilon$ of occuring, yet which will
-still have a $k$ share of influence in the final combined value.
-
-TODO - explain this better.
-
-So the types of weights that are input to this algorithm must be roughly evenly
-distributed in order to be secure. Most distributions probably will not cause
-too many problems; however, negative-log distributions will.
-
-The algorithms below make use of several $\alpha_i$ functions, which fine-tune
-the output based knowledge of on the context of the inputs. There are various
-ways of producing such functions; one method is to extract realistic values
-for some constant, by collecting training data from a prototype network. More
-advanced techniques include collecting data directly from the active network,
-to adjust the values dynamically. [EXTN]
-
-However, such methods are likely to be quite complex, and so this project does
-not go into them. Instead, we only explore heuristics that give a rough
-approximation, based on our intuitions. TODO rewrite...
-
-### Mean weight of a node
+Recall the problem specification:
 
 Given
-:	- a map $M = \{ m \mapsto u_m \in W \}$ of data sources to their scores,
-	  where each data source $m = \{ v \in V \mapsto w_{mv} \in W \}$ is a map
-	  from nodes to their values.
-	- a given node $v \in \bigcup \dom m$
+:	- a set of agents, with their inferred score, and resource-value maps
+	$$
+	a : (s, \{ r : v \})
+	$$
 Return
-:	- the map-weighted mean node-weight $\bar w_v$ of $v$
+:	- a target resource-value map
+	$$
+	r : v
+	$$
 
-The mean weight for node $v$, over all maps, is $\frac{\sum_{m} w_{mv}}{|M|}$.
-If we take into account the weights of each map, we have $\frac{\sum_{m} u_m
-w_{mv}}{\sum_m u_m}$. However, not every map will necessarily contain $v$, so
-some $w_{mv}$ may be undefined. In such cases, we estimate a weight instead;
-see the section on [zero weights](#zero-weight-attributes) for more details.
-Following on from that, we reach:
+The score-weighted mean value for resource $r$, over all agents, is:
 
 $$
-\bar w_v = \frac{\sum_{m} u_m \hat w_{mv}}{\sum_m u_m}
+\bar v_r = \frac{\sum_{a} s_a v_{ar}}{\sum_a s_a}
+$$
+
+However, not every agent will have a judgement for $r$, so some $v_{ar}$ may be
+undefined. In such cases, we make an estimate $\hat v_{ar}$ instead.
+
+$$
+\bar v_r = \frac{\sum_{a} s_a \hat v_{ar}}{\sum_a s_a}
 \quad ; \quad
-\hat w_{mv} = \left\{ \begin{array}{llr} \\
-  w_{mv} & : v \in \dom m & (0) \\
-  \alpha_1(m,v).0 + (1 - \alpha_1(m,v)).\bar w_v & : v \notin \dom m & (1) \\
+\hat v_{ar} = \left\{ \begin{array}{llr} \\
+  v_{ar} & : r \in \dom m & (0) \\
+  \alpha(a,r).0 + (1 - \alpha(a,r)).\bar v_r & : r \notin \dom m & (1) \\
 \end{array} \right
 $$
 
-where $\alpha_i(m, v)$ is the probability that the author of $m$ has judged $v$
-to be worthless, given $(i)$.
+where $\alpha(a,r)$ is the probability that agent $a$ has judged resource $r$
+to be worthless, given $(1)$.
 
-The above definition has $\bar w_v$ on the RHS; after rearranging, we get:
+The above definition has $\bar v_r$ on the RHS; after rearranging, we get:
 
 $$
 % should be \dfrac but LaTeXMathML doesn't support amsmath commands...
-\bar w_v = \frac{\sum_{m:(0)} u_m w_{mv}}{\sum_m u_m \alpha(m,v)}
+\bar v_r = \frac{\sum_{a:(0)} s_a v_{ar}}{\sum_a s_a \alpha_0(a,r)}
 \quad ; \quad
-\alpha(m,v) = \left\{ \begin{array}{ll} \\
+\alpha_0(a,r) = \left\{ \begin{array}{ll} \\
   1 & : (0) \\
-  \alpha_1(m,v) & : (1) \\
+  \alpha(a,r) & : (1) \\
 \end{array} \right
 $$
 
-Generally, the behaviour of $\alpha_i$ are likely to depend highly on the use
-context, so this should be an additional parameter to the algorithm.
+The behaviour of $\alpha$ will depend greatly on the context in which the above
+formula is used. Our system deals with two types of resources, nodes and arcs;
+we note the following observations when implementing heuristics for $\alpha$:
 
-### Mean weight of an arc
+**For a node** $v$, there is no information that could be used to perform any
+heuristic: a node not in the map, has no information relating to it in the map.
+However, it may be possible to extract information from other sources, such as
+the friends for a `ptable`. These are context-specific and are explored in the
+appropriate sections.
 
-Given
-:	- a map $M = \{ m \mapsto u_m \in W \}$ of data sources to their scores,
-	  where each data source $m = \{ e \in E \mapsto w_{me} \in W \}$ is a map
-	  from arcs to their values.
-	- a given arc $e = (v_s, v_t) \in \bigcup \dom m$
-Return
-:	- the map-weighted mean arc-weight $\bar w_e$ of $e$
+**For an arc** $e = (v_s, v_t)$, we have some extra information. The meaning of
+$e$ is fully determined by $v_s$, $v_t$, which means that the agent is able to
+judge $e$ if it "knows about" both $v_s$ and $v_t$. We can estimate this notion
+with $v \in \rft E$. That is, if $e \notin \dom E$ but $v_s, v_t \in \rft E$,
+then it's likely that there is no such relation.[^vcmped]
 
-The formula is similar to the one from the previous section, but here we are
-dealing with arcs, so we can refine our estimate somewhat further; see the
-section on [zero weights](#zero-weight-attributes) for more details. Following
-on from that, we reach:
+[^vcmped]: Or, the agent has overlooked $e$. We assume this is _unlikely_ for
+the average agent, which is reasonable since we already trust them enough to
+be processing their judgement table.
 
-$$
-\bar w_e = \frac{\sum_{m} u_m \hat w_{me}}{\sum_m u_m}
-\quad ; \quad
-\hat w_{me} = \left\{ \begin{array}{llr} \\
-  w_{me} & : e \in \dom m & (0) \\
-  (1 - \alpha_1(m,e)).\bar w_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
-    \not\subseteq \rft m & (1) \\
-  (1 - \alpha_2(m,e)).\bar w_e & : e \notin \dom m \;\wedge\; \{ v_s, v_t \}
-    \subseteq \rft m & (2) \\
-\end{array} \right
-$$
+Brief discussions of specific applications of all of the above is given in the
+[relevant sub-sections](#using-the-naive-value-composer).
 
-where $\alpha_i(m, e)$ is the probability that the author of $m$ has judged $e$
-to be worthless, given $(i)$.
-
-The above definition has $\bar w_e$ on the RHS; after rearranging, we get:
-
-$$
-% should be \dfrac but LaTeXMathML doesn't support amsmath commands...
-\bar w_e = \frac{\sum_{m:(0)} u_m w_{me}}{\sum_m u_m \alpha(m,e)}
-\quad ; \quad
-\alpha(m,e) = \left\{ \begin{array}{ll} \\
-  1 & : (0) \\
-  \alpha_1(m,e) & : (1) \\
-  \alpha_2(m,e) & : (2) \\
-\end{array} \right
-$$
-
-Generally, the behaviour of $\alpha_i$ are likely to depend highly on the use
-context, so this should be an additional parameter to the algorithm.
+More sophisticated methods include training on a prototype network, or dynamic
+learning from an active network. However, it must be noted that the theoretical
+model for this component is not particularly robust anyway, so the benefit-cost
+ratio of such methods is likely to be low.
 
 
 # Comparison
