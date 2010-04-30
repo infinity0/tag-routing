@@ -441,105 +441,106 @@ multiplication - as well as a simple space of values - $[0, 1]$.
 
 ## Structured address space
 
-[LESS]
+As discussed earlier, many routing schemes use a structured address space that
+has two (sometimes implicit) properties over its subspaces:
 
-The routing algorithm needs some way of inferring which tags (out of a related
-set) are more "general" or "specific".
+- A measure of the size of the subspace
+- A measure of the overlap or similarity between two subspace.
 
-Our first thought was to have arcs represent a relationship from a more
-"specific" tag to a more "general" tag. However, this is problematic since:
+In CIDR, "size" is given by the subnet mask, and "similarity" is given by
+matching the subnet prefix against the entries in the routing table. For DHTs,
+both "size" and "similarity" are defined with the choice of address space. In
+the case of semantic routing, a tag's "size" corresponds to how "general" it
+is, and its "similarity" to another tag corresponds to how related they are.
 
-- The relationship is supposed to be transitive, but our graph can potentially
-  contain cycles, especially when pulling in data from several sources. We
-  don't want to be tied up devising a complex algorithm to resolve this.
-- We potentially would like to traverse from general to specific tags, as well
-  as vice versa; and arc targets are the only mechanism of doing this between
-  `tgraph`s.^[Within a `tgraph`, arc sources ("reverse" pointers) could in
-  theory be calculated quickly, depending on the implementation.]
+There are various methods of defining a mathematical space over semantic tags.
+In the end, we settled on a simple probabilistic model. We interpret the set
+of all documents as a probability space:
 
-The analogy to typical navigable networks is that each tag is like an address;
-and each `index` is like a routing table, mapping addresses to target entities.
-^[Most "addresses" in this network will have multiple targets, but this is an
-unimportant detail; eg. the internet has multicast addresses too.] So, we'll
-call the network of `index` objects the "routing" plane.
+- Each document $d \in D$ is an outcome, all equally likely
+- Each tag $t \in T$ is an event, consisting of all documents tagged with $t$.
+  (interpreted as a set, $t = \{ d \in D : d \textrm{ tagged with } t \}$.)
+
+We can interpret $P(t)$ as the size of $t$, and $P(t_0|t)$ as the similarity of
+$t$ to $t_0$. These are fairly straightforward to calculate (ie. count the
+relevant documents and normalise), so this process can in theory be automated.
+
+This information can be stored as a graph, where each tag is a node and each
+tag-tag relationship is an arc. Node attributes are sizes, and arc attributes
+are similarity scores[^addrat]. We'll call this a tag-graph, or tgraph for short.
+
+We are distributing this information across many objects, so each tgraph must
+be able to point to other tgraphs. As with indexes, we need to guide traversal
+between these objects. A simple model for this is to interpret a tgraph $g$ as
+the union event of all its tags, ie. $g = \bigcup_{t \in g} t$[^addrlk]. Any
+tgraph that wishes to refer to $g$ can represent it as a node in the graph,
+with size and similarity attributes following as for single tags.
+
+[^addrat]: In retrospect, it would probably be neater to use $P(t_0, t)$ as arc
+attributes and have an undirected graph. But theoretically they are equivalent.
+
+[^addrlk]: This interpretation gives no information on how well-connected a
+tgraph is, which would also affect its usefulness. However, in general, tgraphs
+are intended to hold highly compressed summaries on significant sections of the
+network, and the vast majority of naming needs should be satisfiable by a small
+neighbourhood around a seed set. In other words, we assume that routing between
+tgraphs won't be a major practical issue, and brush this deficiency under the
+carpet.[EXTN]
+
+### Distance relation
+
+A distance relation over a set $S$ is a function $D : S \times S \to V$,
+satisfying $\forall a,b \in S : D(a,b) = I \iff a = b$, where $(V, \circ)$ is
+a group that has:
+
+- a linear ordering $\sqsubseteq$
+- an identity element $I$
+- only non-negative elements (ie. $\forall v \in V : I \sqsubseteq v$).
+
+This is consistent with the intuitive notion that "adding components to a path
+never makes it shorter":
+
+$$
+\begin{array} {rcll}
+\forall a,b,c \in S :\\
+             I & \sqsubseteq & D(b,c)              & \quad V \textrm{ non-negative } \\
+D(a,b) \circ I & \sqsubseteq & D(a,b) \circ D(b,c) & \quad V \textrm{ linearly ordered } \\
+        D(a,b) & \sqsubseteq & D(a,b) \circ D(b,c) & \quad \textrm{ identity element } \\
+\end{array}
+$$
+
+A distance _metric_ also satisfies $\forall a,b,c \in S : D(a,c) \sqsubseteq
+D(a,b) \circ D(c,b)$, ie. symmetry ("forwards and backwards are equally long")
+and triangle inequality ("a direct path is shortest"); we won't consider these
+restrictions here.
+
+The tuple $(V, I, \sqsubseteq, \circ)$ we'll refer to as the _relation type_.
+A probability-based relation of type $([0, 1], 1, \geq, \times)$ can be
+converted into an entropy-based relation of type $([0, \infty), 0, \leq, +)$
+by taking the negative-log of each value, and vice-versa by taking the
+inverse-exponent.
+
+We want to define a distance relation over tags, so that we can construct a
+routing scheme over them. One simple approach is $D[t_0, t_1] = P(t_1 | t_0)$,
+which forms a valid distance relation with the probability-based relation type
+$([0, 1], 1, \geq, \times)$, giving a path-distance formula of $D[t_i]_0^n =
+D[t_0, t_1].\cdots.D[t_{n-1}, t_n]$. It's unclear whether this has a "natural"
+interpretation, and unfortunately we didn't have enough time to explore this
+very deeply or look at alternatives. However, it does satisfy the distance
+relation axioms given above.
+
+Note that it isn't a distance _metric_, as it doesn't satisfy symmetry nor the
+triangle inequality. We were (and still are) unaware of any theory that might
+comment on whether this is good or bad, from a routing perspective. However,
+the algorithm that we use to construct a routing scheme, Dijkstra's algorithm,
+only requires a distance relation rather than a metric.
+
+### Multicast and reachability
+
+Most "addresses" in this network will have multiple targets, but this is an
+unimportant detail; eg. the internet has multicast addresses too.
 (this is actually an important detail and why global reach is not guaranteed
-for our system).
-
-...
-
-The following model addresses these shortcomings.
-
-For a given tag $t$, let $D(t) = \{ d \in D : d \textrm{ tagged with } t \}$.
-Define the "saturation" of $t$ to be $\frac{|D(t)|}{|D|}$, and the "relevance"
-of $t$ to $t_0$ to be $\frac{|D(t) \cap D(t_0)|}{|D(t)|}$. An equivalent model
-is to treat $D$ as a random variable, evenly distributed over all documents in
-the network. For a given tag $t$, the saturation of $t$ is equivalent to $P(D
-\textrm{ tagged with } t)$, which we shorten to $P(t)$ for convenience.
-Likewise, the relevance of $t$ to $t_0$ is equivalent to $P(t_0|t)$.
-
-We then use these to define:
-
-- the weight $u_t$ of a node $t$ to be $P(t)$, its saturation.
-- the weight $w_e$ of an arc $e = (t_0, t)$ to be $P(t_0|t)$, the relevance of
-  the target tag to the source tag.
-
-These values are straightforward to calculate, so this process can (in theory)
-be automated. Note also that given $u_{t_0}$, $u_t$ and $w_e$, the weight of
-$e^- = (t, t_0)$ can be derived using Bayes' theorem, as $w_e.u_t/u_{t_0}$. If
-the `tgraph` implementation allows quick lookups of an arc both by its source
-node and its target node, then it might be sensible to not explicitly define
-the weight of the reverse arc.
-
-We can think of `tgraph` $g$ (containing tags $t_i$), as a single tag over all
-documents tagged by any $t_i$, and define saturation and relevance accordingly.
-That is, $P(g) = P(\bigcup t_i)$ and $P(t_0|g) = P(t_0|\bigcup t_i)$. Note that
-these values give no information on how well-connected a `tgraph` is within the
-naming network. However, a `tgraph` consists of highly compressed data on a
-large section of the storage network, so in practice the vast majority of our
-naming needs should be satisfied by a small neighbourhood around our seed set.
-Choosing between `tgraph`s probably won't be very important, so for now we
-ignore this deficiency.[EXTN]
-
-Now for the analogy to typical navigable networks: a tag $t$ can be thought of
-as defining a subnetwork - the set of documents tagged with $t$. $P(t)$ tells
-us the size of this subnetwork, and $P(t_0|t)$ tells us the proximity between
-two subnetworks.
-
-For example, $P(t)$ roughly corresponds to the CIDR routing prefix used by the
-current internet. In ring-topology networks, such as some DHTs, neighbours are
-matched by the numerical value of the network address; by contrast, internet
-routers update each other with their nearest neighbours; and here, we provide
-this information in the form of $P(t_0|t)$.
-
-In routing terms, if our end target is $t_0$, then we want to pick a $t$ such
-that $P(t_0 \cap t)$ is maximised - for the above model, this is $u_t.w_e$.
-
-This raises the question of why we don't just define $w_e$ as $P(t_0 \cap t)$,
-which would also remove the need to define $u_t$. However, this would destroy
-our ability to quickly look up $P(t)$ and $P(t_0|t)$. On a distributed network,
-we need to be able to combine data from multiple sources; algorithms to do this
-may well need knowledge of the separate values.
-
-### Distance metric
-
-Given
-:	- an arc $e = (v_s, v_t)$, and its weight $w_e$
-	- a node $v_s$, and its weight $u_s$
-	- a node $v_t$, and its weight $u_t$
-Return
-:	- a "distance" metric $d(v_s, v_t)$.
-
-The distance metric should give some indication of how much $v_s$, $v_t$ are
-related to each other, with lower values representing a closer relationship.
-Furthermore, this should be additive, meaning that given $e_1 = (v_0, v_1)$,
-$e_2 = (v_1, v_2)$, and no further information (ie. assuming that $(e_2, v_0)$,
-$(e_1, v_2)$ are pairwise independent), then $d(v_0, v_2) = d(e_0) + d(e_1)$.
-
-see [`tgraph` semantics](#tgraph-semantics) - want to maximise $u_t.w_e$, etc
-
-so for any $e = (t_0, t)$, let $d(e) = -\log(w_e.u_t)$. MORE pad this out
-
-... scrape off the javadoc of ProbabilityDistanceMetric [MORE]
+for our system). [MOVE]
 
 
 # Architecture
