@@ -39,7 +39,8 @@ use a search provider for every item of information we need; instead, we often
 issue a query that gives us a selection of related sites from all over the web,
 then manually browse within these sites to target our needs more precisely. In
 addition, some websites have non-public information, or specialist knowledge
-that generic search algorithms aren't able to index effectively.
+that generic search algorithms aren't able to index effectively. In these
+cases, central index databases are inadequate.
 
 An alternative approach is to perform dynamic routing using query semantics.
 Instead of a simple client-provider model where a single query is a single
@@ -675,9 +676,8 @@ Each layer follows a basic structural template:
   large pieces of data, and so follow a model where only the parts relevant to
   the query are loaded - the "local view" of the data source. [MORE] maybe
 
-- As input from lower layers, a seed map of data sources to their scores. For
-  the bottom layer (contact), this is implicitly $\{ a_0 : s_{max} \}$[^layin].
-  Other input might also be needed, depending on the specific layer.
+- As input from lower layers, a seed map of data sources to their scores. Other
+  input might also be needed, depending on the specific layer.
 
 - An algorithm for reaching more agents and resources. Generally, this is done
   by traversing out-arcs, starting with our seed data sources and the query
@@ -707,8 +707,6 @@ logic, and reduces the number of critical objects that need to be synchronised
 on. The state machines generally follow the pattern of `[NEW --> AWAIT_INPUT
 <-> IDLE]`; specific cases are discussed in the _traversing objects_ sections
 of the various layers, below.
-
-[^layin]: as noted in [information aggregation](#information-aggregation)
 
 [^layex]: eg. if all available seed indexes have been exhausted, and nothing
 useful returned, we need to ask for more.
@@ -753,9 +751,9 @@ Score-inferer
 	techniques; our prototype only returns an identity's immediate neighbours.
 	[EXTN]
 Value-composer
-:	Our prototype uses the naive mean-based value-composer. For a discussion on
-	what would be an appropriate $\alpha$ function to use, see [using the naive
-	value-composer: on ptables](#on-ptables).
+:	Our prototype uses the naive [mean-based](#value-composer) value-composer.
+	For a discussion on what would be an appropriate $\alpha$ function to use,
+	see [using the naive value-composer: on ptables](#on-ptables).
 
 #### Constructing output
 
@@ -783,11 +781,13 @@ Resource
 Seed map
 :	the input map $G_s$
 Score-inferer
-:	see [score-inferer](#score-inferer) [MORE]
+:	Our prototype uses the naive [path-based](#score-inferer) score-inferer. We
+	consider a route $g \rightarrow^t g'$ only if the traversal algorithm has
+	passed through it, which restricts it to tags relevant to our query.
 Value-composer
-:	Our prototype uses the naive mean-based value-composer. For a discussion on
-	what would be an appropriate $\alpha$ function to use, see [using the naive
-	value-composer: on tgraphs](#on-tgraphs).
+:	Our prototype uses the naive [mean-based](#value-composer) value-composer.
+	For a discussion on what would be an appropriate $\alpha$ function to use,
+	see [using the naive value-composer: on tgraphs](#on-tgraphs).
 
 #### Constructing output
 
@@ -826,11 +826,13 @@ Resource
 Seed map
 :	the input map $H_s$
 Score-inferer
-:	see [score-inferer](#score-inferer) [MORE]
+:	Our prototype uses the naive [path-based](#score-inferer) score-inferer. We
+	consider a route $h \rightarrow^t h'$ only if the traversal algorithm has
+	passed through it, which restricts it to tags relevant to our query.
 Value-composer
-:	Our prototype uses the naive mean-based value-composer. For a discussion on
-	what would be an appropriate $\alpha$ function to use, see [using the naive
-	value-composer: on indexes](#on-indexes).
+:	Our prototype uses the naive [mean-based](#value-composer) value-composer.
+	For a discussion on what would be an appropriate $\alpha$ function to use,
+	see [using the naive value-composer: on indexes](#on-indexes).
 
 #### Constructing output
 
