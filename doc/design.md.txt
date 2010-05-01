@@ -269,15 +269,14 @@ possible relevant tags, but it should seek to summarise this information.
 Instead of listing an index under entries for several dozen instances of (eg.)
 strategy games, it could instead list only for the tag "strategy games".
 
-A clear and consistent model for this is developed in [structured address
-space](#structured-address-space). From that, we get another type of object, a
-tag graph, or tgraph, which defines relationships between tags. Following the
-principle of compacting information again, we need some way to route between
-these tgraphs. At this point, you might worry that we'll continue with this
-ad-infinitum, inventing further layers of meta-objects; but no we stop here,
-and actually we use tgraphs to route between themselves. That is, tgraphs also
-use tags for addresses, and list related tgraphs under entries for appropriate
-tags.
+A consistent model for this is developed in [address space](#address-space).
+From that, we get another type of object, a tag graph, or tgraph, which defines
+relationships between tags. Following the principle of compacting information
+again, we need some way to route between these tgraphs. At this point, you
+might worry that we'll continue with this ad-infinitum, inventing more layers
+of meta-objects; but no we stop here, and actually we use tgraphs to route
+between themselves. That is, tgraphs also use tags for addresses, and list
+related tgraphs under entries for appropriate tags.
 
 To explain why this isn't a problem:
 
@@ -329,154 +328,6 @@ would increase network performance.
 [MORE] our project only considers how routing is to be done, it doesn't
 consider how the routing tables would actually be created and maintained.
 However, model is fairly simple, etc etc [EXTN]
-
-## Information aggregation
-
-Trust metrics and sybil detection algorithms are useful, but cannot support
-applications that must obtain value judgements _about resources_ from other
-agents. Define:
-
-Agent
-:	an entity which can give (and receive) score judgements
-Resource
-:	an entity which can only receive value judgements
-
-Each agent is associated with two maps: an agent-score map $\{ a : s \}$, and
-a resource-value map $\{ r : v \}$, which define their subjective judgements.
-A score represents how much an agent's judgements can be trusted; the meaning
-of a resource value is context-specific. The problem of information aggregation
-can then be formulated as:
-
-Given
-:	- a set of agents, with their agent-score and resource-value maps:
-	  $$
-	  a : (\{ a : s \} , \{ r : v \})
-	  $$
-	- a seed agent-score map:
-	  $$
-	  a : s
-	  $$
-Return
-:	- a target resource-value map, aggregated from the given information
-	  $$
-	  r : v
-	  $$
-
-This can be represented as a table. [DIAG] cols = resources, rows = agents
-
-### Simplification
-
-The above formulation of the problem can be usefully divided up into two
-components:
-
-**1. Infer scores for all agents**:
-
-Given
-:	- a set of agents, with their agent-score maps
-	- a seed agent-score map
-Return
-:	- a target agent-score map, that covers all agents in the input
-
-and
-
-**2. Compose values for all resources, from the scored agents**:
-
-Given
-:	- a set of agents, with their inferred score, and resource-value maps
-Return
-:	- a target resource-value map
-
-We follow this approach in our project. Note however, that even these simpler
-problems are fairly deep, and developing robust techniques to solve them could
-take up a whole other project. Our prototype implemenation only attempts naive
-and simple solutions to each component. [EXTN]
-
-(Note that the first component is a generalisation of trust metrics, which use
-an implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$, i.e. a
-single root agent mapped to the maximum score.)
-
-### Use contexts
-
-In the context of our system design:
-
----------------------------------------------------------------------------
-layer       agent                           resource
------------ ------------------------------- -------------------------------
-social      identities and their ptables    indexes, tgraphs
-
-naming      tgraphs                         tags, tag-tag relationships
-
-routing     indexes                         tag-document relationships
----------------------------------------------------------------------------
-
-One can see here that indexes and tgraphs take the position of both agent and
-resource. The output of the social layer is a resource-value map; the naming
-and routing layers both use this as an agent-score map.
-
-As agents, neither tgraphs nor indexes define explicit agent-score judgements.
-In addition to this, they represent immutable information, rather than social
-identities. These were conscious design choices - to encapsulate the problem of
-trust and authentication into a social layer, away from the problem of naming
-and routing.
-
-This does mean that the problem is different from that of a trust metric. We
-won't attempt to formalise this, but intuitively, for a given non-seed agent
-$a$, we want to infer a score based on how likely a seed agent could have _met_
-$a$, rather than whether they should _trust_ $a$. A naive implementation of
-this is in [score-inferer](#score-inferer). [MORE]
-
-### Attributes
-
-So far, we haven't discussed what the attributes should actually represent. In
-any usage scenario, they should at least satisfy the following properties:
-
-- The attribute should be some well-defined property that can be measured or
-  estimated. Any single value of the attribute should mean the same thing to
-  all agents, rather than being left up to agents' own interpretation.
-- Attribute values should not be treated as authoritative, since in our model
-  we only ever receive data from agents, whom we assume to have a limited view
-  of the entire network. There will always be inconsistency between different
-  agents; the system should account for this.
-
-In the case of perfectly honest agents, it is hoped that inconsistencies will
-work to cancel each other out. In the case of a system under attack, this will
-not be the case. However, only looking at the received values for attributes
-cannot distinguish between an attack and actual value differences; so this must
-be detected in some other way. Our project won't present any methods for doing
-this, but network structure analysis is a common approach type.[EXTN]
-
-The exact forms that we picked for our attributes are discussed elsewhere.[LINK]
-Generally, we use probability-based attributes, which are well-defined and can
-be estimated by agents. It also gives a simple way of combining attributes -
-multiplication - as well as a simple space of values - $[0, 1]$.
-
-TODO discuss more complex schemes that return "variance" for values. This would
-allow further refinement, eg. the more data sources that give a value judgement
-for some object $x$, the smaller the variance would be. [EXTN].
-
-In some contexts, the set of useful resources is sparse over the set of all
-possible resources[^attrsp] - e.g. if the attribute represents an endorsement,
-or a non-trivial binary relationship. In such cases, we'd like to not define
-the non-useful resource at all, implicitly marking it with a neutral or "zero"
-attribute, to save space and redundancy.
-
-However, this raises a problem when aggregating information - we now can't
-distinguish whether an agent implicitly regards a resource as useless, or just
-that it doesn't know about it. In our naive [value-composer](#value-composer),
-we address this issue by requiring an input heuristic that can help to resolve
-this ambiguity, based on other information.
-
-[^attrsp]: from a given agent's point of view
-
-A related idea is negative attributes, which would represent a judgement that
-the resource is malicious or dangerous in some sense, rather than neutral or
-"useless". In a system where it's possible to act aggressively, these weights
-could provide information on who to attack (or set up defences against).
-
-It's not clear how this applies to our system, which is a network of data and
-so only supports passive traps rather than active attacks. It's also unclear
-how probability-based attributes could be extended to work this way. So for
-now, we ignore this possibility.[EXTN]
 
 ## Structured address space
 
@@ -580,97 +431,245 @@ Unfortunately, we didn't have enough time to explore these issues very deeply,
 or to come up with better alternatives. It does satisfy the distance relation
 axioms, so we decided to stick with it.
 
+## Information aggregation
+
+Trust metrics and sybil detection algorithms are useful, but cannot support
+applications that must obtain value judgements _about resources_ from other
+agents. Define:
+
+Agent
+:	an entity which can give (and receive) score judgements
+Resource
+:	an entity which can only receive value judgements
+
+Each agent is associated with two maps: an agent-score map $\{ a : s \}$, and
+a resource-value map $\{ r : v \}$, which define their subjective judgements.
+A score represents how much an agent's judgements can be trusted; the meaning
+of a resource value is context-specific. The problem of information aggregation
+can then be formulated as:
+
+Given
+:	- a set of agents, with their agent-score and resource-value maps:
+	  $$
+	  a : (\{ a : s \} , \{ r : v \})
+	  $$
+	- a seed agent-score map:
+	  $$
+	  a : s
+	  $$
+Return
+:	- a target resource-value map, aggregated from the given information
+	  $$
+	  r : v
+	  $$
+
+This can be represented as a table. [DIAG] cols = resources, rows = agents
+
+### Simplification
+
+The above formulation of the problem can be usefully divided up into two
+components:
+
+**1. Infer scores for all agents**:
+
+Given
+:	- a set of agents, with their agent-score maps
+	- a seed agent-score map
+Return
+:	- a target agent-score map, that covers all agents in the input
+
+and
+
+**2. Compose values for all resources, from the scored agents**:
+
+Given
+:	- a set of agents, with their inferred score, and resource-value maps
+Return
+:	- a target resource-value map
+
+We follow this approach in our project. Even these simpler problems, however,
+are fairly deep, and developing robust techniques to solve them could take up a
+whole other project. Our prototype implemenation only attempts naive and simple
+solutions to each component. [EXTN]
+
+(Note that the first component is a generalisation of trust metrics, which use
+an implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$, i.e. a
+single root agent mapped to the maximum score.)
+
+### Use contexts
+
+In the context of our system design:
+
+---------------------------------------------------------------------------
+layer       agent                           resource
+----------- ------------------------------- -------------------------------
+social      identities and their ptables    indexes, tgraphs
+
+naming      tgraphs                         tags, tag-tag relationships
+
+routing     indexes                         tag-document relationships
+---------------------------------------------------------------------------
+
+One can see here that indexes and tgraphs take the position of both agent and
+resource. The output of the social layer is a resource-value map; the naming
+and routing layers both use this as an agent-score map.
+
+As agents, neither tgraphs nor indexes define explicit agent-score judgements.
+In addition to this, they represent immutable information, rather than social
+identities. These were conscious design choices - to encapsulate the problem of
+trust and authentication into a social layer, away from the problem of naming
+and routing.
+
+This does mean that the problem is different from that of a trust metric. We
+won't attempt to formalise this, but intuitively, for a given non-seed agent
+$a$, we want to infer a score based on how likely a seed agent could have _met_
+$a$, rather than whether they should _trust_ $a$. A naive implementation of
+this is in [score-inferer](#score-inferer). [MORE]
+
+### Attributes
+
+So far, we haven't discussed what the attributes should actually represent. In
+any usage scenario, they should at least satisfy the following properties:
+
+- The attribute should be some well-defined property that can be measured or
+  estimated. Any single value of the attribute should mean the same thing to
+  all agents, rather than being left up to agents' own interpretation.
+- Attribute values should not be treated as authoritative, since in our model
+  we only ever receive data from agents, whom we assume to have a limited view
+  of the entire network. There will always be inconsistency between different
+  agents; the system should account for this.
+
+In the case of perfectly honest agents, it is hoped that inconsistencies will
+work to cancel each other out. In the case of a system under attack, this will
+not be the case. However, only looking at the received values for attributes
+cannot distinguish between an attack and actual value differences; so this must
+be detected in some other way. Our project won't present any methods for doing
+this, but network structure analysis is a common approach type.[EXTN]
+
+The exact forms that we picked for our attributes are discussed elsewhere.[LINK]
+Generally, we use probability-based attributes, which are well-defined and can
+be estimated by agents. It also gives a simple way of combining attributes -
+multiplication - as well as a simple space of values - $[0, 1]$.
+
+TODO discuss more complex schemes that return "variance" for values. This would
+allow further refinement, eg. the more data sources that give a value judgement
+for some object $x$, the smaller the variance would be. [EXTN].
+
+In some contexts, the set of useful resources is sparse over the set of all
+possible resources[^attrsp] - e.g. if the attribute represents an endorsement,
+or a non-trivial binary relationship. In such cases, we'd like to not define
+the non-useful resource at all, implicitly marking it with a neutral or "zero"
+attribute, to save space and redundancy.
+
+However, this raises a problem when aggregating information - we now can't
+distinguish whether an agent implicitly regards a resource as useless, or just
+that it doesn't know about it. In our naive [value-composer](#value-composer),
+we address this issue by requiring an input heuristic that can help to resolve
+this ambiguity, based on other information.
+
+[^attrsp]: from a given agent's point of view
+
+A related idea is negative attributes, which would represent a judgement that
+the resource is malicious or dangerous in some sense, rather than neutral or
+"useless". In a system where it's possible to act aggressively, these weights
+could provide information on who to attack (or set up defences against).
+
+It's not clear how this applies to our system, which is a network of data and
+so only supports passive traps rather than active attacks. It's also unclear
+how probability-based attributes could be extended to work this way. So for
+now, we ignore this possibility.[EXTN]
+
 
 # Architecture
 
 ## Data structures
 
-[TODO] review this section
+_In this section we present a specification of the data objects that our system
+uses, their structure, semantics, and expected contents._
 
-### `index`
+### index
 
 DIAG
 
 Structure
 :	$$
-	h = \left[ \begin{array}{lrr} \\
-	  E_h \subseteq & T \times D \cup H & \to W \\
+	h = \left[ \begin{array}{lrl} \\
+	  E_h =& t, d|h &: w \\
 	\end{array} \right]
 	$$
 Description
-:	A map of arcs to their weights, where each arc is a relation from a tag to
-	a document or another `index`.
+:	A map $E_h$ of arcs to attributes, where each arc is a (tag, index) or
+	(tag, document) relation.
 Semantics
 :	Probability that the arc target will satisfy a query for the source tag.
 
-This data structure contains information on how to satisfy a search request. It
-contains mappings from tags to target documents, or to another index to forward
-the request onto.
+We assume that the set of useful relations is sparse over the set of possible
+relations ($T \times (D \cup H)$), and so relations with near-neutral attribute
+values may be omitted at the maintainer's discretion, even if they are aware of
+them. Algorithms that process this data structure should be aware of this.
 
-A mapping indicates some semantic relevance between the tag and the document,
-and a subjective judgement that a person searching for the tag did intend to
-retrieve information provided by the document.
-
-### `tgraph`
+### tgraph
 
 DIAG
 
 Structure
 :	$$
-	g = \left[ \begin{array}{lrr} \\
-	  V_g \subseteq & T \cup G & \to W \\
-	  E_g \subseteq & T \times T \cup G & \to W \\
+	g = \left[ \begin{array}{lrl} \\
+	  V_g =&    t|g &: u \\
+	  E_g =& t, t|g &: w \\
 	\end{array} \right]
 	$$
 Description
-:	1. A map of nodes to their weights, where each node is a tag; and
-	2. A map of arcs to their weights, where each arc is a relation from a tag
-	to another tag or `tgraph`.
+:	1. A map $V_g$ of nodes to attributes, where each node is a tag; and
+	2. A map $E_g$ of arcs to attributes, where each arc is a (tag, tgraph) or
+	   (tag, tag) relation.
 Semantics
-:	1. Saturation of the tag. (see [`tgraph` semantics](#tgraph-semantics))
-	2. Relevance of the target tag to the source tag.
+:	1. Size of the tag. (see [address space](#address-space))
+	2. Similarity of the target tag or tgraph, to the source tag.
 
-This data structure provides information on tags and the relationships between
-tags. The presence of a tag indicates an understanding of its meaning; an arc
-from a tag to a tag or `tgraph` indicates a semantic relationship between them,
-and a judgement that the target can be used in some appropriate way to satisfy
-a query for the source tag.
+We assume that the size of a tag is useful information, irrespective of the
+actual value. There is no such thing as a "neutral" size, and maintainers are
+expected to define all tag sizes that they have knowledge of.
 
-### `ptable`
+We assume that the set of useful relations is sparse over the set of possible
+relations ($T \times (T \cup G)$), and so relations with near-neutral attribute
+values may be omitted at the maintainer's discretion, even if they are aware of
+them. Algorithms that process this data structure should be aware of this.
+
+### ptable
 
 DIAG
 
 Structure
 :	$$
-	p = \left[ \begin{array}{lrr} \\
-	  V_p \subseteq & G \cup H & \to W \\
+	p = \left[ \begin{array}{lrl} \\
+	  V_p =&   g|h &: u \\
 	\end{array} \right]
 	$$
 Description
-:	A map of nodes to their weights, where each node is a `tgraph` or an
-	`index`. Implicitly, each `ptable` "belongs" to some identity on the
-	[underlying social network](#underlying-social-network).
+:	A map $V_p$ of nodes to attributes, where each node is a tgraph or an
+	index.
 Semantics
-:	Probability that a ... TODO
+:	Probability that the node can satisfy a query for an arbitrary tag.
 
-This data structure allows an identity to declare a personal list of preferred
-indexes and tgraphs to use for routing purposes.
+Each ptable is associated with some identity $z$ on the social network; the
+friend table of $z$, together with $V_p$, make up the judgement table for $z$
+as an agent.
 
-This is intended to provide an attack-resistant "bootstrapping" path onto the
-routing and naming planes.
+We assume that the set of useful resources is sparse over the set of possible
+resources ($G \cup H$), and so resources with near-neutral attribute values may
+be omitted at the identity's discretion, even if they are aware of them.
+Algorithms that process this data structure should be aware of this.
 
 ## Abstraction layers
 
-Since network latency is far greater than processing latency, we design these
-algorithms to be inherently concurrent. Operations involving retrieval of
-remote objects are non-blocking and allow other work to be done whilst waiting
-for its results.
+Our search application is partitioned into layers (contact, naming, routing),
+each encapsulating components that process information from the corresponding
+data planes. This allows all the layers to run concurrently; operations that
+retrieve remote objects are non-blocking and allow other work to be done whilst
+waiting for its results.
 
-The system is partitioned into several layers, each dependent on the one below
-it. These layers (contact, naming, routing) correspond to the data planes
-introduced previously.
-
-Each layer follows a basic skeletal structure:
+Each layer follows a basic structural template:
 
 - A set of data sources (agents and their judgements). We allow for these being
   large pieces of data, and so follow a model where only the parts relevant to
@@ -794,7 +793,7 @@ Value-composer
 
 This is done by applying Dijkstra's algorithm to the aggregate tgraph. The
 distance between nodes is given using the intersection-based distance metric
-discussed in [structured address space](#structured-address-space).
+discussed in [address space](#address-space).
 
 In our prototype, we stop the algorithm when a node hasn't yet been loaded into
 all data sources. This somewhat arbitrary; we could continue with incomplete

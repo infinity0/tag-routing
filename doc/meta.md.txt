@@ -105,11 +105,11 @@ $p$             `ptable`
 
 $z$             identity
 
-$s$             arc attribute (identity score)
+$s$             node attribute (identity score)
 
 $w$             arc attribute (tag-tag weight or tag-doc weight)
 
-$u$             node attribute (tag weight)
+$u$             node attribute (tag weight or resource value)
 
 ------------------------------------------------------------------------
 
