@@ -445,6 +445,30 @@ TODO discuss more complex schemes that return "variance" for values. This would
 allow further refinement, eg. the more data sources that give a value judgement
 for some object $x$, the smaller the variance would be. [EXTN].
 
+In some contexts, the set of useful resources is sparse over the set of all
+possible resources[^attrsp] - e.g. if the attribute represents an endorsement,
+or a non-trivial binary relationship. In such cases, we'd like to not define
+the non-useful resource at all, implicitly marking it with a neutral or "zero"
+attribute, to save space and redundancy.
+
+However, this raises a problem when aggregating information - we now can't
+distinguish whether an agent implicitly regards a resource as useless, or just
+that it doesn't know about it. In our naive [value-composer](#value-composer),
+we address this issue by requiring an input heuristic that can help to resolve
+this ambiguity, based on other information.
+
+[^attrsp]: from a given agent's point of view
+
+A related idea is negative attributes, which would represent a judgement that
+the resource is malicious or dangerous in some sense, rather than neutral or
+"useless". In a system where it's possible to act aggressively, these weights
+could provide information on who to attack (or set up defences against).
+
+It's not clear how this applies to our system, which is a network of data and
+so only supports passive traps rather than active attacks. It's also unclear
+how probability-based attributes could be extended to work this way. So for
+now, we ignore this possibility.[EXTN]
+
 ## Structured address space
 
 As discussed earlier, many routing schemes use a structured address space that
@@ -1290,34 +1314,6 @@ far nodes; and we also have the option of constructing local overrides against
 the attacks that are detected.
 
 TODO make an actual estimate... $2^{-4}$. [EXTN]
-
-## Weights
-
-The current data structures can only represent the presence of an attribute,
-and not its absence. This is a problem: any distributed system has to be able
-to deal with incomplete information, but here there is no way to tell if the
-absence of an object from a collection is due to incomplete information, or an
-explicit rejection based on the semantics of the object attributes. This is
-important when (eg.) we combine weights from multiple sources - we need to know
-whether others disagree with a recommendation, or merely don't know about it.
-
-We can either require that explicit "zero" weight-attributes are defined for
-every item encountered, no matter how insignificant; or we can try to generate
-heuristics for resolving this ambiguity, based on other implicit information.
-
-Save space, etc... context specific.
-
-A related idea is negative weight-attributes, which would represent a judgement
-that the subject is malicious (in some sense), rather than neutral or "useless".
-In a network where it's possible to act aggressively towards particular nodes,
-these weights could provide information on who to attack (or equivalently, set
-up defences against), and in what way.
-
-As it stands, our search system is a "dumb" network of data; the only way of
-interacting with other nodes is by publishing data objects for other nodes to
-read. We are unable to see other nodes' read requests, so it's impossible to
-attack a particular node. In this case then, negative weights are not useful.
-
 
 ## Value-composer
 
