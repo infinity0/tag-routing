@@ -343,7 +343,9 @@ Resource
 
 Each agent is associated with two maps: an agent-score map $\{ a : s \}$, and
 a resource-value map $\{ r : v \}$, which define their subjective judgements.
-The problem of information aggregation can then be formulated as:
+A score represents how much an agent's judgements can be trusted; the meaning
+of a resource value is context-specific. The problem of information aggregation
+can then be formulated as:
 
 Given
 :	- a set of agents, with their agent-score and resource-value maps:
@@ -361,11 +363,6 @@ Return
 	  $$
 
 This can be represented as a table. [DIAG] cols = resources, rows = agents
-
-This is a generalisation of the idea of trust metrics, which has no conception
-of resources. Most trust metrics instead return an aggregated agent-score map,
-with an implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$ (i.e. a
-single root agent mapped to the maximum score).
 
 ### Simplification
 
@@ -394,7 +391,11 @@ problems are fairly deep, and developing robust techniques to solve them could
 take up a whole other project. Our prototype implemenation only attempts naive
 and simple solutions to each component. [EXTN]
 
-### Use within our design
+(Note that the first component is a generalisation of trust metrics, which use
+an implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$, i.e. a
+single root agent mapped to the maximum score.)
+
+### Use contexts
 
 In the context of our system design:
 
@@ -408,13 +409,21 @@ naming      tgraphs                         tags, tag-tag relationships
 routing     indexes                         tag-document relationships
 ---------------------------------------------------------------------------
 
-[MORE] discussion here, discrepancy and score/value being mixed up
-
 One can see here that indexes and tgraphs take the position of both agent and
-resource. This affects the theoretical model for inferring the scores of those
-objects.
+resource. The output of the social layer is a resource-value map; the naming
+and routing layers both use this as an agent-score map.
 
-[MOVE] "links between objects" here
+As agents, neither tgraphs nor indexes define explicit agent-score judgements.
+In addition to this, they represent immutable information, rather than social
+identities. These were conscious design choices - to encapsulate the problem of
+trust and authentication into a social layer, away from the problem of naming
+and routing.
+
+This does mean that the problem is different from that of a trust metric. We
+won't attempt to formalise this, but intuitively, for a given non-seed agent
+$a$, we want to infer a score based on how likely a seed agent could have _met_
+$a$, rather than whether they should _trust_ $a$. A naive implementation of
+this is in [score-inferer](#score-inferer). [MORE]
 
 ### Attributes
 
@@ -775,7 +784,7 @@ Resource
 Seed map
 :	the input map $G_s$
 Score-inferer
-:	see [object-object links](#object-object-links) [MORE]
+:	see [score-inferer](#score-inferer) [MORE]
 Value-composer
 :	Our prototype uses the naive mean-based value-composer. For a discussion on
 	what would be an appropriate $\alpha$ function to use, see [using the naive
@@ -818,7 +827,7 @@ Resource
 Seed map
 :	the input map $H_s$
 Score-inferer
-:	see [object-object links](#object-object-links) [MORE]
+:	see [score-inferer](#score-inferer) [MORE]
 Value-composer
 :	Our prototype uses the naive mean-based value-composer. For a discussion on
 	what would be an appropriate $\alpha$ function to use, see [using the naive
@@ -1220,38 +1229,7 @@ MORE on incremental updates etc.
 
 # Design
 
-## Object-object links
-
-
-Scalability - decreases the number of identity-object pointers
-
-- requires less effort than forming a social link
-- has less implications than a social link - only endorse information contained
-  there, and possibly a small number of steps away
-
-MORE
-
-whether to use social link structure - flawed because:
-
-- MORE using two different semantic meanings for weight attributes being used
-  here (relevancy vs reliability) TODO explore this and its potential pitfalls.
-- would need to expand `tgraph` to provide this information more efficiently
-  (ie. have a "referents" table)
-
-TODO talk about endorser of a node vs maintainer of a node - two different
-things (here "node" refers to `tgraph` or `index`)
-
-- **maintainer** of a node defines its nodes and its out-arcs, and provides no
-  information about any other nodes beyond its out-neighbours
-- **endorser** of a node points to it in its `ptable`, and may follow out-arcs
-  to potentially reach _any_ other nodes in its connected component of the data
-  network
-
-In other words, when scoring nodes not in our seed set, we must **not** use
-weight information from nodes themselves (including the seed nodes), since this
-information comes from the _maintainer_ and not the _endorser_. It might be
-feasible to extend `ptable` to allow endorsers to provide extra information to
-help the scoring process [EXTN].
+## Score-inferer
 
 Below, we explore a rough and basic heuristic to infer scores using only the
 link structure of the data network.
