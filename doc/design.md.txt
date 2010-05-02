@@ -672,9 +672,11 @@ waiting for its results.
 
 Each layer follows a basic structural template:
 
-- A set of data sources (agents and their judgements). We allow for these being
-  large pieces of data, and so follow a model where only the parts relevant to
-  the query are loaded - the "local view" of the data source. [MORE] maybe
+- A set of data sources (agents and their judgements). These may be large data
+  structures, so we follow a model that supports partial loading - the "local
+  view" of the object. This can be visualised as a table, where the rows are
+  agents, and columns are resources. Each cell can hold an attribute, or a
+  sentinel value ("not yet loaded" or "attribute doesn't exist").[^laytb]
 
 - As input from lower layers, a seed map of data sources to their scores. Other
   input might also be needed, depending on the specific layer.
@@ -707,6 +709,9 @@ logic, and reduces the number of critical objects that need to be synchronised
 on. The state machines generally follow the pattern of `[NEW --> AWAIT_INPUT
 <-> IDLE]`; specific cases are discussed in the _traversing objects_ sections
 of the various layers, below.
+
+[^laytb]: Our implementation doesn't actually use a table structure, but this
+is a simple and useful description, which is basically equivalent.
 
 [^layex]: eg. if all available seed indexes have been exhausted, and nothing
 useful returned, we need to ask for more.
@@ -791,19 +796,20 @@ Value-composer
 
 #### Constructing output
 
-This is done by applying Dijkstra's algorithm to the aggregate tgraph. The
-distance between nodes is given using the intersection-based distance metric
-discussed in [address space](#address-space).
+We first construct an aggregate tgraph by passing every node and arc (from all
+tgraphs) through the value-composer. If we haven't yet loaded a node or arc in
+a tgraph, we treat it as non-existent in that tgraph.
 
-In our prototype, we stop the algorithm when a node hasn't yet been loaded into
-all data sources. This somewhat arbitrary; we could continue with incomplete
-information by pretending the node doesn't exist, but we thought it would be
-more prudent to wait until all relevant data became available, since it might
-help to reduce instability in the output.
+We then construct an address scheme from this, rooted at the source tag for the
+query. This is done by applying Dijkstra's algorithm to the aggregate tgraph.
+The distance between nodes is given using the intersection-based [distance
+relation](#distance-relation).
 
-What we end up with is a directed acyclic graph where nodes only have in-arcs
-from other nodes that have a smaller "shortest-distance"; this is passed along
-to the routing layer.
+We don't restrict the arcs to just being the shortest-path-tree; we instead
+only restrict them to the extent that nodes only have in-arcs from neighbours
+with a smaller "shortest-distance-from-source". This is intended to give some
+extra flexibility when routing. So, the resulting address scheme is a directed
+acyclic graph, rather than a tree.
 
 #### Traversing objects
 
@@ -936,183 +942,58 @@ high $\alpha_1$ and a low $\alpha_2$.
 
 #### Naming layer
 
-[REWRITE] this section
+First a definition: we say a tag $t$ is _completely loaded_ (or _complete_ for
+short) in $g$ if the attributes for itself, all its out-arcs, and all its
+out-nodes have been loaded. This is the maximum amount of information that can
+be retrieved from the current set of resources, for calculating the distance
+between $t$ and its out-nodes. The address scheme constructor needs this.
 
-$\breveG_* = \{ g \mapsto \ddotg \}$
-:	- a map of **data sources**, to the local view of each source.
-	- Initialised with the keys of $G_s$, each mapped to an empty local view.
-	- For any $g$, let $t$ is _complete_ in $\ddotg$ mean that enough data has
-	  been retrieved to calculate any [distance](#distance-between-tags) metric
-	  between $t$ and any of its out-nodes - ie. the weights of (itself, its
-	  out-arcs, and its out-nodes). `tgraph` nodes have no out-arcs, so this
-	  will just be its own weight.
-	- Let $t$ is _complete_ in $\breveG_*$ mean that $t$ is complete in all
-	  $\ddotg \in \img \breveG_*$.
-	- Let $\com \breveG_*$ refer to the largest set of nodes for which every
-	  node is complete in $\breveG_*$. This contains enough information to
-	  generate the theoretically largest $\breveT$ for the given $\breveG_*$,
-	  without waiting for more data from the network, or designing some extra
-	  workaround for the missing data.
-$\breveG = \{ g \mapsto w_g \}$
-:	- a map of **data sources** to their [scores](#weight-of-new-tgraph).
-	- Initially empty.
-$\breveg \in G$
-:	- a **combined `tgraph`**, [constructed](#combining-tgraph-objects) from
-	  $\breveG_*$.
-	- Initialised with $t_0$ having weight 1. This is just a temporary dummy
-	  value to allow the routing layer to do an initial scan using just the
-	  root tag, when naming information is still unavailable.
-	- This holds all information related to $\com \breveG_*$; except for arcs
-	  to `tgraph`s already being used as a data source (ie. all $g \in \dom
-	  \breveG$).
-$\breveT \subseteq \breveg$
-:	- an **acyclic subgraph** of $\breveg$, representing a **routing scheme**.
-	- Initially empty.
-	- Nodes are ranked in order of its shortest distance to $t_0$, and each
-	  node only has in-arcs from nodes nearer to $t_0$ than itself.
-	  (TODO could rank these arcs too..)
-	- This provides a quick way to obtain the set of short (ie. greedy) paths
-	  from $t$ back to $t_0$. MORE explain better
+Recall that a layer has a table holding the local views of agents' judgements.
+We mark a column for a tag-resource $t$ as _complete_ in the table, if $t$ is
+_complete_ in all rows $g$ currently in the table.
 
-Implementations may merge $(\breveG_*, \breveG)$ and $(\breveg, \breveT)$ into
-the same objects; however, they should ensure that only the parts specified
-here are exported to other layers.
+Our prototype naming layer expands up this table in two possible ways:
 
-DIAG data flow diagram
+Add a row
+:	For a new tgraph $g$, _completely load_ all the tags that are currently
+	complete in the table, so that the addition of $g$ as a row does not make
+	any (previously completed tags) incomplete.
 
-Receiving data from lower layers
+Add a column
+:	For a new tag $t$, _completely load_ it in all rows $g$, so that $t$ is
+	then complete in the table.
 
-:	We start from our seed `tgraph` set $G_s$. If $t_0$ does not appear in $G_s$,
-	we have a few backup options:
+After each wave of new data, the aggregated resource-value map, and then the
+address scheme, is recalculated.
 
-	- ask the user to supply some related tags. This should not be a significant
-	  problem; people usually "have an idea" of what they are looking for.
-	- ask more nodes in the social graph for their `ptable`s. This could be done
-	  automatically, which makes things more convenient for a user. However, it
-	  increases the risk of an attack through the social network.
+For this traversal algorithm, we have the address scheme constructor stop when
+it reaches a tag which is not complete in the table. This somewhat arbitrary;
+we could continue with incomplete information, but we thought it would be more
+prudent to wait until all the relevant data becomes available. This should help
+to reduce instability in the output, which is important because another layer
+(routing) uses it; if it varies wildly between successive waves then that layer
+might not work so well.
 
-	TODO rewrite this so it's more relevant to the new layer-based architecture.
+So the address scheme will have a maximum of one incomplete tag, and possibly
+references to tgraphs not yet added to our table. These now become valid
+candidates for being added to the table.
 
-Evt+Async: $\breveG_* \to \breveG$
+For this traversal algorithm, we decided to prefer adding columns to adding
+rows; our implementation only adds a new row if no more related tags can be
+found, or if there aren't many strong relations to the source tag in the tags
+found so far.
 
-:	The events that can trigger this are:
-
-	0. After receiving $G_s$ from [contact](#contact), in which case $G_s$ is
-	   just copied to $\breveG$.
-	1. A request from [routing](#routing) to add a tag to $\breveT$, in which
-	   case we complete the last element of $\breveT$ in $\breveG_*$, and
-	   continue our calculation of $\breveT$ (see below).
-	2. A request from [routing](#routing) to add `tgraph` $g \in \breveT$ as
-	   a data source, in which case we add $g$ to $\dom \breveG_*$, and
-	   retrieve enough data to maintain $\com \breveG_*$.
-
-	In each case, additional data may be need to be retrieved from the network.
-	When this is complete, the updates can be pushed atomically (from the other
-	layers' perspective) to $\breveG$, $\breveg$, $\breveT$.
-
-	**(3 only)** This may require first completing $g$ in $\breveG_*$, if the
-	weighting algorithm needs such data. Since this is costly and our prototype
-	does not need it, we omit this step.
-
-	**(3 only)** This may cause some $t \in \com \breveG_*$ to no longer be
-	part of the shortest-path tree, and hence $\breveT$, which will cause
-	future additions to retrieve unnecessary data from the network. In theory,
-	we could check this and prune them; however this would be quite complex and
-	should be rarely needed, so we ignore it in our prototype.
-
-Sync: $\breveG \to^{\breveG_*} \breveg$
-
-:	For each tag $t$ in $\com \breveG_*$, we calculate the combined weights for
-	all of its out-arcs and out-nodes (from every data source), ignoring the
-	`tgraph` nodes that have already been added to $\dom \breveG$ (so that they
-	are not added to $\breveT$ and be made available for addition again).
-
-Sync: $\breveg \to \breveT$
-
-	(The numberings correspond to the "event trigger" specs above.)
+This is based on the assumption that most naming needs should be satisfiable
+by a small neighbourhood around our seed set, and that judgements of tag-tag
+relationships should be similar across the entire network. (If someone claims
+to know the source tag's related tags, then it's likely that this knowledge
+covers a large part of all related tags defined by the entire network.)
 
 #### Routing layer
 
-$\breveH_* = \{ h \mapsto \ddoth_H \}$
-:	- a map of **data sources** to a partial local view of each source.
-	- Initialised with the keys of $H_s$, each mapped to an empty local view.
-	- This only holds arcs to other `index`s; arcs to documents are stored in
-	  $\breveR$ (see below).^[Contrast this with $\breveG_*$ from naming, which
-	  holds all retrieved data, due to the different structure of a `tgraph`.]
-	- TODO explore and explain the reasons why we have a $\com \breveG_*$ but
-	  not a $\com \breveH_*$.
-$\breveH = \{ h \mapsto w_h \}$
-:	- a map of **data sources** to their [scores](#weight-of-new-index).
-	- Initially empty.
-$\breveQ = \{ h \mapsto T_h \}$
-:	- a map of **data sources** to sets of tags, representing the currently
-	  **active lookup** operations.
-	- Initially empty.
-	- Here, we distinguish between the _query_ for tag $t_0$, which is the
-	  objective of this entire process , and the simpler operation _lookup_,
-	  which simply returns the results for a tag in a single `index`.
-$\breveR = \{ h \mapsto \ddoth_D \}$
-:	- a map of **data sources** to a partial local view of each source,
-	  representing the **results** of lookup operations.
-	- Initially empty.
-	- This holds the entire local view, except for arcs to `index`s already
-	  used as a data source (ie. all $h \in \dom \breveH$).
-	- Let $\breveD = \dst \bigcup \ddoth_D$ be the set of all results (from
-	  every data source).
+[MORE]
 
-Implementations may choose to merge any of these objects together; however,
-they should ensure that only the parts specified here are exported to other
-layers.
-
-DIAG data flow diagram
-
-Evt: $\breveH_* \to \breveH$
-
-:	The events that can trigger this are:
-
-	0. After receiving $H_s$ from [contact](#contact), in which case $H_s$ is
-	   just copied to $\breveH$.
-	1. After adding $h \to \dom \breveH_*$ (see below), and its lookups have
-	   all completed, in which case we update $\breveH$ by calling the scoring
-	   algorithm.
-
-	TODO explain this much much better... maybe waiting is not necessary and we
-	can just update $\breveH$ every time we receive data from $\breveR$...
-
-Evt: $\breveH_* \to^\breveT \breveQ$
-
-:	The events that can trigger this are:
-
-	1. A request from the user to add a `index` $h \in \breveD$ as a data
-	   source, in which case we add $h$ to $\dom \breveH_*$, and update
-	   $\breveQ$, etc... TODO explain this much better....
-	2. Receive an update to $\breveT$ from [naming](#naming), in
-	   which case we update $\breveQ$ etc.
-
-	For each `index` $h \in \breveH$, we want to select the tags to lookup.
-
-	- if $h$ is from $H_s$, select all tags in $\breveT$.
-	- otherwise, use $\breveH_*$ to find all tags $t$ than we reached $h$ by,
-	  and then use $\breveT$ to select all "short" paths from $t$ to $t_0$.
-	  TODO clarify this, description already in naming
-
-	Do this when $\breveT$ is updated from [naming](#naming).
-
-Async: $\breveQ \to^\breveP \breveR$
-
-:	We run the lookups of $\breveQ$ in some [order](#deciding-lookup-order),
-	and update $\breveR$ with the results. We can execute these in parallel.
-
-Sync: $\breveR \to \breveH_*$
-
-:	When a lookup $(h, t)$ completes, we scan the results returned, and add
-	any arcs to `index`s to the relevant $\ddoth \in \breveH_*$. We also remove
-	arcs to any `index` nodes that have already been added to $\dom \breveH$
-	(so that they are no longer available for addition again).
-
-	TODO explain this better
-
-#### Deciding lookup order
+Deciding lookup order
 
 Given
 :	- $\breveQ$
