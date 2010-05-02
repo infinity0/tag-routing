@@ -37,9 +37,8 @@ tag
 
 ## Data structures
 
-In the below notation, $\cdots$ denotes some additional predicate after a
-subject, that serves as a specifier or definition for it. Additionally, all
-data structures discussed are implicitly finite.
+Here, we document the notation we use for describing the data structures we
+use. All are implicitly finite in size.
 
 Partial function $f \subseteq X \to Y$
 :	This is non-standard, but $f : X \to Y$ is ambiguous - existing literature
@@ -47,17 +46,19 @@ Partial function $f \subseteq X \to Y$
 
 ### Simple objects
 
-Map $M$
-:	- $\{ x \cdots \mapsto y_x \cdots \}$
-:	- $\{ x_i \cdots \mapsto y_i \cdots \}_{i\cdots}$
-:	A container that maps[^mapfn] $x$ to $y_x$, or $x_i$ to $y_i$. (In the
-	latter style, $i$ is a dummy variable used only to specify $x$, $y$ from
-	the same pair; the actual value is unimportant and both $x_i$, $y_i$ are
-	independent from it.) When the context is clear, such as when the item
-	occurs by itself on a line, then the enclosing braces may be omitted.
-List $L$
-:	- $[ x_i \cdots ]_{i\cdots}$
-:	A container that imposes an ordering $i$ on a collection of items $x_i$.
+Tuple $X = ( a,b,\ldots )$
+:	an ordered container of items, of fixed size
+:	- the parentheses may be omitted when the context is clear
+Union $U = ( a|b|\ldots )$
+:	a container holding a single value of any of the specified types
+:	- the parentheses may be omitted when the context is clear
+Map $M = \{ x : y \}$
+:	a container that maps[^mapfn] $x$ to $y$.
+:	- write $y_x$ to mean "the $y$ that	$x$ maps to".
+	- let $x \in M$ mean the same thing as $x \in \dom M$.
+	- the braces may be omitted when the context is clear
+List $L = [ x_i ]_{i}$
+:	an ordered container of items, of unfixed size
 
 [^mapfn]: This is equivalent to a partial function: $M = \{ x_i \in X \mapsto
 y_i \in Y \}_i$ means the same thing as $M \subseteq X \to Y$; however, the
@@ -67,13 +68,13 @@ former is a better description of a static data structure.
 
 We make heavy use of these container objects:
 
-- A map $V_A : V \to A$ of nodes to their attributes.
-- A map $E_A : E \to A$ of arcs to their attributes.
+- maps $V_A : V \to A$ of nodes to their attributes.
+- maps $E_A : E \to A$ of arcs to their attributes.
 
 These are used in various combinations to represent graphs, inverted indexes,
 etc.
 
-For any set $E = V_s \times V_t$ of arcs, define:
+For any set $E \subseteq V_s \times V_t$ of arcs, define:
 
 - $\src E = \{ v_s \in V_s : \exists v_t . (v_s, v_t) \in E \}$ ie. the set
   of nodes that the arcs point from.

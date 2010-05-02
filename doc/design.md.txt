@@ -588,26 +588,30 @@ now, we ignore this possibility.[EXTN]
 _In this section we present a specification of the data objects that our system
 uses, their structure, semantics, and expected contents._
 
-### index
+### ptable
 
 DIAG
 
 Structure
 :	$$
-	h = \left[ \begin{array}{lrl} \\
-	  E_h =& t, d|h &: w \\
+	p = \left[ \begin{array}{lrl} \\
+	  V_p =&   g|h &: u \\
 	\end{array} \right]
 	$$
 Description
-:	A map $E_h$ of arcs to attributes, where each arc is a (tag, index) or
-	(tag, document) relation.
+:	A map $V_p$ of nodes to attributes, where each node is a tgraph or an
+	index.
 Semantics
-:	Probability that the arc target will satisfy a query for the source tag.
+:	Probability that the node can satisfy a query for an arbitrary tag.
 
-We assume that the set of useful relations is sparse over the set of possible
-relations ($T \times (D \cup H)$), and so relations with near-neutral attribute
-values may be omitted at the maintainer's discretion, even if they are aware of
-them. Algorithms that process this data structure should be aware of this.
+Each ptable is associated with some identity $z$ on the social network; the
+friend table of $z$, together with $V_p$, make up the judgement table for $z$
+as an agent.
+
+We assume that the set of useful resources is sparse over the set of possible
+resources ($G \cup H$), and so resources with near-neutral attribute values may
+be omitted at the identity's discretion, even if they are aware of them.
+Algorithms that process this data structure should be aware of this.
 
 ### tgraph
 
@@ -637,30 +641,26 @@ relations ($T \times (T \cup G)$), and so relations with near-neutral attribute
 values may be omitted at the maintainer's discretion, even if they are aware of
 them. Algorithms that process this data structure should be aware of this.
 
-### ptable
+### index
 
 DIAG
 
 Structure
 :	$$
-	p = \left[ \begin{array}{lrl} \\
-	  V_p =&   g|h &: u \\
+	h = \left[ \begin{array}{lrl} \\
+	  E_h =& t, d|h &: w \\
 	\end{array} \right]
 	$$
 Description
-:	A map $V_p$ of nodes to attributes, where each node is a tgraph or an
-	index.
+:	A map $E_h$ of arcs to attributes, where each arc is a (tag, index) or
+	(tag, document) relation.
 Semantics
-:	Probability that the node can satisfy a query for an arbitrary tag.
+:	Probability that the arc target will satisfy a query for the source tag.
 
-Each ptable is associated with some identity $z$ on the social network; the
-friend table of $z$, together with $V_p$, make up the judgement table for $z$
-as an agent.
-
-We assume that the set of useful resources is sparse over the set of possible
-resources ($G \cup H$), and so resources with near-neutral attribute values may
-be omitted at the identity's discretion, even if they are aware of them.
-Algorithms that process this data structure should be aware of this.
+We assume that the set of useful relations is sparse over the set of possible
+relations ($T \times (D \cup H)$), and so relations with near-neutral attribute
+values may be omitted at the maintainer's discretion, even if they are aware of
+them. Algorithms that process this data structure should be aware of this.
 
 ## Abstraction layers
 
@@ -893,109 +893,44 @@ see "practical details" [LINK]
 
 ### Using the naive value-composer
 
+To recap, $\alpha(a, r)$ is the probability that $a$ judges $r$ to be worthless
+(as opposed to not knowing about it), given that $r \notin A_a$.
+
 #### On ptables
 
-Define $G_s = \dom p_s \cap G$ and $H_s = \dom p_s \cap H$. (Note that $G_s +
-H_s = \dom p_s$).
+Various factors that could affect $\alpha(a, r)$ include the size of the ptable
+(how many resources $a$ knows about in total), and whether their friends also
+know about $r$. Developing a satisfactory model of this would be complicated,
+and the benefits are unclear. Complex models generally need more information,
+which raises the cost of calculation.
 
-A basic implementation is just to calculate the score-weighted average of the
-weight of each node. Then, to generate $p_s[v]$ for any $v \in \bigcup \dom p$,
-we just pass $P_s$, $v$ and some appropriate $\alpha_1 : P \times V \to [0, 1]$
-through the [general algorithm](#mean-weight-of-a-node).
-
-To recap, $\alpha_1(p, v)$ is the probability of $v \notin \dom p$ being due to
-"zero-weight". In other words, $p$ does know about $v$ and has judged it to be
-worthless. We need to make a rough estimate for $\alpha_1$.
-
-Various factors that could affect $\alpha_1$ include:
-
-A.  Maintainers of larger `ptable`s are likely to have come across more objects
-    than those of smaller `ptable`s, and so $\alpha_1$ will be larger.
-B.  The more of our friends that know about a particular item, the more likely
-    it is that we also know about it. The probability is proportionally greater
-    at lower saturations, since it only takes one friend to pass on knowledge.
-C.  On the other hand, we might choose _not_ point to an item that our friends
-    already point to, even if we like it. To do so would be somewhat redundant;
-    we could just get the information from our friends instead.
-
-It is not immediately obvious how these factors interact with each other, and
-how they affect the final $\alpha_1$. Even if we can produce a global estimate,
-it is uncertain whether it would actually be accurate or useful when applied to
-an individual's local situation. [EXTN]
-
-Also, any estimate depending on social factors (eg. (B), (C)) would require
-retrieving the `ptable`s of all the friends of $p$, which is more costly than
-estimates based on an individual `ptable`.
-
-Selecting trustworthy nodes from a social network is a deeper and more general
-problem which would provide resistance to attacks in this layer. With a good
-algorithm, $\alpha_1$ could then be reduced to near-zero.
-
-Due to these reasons, for our prototype we simply use a low constant, $2^{-4}$.
-This is **not** theoretically sound, but should work adequately in the majority
-of cases, where there are few disagreements or malicious attacks.
+Due to these reasons, for our prototype we simply set $\alpha$ to be constant.
+As a preliminary estimate, we'll use a low value of $2^{-4}$, intended to
+convey the notion that most agents only have a limited view of the network.
 
 #### On tgraphs
 
-Given
-:	- $\breveG$
-	- a node $v$, or an arc $e$
-Return
-:	- the combined weight $w_v$ or $w_e$, to be used in $\breveg$.
+Attribute of a node $v$: with `tgraph`s, node-attributes are expected to be
+defined if the agent has information to do this, regardless of what the actual
+attribute value is. So we set $\alpha = 0$.
 
-A basic implementation is just to calculate the score-weighted average value of
-$v$ or $t$.
+Attribute of an arc $e$: as discussed in [value-composer](#value-composer), we
+can make a distinction between arcs whose endpoints are both defined in the
+graph, and the opposite case. So we'll use two constants, a high $\alpha_1$ for
+the former, and a low $\alpha_2$ for the latter.
 
-TODO semantics of tag-tgraph arcs
-
-There are two cases to consider:
-
-Weight of a node $v$
-:	With `tgraph`s, the absolute weight of a single node does not determine
-	its usefulness to the naming layer, but the "distance" between that node
-	and the given query tag $t_0$. To this end, `tgraph`s are *supposed* to
-	include any tag it knows about, including low-weight ones. Therefore, we
-	assume that the absence of a tag *always* means "missing information", and
-	let $\alpha_1(g, v) = 0$.
-
-	We need to justify that the distribution of weight estimates is roughly
-	even. TODO (see incorporate notes from below)
-
-Weight of an arc $e$
-:	We use the standard [mean weight](#mean-weight-of-an-arc) algorithm. This
-	requires us to provide an $\alpha_1, \alpha_2$; these take low, high values
-	respectively - see the [analysis](#zero-weight-attributes) for details.
-
-	We need to justify that the distribution of weight estimates is roughly
-	even. TODO
-
-For node-weights, the "important" thing is not the value itself, but rather
-where the most significant bit occurs. In other words, the outcome-entropy of
-(D tagged by v), equal to -log(P(D tagged by v)).
-
-When we combine saturations from various sources, then I think it's more
-"correct" to take the mean of the entropy, and not the saturation. I'm not sure
-how to justify this rigorously, but intuitively:
-
-- if we have 3 sources giving saturations of (1, epsilon, epsilon), the mean
-saturation is 1/3, whereas the actual value is likely to be nearer epsilon.
-
-Is there a more formal way of saying this?
-
-Also, "mean entropy" is theoretically open to manipulation, since entropy can
-go all the way to infinity. But I don't think this is too much of a problem,
-because:
-
-- there is no incentive to manipulate these node-weights, since a tag must be
-well-related to other tags for the search algorithm to be affected; and
-arc-weights are not susceptible to this kind of manipulation
-- CPUs practically have finite-size representations of numbers, which limits
-the entropy to be proportional to the width (in bits) of the representation.
-Also, we could do this manually.
+A further tweak for node attributes is to take the geometric mean instead of
+the arithmetic mean, by converting probabilities to entropies before passing
+them through the composer, then reverting the result back. This is because we
+expect agents' views of the network to follow a power-law distribution, which
+means the judgements for a tag's size will be distributed in the same way.
+Taking the arithmetic mean of probabilities would bias the result in favour of
+larger sizes.
 
 #### On indexes
 
-...[MORE]
+As in the case of tgraphs, we use two constants for the two cases of arcs, a
+high $\alpha_1$ and a low $\alpha_2$.
 
 ### Traversing objects
 
@@ -1370,8 +1305,8 @@ $$
 \bar v_r = \frac{\sum_{a} s_a \hat v_{ar}}{\sum_a s_a}
 \quad ; \quad
 \hat v_{ar} = \left\{ \begin{array}{llr} \\
-  v_{ar} & : r \in \dom m & (0) \\
-  \alpha(a,r).0 + (1 - \alpha(a,r)).\bar v_r & : r \notin \dom m & (1) \\
+  v_{ar} & : r \in R_a & (0) \\
+  \alpha(a,r).0 + (1 - \alpha(a,r)).\bar v_r & : r \notin R_a & (1) \\
 \end{array} \right
 $$
 
