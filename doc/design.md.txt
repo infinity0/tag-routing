@@ -249,9 +249,9 @@ considered only for the naming and routing layers, and was completely ignored
 for the social layer. During implementation it was realised that trust metrics
 could not resolve conflicts between `ptable` entries, and after implementation
 we formulated the theoretical expression of the general problem, given below.
-The discussion on the various issues of aggregation as related to our design
-(eg. [LINK]) was actually done during the preparation stage, but it was only
-afterwards that we realised how this fit into the general theory.
+The discussion on the various issues of [aggregation](#information-aggregation)
+as related to our design was actually done during the preparation stage, but it
+was only afterwards that we realised how this fit into the general theory.
 
 ## System design
 
@@ -405,7 +405,7 @@ D(a,b) \circ D(c,b)$, ie. _symmetry_ ("forwards backwards are equally long")
 and _triangle inequality_ ("direct path is shortest"); we won't consider these
 restrictions here.
 
-Refer to the tuple $(M, I, \sqsubseteq, \circ)$ as the _relation type_. A
+We refer to the tuple $(M, I, \sqsubseteq, \circ)$ as the _relation type_. A
 probability-based relation of type $([0, 1], 1, \geq, \times)$ can be converted
 into an entropy-based relation of type $([0, \infty), 0, \leq, +)$ by taking
 the negative-log of each value, and vice-versa by taking the inverse-exponent.
@@ -547,7 +547,7 @@ cannot distinguish between an attack and actual value differences; so this must
 be detected in some other way. Our project won't present any methods for doing
 this, but network structure analysis is a common approach type.[EXTN]
 
-The exact forms that we picked for our attributes are discussed elsewhere.[LINK]
+The exact attribute types we use are discussed [elsewhere](#data-structures).
 Generally, we use probability-based attributes, which are well-defined and can
 be estimated by agents. It also gives a simple way of combining attributes -
 multiplication - as well as a simple space of values - $[0, 1]$.
@@ -836,16 +836,51 @@ Value-composer
 
 #### Constructing output
 
-Constructing a results map out of an aggregate index and an address scheme.
+Aggregating the information from various indexes gives us a map $E_{\barh}$ of
+tag-document arcs to attributes. For all $(t, d) : w$, where $w = P(t|d)$, we
+want to normalise this to $(t_0, d) : w'$, where $w' = P(t_0|d)$.
 
-Given
-:	- $\breveg = \{ t \mapsto w \}$
-	- $\breveH = \{ h \mapsto w \}$
-	- $\breveR = \{ h \mapsto \{ t \mapsto \{ d \mapsto w \} \} \}$
-Return
-:	- $\breveh = \{(d, w_d)\}$, a results map of documents to their weights.
+For any tag $t$, let $[t_i]_0^n$ be the shortest path from $t_0$ to $t$, where
+$t = t_n$. From the address scheme, we have the distance between $t$ and $t_0$:
 
-TODO
+$$
+D(t) = D[t_i]_0^n = \prod_{i=0}^{n-1} P(t_{i+1}|t_i)
+$$
+
+If we assume that the pairs $P(t_{i+1}|t_i)$, along with $P(t_n|d)$, are all
+independent[^routin] of each other, then we have:
+
+$$
+\begin{array}{rl}
+D(t)
+=& \prod_{i=0}^{n-1} P(t_{i+1}|t_i) \\
+=& \prod_{i=0}^{n-1} P(t_{i+1}|t_i, \ldots, t_0) \\
+=& P(t_n, \ldots, t_1|t_0) \\
+\end{array}
+$$
+
+so that:
+
+$$
+\begin{array}{rl}
+D(t) \frac{P(t_0)}{P(t_n)} P(t_n|d)
+=& P(t_n, \ldots, t_1|t_0) \frac{P(t_0)}{P(t_n)} P(t_n|d) \\
+=& P(t_{n-1}, \ldots, t_0|t_n) P(t_n|d) \\
+=& P(t_n, \ldots, t_0|d) \\
+\end{array}
+$$
+
+Since $[t_i]$ is the shortest path, we assume that $P(t_n, \ldots, t_0|d)
+\approx P(t_0|d)$. So, for each $(t, d) : w$, we have:
+
+$$
+w' = D(t) \frac{P(t_0)}{P(t)} w
+$$
+
+and generate a results map $d : w'$ for the user.
+
+[^routin]: This assumption is unlikely to be true, but it's a common assumption
+in information retrieval, and appears to give reasonable results.
 
 #### Traversing objects
 
