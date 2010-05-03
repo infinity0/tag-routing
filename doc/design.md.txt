@@ -883,7 +883,9 @@ $$
 w' = D(t) \frac{P(t_0)}{P(t)} w
 $$
 
-and generate a results map $d : w'$ for the user.
+and generate a results map $d : w'$ for the user. If a document is pointed to
+by more than one tag, we get a $w'$ for each tag; we simple pick the most
+favourable one and only use that.
 
 [^routin]: This assumption is unlikely to be true, but it's a common assumption
 in information retrieval, and appears to give reasonable results.
@@ -952,7 +954,8 @@ Recall that a layer has a table holding the local views of agents' judgements.
 We mark a column for a tag-resource $t$ as _complete_ in the table, if $t$ is
 _complete_ in all rows $g$ currently in the table.
 
-Our prototype traversal algorithm expands this table in two possible ways:
+We initialise the table rows from the seed tgraphs $G_s$, and start with no
+columns. The table can be expanded in two possible ways:
 
 Add a row
 :	For a new tgraph $g$, _completely load_ all the tags that are currently
@@ -974,54 +977,85 @@ is important because another layer (routing) uses it; if it varies wildly
 between successive waves then that layer might not work so well.
 
 So the address scheme will have a maximum of one incomplete tag, and possibly
-references to tgraphs not yet added to our table. These become valid candidates
+references to tgraphs not yet added to our table. The incomplete tag, along
+with the tgraph with the "shortest-distance-to-source", become valid candidates
 for being added to the table.
 
-We decided to prefer adding columns to adding rows; our implementation only
-adds a new row if no more related tags can be found, or if there aren't many
-strong relations to the source tag in the tags found so far.
+In choosing between the expansion methods, we prefer adding columns to adding
+rows; we only add a new row if there is no incomplete tag to add, or if it is
+"further" than some predefined threshold, relative to the nearest tgraph. (In
+our prototype, we set this to $2^-2$.)
 
-This is based on the assumption that most naming needs should be satisfiable
-by a small neighbourhood around our seed set, and that judgements of tag-tag
-relationships should be similar across the entire network. (If someone claims
-to know the source tag's related tags, then it's likely that this knowledge
+This preference is based on the assumption that most naming needs should be
+satisfiable by a small neighbourhood around our seeds, and that judgements of
+tag-tag relationships should be similar across the entire network. (If someone
+claims to know a tag's related tags, then it's likely that this knowledge
 covers a large part of all related tags defined by the entire network.)
 
 #### Routing layer
 
+Define the _potential_ of a lookup $(t, h)$ to be $P(t_0, t, h)$. We estimate
+this as $P(t_0|t) P(t|h) P(h)$[^trvrpo], which assumes that $P(t_0|t)$, $P(h)$
+are independent.
+
+[^trvrpo]: ie. similarity of $h$ to $t_0$, relevance of $h$ to $t$, and score
+of $h$, respectively.
+
 As with the other layers, we have a table of loaded attributes. In this layer
 however, we can be more focused when searching through indexes. Instead of
 looking up all the tags for an entire row, we only partially load each row; all
-non-loaded cells are assumed to be non-existent in the index for the row.
+non-loaded cells are assumed to be non-existent in the index for the row, until
+they are loaded.
 
-Our prototype traversal algorithm expands this table in two possible ways:
+We initialise the table rows from the seed indexes $H_s$, and an empty address
+scheme (ie. no columns). The table can be expanded in two possible ways:
 
 Add a row
 :	For a new index $h$, select all tags that lie on a path between $t_s$ and
 	$t_0$ in the address scheme, where $t_s$ is any tag that we reached $h$ by.
 
-Updated address scheme
-:	When the address scheme updates, we just re-add all rows (using the same
-	method of selecting only certain tags), skipping the already-loaded ones.
+On address scheme update
+:	Our prototype implementation has no way of detecting how the address scheme
+	changed, so we just re-add all the rows as above. For seed rows, we select
+	_all_ tags in the address scheme, since "reached-by" doesn't apply to seed
+	tags. Of course, lookups that have already completed, are skipped.
 
 Unlike naming, no other functional component is dependent on the output of this
 layer; the results are only returned to the user. So we shift our focus from
 output stability to responsiveness - updating results as soon as possible when
 new information arrives.
 
-We retrieve data asynchronously, with pending lookups held in a priority queue.
-When the user asks for more results to be retrieved, we add more lookups to the
-queue and return immediately, instead of waiting for them to finish. The user
-can poll the query progress; each time this occurs, we generate aggregated
-results using the data retrieved so far.
+We retrieve data asynchronously, with pending lookups held in a priority queue,
+ordered by lookup potential. When the user asks for more results, we return
+immediately after picking an expansion method and adding its relevant lookups
+to the queue, instead of waiting for them to finish. The user can poll query
+progress; each time this occurs, we generate aggregated results using the data
+retrieved so far.
 
 The aggregated results might also contain references to new indexes as well as
 documents, in which case the most relevant index (scored in the same way as
 documents; this is described elsewhere) becomes a valid candidate for being
 added to the table.
 
-We decided to prefer adding rows to having the address scheme updated; our
-implementation only [MORE] also the actual ordering for the priority queue
+The choice of expansion method proceeds as follows. Define the _potential_
+
+- of a not-yet-added tag $t$, to be the independent union of the potentials of
+  its lookups over all rows $h$.
+- of a not-yet-added index $h$, to be the independent union of the potentials
+  of the lookups that _would be selected_ if $h$ were to be added as a row.
+- of the current lookups queue, to be the highest potential of any lookup
+  currently contained within it.
+
+We compare the potential of the incomplete tag $t$, the new-index candidate
+$h$, and the current lookups queue. If any of these do not exist, they are
+ignored. If the most favourable potential out of these is:
+
+- that of the lookups queue, then we wait for lookups to continue
+- that of $t$, then we request an address scheme update
+- that of $h$, then we add it as a row
+
+Finally, if all three are non-existent (ie. no pending lookups, no incomplete
+tag, and no indexes to add), then we request an address scheme update.
 
 ## Optimisation
 
