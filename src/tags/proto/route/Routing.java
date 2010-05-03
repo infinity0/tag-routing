@@ -254,7 +254,8 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 	protected synchronized void updateResults(AddressScheme<T, A, W> scheme) {
 		if (rcache_v == true) { return; }
 		source.calculateScores();
-		index = composeIndex();
+		index = composeIndex(); // FIXME HIGH - need to lock the local views whilst doing this
+		// otherwise it might throw ConcurrentExecutionException
 		results = makeResults(scheme);
 		rcache_v = true;
 	}

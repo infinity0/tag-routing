@@ -11,14 +11,15 @@ scraper has deadlock issues
 - commitGroupPhotos is leaking, but not commitUserPhotos...
 - put all the database stuff into a "Sample" class
 
+(algorithms)
+- "adds a new row if no more related tags can be found, or if there aren't many
+  strong relations to the source tag in the tags found so far." - actually
+  implement the latter
+
 (cleanup)
 - review Maps.viewSubMap
 - review CompositeMap, MeanEntropyComposer
 - test ProbabilityEntropyTGraphComposer, ProbabilityIndexComposer
-
-(laterz)
-- add tags.rout.IndexComposer to the design document
-- explain how tags are scored, in the design document
 
 (more laterz)
 - decide whether we want to synchronized all methods in Contact, Naming, Routing

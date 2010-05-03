@@ -952,7 +952,7 @@ Recall that a layer has a table holding the local views of agents' judgements.
 We mark a column for a tag-resource $t$ as _complete_ in the table, if $t$ is
 _complete_ in all rows $g$ currently in the table.
 
-Our prototype naming layer expands up this table in two possible ways:
+Our prototype traversal algorithm expands this table in two possible ways:
 
 Add a row
 :	For a new tgraph $g$, _completely load_ all the tags that are currently
@@ -966,22 +966,20 @@ Add a column
 After each wave of new data, the aggregated resource-value map, and then the
 address scheme, is recalculated.
 
-For this traversal algorithm, we have the address scheme constructor stop when
-it reaches a tag which is not complete in the table. This somewhat arbitrary;
-we could continue with incomplete information, but we thought it would be more
-prudent to wait until all the relevant data becomes available. This should help
-to reduce instability in the output, which is important because another layer
-(routing) uses it; if it varies wildly between successive waves then that layer
-might not work so well.
+We have the address scheme constructor stop when it reaches a tag which is not
+complete in the table. Of course we could continue with incomplete information,
+but we thought it would be more prudent to wait until all the relevant data
+becomes available. This should help to reduce instability in the output, which
+is important because another layer (routing) uses it; if it varies wildly
+between successive waves then that layer might not work so well.
 
 So the address scheme will have a maximum of one incomplete tag, and possibly
-references to tgraphs not yet added to our table. These now become valid
-candidates for being added to the table.
+references to tgraphs not yet added to our table. These become valid candidates
+for being added to the table.
 
-For this traversal algorithm, we decided to prefer adding columns to adding
-rows; our implementation only adds a new row if no more related tags can be
-found, or if there aren't many strong relations to the source tag in the tags
-found so far.
+We decided to prefer adding columns to adding rows; our implementation only
+adds a new row if no more related tags can be found, or if there aren't many
+strong relations to the source tag in the tags found so far.
 
 This is based on the assumption that most naming needs should be satisfiable
 by a small neighbourhood around our seed set, and that judgements of tag-tag
@@ -991,26 +989,39 @@ covers a large part of all related tags defined by the entire network.)
 
 #### Routing layer
 
-[MORE]
+As with the other layers, we have a table of loaded attributes. In this layer
+however, we can be more focused when searching through indexes. Instead of
+looking up all the tags for an entire row, we only partially load each row; all
+non-loaded cells are assumed to be non-existent in the index for the row.
 
-Deciding lookup order
+Our prototype traversal algorithm expands this table in two possible ways:
 
-Given
-:	- $\breveQ$
-	- $\breveT$
-	- $\breveH_*$
-Return
-:	- an ordered list $\breveP = [(h_i, t_i)]$, where $(h, t) \in \breveP \iff
-	  h \in \dom \breveQ \wedge t \in \breveQ[h]$.
+Add a row
+:	For a new index $h$, select all tags that lie on a path between $t_s$ and
+	$t_0$ in the address scheme, where $t_s$ is any tag that we reached $h$ by.
 
-Tags further away from the root are less "related" to the original query, but
-searches for them are more likely to succeed (for rare searches), so the
-algorithm should proceed by searching near the root, then further up the tree.
+Updated address scheme
+:	When the address scheme updates, we just re-add all rows (using the same
+	method of selecting only certain tags), skipping the already-loaded ones.
 
-However, note also that tags with higher $u_t$ are more likely to have their
-search queries succeed, independent of $w_e.u_t$.
+Unlike naming, no other functional component is dependent on the output of this
+layer; the results are only returned to the user. So we shift our focus from
+output stability to responsiveness - updating results as soon as possible when
+new information arrives.
 
-TODO rewrite this...
+We retrieve data asynchronously, with pending lookups held in a priority queue.
+When the user asks for more results to be retrieved, we add more lookups to the
+queue and return immediately, instead of waiting for them to finish. The user
+can poll the query progress; each time this occurs, we generate aggregated
+results using the data retrieved so far.
+
+The aggregated results might also contain references to new indexes as well as
+documents, in which case the most relevant index (scored in the same way as
+documents; this is described elsewhere) becomes a valid candidate for being
+added to the table.
+
+We decided to prefer adding rows to having the address scheme updated; our
+implementation only [MORE] also the actual ordering for the priority queue
 
 ## Optimisation
 

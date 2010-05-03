@@ -24,6 +24,8 @@ public class ProbabilityLookupScorer implements LookupScorer<Probability, Probab
 	** # = P(seed | index, subj) P(index|subj) [''chain rule'']
 	** # ≅ P(seed|subj) P(index) [''assume independence'']
 	**
+	** FIXME HIGH flawed; we should use P(subj, index) not P(index).
+	**
 	** @see tags.proto.Notation
 	*/
 	public Probability getLookupScore(Probability idxs, Probability tagw) {
