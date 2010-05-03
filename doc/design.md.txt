@@ -490,7 +490,7 @@ Return
 
 We follow this approach in our project. Even these simpler problems, however,
 are fairly deep, and developing robust techniques to solve them could take up a
-whole other project. Our prototype implemenation only attempts naive and simple
+whole other project. Our prototype implemenation only attempts crude and simple
 solutions to each component. [EXTN]
 
 (Note that the first component is a generalisation of trust metrics, which use
@@ -523,9 +523,9 @@ and routing.
 
 This does mean that the problem is different from that of a trust metric. We
 won't attempt to formalise this, but intuitively, for a given non-seed agent
-$a$, we want to infer a score based on how likely a seed agent could have _met_
-$a$, rather than whether they should _trust_ $a$. A naive implementation of
-this is in [score-inferer](#score-inferer). [MORE]
+$a$, we want to infer its score based on how much the endorsements of the seed
+agents _extend_ to it, rather than how much the seed agents should _trust_ it.
+A crude implementation of this is in [score-inferer](#score-inferer).
 
 ### Attributes
 
@@ -564,7 +564,7 @@ attribute, to save space and redundancy.
 
 However, this raises a problem when aggregating information - we now can't
 distinguish whether an agent implicitly regards a resource as useless, or just
-that it doesn't know about it. In our naive [value-composer](#value-composer),
+that it doesn't know about it. In our crude [value-composer](#value-composer),
 we address this issue by requiring an input heuristic that can help to resolve
 this ambiguity, based on other information.
 
@@ -756,9 +756,9 @@ Score-inferer
 	techniques; our prototype only returns an identity's immediate neighbours.
 	[EXTN]
 Value-composer
-:	Our prototype uses the naive [mean-based](#value-composer) value-composer.
+:	Our prototype uses the crude [mean-based](#value-composer) value-composer.
 	For a discussion on what would be an appropriate $\alpha$ function to use,
-	see [using the naive value-composer: on ptables](#on-ptables).
+	see [using the value-composer: on ptables](#on-ptables).
 
 #### Constructing output
 
@@ -786,13 +786,13 @@ Resource
 Seed map
 :	the input map $G_s$
 Score-inferer
-:	Our prototype uses the naive [path-based](#score-inferer) score-inferer. We
+:	Our prototype uses the crude [path-based](#score-inferer) score-inferer. We
 	consider a route $g \rightarrow^t g'$ only if the traversal algorithm has
 	passed through it, which restricts it to tags relevant to our query.
 Value-composer
-:	Our prototype uses the naive [mean-based](#value-composer) value-composer.
+:	Our prototype uses the crude [mean-based](#value-composer) value-composer.
 	For a discussion on what would be an appropriate $\alpha$ function to use,
-	see [using the naive value-composer: on tgraphs](#on-tgraphs).
+	see [using the value-composer: on tgraphs](#on-tgraphs).
 
 #### Constructing output
 
@@ -832,13 +832,13 @@ Resource
 Seed map
 :	the input map $H_s$
 Score-inferer
-:	Our prototype uses the naive [path-based](#score-inferer) score-inferer. We
+:	Our prototype uses the crude [path-based](#score-inferer) score-inferer. We
 	consider a route $h \rightarrow^t h'$ only if the traversal algorithm has
 	passed through it, which restricts it to tags relevant to our query.
 Value-composer
-:	Our prototype uses the naive [mean-based](#value-composer) value-composer.
+:	Our prototype uses the crude [mean-based](#value-composer) value-composer.
 	For a discussion on what would be an appropriate $\alpha$ function to use,
-	see [using the naive value-composer: on indexes](#on-indexes).
+	see [using the value-composer: on indexes](#on-indexes).
 
 #### Constructing output
 
@@ -899,7 +899,7 @@ see "practical details" [LINK]
 
 ## System components
 
-### Using the naive value-composer
+### Using the value-composer
 
 To recap, $\alpha(a, r)$ is the probability that $a$ judges $r$ to be worthless
 (as opposed to not knowing about it), given that $r \notin A_a$.
@@ -984,7 +984,7 @@ for being added to the table.
 In choosing between the expansion methods, we prefer adding columns to adding
 rows; we only add a new row if there is no incomplete tag to add, or if it is
 "further" than some predefined threshold, relative to the nearest tgraph. (In
-our prototype, we set this to $2^-2$.)
+our prototype, we set this to $2^{-2}$.)
 
 This preference is based on the assumption that most naming needs should be
 satisfiable by a small neighbourhood around our seeds, and that judgements of
@@ -998,7 +998,7 @@ Define the _potential_ of a lookup $(t, h)$ to be $P(t_0, t, h)$. We estimate
 this as $P(t_0|t) P(t|h) P(h)$[^trvrpo], which assumes that $P(t_0|t)$, $P(h)$
 are independent.
 
-[^trvrpo]: ie. similarity of $h$ to $t_0$, relevance of $h$ to $t$, and score
+[^trvrpo]: ie. similarity of $t$ to $t_0$, relevance of $h$ to $t$, and score
 of $h$, respectively.
 
 As with the other layers, we have a table of loaded attributes. In this layer
@@ -1047,8 +1047,8 @@ The choice of expansion method proceeds as follows. Define the _potential_
   currently contained within it.
 
 We compare the potential of the incomplete tag $t$, the new-index candidate
-$h$, and the current lookups queue. If any of these do not exist, they are
-ignored. If the most favourable potential out of these is:
+$h$, and the current lookups queue. (If any of these do not exist, they are
+ignored.) If the most favourable potential out of these is:
 
 - that of the lookups queue, then we wait for lookups to continue
 - that of $t$, then we request an address scheme update
@@ -1128,67 +1128,38 @@ MORE on incremental updates etc.
 
 ## Score-inferer
 
-Below, we explore a rough and basic heuristic to infer scores using only the
-link structure of the data network.
+Here we explore a crude heuristic to infer scores using the link structure of
+a data network. This is intended for use by the naming and routing layers, and
+as discussed previously, we base our model on the likelihood of reaching a
+given agent from the seeds.
 
-MORE
-
-Let $x$ be the node (here, a `tgraph` or `index`) we want to infer a score for.
-For each seed node $s$, let $w_{p(s)}$ be the probability that $x$ will satisfy
-a query, by traversing some path from $s$ to $x$. (If there is no path, the
-probability is obviously 0). The weight of $x$ we might then calculate as:
+Let $x$ be the agent we want to infer a score for. A simple model is to assign
+a path-score for the shortest path between $x$ and each seed agent $a$, then
+take the independent union of all of these path-scores:
 
 $$
-1 - \prod_s (1 - w_{p(s)})
+s_x = 1 - \prod_a (1 - p_{ax})
 $$
 
-This is just the union (over $s$) of all path weights, assuming that paths are
-independent. A rough justification for this is that we only need to traverse
-one path to satisfy a query; we can pick any one we wish.
+Note that this is open to attack by multiple colluding seed nodes, which breaks
+the assumption of independence.
 
-This is open to attack by multiple colluding seed nodes (which breaks the
-assumption of independence), but in such cases, worse attacks are possible.
-TODO explore more...
+Let $k$ represent the probability that an endorsement of a subject also implies
+endorsement of an arbitrary neighbour, and let $i$ be the number of steps in
+the shortest path from $a$ to $x$. Then $k^i$ is a rough estimate for the
+probability that an endorsement extends to a node $i$ steps away. Combining
+this with the weight of the original endorsement gives:
 
-This leaves us to derive a model for $w_{p(s)}$. A simple one is:
+$$
+p_{ax} = s_a.k^i
+$$
 
-- $w_{p(s)} = w_s.k^i$, where $k$ is some constant, and $i$ is the number of
-  steps in the shortest path from $s$ to $x$.
-
-$k^i$ represents the probability that the people who endorse $x$, also endorse
-an object $i$ steps away from it. Suppose that the endorser follows a node's
-out-arcs with probability $k$ (ie. the endorsement also covers the out-node).
-Traversing $i$ steps involves following each arc in the path, and therefore has
-probability $k^i$.
-
-This ignores several important factors. For example:
-
-- for nodes with larger out-degree, a typical endorser will follow a smaller
-  proportion of its out-arcs.
-- an endorser is more likely to visit a node that can be reached in more ways
-  from $s$ (ie. has more distinct paths to $s$). This is essentially the same
-  point as our "union" method above for all $s$.
-- an endorser is less likely to traverse another step, the more steps they
-  already are from $s$.
-
-Some of these suggest potential vectors of attack upon the $k^i$ scheme. For
-example, the assumption that the proportion of out-arcs followed is constant,
-could encourage a malicious seed node to define huge numbers of out-arcs, whose
-referents will then enjoy a larger path weight than appropriate. (This attack
-is easy to detect, but there may be more effective ones.)
-
-This problem can be stated more generally as: _Given an endorsement of a node
-in a (social) network, what other nodes can I infer that the endorsement also
-covers, and to what degree?_ [EXTN]
-
-For our prototype, we stick to $k^i$. Due to the security concerns, we try to
-give an underestimate for $k$. This should not affect the reachability of the
-nodes in the network; only that near nodes (to our seed set) will have a much
-greater priority than far nodes. Attacks from far nodes can only affect other
-far nodes; and we also have the option of constructing local overrides against
-the attacks that are detected.
-
-TODO make an actual estimate... $2^{-4}$. [EXTN]
+Again, this is a very crude model, which ignores several important factors and
+assumes that $k$ is universally constant. However, we weren't able (in the time
+given) to develop any significantly better models, so we've stuck with it for
+our prototype. We try to given an underestimate of $k$, to give a bias towards
+agents nearer our seed set, which hopefully offers slightly more resistance to
+simple attacks. Our prototype uses $k = 2^{-4}$.
 
 ## Value-composer
 
@@ -1272,7 +1243,7 @@ the average agent, which is reasonable since we already trust them enough to
 be processing their judgement table.
 
 Brief discussions of specific applications of all of the above is given in the
-[relevant sub-sections](#using-the-naive-value-composer).
+[relevant sub-sections](#using-the-value-composer).
 
 More sophisticated methods include training on a prototype network, or dynamic
 learning from an active network. However, it must be noted that the theoretical
