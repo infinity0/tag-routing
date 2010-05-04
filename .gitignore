@@ -1,14 +1,21 @@
+# build products
 build
 dist
 run
 site
 tmp
+
+# external libs
 lib
-!lib/patches
+!lib/patch
 src/futures
 src/flickrapi
+
+# build products (scraper)
 test/tags/store/StoreGenerator.java
 sample.*.txt
 sample-data-*.tar.bz2
 *.pyc
+
+# private auth files
 flickr.key
