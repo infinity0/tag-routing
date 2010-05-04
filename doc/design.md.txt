@@ -50,11 +50,10 @@ can index their own local sections of the network, and access and results can
 be fine-tuned using local information. In addition, clients will have a wider
 choice of who to trust.
 
-Admittedly, decentralised systems have their own issues, and these are briefly
-discussed [below](#potential-issues). However, unlike the inherent problems of
-centralisation, these are open research questions. Once a problem is solved,
-future generations may reap the benefits without having to expend the initial
-development cost.
+Of course, decentralised systems have their own issues, and these are briefly
+discussed [below](#potential-issues). We believe that these are all practical
+issues that are ultimately solvable in the long run, whereas centralisation is
+an inherent problem in itself.
 
 Imagine your browser acting like a router; you type in a search query and it
 automatically follows links between pages to reach what you want. Of course,
@@ -79,23 +78,21 @@ Social relationships
 :	Nodes prefer to peer with trusted friends. This provides better security
 	properties, and a more predictable network structure. (OneSwarm, Freenet)
 
-A more comprehensive survey of peer-to-peer search systems is presented in
-[^surv1]. Using the terminology of that paper, this project develops and
-evaluates a _probability-based model_ of information retrieval intended to
-support _comprehensive keyword search_[^surv2].
+A more comprehensive survey of peer-to-peer searching is presented in [^surv1].
+Using the terminology of that paper, this project develops and evaluates a
+_probability-based model_ of information retrieval intended to support
+_comprehensive keyword search_ (as opposed to _partial keyword search_).
 
 [^surv1]: John Risson, Tim Moors, Survey of research towards robust
 peer-to-peer networks: Search methods, _Computer Networks_, **Volume 50**,
 **Issue 17**, 5 December 2006, Pages 3485-3521, ISSN 1389-1286, DOI:
 [10.1016/j.comnet.2006.02.001](http://www.sciencedirect.com/science/article/B6VRG-4JD0XYW-1/2/07e1ec0ba8cbe65f8f094cd99612b149).
 
-[^surv2]: as opposed to _partial keyword search_
-
-There is some existing research into p2p semantic search systems, eg. [^sem1]
-[^sem2]. However, none of these are currently deployed in real systems, and we
-were unaware of them during the initial stages of our project. A discussion of
-these systems and how they relate to our project is given in sections further
-below, after our system has been described first. [MORE]
+Existing research into peer-to-peer semantic search includes [^sem1][^sem2].
+None of these are currently deployed in real systems, and we were unaware of
+them during the initial stages of our project. A discussion of these systems
+and how they relate to our project is given [later](#comparison), after our
+system has been described first.
 
 [^sem1]: [REF] REMINDIN'
 [^sem2]: [REF] Harnessing.
@@ -105,9 +102,9 @@ below, after our system has been described first. [MORE]
 
 ## Objectives
 
-We intend to build a system that can at least offer similar functionality to
-existing search providers, if not as sophisticated or efficient. Core aspects
-of this functionality include:
+We intend to build a system that can potentially offer a similar functionality
+to existing search providers, although obviously our prototype will be nowhere
+near as sophisticated nor efficient. Core functional aspects include:
 
 Semantics
 :	Query subjects have semantic relevance to the results, so the routing
@@ -148,9 +145,12 @@ provide search capabilities. In principle, this is no different from displaying
 links to other websites to help your visitors find what they want - linking to
 useful content increases your own utility, even if this is not reciprocated.
 
-It is widely thought that decentralised systems are hard to design to be both
-secure and scalable, but nothing indicates that this impossible. Recent
-approaches based on social networks have been promising.[MORE]
+As for constructing a decentralised system in the first place, it's widely
+acknowledged that building these to be both scalable and secure is a difficult
+problem. However, nothing suggests that this is an inherently impossible task;
+and once a problem is solved, future generations may reap the benefits without
+having to expend the initial development cost. Recent designs based on social
+networks have been promising, and we will use this as an inspiration.
 
 ## Initial observations
 
@@ -170,7 +170,7 @@ allows for fairly simple, yet effective, routing algorithms.
 
 [^dhtperf]: eg. expected number of hops for a lookup
 
-A basic reason for this is that a numerical address space can be partitioned
+An informal explanation is that a numerical address space can be partitioned
 hierarchically, eg. by taking successively larger prefixes of an address. This
 allows greedy routing to work effectively, ie. by finding the neighbour which
 shares the smallest partition with the desired target node (in IP routing, this
@@ -193,12 +193,13 @@ design aims to support the latter; however, bounding the cost of finding extra
 resources is a more complex problem, which we didn't get the chance to explore.
 [EXTN]
 
-Research has shown that analysing social network structure can be effective in
+Finally, we chose to base our system upon a foundation of social relationships.
+Recent research has shown that analysing network structure can be effective in
 resisting malicious information. A major reason is because social relationships
-are much more expensive to attack than simple naive indexing algorithms, such
-as TF-IDF. Existing examples include Google's PageRank algorithm[REF], which
-measures a node's importance; trust metrics such as Advogato[REF]; and sybil
-detection algorithms such as SybilInfer[REF]. [MORE] restructure
+are much more expensive to attack than simple indexing algorithms that make
+naive assumptions about input data. Examples include Google's PageRank[REF],
+trust metrics such as Advogato[REF], and sybil detection algorithms such as
+SybilInfer[REF].
 
 ## Working assumptions
 
@@ -214,11 +215,10 @@ this primitive we cannot continue at all; data has to be stored somewhere, and
 it has to be accessible to an arbitrary subset of the network.
 
 Additionally, we assume that objects are always available. In a real network,
-this can be implemented with proxy services (eg. servers which hire storage
-space out and guarantee continuous access to this), or it might be a property
-of the storage network (eg. DHTs). This simplifies our design, since it allows
-us to avoid dealing with the issue of churn, by delegating it to an independent
-external component.
+this can be implemented with proxy services (servers that lend out storage and
+guarantee continuous access to this), or it might be a property of the storage
+network (eg. DHTs). This simplifies our design, since it allows us to avoid
+dealing with the issue of churn, by delegating it to an external component.
 
 This also forces us to consider an iterative routing algorithm rather than a
 recursive one. Since data cannot forward queries onto other pieces of data, a
@@ -226,8 +226,12 @@ lient must process it themselves, determine which objects to retrieve next,
 then retrieve those, etc. Hopefully, our design can be adapted into a recursive
 one without much effort, but we won't give special consideration to this.
 
-- style of query, keyword search ONLY [MORE]
-- nothing more complex, eg. intersections [MORE]
+Importantly, we will only consider single-phrase queries, where each "phrase"
+corresponds to a single entry in a lookup table. We exclude compound queries,
+ie. multiple phrases composed with operations such as intersections, unions,
+differences, etc. This helps to keep the basic problem simple; compound query
+methods can be developed later, and arguably on top of a solution to this
+simpler problem.
 
 # Theory
 
@@ -260,7 +264,7 @@ for our design choices. More precise details, such as the exact contents of the
 various objects introduced, and how the search algorithm processes these
 objects, are given in the [architecture](#architecture) section._
 
-We start off with the analogy of an index being a routing table. Tags are
+We start off with the analogy of an **index** being a routing table. Tags are
 addresses, documents are hosts, and routes are semantic relationships between
 a tag (address) and a document (host). Scalable routing tables must compact
 information together. Instead of defining a route to every single host on the
@@ -271,7 +275,7 @@ Instead of listing an index under entries for several dozen instances of (eg.)
 strategy games, it could instead list only for the tag "strategy games".
 
 A consistent model for this is developed in [address space](#address-space).
-From that, we get another type of object, a tag graph, or tgraph, which defines
+That gives us another type of object, a tag graph, or **tgraph**, which defines
 relationships between tags. Following the principle of compacting information
 again, we need some way to route between these tgraphs. At this point, you
 might worry that we'll continue with this ad-infinitum, inventing more layers
@@ -305,30 +309,36 @@ that applies to it must also apply to the case of one-index-per-person. It's
 also arguably more realistic, since we often agree with someone's judgements,
 without trusting them as friends.
 
-Each identity on the social network defines a preference table, or ptable,
-listing the indexes and tgraphs that it values highly, and other identities
-whom it trusts. By exploring this network, we can infer a set of trusted
-objects from which to initiate our search.
+Each identity on the social network defines a preference table, or **ptable**,
+listing the indexes and tgraphs that it values highly, and other identities it
+trusts. By exploring this network, we can infer a set of trusted objects from
+which to initiate our search.
 
 ### Mutability of objects
 
-[MORE] immutable data structures, etc
-git submodules vs. URL links
+[MOVE] probably to "working assumptions"
 
-We have implicitly considered objects to be immutable. For example, we intended
-the sharing of index objects via ptables to be a space-saving measure, not an
-act of delegation. However, this is not enforced by our system, which may
-become an issue when a real implementation is deployed.
+We consider objects to be immutable. For instance, we intended the sharing of
+indexes via ptable pointers to be a space-saving measure, instead of a gesture
+of delegation. In this respect, our objects are more like git commits rather
+than web pages, and object links are more like git submodule pointers rather
+than web hyperlinks.
 
-eg. on freenet, darknet is supposed to be an f2f network, but during the early
-stages of the network people added strangers as "friends" in the belief that it
-would increase network performance.
+Such a data model is more secure, and in our system it also keeps the issue of
+trust contained in the social layer, a property that some components depend on.
+However, the immutability is an implicit assumption, which is neither enforced
+nor verified in any system component. The intention was to leave this to the
+storage layer; real deployments of the system should keep this in mind.
 
 ### Data collection
 
-[MORE] our project only considers how routing is to be done, it doesn't
-consider how the routing tables would actually be created and maintained.
-However, model is fairly simple, etc etc [EXTN]
+[MOVE] probably to "working assumptions"
+
+Finally, our project only considers how we navigate the networks of objects to
+satisfy a search query. It ignores the problem of how these objects would be
+constructed and maintained. However, the data models are fairly simple, and is
+heavily inspired by ordinary human linking habits. So creating these objects
+should be both straightforward and natural.
 
 ## Structured address space
 
@@ -550,11 +560,11 @@ this, but network structure analysis is a common approach type.[EXTN]
 The exact attribute types we use are discussed [elsewhere](#data-structures).
 Generally, we use probability-based attributes, which are well-defined and can
 be estimated by agents. It also gives a simple way of combining attributes -
-multiplication - as well as a simple space of values - $[0, 1]$.
+multiplication - as well as a simple space of values - $[0, 1]$.[^attrva]
 
-TODO discuss more complex schemes that return "variance" for values. This would
-allow further refinement, eg. the more data sources that give a value judgement
-for some object $x$, the smaller the variance would be. [EXTN].
+[^attrva]: More sophisticated attributes might describe a belief distribution
+over its possible values. When aggregating multiple judgements that agree with
+each other, we could reduce the variance of the aggregated attribute.[EXTN]
 
 In some contexts, the set of useful resources is sparse over the set of all
 possible resources[^attrsp] - e.g. if the attribute represents an endorsement,
@@ -767,7 +777,9 @@ aggregate resource-value map by object type, to get $G_s$, $H_s$.
 
 #### Traversing objects
 
-This is done by the trust metric algorithm. [MORE][REF][EXTN]
+This would normally be part of the trust metric component. Since our prototype
+only returns the direct neighbours of the seed identity, there is nothing to
+traverse, so we skip this component for now.
 
 ### Naming
 
@@ -1059,6 +1071,8 @@ tag, and no indexes to add), then we request an address scheme update.
 
 ## Optimisation
 
+[MOVE] to appendix
+
 ### Data structures
 
 - `ptable`
@@ -1117,7 +1131,7 @@ The contact layer is independent of any query, so this can be done in the backgr
 at any time. We can cache data for the layers above, which will help to
 increase performance for future queries. etc...
 
-MORE on incremental updates etc.
+[MORE] on incremental updates etc.
 
 ### Incremental state updates
 
@@ -1126,9 +1140,11 @@ MORE on incremental updates etc.
 
 # Design
 
+[MOVE] probably to "information aggregation"
+
 ## Score-inferer
 
-Here we explore a crude heuristic to infer scores using the link structure of
+Here we explore a crude algorithm to infer scores using the link structure of
 a data network. This is intended for use by the naming and routing layers, and
 as discussed previously, we base our model on the likelihood of reaching a
 given agent from the seeds.
@@ -1163,7 +1179,9 @@ simple attacks. Our prototype uses $k = 2^{-4}$.
 
 ## Value-composer
 
-[MORE]
+Here we explore a crude algorithm to aggregate value judgements from a set of
+agents. This is required by all the layers, and the model presented here is
+general enough to be applied to all of these.
 
 It's impossible to determine the accuracy of the input data from only the data
 itself, since any input is potentially true. We need either a pre-existing
@@ -1173,7 +1191,7 @@ are outside of the scope of this project.[EXTN]
 
 For our prototype, we use a very basic algorithm - the score-weighted mean of
 each agent's value judgement for that resource. In our case, both the score and
-the value are bounded, and it's hoped that this will annul some easy attacks
+the value are bounded, and it's hoped that this can hinder some basic attacks
 against mean-based composers (eg. judging a value to be infinity).
 
 Recall the problem specification:

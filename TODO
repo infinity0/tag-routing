@@ -1,4 +1,4 @@
-== Tasks ==
+== Urgent tasks ==
 
 FIXME NOW:
 - make a better ValueComposer, turns out Mean*Composer is actually pretty shit
@@ -7,14 +7,15 @@ FIXME NOW:
 - add this to the analysis
 - security implications here...
 
+TODO NOW:
+- actually implement the traversal algorithms described in design.md.txt;
+  current implementation uses much simpler and more questionable algorithms.
+
+== Tasks ==
+
 scraper has deadlock issues
 - commitGroupPhotos is leaking, but not commitUserPhotos...
 - put all the database stuff into a "Sample" class
-
-(algorithms)
-- "adds a new row if no more related tags can be found, or if there aren't many
-  strong relations to the source tag in the tags found so far." - actually
-  implement the latter
 
 (cleanup)
 - review Maps.viewSubMap
