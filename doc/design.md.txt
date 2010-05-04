@@ -65,7 +65,7 @@ in that direction.
 
 There are many existing systems which use decentralised, co-operative, dynamic
 routing algorithms, such as the internet and various peer-to-peer overlay
-networks. There are a great variety of different objectives, approaches, and
+networks. There is a great variety of different objectives, approaches, and
 models, but some common themes include:
 
 Key-based routing
@@ -235,11 +235,11 @@ simpler problem.
 
 # Theory
 
-_In this chapter we discuss the theoretical ideas behind the system. We
+In this chapter, we discuss the theoretical ideas behind the system. We
 experimented with many different ideas before the code development began, and
 during development we weeded out the ones which seemed to lead to a dead end.
 Afterwards, the surviving ideas were explored further, and simplified or
-generalised.[^simp]_
+generalised.[^simp]
 
 As such, there are a few aspects of our system design which may seem inelegant
 or imperfect in the context of the theories described below. Unfortunatly, we
@@ -270,18 +270,18 @@ a tag (address) and a document (host). Scalable routing tables must compact
 information together. Instead of defining a route to every single host on the
 network, it is divided up into subnets, and a single route defined for the
 entire subnet. Similarly, indexes shouldn't point to other indexes using all
-possible relevant tags, but it should seek to summarise this information.
-Instead of listing an index under entries for several dozen instances of (eg.)
-strategy games, it could instead list only for the tag "strategy games".
+possible relevant tags, but it should summarise this information. Instead of
+listing a neighbouring index under entries for several dozen instances of e.g.
+strategy games, it could instead list it only under "strategy games".
 
 A consistent model for this is developed in [address space](#address-space).
 That gives us another type of object, a tag graph, or **tgraph**, which defines
 relationships between tags. Following the principle of compacting information
 again, we need some way to route between these tgraphs. At this point, you
 might worry that we'll continue with this ad-infinitum, inventing more layers
-of meta-objects; but no we stop here, and actually we use tgraphs to route
+of meta-objects; but no, we stop here, and actually we use tgraphs to route
 between themselves. That is, tgraphs also use tags for addresses, and list
-related tgraphs under entries for appropriate tags.
+related tgraphs under entries for the appropriate tags.
 
 To explain why this isn't a problem:
 
@@ -304,9 +304,9 @@ Since we are routing between documents, rather than people or hosts, we split
 the social network from the indexes network and the tgraphs network. This gives
 us several advantages. It allows for space reductions - people often agree
 about things, so identical parts of indexes can be spun off into another index
-and pointed to instead of repeated. This model is also more general; anything
-that applies to it must also apply to the case of one-index-per-person. It's
-also arguably more realistic, since we often agree with someone's judgements,
+and pointed to instead of repeated. This model is more general; anything that
+applies to it must also apply to the case of one-index-per-person. It's also
+arguably more realistic, since we often agree with someone's judgements,
 without trusting them as friends.
 
 Each identity on the social network defines a preference table, or **ptable**,
@@ -324,7 +324,7 @@ of delegation. In this respect, our objects are more like git commits rather
 than web pages, and object links are more like git submodule pointers rather
 than web hyperlinks.
 
-Such a data model is more secure, and in our system it also keeps the issue of
+This data model is more secure, and in our system it also keeps the issue of
 trust contained in the social layer, a property that some components depend on.
 However, the immutability is an implicit assumption, which is neither enforced
 nor verified in any system component. The intention was to leave this to the
@@ -533,9 +533,9 @@ and routing.
 
 This does mean that the problem is different from that of a trust metric. We
 won't attempt to formalise this, but intuitively, for a given non-seed agent
-$a$, we want to infer its score based on how much the endorsements of the seed
-agents _extend_ to it, rather than how much the seed agents should _trust_ it.
-A crude implementation of this is in [score-inferer](#score-inferer).
+$a$, we want to infer its score based on how much arbitrary endorsements of the
+seed agents _extend_ to it, rather than how much the seed agents should _trust_
+it. A crude attempt at a solution is [score-inferer](#score-inferer).
 
 ### Attributes
 
@@ -677,8 +677,8 @@ them. Algorithms that process this data structure should be aware of this.
 Our search application is partitioned into layers (contact, naming, routing),
 each encapsulating components that process information from the corresponding
 data planes. This allows all the layers to run concurrently; operations that
-retrieve remote objects are non-blocking and allow other work to be done whilst
-waiting for its results.
+retrieve remote objects do not block other layers, so that can do other work
+whilst waiting for the results.
 
 Each layer follows a basic structural template:
 
@@ -716,9 +716,9 @@ The interaction between layers is co-ordinated by implementing each layer as a
 state machine - it cannot receive requests during a state transition (ie. when
 it is currently processing a previous request). This simplifies the execution
 logic, and reduces the number of critical objects that need to be synchronised
-on. The state machines generally follow the pattern of `[NEW --> AWAIT_INPUT
-<-> IDLE]`; specific cases are discussed in the _traversing objects_ sections
-of the various layers, below.
+on. The state machines generally follow the pattern of `[NEW → AWAIT_INPUT ↔
+IDLE]`; specific cases are discussed in the _traversing objects_ sections of
+the various layers, below.
 
 [^laytb]: Our implementation doesn't actually use a table structure, but this
 is a simple and useful description, which is basically equivalent.
@@ -732,10 +732,10 @@ of the inputs and outputs of each layer:
 -------------------------------------------------------------------------------
 layer           requires                        provides
 --------------- ------------------------------- -------------------------------
-routing         seed indexes $H_s$              results table $\breveh$
-                address scheme $\breveT$
+routing         seed indexes $H_s$              results table $\bar h$
+                address scheme $\bar T$
 
-naming          seed tgraphs $G_s$              $\breveT$
+naming          seed tgraphs $G_s$              $\bar T$
                 query subject tag $t_0$
 
 contact         own identity $z_0$              $G_s$, $H_s$
@@ -787,7 +787,7 @@ Requires
 :	- $t_0$ from the user
 	- $G_s$ from [contact](#contact)
 Provides
-:	- $\breveT$ to [routing](#routing)
+:	- $\bar T$ to [routing](#routing)
 
 #### Aggregating information
 
@@ -831,9 +831,9 @@ see "practical details" [LINK]
 
 Requires
 :	- $H_s$ from [contact](#contact)
-	- $\breveT$ from [naming](#naming)
+	- $\bar T$ from [naming](#naming)
 Provides
-:	- $\breveh$ to the user
+:	- $\bar h$ to the user
 
 #### Aggregating information
 
