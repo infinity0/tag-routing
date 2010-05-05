@@ -251,10 +251,10 @@ that we implemented.
 [^simp]: For example, originally the problem of information aggregation was
 considered only for the naming and routing layers, and was completely ignored
 for the social layer. During implementation it was realised that trust metrics
-could not resolve conflicts between `ptable` entries, and after implementation
-we formulated the theoretical expression of the general problem, given below.
-The discussion on the various issues of [aggregation](#information-aggregation)
-as related to our design was actually done during the preparation stage, but it
+could not resolve conflicts between ptable entries, and after implementation we
+formulated the theoretical expression of the general problem, given below. The
+discussion on the various issues of [aggregation](#information-aggregation) as
+related to our design was actually done during the preparation stage, but it
 was only afterwards that we realised how this fit into the general theory.
 
 ## System design
@@ -416,14 +416,14 @@ and _triangle inequality_ ("direct path is shortest"); we won't consider these
 restrictions here.
 
 We refer to the tuple $(M, I, \sqsubseteq, \circ)$ as the _relation type_. A
-probability-based relation of type $([0, 1], 1, \geq, \times)$ can be converted
+probability-based relation of type $((0, 1], 1, \geq, \times)$ can be converted
 into an entropy-based relation of type $([0, \infty), 0, \leq, +)$ by taking
 the negative-log of each value, and vice-versa by taking the inverse-exponent.
 
 We want to define a distance relation over tags, so that we can construct a
 routing scheme over them. One simple approach is $D[t_0, t_1] = P(t_1 | t_0)$,
 which forms a valid distance relation with the probability-based relation type
-$([0, 1], 1, \geq, \times)$, giving a path-distance formula of $D[t_i]_0^n =
+$((0, 1], 1, \geq, \times)$, giving a path-distance formula of $D[t_i]_0^n =
 D[t_0, t_1].\cdots.D[t_{n-1}, t_n]$.
 
 There are various flaws with this. In our view, a significant flaw is the lack
@@ -930,7 +930,7 @@ convey the notion that most agents only have a limited view of the network.
 
 #### On tgraphs
 
-Attribute of a node $v$: with `tgraph`s, node-attributes are expected to be
+Attribute of a node $v$: with tgraphs, node-attributes are expected to be
 defined if the agent has information to do this, regardless of what the actual
 attribute value is. So we set $\alpha = 0$.
 
@@ -1247,7 +1247,7 @@ we note the following observations when implementing heuristics for $\alpha$:
 **For a node** $v$, there is no information that could be used to perform any
 heuristic: a node not in the map, has no information relating to it in the map.
 However, it may be possible to extract information from other sources, such as
-the friends for a `ptable`. These are context-specific and are explored in the
+the friends for a ptable. These are context-specific and are explored in the
 appropriate sections.
 
 **For an arc** $e = (v_s, v_t)$, we have some extra information. The meaning of

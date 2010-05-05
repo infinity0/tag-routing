@@ -1,5 +1,9 @@
 == Urgent tasks ==
 
+DOCUMENT NOW:
+- notation of resource links: $p_0 \rightarrow^t p$.
+- what "independent union" means
+
 FIXME NOW:
 - make a better ValueComposer, turns out Mean*Composer is actually pretty shit
 - needs to give bigger weight to arcs/nodes defined by *lots of people* (cf.
