@@ -1,32 +1,170 @@
 % Construction and implementation
 % Ximin Luo
 
-# Project infrastructure
+# Development
 
-- version control
-- build system (ant; maven overkill)
+## Project infrastructure
 
-# Routing system
+From the beginning, we put the entire project under version control. We chose
+to use git; we feel that its content-oriented object model and its non-linear
+history model is more flexible and "natural" than (e.g.) centralised systems.
+It's also fast and efficient, and we have the most experience with it.
 
-java, blah blah blah
+The main compilable component, the search application, was written in Java, and
+so we chose Apache Ant for our build system. This is fairly simple and flexible
+enough for our purposes. Maven was also considered, but dropped as we didn't
+think our project needed such a heavyweight solution.
 
-## Architecture
+We spent a moderate amount of our effort creating test code as part of the
+development process. We did _not_ attempt to write a unit test for every single
+class that was implemented. This is not feasible for many classes, since many
+of them are components of a larger system, and cannot function at all without
+the entire system in place. However, for utility functions, data structure
+classes, and other "standalone" components, we did write fairly extensive tests
+for all of these. In our experience, they are the most critical components to
+test, and eliminating bugs early helps greatly when finally testing the actual
+application-specific logic. We used JUnit as the framework for our tests; this
+is easily integrated into the build process via Ant.
 
-description of java packages, structure, paradigms
+Our repository has a fairly simple layout; we have seperate source directories
+for application code and test code, and a source directory for documentation.
+We used github to publish and backup our repository.
 
-- abstract "process" model - QueryAgent, QueryEnvironment, QueryProcess
-- layering, message passing
-- heavy use of generics
+## Search application
 
-## Design patterns
+We decided to develop the search application in Java. We were aware that our
+design had many areas for future improvement, so we wanted our implementation
+to be easily maintainable and extensible. We felt that the strict type safety
+and class inheritance of Java would aid us in achieving such a goal, because
+it allows us to design a system architecture (and its component interfaces) to
+be both self-enforcing and self-documenting. This is especially useful when
+coding individual classes, where it's easy to forget about the overall picture.
+
+### Structure
+
+Our code structure is divided into four main sections, each corresponding
+roughly to a Java package:
+
+`tags.proto`
+:	Prototype implementation of the search application
+`tags.store`
+:	Adapters to provide a consistent interface for different storage layers
+`tags.util`, `tags.io`
+:	General utilities that the rest of the application depends upon, but is not
+	otherwise directly relevant to the theory of our system.
+`tags.ui`
+:	Interfaces for presenting application information to the user
+
+The prototype implementation code can be divided into:
+
+`tags.proto` (objects)
+:	These include classes that define the basic objects of our system uses
+	(like `PTable`, `TGraph`, `Index`), and some utility classes for these.
+	Some of the object classes have multiple versions, which help to strip out
+	unnecessary features based on use context - e.g. when we only need to
+	represent a remote object, we only store outgoing arcs, and for a local
+	object, we store both incoming and outgoing arcs.
+`tags.proto` (process)
+:	These include classes that form the execution architecture of our system.
+	The main ones include:
+:	`LayerService`
+	:	This provides a template that all layers inherit from, which implements
+		some basic functionality (such as receiving messages and holding the
+		query parameters) as described in previous sections.
+	`QueryProcess`
+	:	This represents an ongoing query, and holds references to all of the
+		state relevant to it, including each of the running layers.
+	`QueryEnvironment`
+	:	This represents the environment of the query - the components that a
+		query process needs, but is not specific to the query itself. This
+		includes things such as an `Executor`[^archex] for scheduling jobs, and
+		most importantly the interface to the storage layer.
+`tags.proto.*` (layers)
+:	These sub-packages implement each of the layers, as described in previous
+	sections. The "algorithmic components" of each layer are represented by
+	Java interfaces (with a basic implementation for each, also as previously
+	described), to allow for better future implementations.
+
+[^archex]: `java.util.concurrent.Executor`[REF]
+
+The general utilities can be further divided into:
+
+`tags.util`
+:	This contains mostly data structures classes. Our system design was very
+	abstract, especially the object specifications. An easy way to implement
+	these was to construct them out of union and tuple types, but they aren't
+	a native part of Java, so we built our own. We implemented lots of utility
+	methods for performing complex operations on maps, which was needed since
+	our objects are all node-map/arc-map combinations. Our crude path-based
+	score-inferer and mean-based value-composer are also both implemented here,
+	as well as Probability and Entropy classes that ensure their values are
+	restricted to the appropriate ranges.
+`tags.util.exec`
+:	This contains base classes for our execution architecture. Unfortunately,
+	`java.util.concurrent` is highly abstract and lacking in context-specific
+	implementations of its interfaces, and we weren't aware of any simple,
+	light, easy-to-learn execution frameworks for Java, so we wrote our own.
+	This includes `TaskService`, which is similar in principle to `Executor`
+	but accepts arbitrary objects to act on instead of just `Runnable.run()`;
+	and `MessageReceiver`, which is a basic interface for a simple message
+	passing execution framework.
+`tags.io`
+:	This package only contains deserialisation classes for GraphML, and was
+	not needed until late on during the development process, when we had to
+	extend a large part of JUNG's GraphML reader code - see below.
+
+### Design patterns
 
 - proxy objects, etc. java collections framework very flexible, extend this.
   "views" of data
 - adaptors, decorators, proxies
 - factory & builder classes
+[MORE]
+
+### Generics
+
+We made heavy use of generics in our implementation. In our experience, this is
+a useful tool in both enforcing type safety, and in writing re-usable code.
+
+Our design uses several types of objects without making any comment on their
+type; these include tags, object addresses (in the storage layer), and social
+identities. These are perfect candidates for generic type parameters.
+
+The type of attributes can also be parameterised. Although we use probability
+for all of our attributes, this is a part of our specification that is separate
+from the overall architecture of the system. A full list of theoretically
+distinct types is:
+
+   Source                              Description
+-- ----------------------------------- -----------------------------------
+1. agent score (ptables)               social identity trust score
+2. resource value (ptables) (tgraphs)  rating score for tgraphs
+3. resource value (ptables) (indexes)  rating score for indexes
+4. agent score (tgraphs)               rating score for tgraphs
+5. resource value (tgraphs) (node)     tag size
+6. resource value (tgraphs) (arc)      tag-tag similarity
+7. agent score (indexes)               rating score for indexes
+8. resource value (indexes)            tag-document similarity
+
+(2,4) are the same, and (3,7) are the same, which leaves us with 6 attribute
+types. In the end we felt it prudent to merge (6,8) into a single arc-attribute
+type, and also merge (2,4,3,7) into a single resource-score type. This leaves
+us with 4 distinct attribute types, which arguably is still too much; however,
+we believe our code is modular enough to support this level of flexibility.
+
+We end up with 7 generic type parameters in total, which are all present in the
+unified interface to the storage layer (`StoreControl`):
+
+- `<I>` Type of identity
+- `<T>` Type of tag
+- `<A>` Type of address
+- `<U>` Type of node-attribute
+- `<W>` Type of arc-attribute
+- `<S>` Type of score
+- `<Z>` Type of identity-score
 
 
-# Evaluation code
+## Sample generator
 
 python,
 - development speed & availability of libraries vs optimisation
@@ -36,7 +174,7 @@ description of python modules
 - libraries used: flickrapi, igraph, sqlite3
 - managed to stay within flickrAPI use limit
 
-## Performance issues
+### Performance issues
 
 - heavy optimisation, switched from bsddb to sqlite, tmpfs, custom pickle formats
 - store parts of a large object separately
@@ -44,7 +182,7 @@ description of python modules
 - threading used only to simplify parallel IO, instead of dealing with complexities of event-based models
 
 
-# Data format
+## Data format
 
 - data format used - GraphML, no good java libraries, heavy subclassing and
   hack an existing library (JUNG) to read attribute types. required reading
@@ -54,7 +192,11 @@ description of python modules
 - used Graphviz for visualising graphs, neato renderer into SVG format
 
 
-# Running the tests
+# Running tests
 
 results observed...
+
+
+
+
 
