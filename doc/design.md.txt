@@ -65,7 +65,7 @@ in that direction.
 
 There are many existing systems which use decentralised, co-operative, dynamic
 routing algorithms, such as the internet and various peer-to-peer overlay
-networks. There is a great variety of different objectives, approaches, and
+networks. There are a great variety of different objectives, approaches, and
 models, but some common themes include:
 
 Key-based routing

@@ -12,7 +12,9 @@ import java.util.Map;
 ** Utility methods for grouping and collecting {@link PTable}, {@link TGraph},
 ** {@link Index}, and the components of these.
 */
-public class MultiParts {
+final public class MultiParts {
+
+	private MultiParts() { }
 
 	public static <A, S> Iterable<Map<A, S>> iterTGraphs(Iterable<PTable<A, S>> tabs) {
 		return new ProxyIterable<PTable<A, S>, Map<A, S>>(tabs) {

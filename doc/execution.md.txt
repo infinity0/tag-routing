@@ -42,8 +42,8 @@ coding individual classes, where it's easy to forget about the overall picture.
 
 ### Structure
 
-Our code structure is divided into four main sections, each corresponding
-roughly to a Java package:
+Our code structure can be divided into the following sections, each roughly
+corresponding to a Java package:
 
 `tags.proto`
 :	Prototype implementation of the search application
@@ -57,14 +57,14 @@ roughly to a Java package:
 
 The prototype implementation code can be divided into:
 
-`tags.proto` (objects)
+`tags.proto.*` (objects)
 :	These include classes that define the basic objects of our system uses
 	(like `PTable`, `TGraph`, `Index`), and some utility classes for these.
 	Some of the object classes have multiple versions, which help to strip out
 	unnecessary features based on use context - e.g. when we only need to
 	represent a remote object, we only store outgoing arcs, and for a local
 	object, we store both incoming and outgoing arcs.
-`tags.proto` (process)
+`tags.proto.*` (process)
 :	These include classes that form the execution architecture of our system.
 	The main ones include:
 :	`LayerService`
@@ -79,7 +79,7 @@ The prototype implementation code can be divided into:
 		query process needs, but is not specific to the query itself. This
 		includes things such as an `Executor`[^archex] for scheduling jobs, and
 		most importantly the interface to the storage layer.
-`tags.proto.*` (layers)
+`tags.proto.*.*` (layers)
 :	These sub-packages implement each of the layers, as described in previous
 	sections. The "algorithmic components" of each layer are represented by
 	Java interfaces (with a basic implementation for each, also as previously
@@ -89,37 +89,51 @@ The prototype implementation code can be divided into:
 
 The general utilities can be further divided into:
 
-`tags.util`
+`tags.util.*`
 :	This contains mostly data structures classes. Our system design was very
 	abstract, especially the object specifications. An easy way to implement
 	these was to construct them out of union and tuple types, but they aren't
 	a native part of Java, so we built our own. We implemented lots of utility
 	methods for performing complex operations on maps, which was needed since
-	our objects are all node-map/arc-map combinations. Our crude path-based
-	score-inferer and mean-based value-composer are also both implemented here,
-	as well as Probability and Entropy classes that ensure their values are
-	restricted to the appropriate ranges.
-`tags.util.exec`
+	our objects are all node-map/arc-map combinations. Our crude score-inferer
+	and value-composer are also both implemented here, as well as Probability
+	and Entropy classes that ensure their values are restricted to the
+	appropriate ranges.
+`tags.util.exec.*`
 :	This contains base classes for our execution architecture. Unfortunately,
 	`java.util.concurrent` is highly abstract and lacking in context-specific
 	implementations of its interfaces, and we weren't aware of any simple,
 	light, easy-to-learn execution frameworks for Java, so we wrote our own.
 	This includes `TaskService`, which is similar in principle to `Executor`
 	but accepts arbitrary objects to act on instead of just `Runnable.run()`;
-	and `MessageReceiver`, which is a basic interface for a simple message
-	passing execution framework.
-`tags.io`
-:	This package only contains deserialisation classes for GraphML, and was
-	not needed until late on during the development process, when we had to
-	extend a large part of JUNG's GraphML reader code - see below.
+	and `MessageReceiver`, which is a basic interface for a simple execution
+	framework based on message passing.
+`tags.io.*`
+:	This package only contains deserialisation classes for GraphML, and was not
+	needed until late on during the development process, when we had to extend
+	a large part of JUNG's GraphML reader code - see [below](#data-format).
 
 ### Design patterns
 
-- proxy objects, etc. java collections framework very flexible, extend this.
-  "views" of data
-- adaptors, decorators, proxies
-- factory & builder classes
-[MORE]
+The Java Collections Framework[REF] is simple and flexible, and we built most
+of our data structures on top of it. In many cases, these provide alternative
+views of existing structures, such as combining two maps into one, chaining
+many iterators together, and so on. It is generally more memory efficient to
+expose each item as needed, rather than copying the entire collection and
+converting all the items at once. The _proxy_ and _decorator_ patterns are both
+useful in implementing such views; we made heavy use of our `ProxyIterable` and
+`ProxyMap` classes in constructing more complex proxy objects.
+
+We found good use for the _adapter_ pattern. Our `StoreControl` interface
+provides a consistent way for our search application to interact with different
+storage layers; implementations wrap around and hide these differences. We
+implemented both the path-based score-inferer and the mean-based value-composer
+as general utility classes; adapters were also used to wrap this functionality
+inside an interface expected by the layers that used these components.
+
+We also used the _factory_ and _builder_ patterns to make object creation code
+more extensible. Use cases include creating local views of remote objects, and
+deserialising objects from input streams.
 
 ### Generics
 
@@ -146,50 +160,135 @@ distinct types is:
 7. agent score (indexes)               rating score for indexes
 8. resource value (indexes)            tag-document similarity
 
-(2,4) are the same, and (3,7) are the same, which leaves us with 6 attribute
+(2,4) are the same, and (3,7) are the same, which leaves us with six attribute
 types. In the end we felt it prudent to merge (6,8) into a single arc-attribute
-type, and also merge (2,4,3,7) into a single resource-score type. This leaves
-us with 4 distinct attribute types, which arguably is still too much; however,
-we believe our code is modular enough to support this level of flexibility.
+type, and also merge (2,4,3,7) into a single score type. This leaves us with
+four distinct attribute types, which arguably is still too much; however, we
+believe our code is modular enough to support this level of flexibility.
 
-We end up with 7 generic type parameters in total, which are all present in the
-unified interface to the storage layer (`StoreControl`):
-
-- `<I>` Type of identity
-- `<T>` Type of tag
-- `<A>` Type of address
-- `<U>` Type of node-attribute
-- `<W>` Type of arc-attribute
-- `<S>` Type of score
-- `<Z>` Type of identity-score
-
+We end up with seven generic type parameters in total, which are all present in
+the unified interface to the storage layer (`StoreControl`): `<I>` identity,
+`<T>` tag, `<A>` address, `<U>` node-attribute, `<W>` arc-attribute, `<S>`
+score, `<Z>` identity-score.
 
 ## Sample generator
 
-python,
-- development speed & availability of libraries vs optimisation
+We decided to develop the sample generator in Python. We did not need the code
+here to be as strictly well-designed as for the search application. Moreover,
+by this point we were already far behind schedule, and we felt coding in Python
+would help to recover some of this lost time, due to its simplicity and the
+ease at which one can explore new libraries via the interactive interpreter.
 
-description of python modules
-- threading for quick development, python-futures
-- libraries used: flickrapi, igraph, sqlite3
-- managed to stay within flickrAPI use limit
+This was a decision that we would later come to partially regret, due to poor
+high-level multithreading support, and performance and memory leak issues which
+became important at the scales we were processing data at (we had initially
+overlooked this). However, ultimately it probably did save a lot of development
+time, and it's unclear whether programming in a more low-level language would
+have helped the performance issues significantly.
 
-### Performance issues
+### Libraries
 
-- heavy optimisation, switched from bsddb to sqlite, tmpfs, custom pickle formats
-- store parts of a large object separately
-- lack of true multithreading, not too much of a problem
-- threading used only to simplify parallel IO, instead of dealing with complexities of event-based models
+We used the following external libraries in our sample generator:
 
+flickrapi[REF]
+:	This is a python interface to Flickr's online API[REF].
+python-futures[REF]
+:	This is an ad-hoc high-level multithreading framework for python, inspired
+	by Java's `java.util.concurrent` package. We used this to run flickrapi in
+	multiple threads to reduce network IO waits; this is discussed below[LINK].
+igraph[REF]
+:	This is a general-purpose graph library written in C, with interfaces to
+	other languages including python. We used this as a fast and efficient way
+	to store and manipulate graph data structures, as well as serialising them
+	to store on disk.
+
+### Structure
+
+Our code structure can be divided into the following sections, each roughly
+corresponding to a Python module:
+
+`tags.eval.crawl.flickr`
+:	This contains an extension of flickrapi, and implements the crawl strategy
+	and data collection code, as described in the evaluation section.
+`tags.eval.object`
+:	This holds classes representing single objects, such as `Producer`, `Node`,
+	a class for building graphs (`NodeSample`), and various classes that hold
+	statistics about a sample or its components.
+`tags.eval.sample`
+:	This holds classes for generating, writing, and calculating statistics for
+	entire samples.
+`tags.eval.util`, `tags.eval.cache`, `tags.eval.dbsqlite3`, `tags.eval.state`
+:	These are utility methods and classes that provide support for the rest
+	of the code, but which is otherwise not directly relevant to the system.
+
+### Performance
+
+We had to deal with many performance issues during the implementation of the
+sample generator. Despite our choice of using python, these weren't CPU-bounded
+issues, but actually most involved inefficient use of blocking operations.
+
+#### Network IO
+
+Our Flickr API library, flickrapi, uses blocking IO to send and receive network
+data, which results in a few seconds' wait before each API call completes. This
+was too slow for our purposes.
+
+To optimise this, we used multithreading to start many IO requests in parallel.
+We also extended flickrapi to use persistent HTTP connections (per thread),
+instead of opening a new TCP connection for each API call. Since the threads'
+major task is only to wait for a system call to return, the lack of true
+multithreading in Python (due to the GIL[REF]) is not a problem in this case.
+
+An alternative approach would be to use an asynchronous event-based IO model,
+like the popular Twisted library[REF]. However, we never intended the sample
+generator to be production code, so we preferred the simplicity of threads,
+over the flexibility and performance of event-based models.
+
+#### Serialisation
+
+Since we deal with sizes of data greater than will comfortable fit in our RAM,
+we needed to store (eg.) half-completed objects and request parameters on disk.
+Initially, we used Python's standard `pickle` module[REF] to de/serialise our
+objects, and the standard `shelve` module[REF] to store data. This proved
+inadequate for our needs, and we had to optimise this many times.
+
+The first major optimisation we did was to use a custom `pickle` format for our
+`Graph` objects. We noticed this due to `pickle` leaking huge amounts of memory
+when repeatedly deserialising large graphs; by attempting to track the source
+of this, we discovered that storing the graph as a gzip-compressed GraphML was
+much more efficient (both in storage space and serialisation time) than the
+standard pickle format.[REF]
+
+The next major optimisation we did was to store different components of a large
+object separately. The `shelve` module will attempt to deserialise an entire
+object when it's requested; this turned out to be unnecessary most of the time.
+We ended up refactoring the `Producer` class into a state machine, and storing
+the state field in a separate database from the rest of the object. When we
+want to check the state of a `Producer`, we query this other database first.
+Another optimisation was to store the commonly-accessed parts of a `Graph` in
+an additional cache, which saves having to deserialise the entire `Graph`.
+
+Further optimisations included switching from `shelve`'s default choice of
+database to `sqlite3`, and using the RAM-based `tmpfs` (we used a Debian system
+for development) to store short-lived temporary files.
 
 ## Data format
 
-- data format used - GraphML, no good java libraries, heavy subclassing and
-  hack an existing library (JUNG) to read attribute types. required reading
-  a significant part of the GraphML specification.
+We needed a common data format for sharing data between the search application
+and the sample generator. After a brief look into the formats available, we
+decided on GraphML[REF].
 
-- luckily igraph is good at both reading and writing
-- used Graphviz for visualising graphs, neato renderer into SVG format
+There are very few clean, simple, Java graph libraries that have good support
+for serialising complex graphs. GraphML seemed to be better supported than the
+DOT format[REF], and JUNG is a library that we felt most suited our needs. Even
+so, we had to heavily subclass its `GraphMLReader`, which involved much poking
+around its implementation details, just to read attributes of the correct type.
+This also required reading a significant part of the GraphML specification.
+
+Luckily our graph library on the Python side, `igraph`, is good at both reading
+and writing GraphML, and we didn't have to do any extra work here. It can also
+write in the DOT format, which meant we could visualise some of the simpler
+graphs that were generated, by running them through Graphviz[REF].
 
 
 # Running tests
