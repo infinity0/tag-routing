@@ -17,6 +17,10 @@ public class Loggers {
 		return makeConsoleShortLogger(Level.INFO);
 	}
 
+	public static Logger makeConsoleShortLogger(boolean showall) {
+		return makeConsoleShortLogger(showall? Level.ALL: Level.INFO);
+	}
+
 	public static Logger makeConsoleShortLogger(Level level) {
 		Logger log = Logger.getAnonymousLogger();
 		log.setUseParentHandlers(false);

@@ -36,6 +36,7 @@ public class Tags {
 	final private static Level[] levels = new Level[]{Level.OFF, Level.INFO, Level.FINE, Level.ALL};
 
 	public static void main(String[] args) throws Throwable {
+		System.err.println("current working directory: " + new File(".").getCanonicalPath());
 
 		Options opt = new Options();
 		opt.addOption("h", "help", false, "print this help message");

@@ -14,7 +14,12 @@ import tags.io.TypedXMLGraph;
 import org.apache.commons.collections15.map.ReferenceMap;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.Reader;
+import java.io.InputStreamReader;
 import java.io.IOException;
+import java.util.zip.GZIPInputStream;
+
 import javax.xml.parsers.ParserConfigurationException;
 import org.xml.sax.SAXException;
 
@@ -119,7 +124,7 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 		TypedXMLGraph<T_TGR, N, U, W> graph = tgraphs.get(addr);
 		if (graph == null) {
 			graph = makeTypedXMLGraph(T_TGR.class);
-			graph.load(new File(dir_tgr, addr.toString() + ".graphml"));
+			graph.load(GZIPReader(new File(dir_tgr, addr.toString() + ".graphmlz")));
 			graph.setVertexPrimaryKey(NODE_ID);
 			graph.setDefaultVertexAttribute(NODE_ATTR);
 			graph.setDefaultEdgeAttribute(ARC_ATTR);
@@ -132,12 +137,16 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 		TypedXMLGraph<T_IDX, N, U, W> graph = indexes.get(addr);
 		if (graph == null) {
 			graph = makeTypedXMLGraph(T_IDX.class);
-			graph.load(new File(dir_idx, addr.toString() + ".graphml"));
+			graph.load(GZIPReader(new File(dir_idx, addr.toString() + ".graphmlz")));
 			graph.setVertexPrimaryKey(NODE_ID);
 			graph.setDefaultEdgeAttribute(ARC_ATTR);
 			indexes.put(addr, graph);
 		}
 		return graph;
+	}
+
+	protected Reader GZIPReader(File fn) throws IOException {
+		return new InputStreamReader(new GZIPInputStream(new FileInputStream(fn)));
 	}
 
 	final public static String NODE_ID = "id";
