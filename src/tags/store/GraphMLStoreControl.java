@@ -13,6 +13,7 @@ import java.util.HashMap;
 
 import tags.io.TypedXMLGraph;
 import org.apache.commons.collections15.map.ReferenceMap;
+import java.lang.ref.SoftReference;
 
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -153,18 +154,12 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 	protected TypedXMLGraph<T_TGR, N, U, W> getTGraph(N addr) throws IOException {
 		TypedXMLGraph<T_TGR, N, U, W> graph = tgraphs.get(addr);
 		if (graph == null) {
-			//long old = System.currentTimeMillis();
-			//System.out.println("get tgraph " + addr.toString() + " at " + old);
 			graph = makeTypedXMLGraph(T_TGR.class);
 			graph.load(GZIPReader(new File(dir_tgr, addr.toString() + ".graphmlz")));
-			//long mid = System.currentTimeMillis();
-			//System.out.println("load tgraph " + addr.toString() + " at " + mid + "(" + (mid-old) + ")");
 			graph.setVertexPrimaryKey(NODE_ID);
 			graph.setDefaultVertexAttribute(NODE_ATTR);
 			graph.setDefaultEdgeAttribute(ARC_ATTR);
 			tgraphs.put(addr, graph);
-			//long now = System.currentTimeMillis();
-			//System.out.println("got tgraph " + addr.toString() + " at " + now + "(" + (now-old) + ")");
 		}
 		return graph;
 	}
@@ -214,10 +209,13 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 
 		final public File base;
 		final protected ReferenceMap<String, Map<String, List>> buckets;
+		protected SoftReference<Map<N, U>> node_map;
 
 		final protected long mask;
+		final protected String fmtstr;
 		final protected Map attributes;
 
+		@SuppressWarnings("unchecked")
 		public DirectoryTGraph(File base) throws IOException {
 			if (!base.isDirectory()) {
 				throw new IllegalArgumentException("not a directory: " + base);
@@ -225,13 +223,19 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 			this.base = base;
 			this.buckets = new ReferenceMap<String, Map<String, List>>();
 			this.attributes = parseJSON("attributes", false);
-			this.mask = (Long)attributes.get("mask");
+			this.node_map = new SoftReference<Map<N, U>>((Map<N, U>)attributes.remove("node"));
+			this.mask = (Long)attributes.remove("mask");
+			this.fmtstr = "%0" + Long.toHexString(mask).length() + "x";
 		}
 
 		@SuppressWarnings("unchecked")
 		public U getNodeAttr(N src) throws IOException {
-			List tuple = getTuple(src);
-			return tuple == null? null: (U)tuple.get(T_TGR_UNW.w.ordinal());
+			U attr = getNodeMap().get(src);
+			System.out.println("loaded " + src + " in " + base + ": " + attr);
+			return attr;
+			//List tuple = getTuple(src);
+			//System.out.println("loaded " + src + " in " + base + ": " + (tuple==null?"null":"non-null"));
+			//return tuple == null? null: (U)tuple.get(T_TGR_UNW.w.ordinal());
 		}
 
 		@SuppressWarnings("unchecked")
@@ -239,8 +243,20 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 			List tuple = getTuple(src);
 			if (tuple == null) { return null; }
 			Map<N, W> out_t = (Map)tuple.get(T_TGR_UNW.t.ordinal());
+			System.out.println(out_t.keySet());
 			Map<N, W> out_g = (Map)tuple.get(T_TGR_UNW.g.ordinal());
 			return Maps.uniteDisjoint(out_t, out_g);
+		}
+
+		@SuppressWarnings("unchecked")
+		protected Map<N, U> getNodeMap() throws IOException {
+			Map<N, U> nmap = node_map.get();
+			if (nmap == null) {
+				nmap = (Map<N, U>)parseJSON("attributes", false).get("node");
+				if (nmap == null) { throw new IOException("node map doesn't exist"); }
+				node_map = new SoftReference<Map<N, U>>(nmap);
+			}
+			return nmap;
 		}
 
 		@SuppressWarnings("unchecked")
@@ -261,7 +277,7 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 			String tag = src.toString();
 			CRC32 crc = new CRC32();
 			crc.update(tag.getBytes());
-			String bid = Long.toHexString(crc.getValue()&mask);
+			String bid = String.format(fmtstr, crc.getValue()&mask);
 
 			Map<String, List> bucket = buckets.get(bid);
 			if (bucket == null) {

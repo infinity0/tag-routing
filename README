@@ -34,12 +34,16 @@ pdflatex
 GNU coreutils
 :	Debian: install `coreutils`
 
-### Scraper
+### Evaluation
 
 JUNG
 :	http://jung.sourceforge.net/
 :	Make sure these jars are in lib/: collections-generic colt jung-algorithms
 	jung-api jung-graph-impl jung-io wstx-asl
+
+JSON.simple
+:	http://code.google.com/p/json-simple/
+:	Put json_simple-1.1.jar into lib/
 
 igraph
 :	http://igraph.sourceforge.net/

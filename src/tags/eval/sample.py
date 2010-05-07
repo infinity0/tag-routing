@@ -407,6 +407,7 @@ class SampleWriter(ProducerSample):
 
 		attributes = {"mask":mask}
 		attributes.update((attr, g[attr]) for attr in g.attributes())
+		attributes["node"] = dict((v[NID], v[NAT]) for v in g.vs)
 		with open(os.path.join(bdir, FMT_UNW % "attributes"), 'wb') as fp:
 			dump(attributes, GzipFile(fileobj=fp))
 		LOG.info("unwrap tgraph %s: complete" % gid)
