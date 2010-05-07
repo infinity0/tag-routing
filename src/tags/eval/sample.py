@@ -317,7 +317,7 @@ class SampleGenerator(object):
 						phmap[user].add(gvid)
 					else:
 						phmap[user] = set([gvid])
-		# only add some of these
+		# only add some of these, to prevent a user linking to eg. 400 tgraphs
 		for user, gvids in phmap.iteritems():
 			pvid = id_u[user]
 			for gvid in sample(gvids, int(len(gvids)**0.5)):

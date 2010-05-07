@@ -234,30 +234,45 @@ class Evaluation(object):
 		pgdb = self.db("p_tgr", lrusize=self.cache)
 		pgsb = self.db("p_tgr_s")
 
+		FILE_IDX = "idx.graphml"
+		FILE_CMM = "communities.map"
+		FILE_TGR = "tgr.graphml"
+		FILE_PTB = "ptb.graphml"
+		FILE_PTB_U = "ptables.map"
+
 		sg = SampleGenerator(socgr, gumap, pddb, dppb, dtdb, tcdb, phdb, phsb, pgdb, pgsb)
 
-		if not self.fp_exists("idx.graphml"):
+		# indexes
+		if not self.fp_exists(FILE_IDX):
 			sg.generateIndexes()
-			sg.prodgr.write(self.fp_o("idx.graphml"))
+			sg.prodgr.write(self.fp_o(FILE_IDX))
 		else:
-			sg.prodgr = Graph.Read(self.fp_i("idx.graphml"))
+			sg.prodgr = Graph.Read(self.fp_i(FILE_IDX))
 
-		if not self.fp_exists("communities.map"):
+		# communities
+		if not self.fp_exists(FILE_CMM):
 			sg.generateCommunities()
-			dict_save(dict(enumerate(sg.comm)), self.fp_o("communities.map"))
+			dict_save(dict(enumerate(sg.comm)), self.fp_o(FILE_CMM))
 		else:
-			sg.comm = [v for k, v in sorted(dict_load(self.fp_i("communities.map")).iteritems())]
+			sg.comm = [v for k, v in sorted(dict_load(self.fp_i(FILE_CMM)).iteritems())]
 
-		if not self.fp_exists("tgr.graphml"):
+		# tgraphs
+		if not self.fp_exists(FILE_TGR):
 			sg.generateTGraphs()
-			sg.sprdgr.write(self.fp_o("tgr.graphml"))
+			sg.sprdgr.write(self.fp_o(FILE_TGR))
 		else:
-			sg.sprdgr = Graph.Read(self.fp_i("tgr.graphml"))
+			sg.sprdgr = Graph.Read(self.fp_i(FILE_TGR))
 
-		sg.generatePTables()
-		sg.ptabgr.write(self.fp_o("ptb.graphml"))
+		# ptables
+		if not self.fp_exists(FILE_PTB):
+			sg.generatePTables()
+			sg.ptabgr.write(self.fp_o(FILE_PTB))
+			dict_save(sg.ptbmap, self.fp_o(FILE_PTB_U))
+		else:
+			sg.ptabgr = Graph.Read(self.fp_i(FILE_PTB))
+			sg.ptbmap = dict_load(self.fp_i(FILE_PTB_U))
 
-		dict_save(sg.ptbmap, self.fp_o("ptables.map"))
+		LOG.info("generation complete; don't forget to run `postgen -d %s`" % self.base)
 
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 

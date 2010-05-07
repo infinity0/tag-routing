@@ -68,7 +68,7 @@ if __name__ == "__main__":
 	from optparse import OptionParser
 	config = OptionParser(
 	  usage = "Usage: %prog [OPTIONS] [ROUND] [ARGS|help]",
-	  description = "Scrapes data from flickr. ROUND is one of: %s." % ", ".join(Evaluation.roundlist),
+	  description = "Crawl for and generate a data sample, and evaluate query results against it. ROUND is one of: %s." % ", ".join(Evaluation.roundlist),
 	  version = VERSION,
 	)
 

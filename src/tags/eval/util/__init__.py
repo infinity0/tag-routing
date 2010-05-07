@@ -491,6 +491,8 @@ def representatives(cand, items=None, prop=0, thres=float("inf"), cover=0):
 from ast import literal_eval
 from repr import Repr
 
+CL = "\r\033[0K"
+
 repr_s = Repr()
 repr_s.maxlevel = 3
 repr_s.maxdict = 2
@@ -601,14 +603,14 @@ def db_clean(db_i, start=None, fp=sys.stderr):
 
 	for key in it:
 		try:
-			print >>fp, "                \raccess key %s" % key, # no line break
+			print >>fp, CL+"access key %s" % key, # no line break
 			val = db_i[key]
 		except Exception:
 			del db_i[key]
-			print >>fp, "                \rremoved key %s" % key
+			print >>fp, CL+"removed key %s" % key
 			rem += 1
 		tot += 1
-	print >>fp, "                \rfinished cleanup; %s/%s keys removed" % (rem, tot)
+	print >>fp, CL+"finished cleanup; %s/%s keys removed" % (rem, tot)
 
 
 def db_copy(db_i, db_o, skip_done=True, fp=sys.stderr):
@@ -618,12 +620,12 @@ def db_copy(db_i, db_o, skip_done=True, fp=sys.stderr):
 			continue
 		try:
 			db_o[key] = db_i[key]
-			print >>fp, "                \rcopied key %s" % key, # no line break
+			print >>fp, CL+"copied key %s" % key, # no line break
 		except Exception, e:
-			print >>fp, "                \rfailed key %s: %r" % (key, e)
+			print >>fp, CL+"failed key %s: %r" % (key, e)
 			rem += 1
 		tot += 1
-	print >>fp, "                \rfinished copy; %s/%s keys failed" % (rem, tot)
+	print >>fp, CL+"finished copy; %s/%s keys failed" % (rem, tot)
 
 
 ###############################################################################

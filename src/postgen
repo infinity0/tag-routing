@@ -9,7 +9,7 @@ if [ ! "$?" = "169" ]; then echo "You need GNU sed, or one that supports the q[n
 # test for echo -e
 # if dash ever implements pipefail, we'll use dash, which doesn't have echo -e
 if [ -z "$(echo -e)" ]; then ECHO="echo -e"; else ECHO="echo"; fi
-CR="                \r"
+CR="\r\033[0K"
 
 FIXUP=fixup
 REPWR=wrap
@@ -34,9 +34,9 @@ shift $(expr $OPTIND - 1)
 
 if [ -n "$basedir" ]; then
 	if [ ! -d "$basedir" ]; then echo "not a directory: $basdir"; exit 1; fi
-	echo "patching ptables"; $0 "$basedir/ptb.graphml"
-	echo "patching tgraphs"; $0 -z "$basedir/tgr/"*
-	echo "patching indexes"; $0 -z "$basedir/idx/"*
+	echo "patching ptables..."; $0 "$basedir/ptb.graphml"
+	echo "patching tgraphs..."; $0 -z "$basedir/tgr/"*
+	echo "patching indexes..."; $0 -z "$basedir/idx/"*
 	exit
 fi
 
