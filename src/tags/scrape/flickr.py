@@ -365,7 +365,7 @@ def parse_etree(self, rest_xml):
 	try:
 		return FlickrAPI.parse_etree(self, rest_xml)
 	except ExpatError:
-		rest_xml = replace_nontext(rest_xml.decode("utf-8"), '_').encode("utf-8")
+		rest_xml = replace_nontext(rest_xml.decode("utf-8", "replace"), '_').encode("utf-8")
 		return FlickrAPI.parse_etree(self, rest_xml)
 flickrapi.rest_parsers['etree'] = parse_etree
 

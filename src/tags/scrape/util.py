@@ -715,8 +715,6 @@ def exec_unique(items, done, run, post=lambda it, i, res: None, name="exec_uniqu
 	       is >0 or True, threads are used. if this is <0 or False, processes
 	       are used. the magnitude determines the number of workers; or if it
 	       is a boolean, then the default number for that worker type is used
-	@param max_procs: max worker processes to run; this is superseded by
-	       <max_threads>; if both are None then the caller's thread is used
 	@param assume_unique: whether to assume <item> is unique
 	"""
 	#print "got here 0"
@@ -744,7 +742,7 @@ def exec_unique(items, done, run, post=lambda it, i, res: None, name="exec_uniqu
 	i = -1
 	if workers > 0:
 		from futures import ThreadPoolExecutor
-		with ThreadPoolExecutor(max_threads=max_threads) as x:
+		with ThreadPoolExecutor(max_threads=workers) as x:
 			for i, (it, res) in enumerate_cb(x.run_to_results_any(partial(lambda it: (it, run(it)), it) for it in todo),
 			  logcb_p, "%s: %%(i1)s/%s %%(it)s" % (name, total), **kwargs):
 				post(it, i, res)
