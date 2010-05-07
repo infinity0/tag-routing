@@ -4,6 +4,7 @@ import sys, logging, os
 from math import log, exp
 from itertools import chain, izip
 from igraph import Graph, IN
+from random import sample
 
 from tags.scrape.object import (Node, NodeSample, Producer, ProducerSample,
   ProducerRelation, TagInfo, IDInfo, AddrSchemeEval, NID, NAA, NAT, AAT, P_ARC)
@@ -305,13 +306,22 @@ class SampleGenerator(object):
 			hvid = id_h[nsid]
 			edges.update((id_u[user], hvid) for user in users)
 		# add arcs to tgraphs
+		phmap = {}
 		for i, hvids in enumerate(self.comm):
 			gvid = base_g + i
-			for nsid in self.prodgr.vs.select(hvids)[NID]:
-				if nsid in id_u:
+			for hid in self.prodgr.vs.select(hvids)[NID]:
+				if hid in id_u:
 					continue
-				for user in self.gumap[nsid]:
-					edges.add((id_u[user], gvid))
+				for user in self.gumap[hid]:
+					if user in phmap:
+						phmap[user].add(gvid)
+					else:
+						phmap[user] = set([gvid])
+		# only add some of these
+		for user, gvids in phmap.iteritems():
+			pvid = id_u[user]
+			for gvid in sample(gvids, int(len(gvids)**0.5)):
+				edges.add((pvid, gvid))
 
 		ptabgr.add_vertices(len(id_h) + len(id_g))
 		eend = len(ptabgr.es)
