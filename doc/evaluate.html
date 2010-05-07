@@ -1,0 +1,557 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Evaluation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Ximin Luo" />
+  <meta name="date" content="" />
+  <link rel="stylesheet" href="res/common.css" type="text/css" />
+  <script src="res/LaTeXMathML.js" type="text/javascript"
+  ></script
+  >
+  <script type="text/javascript">
+  /*<![CDATA[*/
+  
+  inc='\u25b9'; dec='\u25bf';
+  ina='\u25b8'; dea='\u25be';
+  
+  function toggleSect(sect) {
+  	if (sect.style.display == 'none') {
+  		sect.style.display = 'block';
+  		sect.parentNode.firstChild.firstChild.nodeValue = dea;
+  		return true;
+  	} else {
+  		sect.style.display = 'none';
+  		sect.parentNode.firstChild.firstChild.nodeValue = ina;
+  		return false;
+  	}
+  }
+  
+  function incSect(sect) {
+  	sect.style.display = 'block';
+  	sect.parentNode.firstChild.firstChild.nodeValue = dec;
+  }
+  
+  function decSect(sect) {
+  	sect.style.display = 'none';
+  	sect.parentNode.firstChild.firstChild.nodeValue = inc;
+  }
+  
+  function disableSelection(target){
+  	if ('MozUserSelect' in target.style) {
+  		target.style.MozUserSelect = "none"
+  	} else if ('onselectstart' in target) {
+  		target.onselectstart = function() { return false; }
+  	} else {
+  		target.onmousedown = function(){ return false; }
+  	}
+  	target.style.cursor = "default";
+  }
+  
+  function getSectDeep(node, lev, list) {
+  	if (lev <= 0) { return; }
+  	switch (node.nodeName.toLowerCase()) {
+  	case 'ul':
+  		for (var i=0; i<node.childNodes.length; i++) {
+  			getSectDeep(node.childNodes.item(i), lev, list);
+  		}
+  		break;
+  	case 'li':
+  		var obj = node.lastChild;
+  		if (obj.nodeName.toLowerCase() == 'ul') {
+  			list[list.length] = obj;
+  			getSectDeep(obj, lev-1, list);
+  		}
+  		break;
+  	}
+  }
+  
+  window.onload = function() {
+  	var toc = document.getElementById("TOC");
+  	disableSelection(toc);
+  	var sect = toc.firstChild.getElementsByTagName('ul');
+  
+  	for (var i=0; i<sect.length; ++i) {
+  		var li = sect[i].parentNode;
+  		var obj = document.createElement('span');
+  		obj.appendChild(document.createTextNode(inc));
+  		obj.className = 'toggle screenonly-inline';
+  		obj.onclick = function(event) {
+  			var stat = toggleSect(this.parentNode.lastChild);
+  			if (!event.shiftKey) { return; }
+  
+  			var subs = this.parentNode.lastChild.getElementsByTagName('ul');
+  			if (stat) {
+  				for (var j=0; j<subs.length; ++j) {
+  					incSect(subs[j]);
+  				}
+  			} else {
+  				for (var j=0; j<subs.length; ++j) {
+  					decSect(subs[j]);
+  				}
+  			}
+  		}
+  		obj.onmouseover = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? ina: dea;
+  		}
+  		obj.onmouseout = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? inc: dec;
+  		}
+  		sect[i].style.display = 'none';
+  		li.insertBefore(obj, li.firstChild);
+  	}
+  
+  	var list = [];
+  	getSectDeep(toc.firstChild, 2, list);
+  	for (var i=0; i<list.length; ++i) {
+  		incSect(list[i]);
+  	}
+  }
+  
+  /*]]>*/
+  </script>
+</head>
+<body>
+<h1 class="title">Evaluation</h1>
+<div id="TOC"
+><ul
+  ><li
+    ><a href="#generating-data"
+      >Generating data</a
+      ><ul
+      ><li
+	><a href="#model"
+	  >Model</a
+	  ><ul
+	  ><li
+	    ><a href="#producer"
+	      >Producer</a
+	      ></li
+	    ><li
+	    ><a href="#object-production"
+	      >Object production</a
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><a href="#application"
+	  >Application</a
+	  ><ul
+	  ><li
+	    ><a href="#flickr-overview"
+	      >Flickr overview</a
+	      ></li
+	    ><li
+	    ><a href="#crawl-strategy"
+	      >Crawl strategy</a
+	      ></li
+	    ><li
+	    ><a href="#processing"
+	      >Processing</a
+	      ></li
+	    ></ul
+	  ></li
+	></ul
+      ></li
+    ><li
+    ><a href="#evaluation"
+      >Evaluation</a
+      ><ul
+      ><li
+	><a href="#test-networks"
+	  >Test networks</a
+	  ><ul
+	  ><li
+	    ><a href="#inter-node-properties"
+	      >Inter-node properties</a
+	      ></li
+	    ><li
+	    ><a href="#intra-node-properties"
+	      >Intra-node properties</a
+	      ></li
+	    ><li
+	    ><a href="#generation-algorithms"
+	      >Generation algorithms</a
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><a href="#simulation"
+	  >Simulation</a
+	  ><ul
+	  ><li
+	    ><a href="#request-models"
+	      >Request models</a
+	      ></li
+	    ><li
+	    ><a href="#network-conditions"
+	      >Network conditions</a
+	      ></li
+	    ></ul
+	  ></li
+	></ul
+      ></li
+    ></ul
+  ></div
+>
+<div id="generating-data"
+><h1
+  ><a href="#TOC"
+    >Generating data</a
+    ></h1
+  ><p
+  >[MORE] why we need to generate data.</p
+  ><div id="model"
+  ><h2
+    ><a href="#TOC"
+      >Model</a
+      ></h2
+    ><p
+    >We assume the following environment:</p
+    ><ul
+    ><li
+      >We have a world-set of documents <span class="LaTeX"
+	>$D$</span
+	>, and a world-set of tags <span class="LaTeX"
+	>$T$</span
+	>. Each document has related tags, each associated with an attribute.</li
+      ><li
+      >We have a social network of identities <span class="LaTeX"
+	>$Z$</span
+	>. Each identity has some known friends.</li
+      ></ul
+    ><p
+    >We present a framework for generating an index network and a tgraph network on top of this. The model is fairly simple; although we model agents as having limited knowledge of the world, we do not try to model inaccurate or malicious information.</p
+    ><div id="producer"
+    ><h3
+      ><a href="#TOC"
+	>Producer</a
+	></h3
+      ><p
+      >The basic generative object, we call a <strong
+	>producer</strong
+	>. This is a node that produces resources. Each producer has:</p
+      ><ul
+      ><li
+	>a resource set, representing the documents that it knows about</li
+	><li
+	>implicitly, a tag set, containing all the tags associated by any of the documents in the resource set</li
+	><li
+	>arcs to other producers; each arc has a source tag, and an attribute.</li
+	></ul
+      ><p
+      >Producers represent data agents rather than social identities - that is, they can produce indexes and tgraphs. Producers can link together in a <em
+	>resource relationship</em
+	>; we write <span class="LaTeX"
+	>$p_0 \rightarrow^t p$</span
+	> to mean that a producer <span class="LaTeX"
+	>$p_0$</span
+	> points to another producer <span class="LaTeX"
+	>$p$</span
+	> via a tag <span class="LaTeX"
+	>$t$</span
+	>. (Note again that this is <em
+	>not</em
+	> equivalent to a social relationship.)</p
+      ><p
+      >Each resource relationship <span class="LaTeX"
+	>$p_0 \rightarrow^t p$</span
+	> has an associated attribute <span class="LaTeX"
+	>$w$</span
+	>, indicating the similarity of <span class="LaTeX"
+	>$t$</span
+	> to <span class="LaTeX"
+	>$p$</span
+	>. For simplicity’s sake, in our model we will only calculate <span class="LaTeX"
+	>$w$</span
+	> given <span class="LaTeX"
+	>$t$</span
+	> and <span class="LaTeX"
+	>$p$</span
+	>, and ignore <span class="LaTeX"
+	>$p_0$</span
+	>.</p
+      ><p
+      >From our specification, an arc <span class="LaTeX"
+	>$(t, d)$</span
+	> should have attribute <span class="LaTeX"
+	>$w = P(t|d)$</span
+	>. Since <span class="LaTeX"
+	>$p$</span
+	> is essentially just a set of documents, we take <span class="LaTeX"
+	>$(t, p) : w$</span
+	> with <span class="LaTeX"
+	>$w$</span
+	> being the independent union of <span class="LaTeX"
+	>$P(t|d)$</span
+	> over <span class="LaTeX"
+	>$d \in p$</span
+	>.</p
+      ></div
+    ><div id="object-production"
+    ><h3
+      ><a href="#TOC"
+	>Object production</a
+	></h3
+      ><p
+      >To generate an index, we simply construct an inverted index from tags to the resource set of <span class="LaTeX"
+	>$p$</span
+	>. Attributes for tag-document arcs are taken from the working environment, as per our assumptions. Attributes for tag-index arcs are taken from the similarity scores for the index’s producer, as calculated above.</p
+      ><p
+      >Generating a tgraph is more complex; we first construct an estimate <span class="LaTeX"
+	>$s'$</span
+	> of <span class="LaTeX"
+	>$|D|$</span
+	> from the point of view of a source producer <span class="LaTeX"
+	>$p_0$</span
+	>. One approach is to take the independent union of <span class="LaTeX"
+	>$P(p) = |p|/|D|$</span
+	> over <span class="LaTeX"
+	>$p \in succ(p_0) \cup p_0$</span
+	>. The resource sets of neighbouring producers should be positively correlated, so this will give a size that is larger than the actual union of their resource sets. This is intended to give a result close to what real producers would estimate the network size to be (from their own view).</p
+      ><p
+      >We then calculate tag sizes and tag-tag similarities by counting the relevant sets of documents and normalising by the appropriate factor. We can calculate sizes for neighbour tgraphs by counting the resource set of its producer and normalising; and tag-producer similarities we already have. Finally, most tags are unrelated, so if a similarity for a particular relation is low then we just ignore this altogether and skip adding the arc to the resulting tgraph.</p
+      ></div
+    ></div
+  ><div id="application"
+  ><h2
+    ><a href="#TOC"
+      >Application</a
+      ></h2
+    ><p
+    >Rather than generate entirely new data from scratch, we decided to collect data from existing resource-sharing services, and process it to fit our data model.</p
+    ><p
+    >This has several advantages. It saves us from having to develop a model of how agents interact with regards to resources, which is hard to emulate well. It also helps us to make a crude evaluation on well the system is working - much of the theory depends upon concepts like tag “size” and tag-tag “similarity”, which we will have intuitive expectations for if the tags are real phrases, but not if they are randomly generated data.</p
+    ><p
+    >We were aware of three online services based around social sharing of content: Flickr[REF] (photos), Last.fm[REF] (music), and Delicious[REF] (bookmarks). We briefly investigated each of their APIs to see which would be most suitable to base our test data on.</p
+    ><p
+    >Both Last.fm and Flickr have well-documented APIs; the Delicious API is still under development. Crucially, Flickr groups can hold resources. Last.fm groups only displays stats for members, and Delicious had no API support for groups at the time of writing. Therefore, we decided to use Flickr.</p
+    ><div id="flickr-overview"
+    ><h3
+      ><a href="#TOC"
+	>Flickr overview</a
+	></h3
+      ><p
+      >Flickr is an online content-sharing service. As with any social networking service, users can add other users as contacts. On Flickr, this does not need to be reciprocated.</p
+      ><p
+      >The basic shareable resource on Flickr is a photograph. User can upload their own photos and associate tags to them. They can also add other users’ photos as personal favorites.</p
+      ><p
+      >Users can create and join common-interest groups. Each group has a group pool to hold photos specific to that interest, which members can post to.</p
+      ><p
+      >Flickr also infers tag <em
+	>clusters</em
+	>, which are sets of tags that occur frequently among common photos. (They seem to use an algorithm which infers each cluster from on a seed triple of tags.) A tag may belong to more than one cluster; this often corresponds to its different semantic senses. We do not add this cluster data directly to producers, but we do use it to generate content relationships.</p
+      ></div
+    ><div id="crawl-strategy"
+    ><h3
+      ><a href="#TOC"
+	>Crawl strategy</a
+	></h3
+      ><p
+      >We don’t have enough time or resources to crawl the entire data set of Flickr, so we need to take a coherent and self-contained subset of it.</p
+      ><p
+      >We start with a single seed user, then perform breath-first search on the social network (outgoing contacts), stopping when a predefined number of users have been met. We then retrieve the groups for each user.</p
+      ><p
+      >For every user and every group, we create a producer and construct its resource set as follows: for user-producers, we add their own photos and favourites; for group-producers, we add photos from its group pool but restricted to the photos uploaded by the users we just crawled.</p
+      ><p
+      >We then retrieve the tags for each photo, and the clusters for each tag. At this point, we have all the data we need for constructing our test sample.</p
+      ></div
+    ><div id="processing"
+    ><h3
+      ><a href="#TOC"
+	>Processing</a
+	></h3
+      ><p
+      >We use both user-producers and group-producers to generate indexes. For each producer, we pre-calculate the similarity for each tag in its tag set. We label the tags with the highest similarities as representative tags, or <em
+	>rep-tags</em
+	>. We also score documents based on which rep-tags are associated with them; the highest-scored are labelled as representative documents, or <em
+	>rep-documents</em
+	>.</p
+      ><p
+      >We generate content relationships as follows: for each producer <span class="LaTeX"
+	>$p_0$</span
+	> we select the producers whose resource sets contain many of its rep-documents. We call these the <em
+	>related producers</em
+	>. For each related producer <span class="LaTeX"
+	>$p$</span
+	>, we infer tags to link to it with, by calculating intersections between the rep-tags of <span class="LaTeX"
+	>$p$</span
+	>, and each cluster of the rep-tags of <span class="LaTeX"
+	>$p_0$</span
+	>.</p
+      ><p
+      >This (arguably convoluted) method is intended to give a wider-ranging and less predictable selection of tags, than merely taking the intersection of the rep-tags of <span class="LaTeX"
+	>$p_0$</span
+	> and <span class="LaTeX"
+	>$p$</span
+	>. This was hoped to be “more realistic”, though this is obviously open to considerable debate.</p
+      ><p
+      >We then produce indexes according to their resource sets and these content relationships, using the method described <a href="#object-production"
+	>above</a
+	>.</p
+      ><p
+      >Our data set does not have any natural entities that, we believe, can provide an adequate naming service, as tgraphs are supposed to. (None of our other social service candidates had such functionality either.) However, we do have preconceived ideas of the information tgraphs would contain, and how they would be structured. So we generate new producers from the existing producers, for producing tgraphs. Our model aims to satisfy the following properties:</p
+      ><ul
+      ><li
+	>tgraph producers have a larger view of the network (ie. larger resource set) than index producers</li
+	><li
+	>the size of each view follows a power-law distribution (as for indexes)</li
+	><li
+	>the views are interest-oriented (as for indexes)</li
+	></ul
+      ><p
+      >We generate super-producers by running community detection algorithms on the indexes network. These were part of the graph library we used, and include label propagation[REF], greedy max-modularity[REF], and walktrap[REF]. Some of these return dendrograms rather than membership sets; we just cut these at various intervals to get multiple membership sets.</p
+      ><p
+      >Note that this is <em
+	>not</em
+	> intended to have a deep theoretical basis, and we did not consider the details of each detected algorithm; rather, we only wanted a quick-and-easy way to achieve the properties listed above.</p
+      ><p
+      >We construct the resource set of each super-producer from the union of those of their child producers. We generate content relationships in a similar way to our original producers, and produce tgraphs similarly too.</p
+      ><p
+      >Lastly, we generate ptables. We simply have each user-producer link to the producers for the groups it belongs to (for indexes) and the super-producers that they in turn belong to (for tgraphs). Social relationships between users are taken straight from the unprocessed data set.</p
+      ></div
+    ></div
+  ></div
+><div id="evaluation"
+><h1
+  ><a href="#TOC"
+    >Evaluation</a
+    ></h1
+  ><ul
+  ><li
+    >./run.sh -d../z/small -s51114580@N00 -i1000 -n64 -v2 google</li
+    ><li
+    ><p
+      >./run.sh -d../z/small -s8072015@N04 -i1000 -n256 -v3 google</p
+      ></li
+    ><li
+    >compare inferred address scheme with true address scheme</li
+    ><li
+    >test whether these match our expectations (nodes further out are “more general”)</li
+    ><li
+    ><p
+      >basically, some measure of how similar two graphs are?</p
+      ></li
+    ></ul
+  ><p
+  >query test:</p
+  ><ol style="list-style-type: decimal;"
+  ><li
+    >score (f1_score, precision, recall)</li
+    ><li
+    >steps to run the algorithm</li
+    ><li
+    ><p
+      >closeness(id, tag)</p
+      ></li
+    ><li
+    >is dependent variable, it’s what we’re interested in</li
+    ><li
+    >is not that interesting since we expect recall better, and</li
+    ><li
+    ><p
+      >independent variable</p
+      ></li
+    ></ol
+  ><p
+  >plot (1) against (3) for a small set of (2) set of (2) we can take to be [32, 64, 128, 256]</p
+  ><p
+  >more sophisticated score would take into account the distance between results docs and actual docs</p
+  ><div id="test-networks"
+  ><h2
+    ><a href="#TOC"
+      >Test networks</a
+      ></h2
+    ><div id="inter-node-properties"
+    ><h3
+      ><a href="#TOC"
+	>Inter-node properties</a
+	></h3
+      ><ul
+      ><li
+	>neighbour count (ie. degree) distribution</li
+	><li
+	>neighbour semantic relation distribution</li
+	></ul
+      ></div
+    ><div id="intra-node-properties"
+    ><h3
+      ><a href="#TOC"
+	>Intra-node properties</a
+	></h3
+      ><ul
+      ><li
+	>semantic unity (how “related” its tags are)</li
+	><li
+	>semantic specialty (how “general” its tags are)</li
+	></ul
+      ></div
+    ><div id="generation-algorithms"
+    ><h3
+      ><a href="#TOC"
+	>Generation algorithms</a
+	></h3
+      ><ul
+      ><li
+	>Use network formed by extracted data (“real world”)</li
+	><li
+	>Barabási-Albert model (preferential attachment)</li
+	><li
+	>scale-free</li
+	><li
+	>not small-world; according to wikipedia:<ul
+	  ><li
+	    >clustering coefficient is power-law, similar to hierarchical networks</li
+	    ><li
+	    >small-world networks have constant clustering coefficient</li
+	    ></ul
+	  ></li
+	><li
+	>TODO etc. read up on network theory.</li
+	><li
+	>hierarchies</li
+	><li
+	>other structures?</li
+	></ul
+      ><p
+      >Ideally we want a single algorithm which takes as input, various parameters for the properties listed in the previous two sections, and outputs a random graph with those properties.</p
+      ></div
+    ></div
+  ><div id="simulation"
+  ><h2
+    ><a href="#TOC"
+      >Simulation</a
+      ></h2
+    ><div id="request-models"
+    ><h3
+      ><a href="#TOC"
+	>Request models</a
+	></h3
+      ></div
+    ><div id="network-conditions"
+    ><h3
+      ><a href="#TOC"
+	>Network conditions</a
+	></h3
+      ><ul
+      ><li
+	>perfect conditions</li
+	><li
+	>random failure</li
+	><li
+	>malicious attacks - under the assumptions of “abstract storage network”, only attacks vs the entire network can occur on the naming / routing planes. attacks vs individuals on the social plane is a separate topic, ignore here<ul
+	  ><li
+	    >attacks vs most well-connected nodes</li
+	    ><li
+	    >MORE</li
+	    ></ul
+	  ></li
+	></ul
+      ></div
+    ></div
+  ></div
+>
+</body>
+</html>
+

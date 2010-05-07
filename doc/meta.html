@@ -1,0 +1,508 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Meta-documentation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Ximin Luo" />
+  <meta name="date" content="" />
+  <link rel="stylesheet" href="res/common.css" type="text/css" />
+  <script src="res/LaTeXMathML.js" type="text/javascript"
+  ></script
+  >
+  <script type="text/javascript">
+  /*<![CDATA[*/
+  
+  inc='\u25b9'; dec='\u25bf';
+  ina='\u25b8'; dea='\u25be';
+  
+  function toggleSect(sect) {
+  	if (sect.style.display == 'none') {
+  		sect.style.display = 'block';
+  		sect.parentNode.firstChild.firstChild.nodeValue = dea;
+  		return true;
+  	} else {
+  		sect.style.display = 'none';
+  		sect.parentNode.firstChild.firstChild.nodeValue = ina;
+  		return false;
+  	}
+  }
+  
+  function incSect(sect) {
+  	sect.style.display = 'block';
+  	sect.parentNode.firstChild.firstChild.nodeValue = dec;
+  }
+  
+  function decSect(sect) {
+  	sect.style.display = 'none';
+  	sect.parentNode.firstChild.firstChild.nodeValue = inc;
+  }
+  
+  function disableSelection(target){
+  	if ('MozUserSelect' in target.style) {
+  		target.style.MozUserSelect = "none"
+  	} else if ('onselectstart' in target) {
+  		target.onselectstart = function() { return false; }
+  	} else {
+  		target.onmousedown = function(){ return false; }
+  	}
+  	target.style.cursor = "default";
+  }
+  
+  function getSectDeep(node, lev, list) {
+  	if (lev <= 0) { return; }
+  	switch (node.nodeName.toLowerCase()) {
+  	case 'ul':
+  		for (var i=0; i<node.childNodes.length; i++) {
+  			getSectDeep(node.childNodes.item(i), lev, list);
+  		}
+  		break;
+  	case 'li':
+  		var obj = node.lastChild;
+  		if (obj.nodeName.toLowerCase() == 'ul') {
+  			list[list.length] = obj;
+  			getSectDeep(obj, lev-1, list);
+  		}
+  		break;
+  	}
+  }
+  
+  window.onload = function() {
+  	var toc = document.getElementById("TOC");
+  	disableSelection(toc);
+  	var sect = toc.firstChild.getElementsByTagName('ul');
+  
+  	for (var i=0; i<sect.length; ++i) {
+  		var li = sect[i].parentNode;
+  		var obj = document.createElement('span');
+  		obj.appendChild(document.createTextNode(inc));
+  		obj.className = 'toggle screenonly-inline';
+  		obj.onclick = function(event) {
+  			var stat = toggleSect(this.parentNode.lastChild);
+  			if (!event.shiftKey) { return; }
+  
+  			var subs = this.parentNode.lastChild.getElementsByTagName('ul');
+  			if (stat) {
+  				for (var j=0; j<subs.length; ++j) {
+  					incSect(subs[j]);
+  				}
+  			} else {
+  				for (var j=0; j<subs.length; ++j) {
+  					decSect(subs[j]);
+  				}
+  			}
+  		}
+  		obj.onmouseover = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? ina: dea;
+  		}
+  		obj.onmouseout = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? inc: dec;
+  		}
+  		sect[i].style.display = 'none';
+  		li.insertBefore(obj, li.firstChild);
+  	}
+  
+  	var list = [];
+  	getSectDeep(toc.firstChild, 2, list);
+  	for (var i=0; i<list.length; ++i) {
+  		incSect(list[i]);
+  	}
+  }
+  
+  /*]]>*/
+  </script>
+</head>
+<body>
+<h1 class="title">Meta-documentation</h1>
+<div id="TOC"
+><ul
+  ><li
+    ><a href="#notation"
+      >Notation</a
+      ><ul
+      ><li
+	><a href="#glossary"
+	  >Glossary</a
+	  ></li
+	><li
+	><a href="#data-structures"
+	  >Data structures</a
+	  ><ul
+	  ><li
+	    ><a href="#simple-objects"
+	      >Simple objects</a
+	      ></li
+	    ><li
+	    ><a href="#composite-objects"
+	      >Composite objects</a
+	      ></li
+	    ><li
+	    ><a href="#system-relevant-objects"
+	      >System-relevant objects</a
+	      ></li
+	    ></ul
+	  ></li
+	></ul
+      ></li
+    ><li
+    ><a href="#bibliography"
+      >Bibliography</a
+      ></li
+    ><li
+    ><a href="#interface"
+      >Interface</a
+      ></li
+    ><li
+    ><a href="#about"
+      >About</a
+      ></li
+    ></ul
+  ></div
+>
+<div id="notation"
+><h1
+  ><a href="#TOC"
+    >Notation</a
+    ></h1
+  ><div id="glossary"
+  ><h2
+    ><a href="#TOC"
+      >Glossary</a
+      ></h2
+    ><dl
+    ><dt
+      >arc</dt
+      ><dd
+      >a directed relation <span class="LaTeX"
+	>$e = (v_s, v_t)$</span
+	> from node <span class="LaTeX"
+	>$v_s$</span
+	> to node <span class="LaTeX"
+	>$v_t$</span
+	>.</dd
+      ><dt
+      >document</dt
+      ><dd
+      >a storage object that can be the target of some query. This could include (eg.) multimedia or software; for simplicity, we’ll refer to these all as “document”.</dd
+      ><dt
+      >identity</dt
+      ><dd
+      >a node (“user”) on the social network</dd
+      ><dt
+      >in-arc, in-degree, in-node (of a subject node)</dt
+      ><dd
+      >respectively: (an incoming arc, the total number of incoming arcs, a neighbour on the other side of an incoming arc) of the subject node.</dd
+      ><dt
+      >local view</dt
+      ><dd
+      >for a remote object <span class="LaTeX"
+	>$x$</span
+	>, the local view <span class="LaTeX"
+	>$\ddotx$</span
+	> holds the parts of <span class="LaTeX"
+	>$x$</span
+	> that have been retrieved from the network, ie. data that is immediately available to the local system. <span class="LaTeX"
+	>$\ddotx$</span
+	> has the ability to distinguish between items found not to exist in <span class="LaTeX"
+	>$x$</span
+	>, and items not yet loaded.</dd
+      ><dt
+      >neighbour (of a subject node)</dt
+      ><dd
+      >a node separated from the subject node by a single arc</dd
+      ><dt
+      >node</dt
+      ><dd
+      >in the context of a graph or a network, a unique individual</dd
+      ><dt
+      >out-arc, out-degree, out-node (of a subject node)</dt
+      ><dd
+      >respectively: (an outgoing arc, the total number of outgoing arcs, a neighbour on the other side of an outgoing arc) of the subject node.</dd
+      ><dt
+      >semantics</dt
+      ><dd
+      >this term is used in two different senses; hopefully the context should give enough disambiguation: the meaning of tags, w.r.t. the end-user; or the meaning of some concept, wrt. the theory of this system.</dd
+      ><dt
+      >tag</dt
+      ><dd
+      >a semantic unit used to describe documents in a useful way to end users.</dd
+      ></dl
+    ></div
+  ><div id="data-structures"
+  ><h2
+    ><a href="#TOC"
+      >Data structures</a
+      ></h2
+    ><p
+    >Here, we document the notation we use for describing the data structures we use. All are implicitly finite in size.</p
+    ><dl
+    ><dt
+      >Partial function <span class="LaTeX"
+	>$f \subseteq X \to Y$</span
+	></dt
+      ><dd
+      >This is non-standard, but <span class="LaTeX"
+	>$f : X \to Y$</span
+	> is ambiguous - existing literature uses it to mean both a partial or a total function, depending on author.</dd
+      ></dl
+    ><div id="simple-objects"
+    ><h3
+      ><a href="#TOC"
+	>Simple objects</a
+	></h3
+      ><dl
+      ><dt
+	>Tuple <span class="LaTeX"
+	  >$X = ( a,b,\ldots )$</span
+	  ></dt
+	><dd
+	>an ordered container of items, of fixed size</dd
+	><dd
+	><ul
+	  ><li
+	    >the parentheses may be omitted when the context is clear</li
+	    ></ul
+	  ></dd
+	><dt
+	>Union <span class="LaTeX"
+	  >$U = ( a|b|\ldots )$</span
+	  ></dt
+	><dd
+	>a container holding a single value of any of the specified types</dd
+	><dd
+	><ul
+	  ><li
+	    >the parentheses may be omitted when the context is clear</li
+	    ></ul
+	  ></dd
+	><dt
+	>Map <span class="LaTeX"
+	  >$M = \{ x : y \}$</span
+	  ></dt
+	><dd
+	>a container that maps<sup
+	  ><a href="#fn1" class="footnoteRef" id="fnref1"
+	    >1</a
+	    ></sup
+	  > <span class="LaTeX"
+	  >$x$</span
+	  > to <span class="LaTeX"
+	  >$y$</span
+	  >.</dd
+	><dd
+	><ul
+	  ><li
+	    >write <span class="LaTeX"
+	      >$y_x$</span
+	      > to mean “the <span class="LaTeX"
+	      >$y$</span
+	      > that <span class="LaTeX"
+	      >$x$</span
+	      > maps to”.</li
+	    ><li
+	    >let <span class="LaTeX"
+	      >$x \in M$</span
+	      > mean the same thing as <span class="LaTeX"
+	      >$x \in \mathtt{\mathrm{dom}}\, M$</span
+	      >.</li
+	    ><li
+	    >the braces may be omitted when the context is clear</li
+	    ></ul
+	  ></dd
+	><dt
+	>List <span class="LaTeX"
+	  >$L = [ x_i ]_{i}$</span
+	  ></dt
+	><dd
+	>an ordered container of items, of unfixed size</dd
+	></dl
+      ></div
+    ><div id="composite-objects"
+    ><h3
+      ><a href="#TOC"
+	>Composite objects</a
+	></h3
+      ><p
+      >We make heavy use of these container objects:</p
+      ><ul
+      ><li
+	>maps <span class="LaTeX"
+	  >$V_A : V \to A$</span
+	  > of nodes to their attributes.</li
+	><li
+	>maps <span class="LaTeX"
+	  >$E_A : E \to A$</span
+	  > of arcs to their attributes.</li
+	></ul
+      ><p
+      >These are used in various combinations to represent graphs, inverted indexes, etc.</p
+      ><p
+      >For any set <span class="LaTeX"
+	>$E \subseteq V_s \times V_t$</span
+	> of arcs, define:</p
+      ><ul
+      ><li
+	><span class="LaTeX"
+	  >$\mathtt{\mathrm{src}}\, E = \{ v_s \in V_s : \exists v_t . (v_s, v_t) \in E \}$</span
+	  > ie. the set of nodes that the arcs point from.</li
+	><li
+	><span class="LaTeX"
+	  >$\mathtt{\mathrm{dst}}\, E = \{ v_t \in V_t : \exists v_s . (v_s, v_t) \in E \}$</span
+	  > ie. the set of nodes that the arcs point to.</li
+	><li
+	><span class="LaTeX"
+	  >$\mathtt{\mathrm{rft}}\, E = \mathtt{\mathrm{src}}\, E \cup \mathtt{\mathrm{dst}}\, E$</span
+	  > ie. the set of nodes that E refers to.</li
+	></ul
+      ><p
+      >For convenience, let this also apply to arc-attribute maps, ie. <span class="LaTeX"
+	>$\mathtt{\mathrm{rft}}\, E_A = \mathtt{\mathrm{rft}}\, E$</span
+	>.</p
+      ></div
+    ><div id="system-relevant-objects"
+    ><h3
+      ><a href="#TOC"
+	>System-relevant objects</a
+	></h3
+      ><p
+      >With no other context or indication, the following single-letter symbols refer to the following object types. Capitalised symbols refer to the set of all objects of the given type; this is also partly reflected in the source code.</p
+      ><table
+      ><col width="20%"
+	 /><col width="68%"
+	 /><thead
+	><tr class="header"
+	  ><th align="left"
+	    >Symbol</th
+	    ><th align="left"
+	    >Object type</th
+	    ></tr
+	  ></thead
+	><tbody
+	><tr class="odd"
+	  ><td align="left"
+	    ><span class="LaTeX"
+	      >$d$</span
+	      ></td
+	    ><td align="left"
+	    >document</td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    ><span class="LaTeX"
+	      >$t$</span
+	      ></td
+	    ><td align="left"
+	    >tag</td
+	    ></tr
+	  ><tr class="odd"
+	  ><td align="left"
+	    ><span class="LaTeX"
+	      >$g$</span
+	      ></td
+	    ><td align="left"
+	    ><code
+	      >tgraph</code
+	      ></td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    ><span class="LaTeX"
+	      >$h$</span
+	      ></td
+	    ><td align="left"
+	    ><code
+	      >index</code
+	      ></td
+	    ></tr
+	  ><tr class="odd"
+	  ><td align="left"
+	    ><span class="LaTeX"
+	      >$p$</span
+	      ></td
+	    ><td align="left"
+	    ><code
+	      >ptable</code
+	      ></td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    ><span class="LaTeX"
+	      >$z$</span
+	      ></td
+	    ><td align="left"
+	    >identity</td
+	    ></tr
+	  ><tr class="odd"
+	  ><td align="left"
+	    ><span class="LaTeX"
+	      >$s$</span
+	      ></td
+	    ><td align="left"
+	    >node attribute (identity score)</td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    ><span class="LaTeX"
+	      >$w$</span
+	      ></td
+	    ><td align="left"
+	    >arc attribute (tag-tag weight or tag-doc weight)</td
+	    ></tr
+	  ><tr class="odd"
+	  ><td align="left"
+	    ><span class="LaTeX"
+	      >$u$</span
+	      ></td
+	    ><td align="left"
+	    >node attribute (tag weight or resource value)</td
+	    ></tr
+	  ></tbody
+	></table
+      ><p
+      >Details about these object types, their structure and semantics, are contained in the design document.</p
+      ></div
+    ></div
+  ></div
+><div id="bibliography"
+><h1
+  ><a href="#TOC"
+    >Bibliography</a
+    ></h1
+  ><p
+  >etc etc etc</p
+  ></div
+><div id="interface"
+><h1
+  ><a href="#TOC"
+    >Interface</a
+    ></h1
+  ><p
+  >Clicking the arrows next to the menus will toggle the visibility of their children. Shift-clicking will do this recursively for all descendents at all levels.</p
+  ></div
+><div id="about"
+><h1
+  ><a href="#TOC"
+    >About</a
+    ></h1
+  ><p
+  >These documents were prepared in <a href="http://johnmacfarlane.net/pandoc/"
+    >pandoc markdown</a
+    >.</p
+  ></div
+><div class="footnotes"
+><hr
+   /><ol
+  ><li id="fn1"
+    ><p
+      >This is equivalent to a partial function: <span class="LaTeX"
+	>$M = \{ x_i \in X \mapsto y_i \in Y \}_i$</span
+	> means the same thing as <span class="LaTeX"
+	>$M \subseteq X \to Y$</span
+	>; however, the former is a better description of a static data structure. <a href="#fnref1" class="footnoteBackLink" title="Jump back to footnote 1">↩</a></p
+      ></li
+    ></ol
+  ></div
+>
+</body>
+</html>
+

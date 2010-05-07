@@ -1,0 +1,655 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Construction and implementation</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Ximin Luo" />
+  <meta name="date" content="" />
+  <link rel="stylesheet" href="res/common.css" type="text/css" />
+  <script type="text/javascript">
+  /*<![CDATA[*/
+  
+  inc='\u25b9'; dec='\u25bf';
+  ina='\u25b8'; dea='\u25be';
+  
+  function toggleSect(sect) {
+  	if (sect.style.display == 'none') {
+  		sect.style.display = 'block';
+  		sect.parentNode.firstChild.firstChild.nodeValue = dea;
+  		return true;
+  	} else {
+  		sect.style.display = 'none';
+  		sect.parentNode.firstChild.firstChild.nodeValue = ina;
+  		return false;
+  	}
+  }
+  
+  function incSect(sect) {
+  	sect.style.display = 'block';
+  	sect.parentNode.firstChild.firstChild.nodeValue = dec;
+  }
+  
+  function decSect(sect) {
+  	sect.style.display = 'none';
+  	sect.parentNode.firstChild.firstChild.nodeValue = inc;
+  }
+  
+  function disableSelection(target){
+  	if ('MozUserSelect' in target.style) {
+  		target.style.MozUserSelect = "none"
+  	} else if ('onselectstart' in target) {
+  		target.onselectstart = function() { return false; }
+  	} else {
+  		target.onmousedown = function(){ return false; }
+  	}
+  	target.style.cursor = "default";
+  }
+  
+  function getSectDeep(node, lev, list) {
+  	if (lev <= 0) { return; }
+  	switch (node.nodeName.toLowerCase()) {
+  	case 'ul':
+  		for (var i=0; i<node.childNodes.length; i++) {
+  			getSectDeep(node.childNodes.item(i), lev, list);
+  		}
+  		break;
+  	case 'li':
+  		var obj = node.lastChild;
+  		if (obj.nodeName.toLowerCase() == 'ul') {
+  			list[list.length] = obj;
+  			getSectDeep(obj, lev-1, list);
+  		}
+  		break;
+  	}
+  }
+  
+  window.onload = function() {
+  	var toc = document.getElementById("TOC");
+  	disableSelection(toc);
+  	var sect = toc.firstChild.getElementsByTagName('ul');
+  
+  	for (var i=0; i<sect.length; ++i) {
+  		var li = sect[i].parentNode;
+  		var obj = document.createElement('span');
+  		obj.appendChild(document.createTextNode(inc));
+  		obj.className = 'toggle screenonly-inline';
+  		obj.onclick = function(event) {
+  			var stat = toggleSect(this.parentNode.lastChild);
+  			if (!event.shiftKey) { return; }
+  
+  			var subs = this.parentNode.lastChild.getElementsByTagName('ul');
+  			if (stat) {
+  				for (var j=0; j<subs.length; ++j) {
+  					incSect(subs[j]);
+  				}
+  			} else {
+  				for (var j=0; j<subs.length; ++j) {
+  					decSect(subs[j]);
+  				}
+  			}
+  		}
+  		obj.onmouseover = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? ina: dea;
+  		}
+  		obj.onmouseout = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? inc: dec;
+  		}
+  		sect[i].style.display = 'none';
+  		li.insertBefore(obj, li.firstChild);
+  	}
+  
+  	var list = [];
+  	getSectDeep(toc.firstChild, 2, list);
+  	for (var i=0; i<list.length; ++i) {
+  		incSect(list[i]);
+  	}
+  }
+  
+  /*]]>*/
+  </script>
+</head>
+<body>
+<h1 class="title">Construction and implementation</h1>
+<div id="TOC"
+><ul
+  ><li
+    ><a href="#development"
+      >Development</a
+      ><ul
+      ><li
+	><a href="#project-infrastructure"
+	  >Project infrastructure</a
+	  ></li
+	><li
+	><a href="#search-application"
+	  >Search application</a
+	  ><ul
+	  ><li
+	    ><a href="#structure"
+	      >Structure</a
+	      ></li
+	    ><li
+	    ><a href="#design-patterns"
+	      >Design patterns</a
+	      ></li
+	    ><li
+	    ><a href="#generics"
+	      >Generics</a
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><a href="#sample-generator"
+	  >Sample generator</a
+	  ><ul
+	  ><li
+	    ><a href="#libraries"
+	      >Libraries</a
+	      ></li
+	    ><li
+	    ><a href="#structure-1"
+	      >Structure</a
+	      ></li
+	    ><li
+	    ><a href="#performance"
+	      >Performance</a
+	      ><ul
+	      ><li
+		><a href="#network-io"
+		  >Network IO</a
+		  ></li
+		><li
+		><a href="#serialisation"
+		  >Serialisation</a
+		  ></li
+		></ul
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><a href="#data-format"
+	  >Data format</a
+	  ></li
+	></ul
+      ></li
+    ><li
+    ><a href="#running-tests"
+      >Running tests</a
+      ></li
+    ></ul
+  ></div
+>
+<div id="development"
+><h1
+  ><a href="#TOC"
+    >Development</a
+    ></h1
+  ><div id="project-infrastructure"
+  ><h2
+    ><a href="#TOC"
+      >Project infrastructure</a
+      ></h2
+    ><p
+    >From the beginning, we put the entire project under version control. We chose to use git; we feel that its content-oriented object model and its non-linear history model is more flexible and “natural” than (e.g.) centralised systems. It’s also fast and efficient, and we have the most experience with it.</p
+    ><p
+    >The main compilable component, the search application, was written in Java, and so we chose Apache Ant for our build system. This is fairly simple and flexible enough for our purposes. Maven was also considered, but dropped as we didn’t think our project needed such a heavyweight solution.</p
+    ><p
+    >We spent a moderate amount of our effort creating test code as part of the development process. We did <em
+      >not</em
+      > attempt to write a unit test for every single class that was implemented. This is not feasible for many classes, since many of them are components of a larger system, and cannot function at all without the entire system in place. However, for utility functions, data structure classes, and other “standalone” components, we did write fairly extensive tests for all of these. In our experience, they are the most critical components to test, and eliminating bugs early helps greatly when finally testing the actual application-specific logic. We used JUnit as the framework for our tests; this is easily integrated into the build process via Ant.</p
+    ><p
+    >Our repository has a fairly simple layout; we have seperate source directories for application code and test code, and a source directory for documentation. We used github to publish and backup our repository.</p
+    ></div
+  ><div id="search-application"
+  ><h2
+    ><a href="#TOC"
+      >Search application</a
+      ></h2
+    ><p
+    >We decided to develop the search application in Java. We were aware that our design had many areas for future improvement, so we wanted our implementation to be easily maintainable and extensible. We felt that the strict type safety and class inheritance of Java would aid us in achieving such a goal, because it allows us to design a system architecture (and its component interfaces) to be both self-enforcing and self-documenting. This is especially useful when coding individual classes, where it’s easy to forget about the overall picture.</p
+    ><div id="structure"
+    ><h3
+      ><a href="#TOC"
+	>Structure</a
+	></h3
+      ><p
+      >Our code structure can be divided into the following sections, each roughly corresponding to a Java package:</p
+      ><dl
+      ><dt
+	><code
+	  >tags.proto</code
+	  ></dt
+	><dd
+	>Prototype implementation of the search application</dd
+	><dt
+	><code
+	  >tags.store</code
+	  ></dt
+	><dd
+	>Adapters to provide a consistent interface for different storage layers</dd
+	><dt
+	><code
+	  >tags.util</code
+	  >, <code
+	  >tags.io</code
+	  ></dt
+	><dd
+	>General utilities that the rest of the application depends upon, but is not otherwise directly relevant to the theory of our system.</dd
+	><dt
+	><code
+	  >tags.ui</code
+	  ></dt
+	><dd
+	>Interfaces for presenting application information to the user</dd
+	></dl
+      ><p
+      >The prototype implementation code can be divided into:</p
+      ><dl
+      ><dt
+	><code
+	  >tags.proto.*</code
+	  > (objects)</dt
+	><dd
+	>These include classes that define the basic objects of our system uses (like <code
+	  >PTable</code
+	  >, <code
+	  >TGraph</code
+	  >, <code
+	  >Index</code
+	  >), and some utility classes for these. Some of the object classes have multiple versions, which help to strip out unnecessary features based on use context - e.g. when we only need to represent a remote object, we only store outgoing arcs, and for a local object, we store both incoming and outgoing arcs.</dd
+	><dt
+	><code
+	  >tags.proto.*</code
+	  > (process)</dt
+	><dd
+	>These include classes that form the execution architecture of our system. The main ones include:</dd
+	><dd
+	><dl
+	  ><dt
+	    ><code
+	      >LayerService</code
+	      ></dt
+	    ><dd
+	    >This provides a template that all layers inherit from, which implements some basic functionality (such as receiving messages and holding the query parameters) as described in previous sections.</dd
+	    ><dt
+	    ><code
+	      >QueryProcess</code
+	      ></dt
+	    ><dd
+	    >This represents an ongoing query, and holds references to all of the state relevant to it, including each of the running layers.</dd
+	    ><dt
+	    ><code
+	      >QueryEnvironment</code
+	      ></dt
+	    ><dd
+	    >This represents the environment of the query - the components that a query process needs, but is not specific to the query itself. This includes things such as an <code
+	      >Executor</code
+	      ><sup
+	      ><a href="#fn1" class="footnoteRef" id="fnref1"
+		>1</a
+		></sup
+	      > for scheduling jobs, and most importantly the interface to the storage layer.</dd
+	    ></dl
+	  ></dd
+	><dt
+	><code
+	  >tags.proto.*.*</code
+	  > (layers)</dt
+	><dd
+	>These sub-packages implement each of the layers, as described in previous sections. The “algorithmic components” of each layer are represented by Java interfaces (with a basic implementation for each, also as previously described), to allow for better future implementations.</dd
+	></dl
+      ><p
+      >The general utilities can be further divided into:</p
+      ><dl
+      ><dt
+	><code
+	  >tags.util.*</code
+	  ></dt
+	><dd
+	>This contains mostly data structures classes. Our system design was very abstract, especially the object specifications. An easy way to implement these was to construct them out of union and tuple types, but they aren’t a native part of Java, so we built our own. We implemented lots of utility methods for performing complex operations on maps, which was needed since our objects are all node-map/arc-map combinations. Our crude score-inferer and value-composer are also both implemented here, as well as Probability and Entropy classes that ensure their values are restricted to the appropriate ranges.</dd
+	><dt
+	><code
+	  >tags.util.exec.*</code
+	  ></dt
+	><dd
+	>This contains base classes for our execution architecture. Unfortunately, <code
+	  >java.util.concurrent</code
+	  > is highly abstract and lacking in context-specific implementations of its interfaces, and we weren’t aware of any simple, light, easy-to-learn execution frameworks for Java, so we wrote our own. This includes <code
+	  >TaskService</code
+	  >, which is similar in principle to <code
+	  >Executor</code
+	  > but accepts arbitrary objects to act on instead of just <code
+	  >Runnable.run()</code
+	  >; and <code
+	  >MessageReceiver</code
+	  >, which is a basic interface for a simple execution framework based on message passing.</dd
+	><dt
+	><code
+	  >tags.io.*</code
+	  ></dt
+	><dd
+	>This package only contains deserialisation classes for GraphML, and was not needed until late on during the development process, when we had to extend a large part of JUNG’s GraphML reader code - see <a href="#data-format"
+	  >below</a
+	  >.</dd
+	></dl
+      ></div
+    ><div id="design-patterns"
+    ><h3
+      ><a href="#TOC"
+	>Design patterns</a
+	></h3
+      ><p
+      >The Java Collections Framework[REF] is simple and flexible, and we built most of our data structures on top of it. In many cases, these provide alternative views of existing structures, such as combining two maps into one, chaining many iterators together, and so on. It is generally more memory efficient to expose each item as needed, rather than copying the entire collection and converting all the items at once. The <em
+	>proxy</em
+	> and <em
+	>decorator</em
+	> patterns are both useful in implementing such views; we made heavy use of our <code
+	>ProxyIterable</code
+	> and <code
+	>ProxyMap</code
+	> classes in constructing more complex proxy objects.</p
+      ><p
+      >We found good use for the <em
+	>adapter</em
+	> pattern. Our <code
+	>StoreControl</code
+	> interface provides a consistent way for our search application to interact with different storage layers; implementations wrap around and hide these differences. We implemented both the path-based score-inferer and the mean-based value-composer as general utility classes; adapters were also used to wrap this functionality inside an interface expected by the layers that used these components.</p
+      ><p
+      >We also used the <em
+	>factory</em
+	> and <em
+	>builder</em
+	> patterns to make object creation code more extensible. Use cases include creating local views of remote objects, and deserialising objects from input streams.</p
+      ></div
+    ><div id="generics"
+    ><h3
+      ><a href="#TOC"
+	>Generics</a
+	></h3
+      ><p
+      >We made heavy use of generics in our implementation. In our experience, this is a useful tool in both enforcing type safety, and in writing re-usable code.</p
+      ><p
+      >Our design uses several types of objects without making any comment on their type; these include tags, object addresses (in the storage layer), and social identities. These are perfect candidates for generic type parameters.</p
+      ><p
+      >The type of attributes can also be parameterised. Although we use probability for all of our attributes, this is a part of our specification that is separate from the overall architecture of the system. A full list of theoretically distinct types is:</p
+      ><table
+      ><thead
+	><tr class="header"
+	  ><th align="left"
+	    ></th
+	    ><th align="left"
+	    >Source</th
+	    ><th align="left"
+	    >Description</th
+	    ></tr
+	  ></thead
+	><tbody
+	><tr class="odd"
+	  ><td align="left"
+	    >1.</td
+	    ><td align="left"
+	    >agent score (ptables)</td
+	    ><td align="left"
+	    >social identity trust score</td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    >2.</td
+	    ><td align="left"
+	    >resource value (ptables) (tgraphs)</td
+	    ><td align="left"
+	    >rating score for tgraphs</td
+	    ></tr
+	  ><tr class="odd"
+	  ><td align="left"
+	    >3.</td
+	    ><td align="left"
+	    >resource value (ptables) (indexes)</td
+	    ><td align="left"
+	    >rating score for indexes</td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    >4.</td
+	    ><td align="left"
+	    >agent score (tgraphs)</td
+	    ><td align="left"
+	    >rating score for tgraphs</td
+	    ></tr
+	  ><tr class="odd"
+	  ><td align="left"
+	    >5.</td
+	    ><td align="left"
+	    >resource value (tgraphs) (node)</td
+	    ><td align="left"
+	    >tag size</td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    >6.</td
+	    ><td align="left"
+	    >resource value (tgraphs) (arc)</td
+	    ><td align="left"
+	    >tag-tag similarity</td
+	    ></tr
+	  ><tr class="odd"
+	  ><td align="left"
+	    >7.</td
+	    ><td align="left"
+	    >agent score (indexes)</td
+	    ><td align="left"
+	    >rating score for indexes</td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    >8.</td
+	    ><td align="left"
+	    >resource value (indexes)</td
+	    ><td align="left"
+	    >tag-document similarity</td
+	    ></tr
+	  ></tbody
+	></table
+      ><p
+      >(2,4) are the same, and (3,7) are the same, which leaves us with six attribute types. In the end we felt it prudent to merge (6,8) into a single arc-attribute type, and also merge (2,4,3,7) into a single score type. This leaves us with four distinct attribute types, which arguably is still too much; however, we believe our code is modular enough to support this level of flexibility.</p
+      ><p
+      >We end up with seven generic type parameters in total, which are all present in the unified interface to the storage layer (<code
+	>StoreControl</code
+	>): <code
+	>&lt;I&gt;</code
+	> identity, <code
+	>&lt;T&gt;</code
+	> tag, <code
+	>&lt;A&gt;</code
+	> address, <code
+	>&lt;U&gt;</code
+	> node-attribute, <code
+	>&lt;W&gt;</code
+	> arc-attribute, <code
+	>&lt;S&gt;</code
+	> score, <code
+	>&lt;Z&gt;</code
+	> identity-score.</p
+      ></div
+    ></div
+  ><div id="sample-generator"
+  ><h2
+    ><a href="#TOC"
+      >Sample generator</a
+      ></h2
+    ><p
+    >We decided to develop the sample generator in Python. We did not need the code here to be as strictly well-designed as for the search application. Moreover, by this point we were already far behind schedule, and we felt coding in Python would help to recover some of this lost time, due to its simplicity and the ease at which one can explore new libraries via the interactive interpreter.</p
+    ><p
+    >This was a decision that we would later come to partially regret, due to poor high-level multithreading support, and performance and memory leak issues which became important at the scales we were processing data at (we had initially overlooked this). However, ultimately it probably did save a lot of development time, and it’s unclear whether programming in a more low-level language would have helped the performance issues significantly.</p
+    ><div id="libraries"
+    ><h3
+      ><a href="#TOC"
+	>Libraries</a
+	></h3
+      ><p
+      >We used the following external libraries in our sample generator:</p
+      ><dl
+      ><dt
+	>flickrapi[REF]</dt
+	><dd
+	>This is a python interface to Flickr’s online API[REF].</dd
+	><dt
+	>python-futures[REF]</dt
+	><dd
+	>This is an ad-hoc high-level multithreading framework for python, inspired by Java’s <code
+	  >java.util.concurrent</code
+	  > package. We used this to run flickrapi in multiple threads to reduce network IO waits; this is discussed below[LINK].</dd
+	><dt
+	>igraph[REF]</dt
+	><dd
+	>This is a general-purpose graph library written in C, with interfaces to other languages including python. We used this as a fast and efficient way to store and manipulate graph data structures, as well as serialising them to store on disk.</dd
+	></dl
+      ></div
+    ><div id="structure-1"
+    ><h3
+      ><a href="#TOC"
+	>Structure</a
+	></h3
+      ><p
+      >Our code structure can be divided into the following sections, each roughly corresponding to a Python module:</p
+      ><dl
+      ><dt
+	><code
+	  >tags.eval.crawl.flickr</code
+	  ></dt
+	><dd
+	>This contains an extension of flickrapi, and implements the crawl strategy and data collection code, as described in the evaluation section.</dd
+	><dt
+	><code
+	  >tags.eval.object</code
+	  ></dt
+	><dd
+	>This holds classes representing single objects, such as <code
+	  >Producer</code
+	  >, <code
+	  >Node</code
+	  >, a class for building graphs (<code
+	  >NodeSample</code
+	  >), and various classes that hold statistics about a sample or its components.</dd
+	><dt
+	><code
+	  >tags.eval.sample</code
+	  ></dt
+	><dd
+	>This holds classes for generating, writing, and calculating statistics for entire samples.</dd
+	><dt
+	><code
+	  >tags.eval.util</code
+	  >, <code
+	  >tags.eval.cache</code
+	  >, <code
+	  >tags.eval.dbsqlite3</code
+	  >, <code
+	  >tags.eval.state</code
+	  ></dt
+	><dd
+	>These are utility methods and classes that provide support for the rest of the code, but which is otherwise not directly relevant to the system.</dd
+	></dl
+      ></div
+    ><div id="performance"
+    ><h3
+      ><a href="#TOC"
+	>Performance</a
+	></h3
+      ><p
+      >We had to deal with many performance issues during the implementation of the sample generator. Despite our choice of using python, these weren’t CPU-bounded issues, but actually most involved inefficient use of blocking operations.</p
+      ><div id="network-io"
+      ><h4
+	><a href="#TOC"
+	  >Network IO</a
+	  ></h4
+	><p
+	>Our Flickr API library, flickrapi, uses blocking IO to send and receive network data, which results in a few seconds’ wait before each API call completes. This was too slow for our purposes.</p
+	><p
+	>To optimise this, we used multithreading to start many IO requests in parallel. We also extended flickrapi to use persistent HTTP connections (per thread), instead of opening a new TCP connection for each API call. Since the threads’ major task is only to wait for a system call to return, the lack of true multithreading in Python (due to the GIL[REF]) is not a problem in this case.</p
+	><p
+	>An alternative approach would be to use an asynchronous event-based IO model, like the popular Twisted library[REF]. However, we never intended the sample generator to be production code, so we preferred the simplicity of threads, over the flexibility and performance of event-based models.</p
+	></div
+      ><div id="serialisation"
+      ><h4
+	><a href="#TOC"
+	  >Serialisation</a
+	  ></h4
+	><p
+	>Since we deal with sizes of data greater than will comfortable fit in our RAM, we needed to store (eg.) half-completed objects and request parameters on disk. Initially, we used Python’s standard <code
+	  >pickle</code
+	  > module[REF] to de/serialise our objects, and the standard <code
+	  >shelve</code
+	  > module[REF] to store data. This proved inadequate for our needs, and we had to optimise this many times.</p
+	><p
+	>The first major optimisation we did was to use a custom <code
+	  >pickle</code
+	  > format for our <code
+	  >Graph</code
+	  > objects. We noticed this due to <code
+	  >pickle</code
+	  > leaking huge amounts of memory when repeatedly deserialising large graphs; by attempting to track the source of this, we discovered that storing the graph as a gzip-compressed GraphML was much more efficient (both in storage space and serialisation time) than the standard pickle format.[REF]</p
+	><p
+	>The next major optimisation we did was to store different components of a large object separately. The <code
+	  >shelve</code
+	  > module will attempt to deserialise an entire object when it’s requested; this turned out to be unnecessary most of the time. We ended up refactoring the <code
+	  >Producer</code
+	  > class into a state machine, and storing the state field in a separate database from the rest of the object. When we want to check the state of a <code
+	  >Producer</code
+	  >, we query this other database first. Another optimisation was to store the commonly-accessed parts of a <code
+	  >Graph</code
+	  > in an additional cache, which saves having to deserialise the entire <code
+	  >Graph</code
+	  >.</p
+	><p
+	>Further optimisations included switching from <code
+	  >shelve</code
+	  >’s default choice of database to <code
+	  >sqlite3</code
+	  >, and using the RAM-based <code
+	  >tmpfs</code
+	  > (we used a Debian system for development) to store short-lived temporary files.</p
+	></div
+      ></div
+    ></div
+  ><div id="data-format"
+  ><h2
+    ><a href="#TOC"
+      >Data format</a
+      ></h2
+    ><p
+    >We needed a common data format for sharing data between the search application and the sample generator. After a brief look into the formats available, we decided on GraphML[REF].</p
+    ><p
+    >There are very few clean, simple, Java graph libraries that have good support for serialising complex graphs. GraphML seemed to be better supported than the DOT format[REF], and JUNG is a library that we felt most suited our needs. Even so, we had to heavily subclass its <code
+      >GraphMLReader</code
+      >, which involved much poking around its implementation details, just to read attributes of the correct type. This also required reading a significant part of the GraphML specification.</p
+    ><p
+    >Luckily our graph library on the Python side, <code
+      >igraph</code
+      >, is good at both reading and writing GraphML, and we didn’t have to do any extra work here. It can also write in the DOT format, which meant we could visualise some of the simpler graphs that were generated, by running them through Graphviz[REF].</p
+    ></div
+  ></div
+><div id="running-tests"
+><h1
+  ><a href="#TOC"
+    >Running tests</a
+    ></h1
+  ><p
+  >results observed…</p
+  ></div
+><div class="footnotes"
+><hr
+   /><ol
+  ><li id="fn1"
+    ><p
+      ><code
+	>java.util.concurrent.Executor</code
+	>[REF] <a href="#fnref1" class="footnoteBackLink" title="Jump back to footnote 1">↩</a></p
+      ></li
+    ></ol
+  ></div
+>
+</body>
+</html>
+

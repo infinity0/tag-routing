@@ -553,12 +553,10 @@
     >Theory</a
     ></h1
   ><p
-  ><em
-    >In this chapter we discuss the theoretical ideas behind the system. We experimented with many different ideas before the code development began, and during development we weeded out the ones which seemed to lead to a dead end. Afterwards, the surviving ideas were explored further, and simplified or generalised.<sup
-      ><a href="#fn7" class="footnoteRef" id="fnref7"
-	>7</a
-	></sup
-      ></em
+  >In this chapter, we discuss the theoretical ideas behind the system. We experimented with many different ideas before the code development began, and during development we weeded out the ones which seemed to lead to a dead end. Afterwards, the surviving ideas were explored further, and simplified or generalised.<sup
+    ><a href="#fn7" class="footnoteRef" id="fnref7"
+      >7</a
+      ></sup
     ></p
   ><p
   >As such, there are a few aspects of our system design which may seem inelegant or imperfect in the context of the theories described below. Unfortunatly, we didn’t have enough time to go back and refine them; but we have tried to point these out in the appropriate parts of the architecture section. None of these flaws, we think, are serious enough to defeat the basic purpose of the design that we implemented.</p
@@ -576,13 +574,13 @@
     ><p
     >We start off with the analogy of an <strong
       >index</strong
-      > being a routing table. Tags are addresses, documents are hosts, and routes are semantic relationships between a tag (address) and a document (host). Scalable routing tables must compact information together. Instead of defining a route to every single host on the network, it is divided up into subnets, and a single route defined for the entire subnet. Similarly, indexes shouldn’t point to other indexes using all possible relevant tags, but it should seek to summarise this information. Instead of listing an index under entries for several dozen instances of (eg.) strategy games, it could instead list only for the tag “strategy games”.</p
+      > being a routing table. Tags are addresses, documents are hosts, and routes are semantic relationships between a tag (address) and a document (host). Scalable routing tables must compact information together. Instead of defining a route to every single host on the network, it is divided up into subnets, and a single route defined for the entire subnet. Similarly, indexes shouldn’t point to other indexes using all possible relevant tags, but it should summarise this information. Instead of listing a neighbouring index under entries for several dozen instances of e.g. strategy games, it could instead list it only under “strategy games”.</p
     ><p
     >A consistent model for this is developed in <a href="#address-space"
       >address space</a
       >. That gives us another type of object, a tag graph, or <strong
       >tgraph</strong
-      >, which defines relationships between tags. Following the principle of compacting information again, we need some way to route between these tgraphs. At this point, you might worry that we’ll continue with this ad-infinitum, inventing more layers of meta-objects; but no we stop here, and actually we use tgraphs to route between themselves. That is, tgraphs also use tags for addresses, and list related tgraphs under entries for appropriate tags.</p
+      >, which defines relationships between tags. Following the principle of compacting information again, we need some way to route between these tgraphs. At this point, you might worry that we’ll continue with this ad-infinitum, inventing more layers of meta-objects; but no, we stop here, and actually we use tgraphs to route between themselves. That is, tgraphs also use tags for addresses, and list related tgraphs under entries for the appropriate tags.</p
     ><p
     >To explain why this isn’t a problem:</p
     ><ul
@@ -600,7 +598,7 @@
     ><p
     >This principle can be summed up as “language unites”. Just as the ubiquity of mathematics allows numerical addresses to be routed over, we exploit the semi-ubiquity of language to allow tags to be routed over.</p
     ><p
-    >Since we are routing between documents, rather than people or hosts, we split the social network from the indexes network and the tgraphs network. This gives us several advantages. It allows for space reductions - people often agree about things, so identical parts of indexes can be spun off into another index and pointed to instead of repeated. This model is also more general; anything that applies to it must also apply to the case of one-index-per-person. It’s also arguably more realistic, since we often agree with someone’s judgements, without trusting them as friends.</p
+    >Since we are routing between documents, rather than people or hosts, we split the social network from the indexes network and the tgraphs network. This gives us several advantages. It allows for space reductions - people often agree about things, so identical parts of indexes can be spun off into another index and pointed to instead of repeated. This model is more general; anything that applies to it must also apply to the case of one-index-per-person. It’s also arguably more realistic, since we often agree with someone’s judgements, without trusting them as friends.</p
     ><p
     >Each identity on the social network defines a preference table, or <strong
       >ptable</strong
@@ -615,7 +613,7 @@
       ><p
       >We consider objects to be immutable. For instance, we intended the sharing of indexes via ptable pointers to be a space-saving measure, instead of a gesture of delegation. In this respect, our objects are more like git commits rather than web pages, and object links are more like git submodule pointers rather than web hyperlinks.</p
       ><p
-      >Such a data model is more secure, and in our system it also keeps the issue of trust contained in the social layer, a property that some components depend on. However, the immutability is an implicit assumption, which is neither enforced nor verified in any system component. The intention was to leave this to the storage layer; real deployments of the system should keep this in mind.</p
+      >This data model is more secure, and in our system it also keeps the issue of trust contained in the social layer, a property that some components depend on. However, the immutability is an implicit assumption, which is neither enforced nor verified in any system component. The intention was to leave this to the storage layer; real deployments of the system should keep this in mind.</p
       ></div
     ><div id="data-collection"
     ><h3
@@ -755,7 +753,7 @@ $$</span
 	> as the <em
 	>relation type</em
 	>. A probability-based relation of type <span class="LaTeX"
-	>$([0, 1], 1, \geq, \times)$</span
+	>$((0, 1], 1, \geq, \times)$</span
 	> can be converted into an entropy-based relation of type <span class="LaTeX"
 	>$([0, \infty), 0, \leq, +)$</span
 	> by taking the negative-log of each value, and vice-versa by taking the inverse-exponent.</p
@@ -763,7 +761,7 @@ $$</span
       >We want to define a distance relation over tags, so that we can construct a routing scheme over them. One simple approach is <span class="LaTeX"
 	>$D[t_0, t_1] = P(t_1 | t_0)$</span
 	>, which forms a valid distance relation with the probability-based relation type <span class="LaTeX"
-	>$([0, 1], 1, \geq, \times)$</span
+	>$((0, 1], 1, \geq, \times)$</span
 	>, giving a path-distance formula of <span class="LaTeX"
 	>$D[t_i]_0^n = D[t_0, t_1].\cdots.D[t_{n-1}, t_n]$</span
 	>.</p
@@ -953,11 +951,11 @@ $$</span
       ><p
       >This does mean that the problem is different from that of a trust metric. We won’t attempt to formalise this, but intuitively, for a given non-seed agent <span class="LaTeX"
 	>$a$</span
-	>, we want to infer its score based on how much the endorsements of the seed agents <em
+	>, we want to infer its score based on how much arbitrary endorsements of the seed agents <em
 	>extend</em
 	> to it, rather than how much the seed agents should <em
 	>trust</em
-	> it. A crude implementation of this is in <a href="#score-inferer"
+	> it. A crude attempt at a solution is <a href="#score-inferer"
 	>score-inferer</a
 	>.</p
       ></div
@@ -1155,7 +1153,7 @@ $$</span
       >Abstraction layers</a
       ></h2
     ><p
-    >Our search application is partitioned into layers (contact, naming, routing), each encapsulating components that process information from the corresponding data planes. This allows all the layers to run concurrently; operations that retrieve remote objects are non-blocking and allow other work to be done whilst waiting for its results.</p
+    >Our search application is partitioned into layers (contact, naming, routing), each encapsulating components that process information from the corresponding data planes. This allows all the layers to run concurrently; operations that retrieve remote objects do not block other layers, so that can do other work whilst waiting for the results.</p
     ><p
     >Each layer follows a basic structural template:</p
     ><ul
@@ -1194,7 +1192,7 @@ $$</span
       >. The top layer (routing) receives requests from the user, and the bottom layer (contact) uses data from the social network only, independently of any query. Note that data retrieval can in theory proceed until the entire network has been searched. In practice, we only automatically send requests for more data until a set number of results have been returned; after that we wait for user input before retrieving more.</p
     ><p
     >The interaction between layers is co-ordinated by implementing each layer as a state machine - it cannot receive requests during a state transition (ie. when it is currently processing a previous request). This simplifies the execution logic, and reduces the number of critical objects that need to be synchronised on. The state machines generally follow the pattern of <code
-      >[NEW --&gt; AWAIT_INPUT &lt;-&gt; IDLE]</code
+      >[NEW &#8594; AWAIT_INPUT &#8596; IDLE]</code
       >; specific cases are discussed in the <em
       >traversing objects</em
       > sections of the various layers, below.</p
@@ -1224,11 +1222,11 @@ $$</span
 	  >seed indexes <span class="LaTeX"
 	    >$H_s$</span
 	    > address scheme <span class="LaTeX"
-	    >$\breveT$</span
+	    >$\bar T$</span
 	    ></td
 	  ><td align="left"
 	  >results table <span class="LaTeX"
-	    >$\breveh$</span
+	    >$\bar h$</span
 	    ></td
 	  ></tr
 	><tr class="even"
@@ -1242,7 +1240,7 @@ $$</span
 	    ></td
 	  ><td align="left"
 	  ><span class="LaTeX"
-	    >$\breveT$</span
+	    >$\bar T$</span
 	    ></td
 	  ></tr
 	><tr class="odd"
@@ -1381,7 +1379,7 @@ $$</span
 	><ul
 	  ><li
 	    ><span class="LaTeX"
-	      >$\breveT$</span
+	      >$\bar T$</span
 	      > to <a href="#routing"
 	      >routing</a
 	      ></li
@@ -1469,7 +1467,7 @@ $$</span
 	      ></li
 	    ><li
 	    ><span class="LaTeX"
-	      >$\breveT$</span
+	      >$\bar T$</span
 	      > from <a href="#naming"
 	      >naming</a
 	      ></li
@@ -1481,7 +1479,7 @@ $$</span
 	><ul
 	  ><li
 	    ><span class="LaTeX"
-	      >$\breveh$</span
+	      >$\bar h$</span
 	      > to the user</li
 	    ></ul
 	  ></dd
@@ -1684,9 +1682,7 @@ $$</span
 	><p
 	>Attribute of a node <span class="LaTeX"
 	  >$v$</span
-	  >: with <code
-	  >tgraph</code
-	  >s, node-attributes are expected to be defined if the agent has information to do this, regardless of what the actual attribute value is. So we set <span class="LaTeX"
+	  >: with tgraphs, node-attributes are expected to be defined if the agent has information to do this, regardless of what the actual attribute value is. So we set <span class="LaTeX"
 	  >$\alpha = 0$</span
 	  >.</p
 	><p
@@ -2255,9 +2251,7 @@ $$</span
       >For a node</strong
       > <span class="LaTeX"
       >$v$</span
-      >, there is no information that could be used to perform any heuristic: a node not in the map, has no information relating to it in the map. However, it may be possible to extract information from other sources, such as the friends for a <code
-      >ptable</code
-      >. These are context-specific and are explored in the appropriate sections.</p
+      >, there is no information that could be used to perform any heuristic: a node not in the map, has no information relating to it in the map. However, it may be possible to extract information from other sources, such as the friends for a ptable. These are context-specific and are explored in the appropriate sections.</p
     ><p
     ><strong
       >For an arc</strong
@@ -2339,9 +2333,7 @@ $$</span
       ></li
     ><li id="fn7"
     ><p
-      >For example, originally the problem of information aggregation was considered only for the naming and routing layers, and was completely ignored for the social layer. During implementation it was realised that trust metrics could not resolve conflicts between <code
-	>ptable</code
-	> entries, and after implementation we formulated the theoretical expression of the general problem, given below. The discussion on the various issues of <a href="#information-aggregation"
+      >For example, originally the problem of information aggregation was considered only for the naming and routing layers, and was completely ignored for the social layer. During implementation it was realised that trust metrics could not resolve conflicts between ptable entries, and after implementation we formulated the theoretical expression of the general problem, given below. The discussion on the various issues of <a href="#information-aggregation"
 	>aggregation</a
 	> as related to our design was actually done during the preparation stage, but it was only afterwards that we realised how this fit into the general theory. <a href="#fnref7" class="footnoteBackLink" title="Jump back to footnote 7">↩</a></p
       ></li
