@@ -217,7 +217,7 @@ corresponding to a Python module:
 `tags.eval.sample`
 :	This holds classes for generating, writing, and calculating statistics for
 	entire samples.
-`tags.eval.util`, `tags.eval.cache`, `tags.eval.dbsqlite3`, `tags.eval.state`
+`tags.eval.util`, `tags.eval.util.*`
 :	These are utility methods and classes that provide support for the rest
 	of the code, but which is otherwise not directly relevant to the system.
 

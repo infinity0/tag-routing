@@ -10,8 +10,8 @@ from zlib import compress, decompress
 from tempfile import TemporaryFile
 from igraph import Graph, IN, OUT
 
-from tags.scrape.state import StateError, state_req, state_not, state_next
-from tags.scrape.util import (intern_force, geo_mean, union_ind, f1_score,
+from tags.eval.util.state import StateError, state_req, state_not, state_next
+from tags.eval.util import (intern_force, geo_mean, union_ind, f1_score,
   sort_v, edge_array, infer_arcs, iterconverge, representatives, graph_copy,
   callable_wrap, TMP_RAM)
 

@@ -18,8 +18,8 @@ case $1 in
 	;;
 -h | --help )
 	cat <<-EOF
-	Usage: $0 [OPTION] [SCRAPER ARGS]
-	Wrapper script; sets THREAD_DUMP_FILE="dump.log" and executes scrape.py using
+	Usage: $0 [OPTION] [EVALUATE ARGS]
+	Wrapper script; sets THREAD_DUMP_FILE="dump.log" and executes eval.py using
 	either the normal python interpreter, or one of the ones below:
 
 	Options:
@@ -32,5 +32,5 @@ case $1 in
 	;;
 esac
 
-THREAD_DUMP_FILE="dump.log" exec $PYTHON src/scrape.py "$@"
+THREAD_DUMP_FILE="dump.log" exec $PYTHON src/eval.py "$@"
 

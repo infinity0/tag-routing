@@ -1,6 +1,6 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
-from tags.scrape.util import callable_wrap
+from tags.eval.util import callable_wrap
 
 
 class StateError(RuntimeError):

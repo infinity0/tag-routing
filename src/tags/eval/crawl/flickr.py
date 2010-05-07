@@ -13,8 +13,8 @@ from xml.parsers.expat import ExpatError
 
 from flickrapi import FlickrAPI, FlickrError
 
-from tags.scrape.object import Node, NodeSample, NID
-from tags.scrape.util import (intern_force, enumerate_cb, exec_unique, repr_call)
+from tags.eval.object import Node, NodeSample, NID
+from tags.eval.util import (intern_force, enumerate_cb, exec_unique, repr_call)
 
 LOG = logging.getLogger(__name__)
 

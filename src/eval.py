@@ -8,17 +8,17 @@ from itertools import chain
 from igraph import Graph
 from xml.etree.ElementTree import dump
 
-from tags.scrape.util import futures_patch_nonblocking
+from tags.eval.util import futures_patch_nonblocking
 futures_patch_nonblocking()
-#from tags.scrape.contextprocess import multiprocessing_patch_nonblocking
+#from tags.eval.contextprocess import multiprocessing_patch_nonblocking
 #multiprocessing_patch_nonblocking()
 logging.basicConfig(format="%(asctime)s.%(msecs)03d | %(levelno)02d | %(message)s", datefmt="%s")
 
-from tags.scrape.flickr import SafeFlickrAPI
-from tags.scrape.sample import SampleGenerator, SampleWriter, SampleStats
-from tags.scrape.object import NodeSample, Node, QueryReport
-from tags.scrape.util import signal_dump, dict_load, dict_save, read_chapters, db_open
-from tags.scrape.cache import shelve_attach_cache
+from tags.eval.crawl.flickr import SafeFlickrAPI
+from tags.eval.sample import SampleGenerator, SampleWriter, SampleStats
+from tags.eval.object import NodeSample, Node, QueryReport
+from tags.eval.util import signal_dump, dict_load, dict_save, read_chapters, db_open
+from tags.eval.util.cache import shelve_attach_cache
 
 NAME = "scrape.py"
 VERSION = 0.01
