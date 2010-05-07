@@ -1,4 +1,4 @@
-% Development and execution
+% Execution
 % Ximin Luo
 
 # Development
@@ -70,7 +70,7 @@ The prototype implementation code can be divided into:
 :	`LayerService`
 	:	This provides a template that all layers inherit from, which implements
 		some basic functionality (such as receiving messages) as described in
-		[architecture - abstraction layers](design.html#abstraction-layers).
+		[architecture - layers](design.html#layers).
 	`QueryProcess`
 	:	This represents an ongoing query, and holds references to all of the
 		state relevant to it, including each of the running layers.
@@ -81,10 +81,9 @@ The prototype implementation code can be divided into:
 		most importantly the interface to the storage layer.
 `tags.proto.*.*` (layers)
 :	These sub-packages implement each layer, as described in [architecture -
-	abstraction layers](design.html#abstraction-layers). The "algorithmic
-	components" of each layer are represented by Java interfaces (with a basic
-	implementation for each, also as described), to allow for better future
-	implementations.
+	layers](design.html#layers). The "algorithmic components" of each layer are
+	represented by Java interfaces (with a basic implementation for each, also
+	as described), to allow for better future implementations.
 
 [^archex]: `java.util.concurrent.Executor`[REF]
 
@@ -293,7 +292,7 @@ write in the DOT format, which meant we could visualise some of the simpler
 graphs that were generated, by running them through Graphviz[REF].
 
 
-# Running tests
+# Testing
 
 results observed...
 

@@ -1,4 +1,4 @@
-% Introduction and preparation
+% Introduction
 % Ximin Luo
 
 # Introduction

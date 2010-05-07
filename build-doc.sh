@@ -34,7 +34,8 @@ for i in *.md.txt; do
 	  -e 's/\\row/\\mathtt{\\mathrm{row}}\\,/g' \
 	  -e 's/\\col/\\mathtt{\\mathrm{col}}\\,/g' \
 	  -e 's/\\com/\\mathtt{\\mathrm{com}}\\,/g' \
-	"$i" | pandoc -s --toc --smart -c "$RES/common.css" -H "../$SRC/header.html" --latexmathml="$RES/LaTeXMathML.js" > "../$OUT"
+	"$i" | pandoc -s --toc --smart -c "$RES/common.css" --latexmathml="$RES/LaTeXMathML.js" \
+	  -H "../$SRC/header.html" -B "../$SRC/body_header.html" -A "../$SRC/body_footer.html" > "../$OUT"
 	echo "built $OUT"
 done
 

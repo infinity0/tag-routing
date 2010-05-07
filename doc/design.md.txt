@@ -1,4 +1,4 @@
-% Design and architecture
+% Design
 % Ximin Luo
 
 # Theory
@@ -440,7 +440,7 @@ relations ($T \times (D \cup H)$), and so relations with near-neutral attribute
 values may be omitted at the maintainer's discretion, even if they are aware of
 them. Algorithms that process this data structure should be aware of this.
 
-## Abstraction layers
+## Layers
 
 Our search application is partitioned into layers (contact, naming, routing),
 each encapsulating components that process information from the corresponding
@@ -677,14 +677,12 @@ see "practical details" [LINK]
 
 # Practical details
 
-## System components
-
-### Using the value-composer
+## Using the value-composer
 
 To recap, $\alpha(a, r)$ is the probability that $a$ judges $r$ to be worthless
 (as opposed to not knowing about it), given that $r \notin A_a$.
 
-#### On ptables
+### On ptables
 
 Various factors that could affect $\alpha(a, r)$ include the size of the ptable
 (how many resources $a$ knows about in total), and whether their friends also
@@ -696,7 +694,7 @@ Due to these reasons, for our prototype we simply set $\alpha$ to be constant.
 As a preliminary estimate, we'll use a low value of $2^{-4}$, intended to
 convey the notion that most agents only have a limited view of the network.
 
-#### On tgraphs
+### On tgraphs
 
 Attribute of a node $v$: with tgraphs, node-attributes are expected to be
 defined if the agent has information to do this, regardless of what the actual
@@ -715,14 +713,14 @@ means the judgements for a tag's size will be distributed in the same way.
 Taking the arithmetic mean of probabilities would bias the result in favour of
 larger sizes.
 
-#### On indexes
+### On indexes
 
 As in the case of tgraphs, we use two constants for the two cases of arcs, a
 high $\alpha_1$ and a low $\alpha_2$.
 
-### Traversing objects
+## Traversing objects
 
-#### Naming layer
+### Naming layer
 
 First a definition: we say a tag $t$ is _completely loaded_ (or _complete_ for
 short) in $g$ if the attributes for itself, all its out-arcs, and all its
@@ -772,7 +770,7 @@ tag-tag relationships should be similar across the entire network. (If someone
 claims to know a tag's related tags, then it's likely that this knowledge
 covers a large part of all related tags defined by the entire network.)
 
-#### Routing layer
+### Routing layer
 
 Define the _potential_ of a lookup $(t, h)$ to be $P(t_0, t, h)$. We estimate
 this as $P(t_0|t) P(t|h) P(h)$[^trvrpo], which assumes that $P(t_0|t)$, $P(h)$

@@ -177,7 +177,7 @@ that they in turn belong to (for tgraphs). Social relationships between users
 are taken straight from the unprocessed data set.
 
 
-# Evaluation
+# Measurements
 
 - ./run.sh -d../z/small -s51114580@N00 -i1000 -n64 -v2 google
 - ./run.sh -d../z/small -s8072015@N04 -i1000 -n256 -v3 google
