@@ -6,8 +6,8 @@ from itertools import chain, izip
 from igraph import Graph, IN
 from random import sample
 
-from tags.eval.objects import (Node, NodeSample, Producer, ProducerSample,
-  ProducerRelation, TagInfo, IDInfo, AddrSchemeEval, NID, NAA, NAT, AAT, P_ARC)
+from tags.eval.objects import (Node, NodeSample, NID, NAA, NAT, AAT, P_ARC,
+  Producer, ProducerSample, ProducerRelation, TagInfo, IDInfo, AddrSchemeEval)
 from tags.eval.util import (union_ind, geo_prog_range, split_asc, sort_v,
   infer_arcs, edge_array, graph_copy, graph_prune_arcs, undirect_and_simplify,
   invert_seq, invert_multimap, write_align_column, exec_unique)
@@ -349,6 +349,7 @@ class SampleGenerator(object):
 
 
 FMT_EXT = "%s.graphmlz"
+FMT_UNW = "%s.json.gz"
 
 class SampleWriter(ProducerSample):
 
@@ -374,6 +375,41 @@ class SampleWriter(ProducerSample):
 		exec_unique(self.pgdb.iterkeys(), lambda nsid: os.path.exists(os.path.join(base, FMT_EXT % nsid)),
 		  run, None, "tgraphs db: object files", LOG.info)
 
+
+	def unwrapTGraph(self, base, gid, sz=2):
+		from simplejson import dump
+		from zlib import crc32
+		from gzip import GzipFile
+
+		LOG.debug("unwrap tgraph %s: reading" % gid)
+		g = Graph.Read(os.path.join(base, FMT_EXT % gid))
+		sz = int(log(g.vcount())**2/16)
+		mask = 0x2**sz-1
+		maskfmt = "%%0%dx" % (((sz-1)>>2)+1)
+
+		bdir = os.path.join(base, gid)
+		if not os.path.isdir(bdir):
+			os.mkdir(bdir)
+
+		LOG.debug("unwrap tgraph %s: making buckets" % gid)
+		buckets = {}
+		for tid in xrange(g.vcount()):
+			tag, tup = self.makeTGraphTuple(g, tid)
+			hash = maskfmt % (crc32(tag)&mask)
+			if hash not in buckets:
+				buckets[hash] = {}
+			buckets[hash][tag] = tup
+
+		LOG.debug("unwrap tgraph %s: writing buckets" % gid)
+		for bucket, contents in buckets.iteritems():
+			with open(os.path.join(bdir, FMT_UNW % bucket), 'wb') as fp:
+				dump(contents, GzipFile(fileobj=fp))
+
+		attributes = {"mask":mask}
+		attributes.update((attr, g[attr]) for attr in g.attributes())
+		with open(os.path.join(bdir, FMT_UNW % "attributes"), 'wb') as fp:
+			dump(attributes, GzipFile(fileobj=fp))
+		LOG.info("unwrap tgraph %s: complete" % gid)
 
 
 AAT_A = "logweight" # additive arc-attribute

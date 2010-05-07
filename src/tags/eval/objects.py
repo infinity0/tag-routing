@@ -168,12 +168,28 @@ class ProducerSample(object):
 		self.pgdb = pgdb
 		self.phdb = phdb
 
-	def makeTGraphNode(self, g, tag):
+	def makeTGraphNode(self, g, tid):
 		"""
-		Make a Node object out of a tag in a tgraph.
+		Make a Node object out of a tagid in a tgraph.
 		"""
-		return Node(tag, dict((g.vs[e.target][NID], g.es[e.index][AAT])
-		  for e in g.es.select(g.adjacent(g.vs.select(id=tag)[0].index))), g.vs.select(id=tag)[0][NAT])
+		return Node(g.vs[tid][NID], dict((g.vs[e.target][NID], g.es[e.index][AAT])
+		  for e in g.es.select(g.adjacent(tid))), g.vs[tid][NAT])
+
+	def makeTGraphTuple(self, g, tid):
+		"""
+		Returns a (tag, (attr, out_t, out_g)) tuple out of a tagid in a tgraph.
+		"""
+		base_g = g["base_g"]
+		out_t = {}
+		out_g = {}
+		for e in g.es.select(g.adjacent(tid)):
+			dst = e.target
+			attr = g.es[e.index][AAT]
+			if dst < base_g:
+				out_t[g.vs[dst][NID]] = attr
+			else:
+				out_g[g.vs[dst][NID]] = attr
+		return g.vs[tid][NID], (g.vs[tid][NAT], out_t, out_g)
 
 
 

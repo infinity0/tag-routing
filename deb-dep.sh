@@ -15,3 +15,4 @@ aptitude install texlive-latex-base pandoc
 # TODO
 # python-flickrapi
 # python-futures
+# python-simplejson
