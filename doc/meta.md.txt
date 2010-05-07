@@ -1,4 +1,4 @@
-% Meta-documentation
+% Appendices
 % Ximin Luo
 
 # Notation
@@ -121,19 +121,130 @@ in the design document.
 # Bibliography
 
 etc etc etc
+[MORE]
 
 
 
+# Meta
 
+These documents were prepared in [pandoc markdown](http://johnmacfarlane.net/pandoc/).
 
-# Interface
+## Interface
 
 Clicking the arrows next to the menus will toggle the visibility of their
 children. Shift-clicking will do this recursively for all descendents at all
 levels.
 
 
-# About
+# Unfinished notes
 
-These documents were prepared in [pandoc markdown](http://johnmacfarlane.net/pandoc/).
+## Optimisation
+
+[MOVE] to appendix
+
+### Data structures
+
+- `ptable`
+	- quick partition of `index` vs `tgraph` nodes [$G_s$, $H_s$]
+	- optionally order these by their score [possible future use]
+
+- `tgraph`, `index`
+	- where applicable:
+	- quick lookup of node (and weight)
+	- quick lookup of node's out-arcs (and weight) [routing, naming]
+
+- `index`
+	- quick partition of tag's to-`index` vs to-document arcs
+	- optionally order these by their score [routing]
+
+- $\breveg$
+	- same as `tgraph`
+
+- $p_s$, $\breveg$, $\breveG$, $\breveH$
+	- might want to make these use CombinedWeight objects instead of a float
+	  "weight", which in the future could be expanded to include a variance...
+
+- $\breveT$
+	- quick lookup of node (and weight)
+	- quick iteration through all nodes [$\breveQ$]
+	- quick comparison of nodes by their distance ordering [$\breveP$]
+	- quick lookup of node's in-arcs (and weight) [$\breveQ$]
+
+- $\ddotg \in \img \breveG_*$, $\ddoth \in \img \breveH_*$
+	- quick lookup of node (and weight)
+	- quick iteration through all nodes, arcs [$\breveg$]
+	- quick lookup of node`s in-arcs (and weight) [routing, naming]
+	- quick lookup of node's out-arcs (and weight) [maybe needed by some
+	  scoring modules]
+	- quick one-time check that all of a node's out-arcs (and weight) have
+	  been retrieved from the network [routing, naming]
+
+- $\breveQ$, $\breveR$
+	- quick iteration of all lookups/results [$\breveP$, $\breveh$]
+	- an advanced implementation would allow items to be added and dynamically
+	  ordered in priority, bypassing the need to have $\breveP$, $\breveh$.
+
+### Retrieval of remote objects
+
+Usually we only need to retrieval part of a `tgraph` or `index`, eg. the weight
+of a single node, or its out-arcs.
+
+- eg. for quick "no" answer on lookups of storage objects - bloom filters
+
+### Caching storage objects
+
+- eg. cache commonly-retrieved objects like `ptable`s
+
+The contact layer is independent of any query, so this can be done in the background
+at any time. We can cache data for the layers above, which will help to
+increase performance for future queries. etc...
+
+[MORE] on incremental updates etc.
+
+### Incremental state updates
+
+- eg. when updating $\breveG$ from $\breveG_*$, we should only need to
+  recalculate the parts that are affected by the updated....
+
+## Test networks
+
+### Inter-node properties
+
+- neighbour count (ie. degree) distribution
+- neighbour semantic relation distribution
+
+### Intra-node properties
+
+- semantic unity (how "related" its tags are)
+- semantic specialty (how "general" its tags are)
+
+### Generation algorithms
+
+- Use network formed by extracted data ("real world")
+- Barabási-Albert model (preferential attachment)
+  - scale-free
+  - not small-world; according to wikipedia:
+    - clustering coefficient is power-law, similar to hierarchical networks
+    - small-world networks have constant clustering coefficient
+- TODO etc. read up on network theory.
+- hierarchies
+- other structures?
+
+Ideally we want a single algorithm which takes as input, various parameters for
+the properties listed in the previous two sections, and outputs a random graph
+with those properties.
+
+## Simulation
+
+### Request models
+
+### Network conditions
+
+- perfect conditions
+- random failure
+- malicious attacks - under the assumptions of "abstract storage network", only
+  attacks vs the entire network can occur on the naming / routing planes.
+  attacks vs individuals on the social plane is a separate topic, ignore here
+	- attacks vs most well-connected nodes
+	- MORE
 

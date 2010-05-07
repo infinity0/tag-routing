@@ -5,11 +5,26 @@
 
 /* Layout */
 
-body { padding-left: 16em; }
+body { padding-left: 16em; padding-top: 1em; }
+
+#mainmenu {
+	margin: 0;
+	padding: 0.5ex 1ex;
+	position: fixed;
+	top: 0; left: 0;
+	border-bottom: 1px solid black;
+	width: 100%;
+	background: wheat;
+}
+
+#mainmenu li {
+	display: inline;
+	margin: 0 1em;
+}
 
 #TOC {
 	box-sizing: border-box; -moz-box-sizing: border-box;
-	position: fixed; top: 0; left: 0;
+	position: fixed; top: 2em; left: 0;
 	height: 100%; width: 16em;
 	overflow: auto;
 	padding-right: 0.8em;

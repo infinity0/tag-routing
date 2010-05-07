@@ -1,4 +1,4 @@
-% Construction and implementation
+% Development and execution
 % Ximin Luo
 
 # Development
@@ -69,8 +69,8 @@ The prototype implementation code can be divided into:
 	The main ones include:
 :	`LayerService`
 	:	This provides a template that all layers inherit from, which implements
-		some basic functionality (such as receiving messages and holding the
-		query parameters) as described in previous sections.
+		some basic functionality (such as receiving messages) as described in
+		[architecture - abstraction layers](design.html#abstraction-layers).
 	`QueryProcess`
 	:	This represents an ongoing query, and holds references to all of the
 		state relevant to it, including each of the running layers.
@@ -80,10 +80,11 @@ The prototype implementation code can be divided into:
 		includes things such as an `Executor`[^archex] for scheduling jobs, and
 		most importantly the interface to the storage layer.
 `tags.proto.*.*` (layers)
-:	These sub-packages implement each of the layers, as described in previous
-	sections. The "algorithmic components" of each layer are represented by
-	Java interfaces (with a basic implementation for each, also as previously
-	described), to allow for better future implementations.
+:	These sub-packages implement each layer, as described in [architecture -
+	abstraction layers](design.html#abstraction-layers). The "algorithmic
+	components" of each layer are represented by Java interfaces (with a basic
+	implementation for each, also as described), to allow for better future
+	implementations.
 
 [^archex]: `java.util.concurrent.Executor`[REF]
 
@@ -209,7 +210,8 @@ corresponding to a Python module:
 
 `tags.eval.crawl.flickr`
 :	This contains an extension of flickrapi, and implements the crawl strategy
-	and data collection code, as described in the evaluation section.
+	and data collection code, as described [evaluation - generating
+	data](evaluation.html#application).
 `tags.eval.objects`
 :	This holds classes representing single objects, such as `Producer`, `Node`,
 	a class for building graphs (`NodeSample`), and various classes that hold
