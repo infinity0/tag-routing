@@ -6,7 +6,7 @@ from itertools import chain, izip
 from igraph import Graph, IN
 from random import sample
 
-from tags.eval.object import (Node, NodeSample, Producer, ProducerSample,
+from tags.eval.objects import (Node, NodeSample, Producer, ProducerSample,
   ProducerRelation, TagInfo, IDInfo, AddrSchemeEval, NID, NAA, NAT, AAT, P_ARC)
 from tags.eval.util import (union_ind, geo_prog_range, split_asc, sort_v,
   infer_arcs, edge_array, graph_copy, graph_prune_arcs, undirect_and_simplify,

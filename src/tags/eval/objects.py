@@ -1,6 +1,6 @@
 # Released under GPLv2 or later. See http://www.gnu.org/ for details.
 
-import sys, re, os
+import sys, re
 from functools import partial
 from itertools import chain
 from collections import namedtuple

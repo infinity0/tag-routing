@@ -210,7 +210,7 @@ corresponding to a Python module:
 `tags.eval.crawl.flickr`
 :	This contains an extension of flickrapi, and implements the crawl strategy
 	and data collection code, as described in the evaluation section.
-`tags.eval.object`
+`tags.eval.objects`
 :	This holds classes representing single objects, such as `Producer`, `Node`,
 	a class for building graphs (`NodeSample`), and various classes that hold
 	statistics about a sample or its components.

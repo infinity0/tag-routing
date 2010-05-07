@@ -19,3 +19,8 @@ sample-data-*.tar.bz2
 
 # private auth files
 flickr.key
+
+# logging files
+dump*.log
+profile*.log
+res*.log
