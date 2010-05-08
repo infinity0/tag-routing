@@ -283,8 +283,116 @@ graphs that were generated, by running them through Graphviz[REF].
 
 # Testing
 
-results observed...
+We had originally planned to do much more extensive testing of our system, and
+for much larger sets of data. However, time constraints
 
+unforeseen difficulties, mostly related to performance, unexpectedly large data
+sets, etc etc [MORE]
+
+We did an initial crawl of 16 users starting from a randomly selected seed, to
+verify that the sample generator was working correctly. We extended the crawl
+to 313 groups, and retrieved 11000 photos and 6457 tags. We then generated 329
+indexes and 56 tgraphs. We ran the search application on this sample; in most
+cases it was able to find most of the documents associated with a tag with a
+reasonable amount of lookups, just because this network was so small.
+
+The original plan was to generate a sample from a crawl of several thousand
+users. However, when we tested our generator with successively larger crawl
+sizes, it became clear that this was impossible with the resources available,
+even with our heavy optimisations.
+
+The largest complete sample we managed to achieve was from an inital crawl of
+256 users. We extended the crawl to 8597 groups, and retrieved 411872 photos
+and 128409 tags. We then generated 8853 indexes and 438 tgraphs.
+
+## Sample integrity
+
+Before proceeding with testing our search application, we first did some basic
+integrity tests on our generated sample. It is a common observation that social
+networks have a power-law distribution in several properties, the easiest one
+to calculate being the node degree.
+
+Firstly, we verified that our crawl of the social network satisfies a power-law
+distribution:
+
+[DIAG]
+
+This is a relatively small sample size (256), but it is clear that it does
+follow the expected distribution.
+
+Then, we tested for a power-law distribution over our generated indexes and
+tgraphs[^testar]:
+
+[^testar]: we model an arc $p_0 \rightarrow p$ if a content-relationship $p_0
+\rightarrow^t p$ exists for any tag $t$.
+
+[DIAG]
+
+[DIAG]
+
+Clearly, the tgraphs network satisfies a power-law distribution. The plot for
+the indexes network has a split in the data; this can be explained by the way
+we generated arcs. Simply put, if $p_0 \cup p_1$ is similar in size to $p_0$,
+but much smaller than $p_1$, then we would generate $p_0 \rightarrow p_1$ but
+not vice versa. Most of the time however, links will be bi-directional; this
+explains the discrepancy between odd/even degree frequencies[^testdg].
+
+We confirmed this by counting only in-degree / out-degree, which both give
+clear power-law distributions:
+
+[DIAG]
+
+[DIAG]
+
+[^testdg]: this also applies for the social network sample and the generated
+tgraphs network. This discrepancy was not present in these cases, we think,
+because the sample sizes were much smaller.
+
+## Initial tests
+
+Before proceeding with our suite of tests, we did a few initial tests for
+randomly-picked queries, to get an idea on how well the system was working.
+
+It became apparent that our mean-based value-composer was not very effective.
+To start with, we compared the "ideal"[^explad] address scheme for the sample,
+with the address scheme that our search application generated from all the
+separate data sources. At first, these differed greatly.
+
+The basic problem seems to be that, at least some agents will give high values
+for resources that don't "deserve" them, even when all agents are honest. So,
+assuming that most gaps are due to lack of information, will bias the final
+result towards this inaccuracy, and sometimes will even supersede a value for
+another resource, that many agents agreed with.
+
+A much better way of combining resource values would be to model them as belief
+distributions, as suggested previously. We can then use an algorithm that
+reduces the variance of an aggregated distribution, formed from many similar
+values. (Using the mean would fit this, as per the Central Limit Theorem.) A
+recently-developed system for evaulating skill over the result of many games,
+uses similar principles.[REF]
+
+We didn't have time to implement this, since it would require redesigning our
+prototype to reason about distributions and not probabilities, which is much
+more complex. Instead, we just set all our $\alpha$ to be a constant $1$. This
+at least allows resources with many "good" value-ratings, to override ones that
+have less. (Likewise, YouTube recently switched from a mean-based 5-star rating
+system to one that instead counts the number of like/dislike votes.) After we
+made this change, the ideal vs. generated address schemes were much more alike.
+
+[^explad]: i.e. according to our model of the [address
+space](design.html#structured-address-space), rather than "theoretically
+perfect"
+
+Unfortunately, we didn't devise any tests for how well the score-inferer works.
+This would involve simulating an attack on the system; doing this properly
+would have taken us far beyond our time and resource constraints.
+
+## Full testing
+
+We took a sample of 16 identities and 16 tags [HOW]?
+
+
+For each of these, we measured the
 
 
 

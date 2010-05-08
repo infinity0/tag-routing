@@ -14,8 +14,10 @@ POTENTIAL CUTS:
 	derivation "value composer" - <253
 	derivation "routing - constructing output" - <97
 - execution:
-	"The type of attributes can also be parameterised" - <177
+	derivation "The type of attributes can also be parameterised" - <177
 (~750)
+"The interaction between layers is co-ordinated by implementing each layer as a state machine"
+
 
 TODO NOW:
 - actually implement the traversal algorithms described in design.md.txt;

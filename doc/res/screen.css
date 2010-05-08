@@ -6,7 +6,7 @@
 /* Layout */
 body { padding-left: 16em; padding-top: 1em; }
 
-/* hack to get link-to-anchors working properly */
+/* hack to get link-to-anchors working properly with the header menu */
 h1, h2, h3, h4, h5, h6 { margin-top: -22pt; padding-top: 22pt; }
 h1.title { margin-top: 0; }
 

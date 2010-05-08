@@ -175,21 +175,36 @@ class ProducerSample(object):
 		return Node(g.vs[tid][NID], dict((g.vs[e.target][NID], g.es[e.index][AAT])
 		  for e in g.es.select(g.adjacent(tid))), g.vs[tid][NAT])
 
-	def makeTGraphTuple(self, g, tid):
+	def makeTGraphTuple(self, g, vid):
 		"""
-		Returns a (tag, (attr, out_t, out_g)) tuple out of a tagid in a tgraph.
+		Make a (id, (out_t, out_g)) tuple of a vertex-id in a tgraph.
 		"""
-		base_g = g["base_g"]
-		out_t = {}
-		out_g = {}
-		for e in g.es.select(g.adjacent(tid)):
+		return self.makeOutgoingTuple(g, vid, g["base_g"])
+
+	def makeIndexTuple(self, h, vid):
+		"""
+		Make a (id, (out_d, out_h)) tuple of a tag vertex-id in an index. If
+		the vertex-id isn't of a tag, None is returned.
+		"""
+		if not h["base_t"] <= vid < h["base_h"]:
+			return None
+		return self.makeOutgoingTuple(h, vid, h["base_h"])
+
+	def makeOutgoingTuple(self, g, vid, base):
+		"""
+		Make a (id, (out_0, out_1)) tuple of a vertex-id in a graph, and
+		the partition betwen type-0 and type-1 items.
+
+		@param base: The first vid of type-1 items
+		"""
+		out0 = {}
+		out1 = {}
+		for e in g.es.select(g.adjacent(vid)):
 			dst = e.target
 			attr = g.es[e.index][AAT]
-			if dst < base_g:
-				out_t[g.vs[dst][NID]] = attr
-			else:
-				out_g[g.vs[dst][NID]] = attr
-		return g.vs[tid][NID], (g.vs[tid][NAT], out_t, out_g)
+			(out0 if dst < base else out1)[g.vs[dst][NID]] = attr
+		return g.vs[vid][NID], (out0, out1)
+
 
 
 

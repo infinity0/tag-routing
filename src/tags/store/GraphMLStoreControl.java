@@ -223,15 +223,15 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 			this.base = base;
 			this.buckets = new ReferenceMap<String, Map<String, List>>();
 			this.attributes = parseJSON("attributes", false);
-			this.node_map = new SoftReference<Map<N, U>>((Map<N, U>)attributes.remove("node"));
 			this.mask = (Long)attributes.remove("mask");
 			this.fmtstr = "%0" + Long.toHexString(mask).length() + "x";
+			this.node_map = new SoftReference<Map<N, U>>(null);
 		}
 
 		@SuppressWarnings("unchecked")
 		public U getNodeAttr(N src) throws IOException {
 			U attr = getNodeMap().get(src);
-			System.out.println("loaded " + src + " in " + base + ": " + attr);
+			//System.out.println("loaded " + src + " in " + base + ": " + attr);
 			return attr;
 			//List tuple = getTuple(src);
 			//System.out.println("loaded " + src + " in " + base + ": " + (tuple==null?"null":"non-null"));
@@ -243,7 +243,7 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 			List tuple = getTuple(src);
 			if (tuple == null) { return null; }
 			Map<N, W> out_t = (Map)tuple.get(T_TGR_UNW.t.ordinal());
-			System.out.println(out_t.keySet());
+			//System.out.println(out_t.keySet());
 			Map<N, W> out_g = (Map)tuple.get(T_TGR_UNW.g.ordinal());
 			return Maps.uniteDisjoint(out_t, out_g);
 		}
@@ -252,7 +252,7 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 		protected Map<N, U> getNodeMap() throws IOException {
 			Map<N, U> nmap = node_map.get();
 			if (nmap == null) {
-				nmap = (Map<N, U>)parseJSON("attributes", false).get("node");
+				nmap = (Map<N, U>)parseJSON("nodes", true);
 				if (nmap == null) { throw new IOException("node map doesn't exist"); }
 				node_map = new SoftReference<Map<N, U>>(nmap);
 			}

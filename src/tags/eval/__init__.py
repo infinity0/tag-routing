@@ -166,7 +166,7 @@ class Evaluation(object):
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
 
-	def round_invertp(self):
+	def round_inv_pd(self):
 		"""
 		Invert the producer-photo mapping.
 		"""
@@ -192,7 +192,7 @@ class Evaluation(object):
 		if self.interact: code.interact(banner=self.banner(locals()), local=locals())
 
 
-	def round_invertt(self):
+	def round_inv_dt(self):
 		"""
 		Invert the photo-tag mapping.
 		"""

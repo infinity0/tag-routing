@@ -43,7 +43,7 @@ again, we need some way to route between these tgraphs. At this point, you
 might worry that we'll continue with this ad-infinitum, inventing more layers
 of meta-objects; but no, we stop here, and actually we use tgraphs to route
 between themselves. That is, tgraphs also use tags for addresses, and list
-related tgraphs under entries for the appropriate tags.
+related tgraphs under entries for the appropriate tags.[LESS]
 
 To explain why this isn't a problem:
 
@@ -255,7 +255,7 @@ and routing layers both use this as an agent-score map.
 As agents, neither tgraphs nor indexes define explicit agent-score judgements.
 In addition to this, they represent immutable information, rather than social
 identities. These were conscious design choices - to encapsulate the problem of
-trust and authentication into a social layer, away from the problem of naming
+trust and authentication into a social layer, away from the issues of naming
 and routing.
 
 This does mean that the problem is different from that of a trust metric. We

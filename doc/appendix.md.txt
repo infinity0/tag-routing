@@ -124,6 +124,8 @@ etc etc etc
 [MORE]
 
 
+http://research.microsoft.com/en-us/projects/trueskill/details.aspx
+
 
 # Meta
 

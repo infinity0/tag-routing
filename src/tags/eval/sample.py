@@ -3,14 +3,14 @@
 import sys, logging, os
 from math import log, exp
 from itertools import chain, izip
-from igraph import Graph, IN
+from igraph import Graph, IN, OUT, ALL
 from random import sample
 
 from tags.eval.objects import (Node, NodeSample, NID, NAA, NAT, AAT, P_ARC,
   Producer, ProducerSample, ProducerRelation, TagInfo, IDInfo, AddrSchemeEval)
 from tags.eval.util import (union_ind, geo_prog_range, split_asc, sort_v,
   infer_arcs, edge_array, graph_copy, graph_prune_arcs, undirect_and_simplify,
-  invert_seq, invert_multimap, write_align_column, exec_unique)
+  freq, invert_seq, invert_multimap, write_align_column, exec_unique)
 
 LOG = logging.getLogger(__name__)
 
@@ -358,59 +358,79 @@ class SampleWriter(ProducerSample):
 		self.totalsize = totalsize
 
 
-	def writeIndexes(self, base):
+	def writeIndexes(self, dir):
 		def run(nsid):
 			prod = self.phdb[nsid]
 			g = prod.createIndex()
-			g.write(os.path.join(base, FMT_EXT % nsid))
-		exec_unique(self.phdb.iterkeys(), lambda nsid: os.path.exists(os.path.join(base, FMT_EXT % nsid)),
+			g.write(os.path.join(dir, FMT_EXT % nsid))
+		exec_unique(self.phdb.iterkeys(), lambda nsid: os.path.exists(os.path.join(dir, FMT_EXT % nsid)),
 		  run, None, "indexes db: object files", LOG.info)
 
 
-	def writeTGraphs(self, base):
+	def writeTGraphs(self, dir):
 		def run(nsid):
 			prod = self.pgdb[nsid]
 			g = prod.createTGraph(self.totalsize, self.pgdb)
-			g.write(os.path.join(base, FMT_EXT % nsid))
-		exec_unique(self.pgdb.iterkeys(), lambda nsid: os.path.exists(os.path.join(base, FMT_EXT % nsid)),
+			g.write(os.path.join(dir, FMT_EXT % nsid))
+		exec_unique(self.pgdb.iterkeys(), lambda nsid: os.path.exists(os.path.join(dir, FMT_EXT % nsid)),
 		  run, None, "tgraphs db: object files", LOG.info)
 
 
-	def unwrapTGraph(self, base, gid, sz=2):
+	def unwrapTGraph(self, dir, gid):
+		LOG.debug("unwrap tgraph %s: reading" % gid)
+		fn = os.path.join(dir, FMT_EXT % gid)
+		g = Graph.Read(fn)
+		self.unwrap(dir, g, dict((v[NID], v[NAT]) for v in g.vs), gid, xrange(g.vcount()), self.makeTGraphTuple)
+
+
+	def unwrapIndex(self, dir, hid, skip_lower_than=0):
+		LOG.debug("unwrap index %s: reading" % hid)
+		fn = os.path.join(dir, FMT_EXT % hid)
+		if skip_lower_than and os.path.getsize(fn) < skip_lower_than:
+			LOG.info("unwrap index %s: skipping (%s < %s)" % (hid, os.path.getsize(fn), skip_lower_than))
+			return
+
+		h = Graph.Read(fn)
+		tags = xrange(h["base_t"], h["base_h"])
+		self.unwrap(dir, h, [v[NID] for v in h.vs.select(tags)], hid, tags, self.makeIndexTuple)
+
+
+	def unwrap(self, dir, g, nodes, gid, vrange, mktuple):
 		from simplejson import dump
 		from zlib import crc32
 		from gzip import GzipFile
 
-		LOG.debug("unwrap tgraph %s: reading" % gid)
-		g = Graph.Read(os.path.join(base, FMT_EXT % gid))
-		sz = int(log(g.vcount())**2/16)
+		sz = int(log(1+g.vcount())**2/16)
 		mask = 0x2**sz-1
 		maskfmt = "%%0%dx" % (((sz-1)>>2)+1)
 
-		bdir = os.path.join(base, gid)
+		bdir = os.path.join(dir, gid)
 		if not os.path.isdir(bdir):
 			os.mkdir(bdir)
 
-		LOG.debug("unwrap tgraph %s: making buckets" % gid)
+		LOG.debug("unwrap %s: writing attributes and nodes" % gid)
+		attributes = {"mask":mask}
+		attributes.update((attr, g[attr]) for attr in g.attributes())
+		with open(os.path.join(bdir, FMT_UNW % "attributes"), 'wb') as fp:
+			dump(attributes, GzipFile(fileobj=fp))
+		with open(os.path.join(bdir, FMT_UNW % "nodes"), 'wb') as fp:
+			dump(nodes, GzipFile(fileobj=fp))
+
+		LOG.debug("unwrap %s: making buckets" % gid)
 		buckets = {}
-		for tid in xrange(g.vcount()):
-			tag, tup = self.makeTGraphTuple(g, tid)
+		for vid in vrange:
+			tag, tup = mktuple(g, vid)
 			hash = maskfmt % (crc32(tag)&mask)
 			if hash not in buckets:
 				buckets[hash] = {}
 			buckets[hash][tag] = tup
 
-		LOG.debug("unwrap tgraph %s: writing buckets" % gid)
+		LOG.debug("unwrap %s: writing buckets" % gid)
 		for bucket, contents in buckets.iteritems():
 			with open(os.path.join(bdir, FMT_UNW % bucket), 'wb') as fp:
 				dump(contents, GzipFile(fileobj=fp))
 
-		attributes = {"mask":mask}
-		attributes.update((attr, g[attr]) for attr in g.attributes())
-		attributes["node"] = dict((v[NID], v[NAT]) for v in g.vs)
-		with open(os.path.join(bdir, FMT_UNW % "attributes"), 'wb') as fp:
-			dump(attributes, GzipFile(fileobj=fp))
-		LOG.info("unwrap tgraph %s: complete" % gid)
+		LOG.info("unwrap %s: complete" % gid)
 
 
 AAT_A = "logweight" # additive arc-attribute
@@ -431,6 +451,13 @@ class SampleStats(object):
 
 		self.id_p = dict((intern(nsid), vid) for vid, nsid in enumerate(self.ptabgr.vs[NID]))
 		self.id_h = dict((intern(nsid), vid) for vid, nsid in enumerate(self.prodgr.vs[NID]))
+
+
+	def degreeLogLogPlot(self, g, fp=None, type=ALL):
+		gen = ((log(1+deg), log(1+freq)) for deg, freq in sorted(freq(g.degree(type=type)).iteritems()))
+		if not fp: return list(gen)
+		for k, v in gen:
+			print >>fp, k, v
 
 
 	def getTagInfo(self, tag):
@@ -508,13 +535,13 @@ class SampleStats(object):
 			#print g.es[AAT_A]
 
 		if not src: return 0.0
-		total = 0
+		dstcl = []
 		for lengths in g.vs.select(dst).shortest_paths(weights=AAT_A, mode=IN):
-			#total += exp(-reduce(lambda x, y: x+y, (lengths[i] for i in src), 0.0) / len(src))
-			#total += reduce(lambda x, y: x+y, (exp(-lengths[i]) for i in src), 0.0)
-			total += exp(-min(lengths[i] for i in src))
+			#dstcl.append(exp(-sum(lengths[i] for i in src)/len(src)))
+			#dstcl.append(sum(exp(-lengths[i]) for i in src))
+			dstcl.append(exp(-min(lengths[i] for i in src)))
 
-		return total
+		return sum(dstcl)
 
 
 	def getAllCloseness(self):
