@@ -4,16 +4,29 @@ DOCUMENT NOW:
 - notation of resource links: $p_0 \rightarrow^t p$.
 - what "independent union" means
 
+POTENTIAL CUTS:
+- intro:
+	"Another issue is the " - 83
+	"Imagine your browser " - 57
+- design:
+	derivation "adding components to a path" - 53
+	derivation "score inferer" - <211
+	derivation "value composer" - <253
+	derivation "routing - constructing output" - <97
+- execution:
+	"The type of attributes can also be parameterised" - <177
+(~750)
+
+TODO NOW:
+- actually implement the traversal algorithms described in design.md.txt;
+  current implementation uses much simpler and more questionable algorithms.
+
 FIXME NOW:
 - make a better ValueComposer, turns out Mean*Composer is actually pretty shit
 - needs to give bigger weight to arcs/nodes defined by *lots of people* (cf.
   youtube's decision to drop the star ratings and just go for like/dislike)
 - add this to the analysis
 - security implications here...
-
-TODO NOW:
-- actually implement the traversal algorithms described in design.md.txt;
-  current implementation uses much simpler and more questionable algorithms.
 
 == Tasks ==
 

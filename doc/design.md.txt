@@ -3,27 +3,21 @@
 
 # Theory
 
-In this chapter, we discuss the theoretical ideas behind the system. We
-experimented with many different ideas before the code development began, and
-during development we weeded out the ones which seemed to lead to a dead end.
-Afterwards, the surviving ideas were explored further, and simplified or
-generalised.[^simp]
+We explored many different ideas before implementation began, and during
+implementation we weeded out the ones which seemed to lead nowhere. Afterwards,
+surviving ideas were explored further, and simplified or generalised.[^simp]
 
-As such, there are a few aspects of our system design which may seem inelegant
-or imperfect in the context of the theories described below. Unfortunatly, we
-didn't have enough time to go back and refine them; but we have tried to point
-these out in the appropriate sections of [architecture](#architecture). None of
-these flaws, we think, are serious enough to defeat the basic purpose of the
-design that we implemented.
+As such, there are a few aspects of our design which may seem inelegant or
+imperfect in the context of the theories described below. Unfortunately, we
+didn't have time to go back and refine them; but we have tried to point these
+out where relevant. None of these flaws, we think, are serious enough to defeat
+the basic purpose of the design that we implemented.
 
-[^simp]: For example, originally the problem of information aggregation was
-considered only for the naming and routing layers, and was completely ignored
-for the social layer. During implementation it was realised that trust metrics
-could not resolve conflicts between ptable entries, and after implementation we
-formulated the theoretical expression of the general problem, given below. The
-discussion on the various issues of [aggregation](#information-aggregation) as
-related to our design was actually done during the preparation stage, but it
-was only afterwards that we realised how this fit into the general theory.
+[^simp]: For example, information aggregation was originally only considered
+for the naming and routing layers, and was completely ignored for the social
+layer. During implementation we realised that trust metrics could not resolve
+conflicts between ptable entries, and only afterwards did we formulate the
+expression of the general problem.
 
 ## System design
 
@@ -194,21 +188,19 @@ which forms a valid distance relation with the probability-based relation type
 $((0, 1], 1, \geq, \times)$, giving a path-distance formula of $D[t_i]_0^n =
 D[t_0, t_1].\cdots.D[t_{n-1}, t_n]$.
 
-There are various flaws with this. In our view, a significant flaw is the lack
-of a "natural" interpretation as to what this thing represents. It also gives
-no information about tag triples, and hence cannot distinguish between cases
-where triple-intersections differ greatly; although this is really a problem
-with the tgraph design.[^addrdm]
+A significant flaw is the lack of a "natural" interpretation for what this
+measure represents. It also gives no information about tag triples, and hence
+cannot distinguish between cases where triple intersection sizes differ greatly
+- although this is more a problem with the tgraph design.[^addrdm]
 
 [^addrdm]: Note also that it isn't a distance _metric_, as it satisfies neither
 symmetry nor the triangle inequality. We were (and still are) unaware of any
 theory that comments on if this is a bad thing, from a routing perspective.
-Dijkstra's algorithm, which we use to construct a routing scheme, only requires
-a distance relation rather than a metric.
 
-Unfortunately, we didn't have enough time to explore these issues very deeply,
-or to come up with better alternatives. It does satisfy the distance relation
-axioms, so we decided to stick with it.
+Unfortunately, we didn't have time to explore these issues deeply, to find
+better alternatives. However, it does satisfy the distance relation axioms,
+meaning that we can use Dijkstra's algorithm to construct routing schemes, so
+we decided to stick with it.
 
 ## Information aggregation
 
@@ -243,39 +235,6 @@ Return
 	  $$
 
 This can be represented as a table. [DIAG] cols = resources, rows = agents
-
-### Simplification
-
-The above formulation of the problem can be usefully divided up into two
-components:
-
-**1. Infer scores for all agents**:
-
-Given
-:	- a set of agents, with their agent-score maps
-	- a seed agent-score map
-Return
-:	- a target agent-score map, that covers all agents in the input
-
-and
-
-**2. Compose values for all resources, from the scored agents**:
-
-Given
-:	- a set of agents, with their inferred score, and resource-value maps
-Return
-:	- a target resource-value map
-
-We follow this approach in our project. Even these simpler problems, however,
-are fairly deep, and developing robust techniques to solve them could take up a
-whole other project. Our prototype implemenation only attempts crude and simple
-solutions to each component. [EXTN]
-
-(Note that the first component is a generalisation of trust metrics, which use
-an implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$, i.e. a
-single root agent mapped to the maximum score.)
-
-### Use contexts
 
 In the context of our system design:
 
@@ -358,13 +317,166 @@ so only supports passive traps rather than active attacks. It's also unclear
 how probability-based attributes could be extended to work this way. So for
 now, we ignore this possibility.[EXTN]
 
+### Simplification
+
+The above formulation of the problem can be usefully divided up into two
+components:
+
+**1. Infer scores for all agents**:
+
+Given
+:	- a set of agents, with their agent-score maps
+	- a seed agent-score map
+Return
+:	- a target agent-score map, that covers all agents in the input
+
+and
+
+**2. Compose values for all resources, from the scored agents**:
+
+Given
+:	- a set of agents, with their inferred score, and resource-value maps
+Return
+:	- a target resource-value map
+
+We follow this approach in our project. Even these simpler problems, however,
+are fairly deep, and developing robust techniques to solve them could take up a
+whole other project. Given our time constraints, we only implement a crude and
+simple solution for each of these, which are given below. [EXTN]
+
+(Note that "infer scores" is a generalisation of trust metrics, which use an
+implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$, i.e. a single
+root agent mapped to the maximum score.)
+
+#### Score-inferer
+
+This is intended only for use by the naming and routing layers. As mentioned
+earlier, our approach is to estimate the probability of reaching a given agent
+from the seeds.
+
+Let $x$ be the agent we want to infer a score for. A simple model is to assign
+a path-score for the shortest path between $x$ and each seed agent $a$, then
+take the _independent union_ of all of these path-scores:
+
+$$
+s_x = 1 - \prod_a (1 - p_{ax})
+$$
+
+Note that this is open to attack by multiple colluding seed nodes, which breaks
+the assumption of independence.
+
+Let $k$ represent the probability that an endorsement of a subject also implies
+endorsement of an arbitrary neighbour, and let $i$ be the number of steps in
+the shortest path from $a$ to $x$. Then $k^i$ is a rough estimate for the
+probability that an endorsement extends to a node $i$ steps away. Combining
+this with the weight of the original endorsement gives:
+
+$$
+p_{ax} = s_a.k^i
+$$
+
+Again, this is a very crude model, which ignores several important factors and
+assumes that $k$ is universally constant. However, we weren't able (in the time
+given) to develop any significantly better models, so we've stuck with it for
+our prototype. We try to given an underestimate of $k$, to give a bias towards
+agents nearer our seed set, which hopefully offers slightly more resistance to
+simple attacks. Our prototype uses $k = 2^{-4}$.
+
+#### Value-composer
+
+Here we explore a crude algorithm to aggregate value judgements from a set of
+agents. This is required by all the layers, and the model presented here is
+general enough to be applied to all of these.
+
+It's impossible to determine the accuracy of the input data from only the data
+itself, since any input is potentially true. We need either a pre-existing
+expection of what the information should look like, or a model of how its
+meta-information (eg. its source agents) affects its accuracy. Both approaches
+are outside of the scope of this project.[EXTN]
+
+For our prototype, we use a very basic algorithm - the score-weighted mean of
+each agent's value judgement for that resource. In our case, both the score and
+the value are bounded, and it's hoped that this can hinder some basic attacks
+against mean-based composers (eg. judging a value to be infinity).
+
+Recall the problem specification:
+
+Given
+:	- a set of agents, with their inferred score, and resource-value maps
+	$$
+	a : (s, \{ r : v \})
+	$$
+Return
+:	- a target resource-value map
+	$$
+	r : v
+	$$
+
+The score-weighted mean value for resource $r$, over all agents, is:
+
+$$
+\bar v_r = \frac{\sum_{a} s_a v_{ar}}{\sum_a s_a}
+$$
+
+However, not every agent will have a judgement for $r$, so some $v_{ar}$ may be
+undefined. In such cases, we make an estimate $\hat v_{ar}$ instead.
+
+$$
+\bar v_r = \frac{\sum_{a} s_a \hat v_{ar}}{\sum_a s_a}
+\quad ; \quad
+\hat v_{ar} = \left\{ \begin{array}{llr} \\
+  v_{ar} & : r \in R_a & (0) \\
+  \alpha(a,r).0 + (1 - \alpha(a,r)).\bar v_r & : r \notin R_a & (1) \\
+\end{array} \right
+$$
+
+where $\alpha(a,r)$ is the probability that agent $a$ has judged resource $r$
+to be worthless, given $(1)$.
+
+The above definition has $\bar v_r$ on the RHS; after rearranging, we get:
+
+$$
+% should be \dfrac but LaTeXMathML doesn't support amsmath commands...
+\bar v_r = \frac{\sum_{a:(0)} s_a v_{ar}}{\sum_a s_a \alpha_0(a,r)}
+\quad ; \quad
+\alpha_0(a,r) = \left\{ \begin{array}{ll} \\
+  1 & : (0) \\
+  \alpha(a,r) & : (1) \\
+\end{array} \right
+$$
+
+The behaviour of $\alpha$ will depend greatly on the context in which the above
+formula is used. Our system deals with two types of resources, nodes and arcs;
+we note the following observations when implementing heuristics for $\alpha$:
+
+**For a node** $v$, there is no information that could be used to perform any
+heuristic: a node not in the map, has no information relating to it in the map.
+However, it may be possible to extract information from other sources, such as
+the friends for a ptable. These are context-specific and are explored in the
+appropriate sections.
+
+**For an arc** $e = (v_s, v_t)$, we have some extra information. The meaning of
+$e$ is fully determined by $v_s$, $v_t$, which means that the agent is able to
+judge $e$ if it "knows about" both $v_s$ and $v_t$. We can estimate this notion
+with $v \in \rft E$. That is, if $e \notin \dom E$ but $v_s, v_t \in \rft E$,
+then it's likely that there is no such relation.[^vcmped]
+
+[^vcmped]: Or, the agent has overlooked $e$. We assume this is _unlikely_ for
+the average agent, which is reasonable since we already trust them enough to
+be processing their judgement table.
+
+Brief discussions of specific applications of all of the above is given in the
+[relevant sub-sections](#using-the-value-composer).
+
+More sophisticated methods include training on a prototype network, or dynamic
+learning from an active network. However, it must be noted that the theoretical
+model for this component is not particularly robust anyway, so the benefit-cost
+ratio of such methods is likely to be low.
+
 
 # Architecture
 
 ## Data structures
-
-_In this section we present a specification of the data objects that our system
-uses, their structure, semantics, and expected contents._
 
 ### ptable
 
@@ -779,11 +891,11 @@ are independent.
 [^trvrpo]: ie. similarity of $t$ to $t_0$, relevance of $h$ to $t$, and score
 of $h$, respectively.
 
-As with the other layers, we have a table of loaded attributes. In this layer
-however, we can be more focused when searching through indexes. Instead of
-looking up all the tags for an entire row, we only partially load each row; all
-non-loaded cells are assumed to be non-existent in the index for the row, until
-they are loaded.
+As with other layers, we have a table of loaded attributes. Here however, we
+can be more focused when searching through indexes. Instead of looking up all
+the tags for an entire row, we only partially load each row; all non-loaded
+cells are assumed to be non-existent in the index for the row, until they are
+loaded.
 
 We initialise the table rows from the seed indexes $H_s$, and an empty address
 scheme (ie. no columns). The table can be expanded in two possible ways:
@@ -834,135 +946,4 @@ ignored.) If the most favourable potential out of these is:
 
 Finally, if all three are non-existent (ie. no pending lookups, no incomplete
 tag, and no indexes to add), then we request an address scheme update.
-
-
-# Design
-
-[MOVE] probably to "information aggregation"
-
-## Score-inferer
-
-Here we explore a crude algorithm to infer scores using the link structure of
-a data network. This is intended for use by the naming and routing layers, and
-as discussed previously, we base our model on the likelihood of reaching a
-given agent from the seeds.
-
-Let $x$ be the agent we want to infer a score for. A simple model is to assign
-a path-score for the shortest path between $x$ and each seed agent $a$, then
-take the independent union of all of these path-scores:
-
-$$
-s_x = 1 - \prod_a (1 - p_{ax})
-$$
-
-Note that this is open to attack by multiple colluding seed nodes, which breaks
-the assumption of independence.
-
-Let $k$ represent the probability that an endorsement of a subject also implies
-endorsement of an arbitrary neighbour, and let $i$ be the number of steps in
-the shortest path from $a$ to $x$. Then $k^i$ is a rough estimate for the
-probability that an endorsement extends to a node $i$ steps away. Combining
-this with the weight of the original endorsement gives:
-
-$$
-p_{ax} = s_a.k^i
-$$
-
-Again, this is a very crude model, which ignores several important factors and
-assumes that $k$ is universally constant. However, we weren't able (in the time
-given) to develop any significantly better models, so we've stuck with it for
-our prototype. We try to given an underestimate of $k$, to give a bias towards
-agents nearer our seed set, which hopefully offers slightly more resistance to
-simple attacks. Our prototype uses $k = 2^{-4}$.
-
-## Value-composer
-
-Here we explore a crude algorithm to aggregate value judgements from a set of
-agents. This is required by all the layers, and the model presented here is
-general enough to be applied to all of these.
-
-It's impossible to determine the accuracy of the input data from only the data
-itself, since any input is potentially true. We need either a pre-existing
-expection of what the information should look like, or a model of how its
-meta-information (eg. its source agents) affects its accuracy. Both approaches
-are outside of the scope of this project.[EXTN]
-
-For our prototype, we use a very basic algorithm - the score-weighted mean of
-each agent's value judgement for that resource. In our case, both the score and
-the value are bounded, and it's hoped that this can hinder some basic attacks
-against mean-based composers (eg. judging a value to be infinity).
-
-Recall the problem specification:
-
-Given
-:	- a set of agents, with their inferred score, and resource-value maps
-	$$
-	a : (s, \{ r : v \})
-	$$
-Return
-:	- a target resource-value map
-	$$
-	r : v
-	$$
-
-The score-weighted mean value for resource $r$, over all agents, is:
-
-$$
-\bar v_r = \frac{\sum_{a} s_a v_{ar}}{\sum_a s_a}
-$$
-
-However, not every agent will have a judgement for $r$, so some $v_{ar}$ may be
-undefined. In such cases, we make an estimate $\hat v_{ar}$ instead.
-
-$$
-\bar v_r = \frac{\sum_{a} s_a \hat v_{ar}}{\sum_a s_a}
-\quad ; \quad
-\hat v_{ar} = \left\{ \begin{array}{llr} \\
-  v_{ar} & : r \in R_a & (0) \\
-  \alpha(a,r).0 + (1 - \alpha(a,r)).\bar v_r & : r \notin R_a & (1) \\
-\end{array} \right
-$$
-
-where $\alpha(a,r)$ is the probability that agent $a$ has judged resource $r$
-to be worthless, given $(1)$.
-
-The above definition has $\bar v_r$ on the RHS; after rearranging, we get:
-
-$$
-% should be \dfrac but LaTeXMathML doesn't support amsmath commands...
-\bar v_r = \frac{\sum_{a:(0)} s_a v_{ar}}{\sum_a s_a \alpha_0(a,r)}
-\quad ; \quad
-\alpha_0(a,r) = \left\{ \begin{array}{ll} \\
-  1 & : (0) \\
-  \alpha(a,r) & : (1) \\
-\end{array} \right
-$$
-
-The behaviour of $\alpha$ will depend greatly on the context in which the above
-formula is used. Our system deals with two types of resources, nodes and arcs;
-we note the following observations when implementing heuristics for $\alpha$:
-
-**For a node** $v$, there is no information that could be used to perform any
-heuristic: a node not in the map, has no information relating to it in the map.
-However, it may be possible to extract information from other sources, such as
-the friends for a ptable. These are context-specific and are explored in the
-appropriate sections.
-
-**For an arc** $e = (v_s, v_t)$, we have some extra information. The meaning of
-$e$ is fully determined by $v_s$, $v_t$, which means that the agent is able to
-judge $e$ if it "knows about" both $v_s$ and $v_t$. We can estimate this notion
-with $v \in \rft E$. That is, if $e \notin \dom E$ but $v_s, v_t \in \rft E$,
-then it's likely that there is no such relation.[^vcmped]
-
-[^vcmped]: Or, the agent has overlooked $e$. We assume this is _unlikely_ for
-the average agent, which is reasonable since we already trust them enough to
-be processing their judgement table.
-
-Brief discussions of specific applications of all of the above is given in the
-[relevant sub-sections](#using-the-value-composer).
-
-More sophisticated methods include training on a prototype network, or dynamic
-learning from an active network. However, it must be noted that the theoretical
-model for this component is not particularly robust anyway, so the benefit-cost
-ratio of such methods is likely to be low.
 

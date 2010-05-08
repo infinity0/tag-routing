@@ -7,8 +7,8 @@
 
 From the beginning, we put the entire project under version control. We chose
 to use git; we feel that its content-oriented object model and its non-linear
-history model is more flexible and "natural" than (e.g.) centralised systems.
-It's also fast and efficient, and we have the most experience with it.
+history model is more flexible than traditional centralised systems. It's also
+fast and efficient, and we have the most experience with it.
 
 The main compilable component, the search application, was written in Java, and
 so we chose Apache Ant for our build system. This is fairly simple and flexible
@@ -35,10 +35,10 @@ We used github to publish and backup our repository.
 We decided to develop the search application in Java. We were aware that our
 design had many areas for future improvement, so we wanted our implementation
 to be easily maintainable and extensible. We felt that the strict type safety
-and class inheritance of Java would aid us in achieving such a goal, because
-it allows us to design a system architecture (and its component interfaces) to
-be both self-enforcing and self-documenting. This is especially useful when
-coding individual classes, where it's easy to forget about the overall picture.
+and class inheritance of Java would aid in achieving such a goal, because it
+allows us to design a system architecture (and its component interfaces) to be
+both self-enforcing and self-documenting. This is especially useful when coding
+individual classes, where it's easy to forget about the overall picture.
 
 ### Structure
 
@@ -58,78 +58,71 @@ corresponding to a Java package:
 The prototype implementation code can be divided into:
 
 `tags.proto.*` (objects)
-:	These include classes that define the basic objects of our system uses
-	(like `PTable`, `TGraph`, `Index`), and some utility classes for these.
-	Some of the object classes have multiple versions, which help to strip out
-	unnecessary features based on use context - e.g. when we only need to
-	represent a remote object, we only store outgoing arcs, and for a local
-	object, we store both incoming and outgoing arcs.
+:	The basic objects of our system (`PTable`, `TGraph`, `Index`) and utility
+	classes for these. Some of the objects have multiple versions, which help
+	to strip out unnecessary features based on use context - e.g. when we only
+	need to represent a remote object, we only store outgoing arcs.
 `tags.proto.*` (process)
-:	These include classes that form the execution architecture of our system.
-	The main ones include:
+:	The execution architecture of our system. The main classes include:
 :	`LayerService`
-	:	This provides a template that all layers inherit from, which implements
-		some basic functionality (such as receiving messages) as described in
-		[architecture - layers](design.html#layers).
+	:	A template that all layers inherit from, which implements some basic
+		functionality (e.g. receiving messages, holding query parameters) as
+		described in [architecture - layers](design.html#layers).
 	`QueryProcess`
-	:	This represents an ongoing query, and holds references to all of the
-		state relevant to it, including each of the running layers.
+	:	An ongoing query. It holds references to all the state relevant to it,
+		including each of the running layers.
 	`QueryEnvironment`
-	:	This represents the environment of the query - the components that a
-		query process needs, but is not specific to the query itself. This
-		includes things such as an `Executor`[^archex] for scheduling jobs, and
-		most importantly the interface to the storage layer.
+	:	The environment of the query - the components that a query process
+		needs, but is not specific to the query itself. This includes e.g. an
+		`Executor`[^archex] for scheduling jobs, and the interface to the
+		storage layer.
 `tags.proto.*.*` (layers)
-:	These sub-packages implement each layer, as described in [architecture -
-	layers](design.html#layers). The "algorithmic components" of each layer are
-	represented by Java interfaces (with a basic implementation for each, also
-	as described), to allow for better future implementations.
+:	The layers as described in [architecture - layers](design.html#layers). The
+	"algorithmic components" are represented by Java interfaces (plus basic
+	implementations, also as described), to allow for future improvements.
 
 [^archex]: `java.util.concurrent.Executor`[REF]
 
 The general utilities can be further divided into:
 
 `tags.util.*`
-:	This contains mostly data structures classes. Our system design was very
-	abstract, especially the object specifications. An easy way to implement
-	these was to construct them out of union and tuple types, but they aren't
-	a native part of Java, so we built our own. We implemented lots of utility
-	methods for performing complex operations on maps, which was needed since
-	our objects are all node-map/arc-map combinations. Our crude score-inferer
-	and value-composer are also both implemented here, as well as Probability
-	and Entropy classes that ensure their values are restricted to the
-	appropriate ranges.
+:	Data-structure related utilities. Our object specifications are fairly
+	abstract, and an easy way to implement them was to construct them out of
+	union and tuple types. These aren't a native part of Java, so we built our
+	own. We also implemented many methods for performing complex operations on
+	maps, needed because our objects are all node-map/arc-map combinations. Our
+	crude score-inferer and value-composer are both implemented here, as well
+	as Probability and Entropy classes that ensure their values are restricted
+	to the correct ranges.
 `tags.util.exec.*`
-:	This contains base classes for our execution architecture. Unfortunately,
-	`java.util.concurrent` is highly abstract and lacking in context-specific
-	implementations of its interfaces, and we weren't aware of any simple,
-	light, easy-to-learn execution frameworks for Java, so we wrote our own.
-	This includes `TaskService`, which is similar in principle to `Executor`
-	but accepts arbitrary objects to act on instead of just `Runnable.run()`;
-	and `MessageReceiver`, which is a basic interface for a simple execution
-	framework based on message passing.
+:	Base classes for our execution architecture. `java.util.concurrent` is
+	highly abstract and lacking in context-specific implementations. We weren't
+	aware of any simple, light, easy-to-learn execution frameworks for Java, so
+	we wrote our own. This includes `TaskService`, similar to `Executor` but
+	accepts general objects to act on; and `MessageReceiver`, a basic interface
+	for a simple execution framework based on message passing.
 `tags.io.*`
-:	This package only contains deserialisation classes for GraphML, and was not
-	needed until late on during the development process, when we had to extend
-	a large part of JUNG's GraphML reader code - see [below](#data-format).
+:	This only contains deserialisation classes for GraphML, and was not needed
+	until late on during the development process, when we had to extend a large
+	part of JUNG's GraphML reader code - see [below](#data-format).
 
 ### Design patterns
 
 The Java Collections Framework[REF] is simple and flexible, and we built most
 of our data structures on top of it. In many cases, these provide alternative
 views of existing structures, such as combining two maps into one, chaining
-many iterators together, and so on. It is generally more memory efficient to
-expose each item as needed, rather than copying the entire collection and
-converting all the items at once. The _proxy_ and _decorator_ patterns are both
-useful in implementing such views; we made heavy use of our `ProxyIterable` and
-`ProxyMap` classes in constructing more complex proxy objects.
+many iterators together, etc. It is generally more space-efficient to expose
+each item as needed, rather than copying the entire collection and converting
+all the items at once. The _proxy_ and _decorator_ patterns are both useful in
+implementing such views; we made heavy use of our `ProxyIterable`, `ProxyMap`
+classes in constructing the more complex views.
 
-We found good use for the _adapter_ pattern. Our `StoreControl` interface
-provides a consistent way for our search application to interact with different
-storage layers; implementations wrap around and hide these differences. We
-implemented both the path-based score-inferer and the mean-based value-composer
-as general utility classes; adapters were also used to wrap this functionality
-inside an interface expected by the layers that used these components.
+We found good use for the _adapter_ pattern. Our `StoreControl` provides a
+consistent interface to interact with different storage layers; implementations
+wrap around and hide these differences. We implemented both the path-based
+score-inferer and the mean-based value-composer as general utility classes;
+adapters were also used to wrap this functionality inside an interface expected
+by the layers that used these components.
 
 We also used the _factory_ and _builder_ patterns to make object creation code
 more extensible. Use cases include creating local views of remote objects, and
@@ -151,14 +144,14 @@ distinct types is:
 
    Source                              Description
 -- ----------------------------------- -----------------------------------
-1. agent score (ptables)               social identity trust score
-2. resource value (ptables) (tgraphs)  rating score for tgraphs
-3. resource value (ptables) (indexes)  rating score for indexes
-4. agent score (tgraphs)               rating score for tgraphs
-5. resource value (tgraphs) (node)     tag size
-6. resource value (tgraphs) (arc)      tag-tag similarity
-7. agent score (indexes)               rating score for indexes
-8. resource value (indexes)            tag-document similarity
+1. agent score (social)                social identity trust score
+2. resource value (social) (tgraphs)   rating score for tgraphs
+3. resource value (social) (indexes)   rating score for indexes
+4. agent score (naming)                rating score for tgraphs
+5. resource value (naming) (node)      tag size
+6. resource value (naming) (arc)       tag-tag similarity
+7. agent score (routing)               rating score for indexes
+8. resource value (routing)            tag-document similarity
 
 (2,4) are the same, and (3,7) are the same, which leaves us with six attribute
 types. In the end we felt it prudent to merge (6,8) into a single arc-attribute
@@ -174,33 +167,31 @@ score, `<Z>` identity-score.
 ## Sample generator
 
 We decided to develop the sample generator in Python. We did not need the code
-here to be as strictly well-designed as for the search application. Moreover,
-by this point we were already far behind schedule, and we felt coding in Python
-would help to recover some of this lost time, due to its simplicity and the
-ease at which one can explore new libraries via the interactive interpreter.
+here to be as strictly well-designed as for the search application. Also, by
+this point we were already far behind schedule - we felt using Python would
+help recover some of this, due to its simplicity and the ease of exploring new
+libraries (via the interactive interpreter).
 
-This was a decision that we would later come to partially regret, due to poor
-high-level multithreading support, and performance and memory leak issues which
-became important at the scales we were processing data at (we had initially
-overlooked this). However, ultimately it probably did save a lot of development
-time, and it's unclear whether programming in a more low-level language would
-have helped the performance issues significantly.
+We did run into many problems, such as poor high-level multithreading support,
+and performance and memory leak issues which became important at the scales we
+were processing data at (we had initially overlooked this). However, ultimately
+it probably did save us time, and it's unclear that using a more low-level
+language would've helped the performance issues significantly.
 
 ### Libraries
 
-We used the following external libraries in our sample generator:
+We made use of the following external libraries:
 
 flickrapi[REF]
-:	This is a python interface to Flickr's online API[REF].
+:	Python bindings for Flickr's online API[REF].
 python-futures[REF]
-:	This is an ad-hoc high-level multithreading framework for python, inspired
-	by Java's `java.util.concurrent` package. We used this to run flickrapi in
-	multiple threads to reduce network IO waits; this is discussed below[LINK].
+:	A high-level multithreading framework, inspired by `java.util.concurrent`.
+	We used this to run flickrapi in parallel to reduce network IO waits; this
+	is discussed below[LINK].
 igraph[REF]
-:	This is a general-purpose graph library written in C, with interfaces to
-	other languages including python. We used this as a fast and efficient way
-	to store and manipulate graph data structures, as well as serialising them
-	to store on disk.
+:	A general-purpose graph library written in C, with a python interface
+	available. We used this to store and manipulate graph objects, and for
+	data serialisation.
 
 ### Structure
 
@@ -208,19 +199,17 @@ Our code structure can be divided into the following sections, each roughly
 corresponding to a Python module:
 
 `tags.eval.crawl.flickr`
-:	This contains an extension of flickrapi, and implements the crawl strategy
-	and data collection code, as described [evaluation - generating
-	data](evaluation.html#application).
+:	An extension of flickrapi, and code for data collection, as described in
+	[evaluation - generating data](evaluate.html#application).
 `tags.eval.objects`
-:	This holds classes representing single objects, such as `Producer`, `Node`,
-	a class for building graphs (`NodeSample`), and various classes that hold
+:	Classes representing single objects, such as `Producer`, `Node`, a class
+	for building graphs (`NodeSample`), and various classes for holding
 	statistics about a sample or its components.
 `tags.eval.sample`
-:	This holds classes for generating, writing, and calculating statistics for
-	entire samples.
+:	Classes for generating, writing, and calculating statistics for samples.
 `tags.eval.util`, `tags.eval.util.*`
-:	These are utility methods and classes that provide support for the rest
-	of the code, but which is otherwise not directly relevant to the system.
+:	Utility methods and classes that provide support for the rest of the code,
+	but which is otherwise not directly relevant to the system.
 
 ### Performance
 
@@ -247,27 +236,27 @@ over the flexibility and performance of event-based models.
 
 #### Serialisation
 
-Since we deal with sizes of data greater than will comfortable fit in our RAM,
-we needed to store (eg.) half-completed objects and request parameters on disk.
-Initially, we used Python's standard `pickle` module[REF] to de/serialise our
-objects, and the standard `shelve` module[REF] to store data. This proved
-inadequate for our needs, and we had to optimise this many times.
+Since we were dealing with data sizes larger than our RAM, we needed to store
+(e.g.) semi-completed objects and request parameters on disk. At first, we used
+Python's standard `pickle` module[REF] to de/serialise our objects, and the
+standard `shelve` module[REF] to store this data. This proved inadequate, and
+we had to optimise heavily.
 
-The first major optimisation we did was to use a custom `pickle` format for our
-`Graph` objects. We noticed this due to `pickle` leaking huge amounts of memory
-when repeatedly deserialising large graphs; by attempting to track the source
-of this, we discovered that storing the graph as a gzip-compressed GraphML was
-much more efficient (both in storage space and serialisation time) than the
-standard pickle format.[REF]
+The first major optimisation was to use a custom `pickle` format for `Graph`
+objects. `pickle` was leaking huge amounts of memory when deserialising large
+graphs; we tried to debug this, and discovered that storing the graph as a
+gzip-compressed GraphML is much more efficient (both in storage space and
+serialisation time)[REF] than the standard pickle format, and also solves the
+memory leak.
 
-The next major optimisation we did was to store different components of a large
-object separately. The `shelve` module will attempt to deserialise an entire
-object when it's requested; this turned out to be unnecessary most of the time.
-We ended up refactoring the `Producer` class into a state machine, and storing
-the state field in a separate database from the rest of the object. When we
-want to check the state of a `Producer`, we query this other database first.
-Another optimisation was to store the commonly-accessed parts of a `Graph` in
-an additional cache, which saves having to deserialise the entire `Graph`.
+The next major optimisation was to store different components of a large object
+separately. The `shelve` module will deserialise an entire object when it's
+requested; this turned out to be unnecessary most of the time. We ended up
+refactoring the `Producer` class into a state machine, and storing the state
+field in a separate table. When we want to check the state of a `Producer`, we
+query this other table first. Another optimisation was to store the commonly
+accessed parts of a `Graph` in an extra cache, which saves deserialising the
+entire `Graph`.
 
 Further optimisations included switching from `shelve`'s default choice of
 database to `sqlite3`, and using the RAM-based `tmpfs` (we used a Debian system

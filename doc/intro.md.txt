@@ -124,17 +124,12 @@ reach all relevant data on the network.
 
 ## Potential issues
 
-_Here, we briefly discuss issues surrounding a decentralised architecture, and
-present ways of addressing these issues, or else explain why we think they are
-not a significant problem in the context of this project._
-
 A system which must route queries between autonomous providers will obviously
 be slower than a system that only needs to query a single provider. At present,
-this is noticeable and signficiant - eg. Google returns results for the entire
-web almost instantaneously, whereas DHT queries on a medium-sized network might
-take a minute to complete. However, systems only get better, not worse, and
-hardware will improve in the years to come. By the time research in this area
-is well-developed, it's entirely possible that performance will have improved
+this is signficiant - web search engines return results almost instantaneously,
+whereas DHT queries on a medium-sized network might take a minute to complete.
+However, systems only get better, not worse, and so by the time research in
+this area is mature, it's entirely possible that performance will have improved
 beyond the limit of human perceptibility.
 
 Existing large service providers might have little incentive to participate in
@@ -185,53 +180,49 @@ Semantic tags are not as naturally structured as numerical addresses however,
 and a significant part of our time would be spent in developing a theoretical
 model of a partitionable and navigable space over tags.
 
-We did not have any specific initial ideas on how to ensure the global reach of
-a search request. Using tags as addresses means that each address holds many
-resources; being able to reach all the resources for a single tag is equivalent
-to being able to reach any arbitrary resource for that tag. Our DHT-inspired
-design aims to support the latter; however, bounding the cost of finding extra
-resources is a more complex problem, which we didn't get the chance to explore.
-[EXTN]
+We did not have specific ideas on how to ensure the global reach of a query.
+Using tags as addresses means that each address points to many resources; being
+able to reach all the resources for a single tag is equivalent to being able to
+reach any arbitrary resource for that tag. Our DHT-inspired design aims to
+support the latter; however, bounding the cost of finding extra resources is a
+more complex problem, which we didn't have time to explore.[EXTN]
 
-Finally, we chose to base our system upon a foundation of social relationships.
-Recent research has shown that analysing network structure can be effective in
-resisting malicious information. A major reason is because social relationships
-are much more expensive to attack than simple indexing algorithms that make
-naive assumptions about input data. Examples include Google's PageRank[REF],
-trust metrics such as Advogato[REF], and sybil detection algorithms such as
-SybilInfer[REF].
+Finally, we based our system on a social foundation. Research has shown that
+analysing network structure can offer resistance against malicious information.
+A major reason is because social relationships are much more expensive to
+attack than simple algorithms that make naive assumptions about input data.
+Examples include Google's PageRank[REF], trust metrics such as Advogato[REF],
+and sybil detection algorithms such as SybilInfer[REF].
 
 ## Working assumptions
 
 Since the aim of the project is fairly ambitious, we want to repeat as little
 work as possible. Therefore, we make various assumptions about the environment
 that our system will run under. Some of these are reasonable, and some of these
-are fairly restrictive; however, we feel they are prudent and necessary in the
-context of this project.
+are fairly restrictive; however, we feel they are prudent and necessary given
+our resource limits.
 
 Locating known objects is essentially a solved problem: the internet and DHTs
 both offer ways to retrieve objects based on a globally unique address. Without
-this primitive we cannot continue at all; data has to be stored somewhere, and
-it has to be accessible to an arbitrary subset of the network.
+this primitive we cannot continue; data must be stored somewhere, and it must
+be accessible to arbitrary agents on the network.
 
-Additionally, we assume that objects are always available. In a real network,
-this can be implemented with proxy services (servers that lend out storage and
-guarantee continuous access to this), or it might be a property of the storage
-network (eg. DHTs). This simplifies our design, since it allows us to avoid
-dealing with the issue of churn, by delegating it to an external component.
+We assume that objects are always available. In a real network, this can be
+implemented with proxy services, or it might be a property of the network (e.g.
+DHTs). This simplifies our design, since it allows us to avoid dealing with the
+issue of churn, by delegating it to an external component.
 
-This also forces us to consider an iterative routing algorithm rather than a
-recursive one. Since data cannot forward queries onto other pieces of data, a
-lient must process it themselves, determine which objects to retrieve next,
-then retrieve those, etc. Hopefully, our design can be adapted into a recursive
-one without much effort, but we won't give special consideration to this.
+This assumption also forces us to design an iterative routing algorithm rather
+than a recursive one. Since data cannot forward queries onto other pieces of
+data, a client must process it themselves, determine which objects to retrieve
+next, then retrieve those, etc. Hopefully, our design can be adapted into a
+recursive one, but we won't consider this problem.
 
-Importantly, we will only consider single-phrase queries, where each "phrase"
-corresponds to a single entry in a lookup table. We exclude compound queries,
-ie. multiple phrases composed with operations such as intersections, unions,
-differences, etc. This helps to keep the basic problem simple; compound query
-methods can be developed later, and arguably on top of a solution to this
-simpler problem.
+Finally, we only consider single-phrase queries, that correspond to a single
+key in a lookup table. We exclude compound queries (multiple phrases composed
+with e.g. intersections, unions, differences). This helps to keep the basic
+problem simple; compound query methods can be developed later, and arguably on
+top of a solution to this simpler problem.
 
 
 # Comparison
