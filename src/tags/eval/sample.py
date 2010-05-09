@@ -9,8 +9,8 @@ from random import sample
 from tags.eval.objects import (Node, NodeSample, NID, NAA, NAT, AAT, P_ARC,
   Producer, ProducerSample, ProducerRelation, TagInfo, IDInfo, AddrSchemeEval)
 from tags.eval.util import (union_ind, geo_prog_range, split_asc, sort_v,
-  infer_arcs, edge_array, graph_copy, graph_prune_arcs, undirect_and_simplify,
-  freq, invert_seq, invert_multimap, write_align_column, exec_unique)
+  infer_arcs, edge_array, graph_prune_arcs, undirect_and_simplify, freq,
+  invert_seq, invert_multimap, write_align_column, exec_unique)
 
 LOG = logging.getLogger(__name__)
 
@@ -296,7 +296,7 @@ class SampleGenerator(object):
 		lab_g, id_g = zip(*((nsid, (nsid, base_g+vid)) for vid, nsid in enumerate(self.sprdgr.vs[NID]))) if len(self.sprdgr.vs) > 0 else ([], [])
 		id_g = dict(id_g)
 
-		ptabgr = graph_copy(self.socgr)
+		ptabgr = self.socgr.copy()
 
 		edges = set()
 		# add arcs to self
@@ -497,39 +497,22 @@ class SampleStats(object):
 
 	def closeness(self, id, tag=None):
 		"""
-		Get the residual closeness between the set of indexes pointed to by an
-		ID's ptable, and the set of indexes pointing to a tag (or the entire
-		graph, if the tag is None). This provides a measure of how quickly
-		information can flow from one area of the graph to another, assuming
-		only the structure of the graph, and perfect conditions.
+		Return the closeness between the set of indexes pointed to by an ID's
+		ptable, and the set of indexes pointing to a tag (or the entire graph,
+		if the tag is None).
 
-		[1] provides a definition of closeness:
-
-		  C(s) = sum[t in G] { 2 ^ -d(s,t) }
-
-		where s,t are vertices, and d(s,t) is the length of the shortest path
-		between them. We extend this to subsets of vertices:
-
-		  C(S, T) = sum[t in T] { 2 ^ -D(S, t) }
-		  D(S, t) = min[s in S] { d(s,t) }
-
-		The values in our graph are probabilities, which is a multiplicative
-		distance metric. Converting this to an additive metric means taking the
-		negative log (ie. converting to entropy), giving d(s,t) = -log p(s,t).
-		This is the form we actually calculate.
-
-		TODO needs tweaking, why min/sum/max/etc/whatever? and also normalise
-		against "size" of tag
-
-		[1] Dangalchev, C. Residual closeness in networks, 2006.
+		DOCUMENT. for now, see evaluate.html
 		"""
+		g = self.prodgr
 
 		idi = self.getIDInfo(id)
 		src = sorted([self.id_h[nsid] for nsid in set(idi.idx+idi.soc)])
-		dst = range(0, len(self.prodgr.vs)) if tag is None else sorted([
+		dst = range(0, len(g.vs)) if tag is None else sorted([
 		  self.id_h[nsid] for nsid in self.getTagInfo(tag).prod.iterkeys()])
 
-		g = self.prodgr
+		srcout = len(set(chain(*(g.successors(i) for i in src))))
+		dstout = len(set(chain(*(g.predecessors(i) for i in dst))))
+
 		if AAT_A not in g.es:
 			g.es[AAT_A] = [-log(attr) for attr in g.es[AAT]]
 			#print g.es[AAT_A]
@@ -537,11 +520,12 @@ class SampleStats(object):
 		if not src: return 0.0
 		dstcl = []
 		for lengths in g.vs.select(dst).shortest_paths(weights=AAT_A, mode=IN):
-			#dstcl.append(exp(-sum(lengths[i] for i in src)/len(src)))
+			#print [lengths[i] for i in src]
+			dstcl.append(sum(exp(-lengths[i]) for i in src)/len(src))
 			#dstcl.append(sum(exp(-lengths[i]) for i in src))
-			dstcl.append(exp(-min(lengths[i] for i in src)))
+			#dstcl.append(exp(-min(lengths[i] for i in src)))
 
-		return sum(dstcl)
+		return (srcout, dstout), (max(dstcl), sum(dstcl), sum(dstcl)/len(dstcl)), dstcl
 
 
 	def getAllCloseness(self):
@@ -554,7 +538,7 @@ class SampleStats(object):
 		Evaluate the given address scheme against the perfect address scheme
 		from the complete data of the world.
 		"""
-		prune = graph_copy(scheme)
+		prune = scheme.copy()
 		prune.delete_vertices(v.index for v in prune.vs.select(lambda vx: vx[NAA] is None))
 
 		ss = NodeSample()

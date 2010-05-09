@@ -178,6 +178,8 @@ are taken straight from the unprocessed data set.
 
 - ./run.sh -d../z/small -s51114580@N00 -i1000 -n64 -v2 google
 - ./run.sh -d../z/small -s8072015@N04 -i1000 -n256 -v3 google
+stats.closeness("8072015@N04", "google")
+stats.closeness("51114580@N00", "google")
 
 - compare inferred address scheme with true address scheme
 - test whether these match our expectations (nodes further out are "more general")
@@ -201,3 +203,25 @@ more sophisticated score would take into account the distance between results do
 
 
 
+ This provides a measure of how quickly
+information can flow from one area of the graph to another, assuming
+only the structure of the graph, and perfect conditions.
+
+[1] provides a definition of closeness:
+
+  C(s) = sum[t in G] { 2 ^ -d(s,t) }
+
+where s,t are vertices, and d(s,t) is the length of the shortest path
+between them. We extend this to subsets of vertices:
+
+  C(S, T) = sum[t in T] { mean[s in S] { 2 ^ -d(s, t) } }
+
+The values in our graph are probabilities, which is a multiplicative
+distance metric. Converting this to an additive metric means taking the
+negative log (ie. converting to entropy), giving d(s,t) = -log p(s,t).
+This is the form we actually calculate.
+
+TODO needs tweaking, why min/sum/max/etc/whatever? and also normalise
+against "size" of tag
+
+[1] Dangalchev, C. Residual closeness in networks, 2006.

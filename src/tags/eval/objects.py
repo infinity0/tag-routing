@@ -12,8 +12,8 @@ from igraph import Graph, IN, OUT
 
 from tags.eval.util.state import StateError, state_req, state_not, state_next
 from tags.eval.util import (intern_force, geo_mean, union_ind, f1_score,
-  sort_v, edge_array, infer_arcs, iterconverge, representatives, graph_copy,
-  callable_wrap, TMP_RAM)
+  sort_v, edge_array, infer_arcs, iterconverge, representatives, callable_wrap,
+  TMP_RAM)
 
 
 NID = "id" # label for node id in graphs
@@ -623,7 +623,7 @@ class Producer(object):
 		total = union_ind(chain([self.size()], (pgdb[self.docgr.vs[pid]["id"]].size() for pid in self.prange())), totalsize)
 		# print "producer %s (%s): total size of network estimated to be %s (actual %s)" % (self.nsid, self.size(), total, totalsize)
 
-		gg = graph_copy(self.docgr)
+		gg = self.docgr.copy()
 		del gg.vs[NAA]
 		gg["base_t"] = 0
 		gg["base_g"] = self.base_p - self.base_t
@@ -665,7 +665,7 @@ class Producer(object):
 		       holds the attribute value for the respective type of node; this
 		       only has an effect if <display> is True
 		"""
-		gg = graph_copy(self.docgr)
+		gg = self.docgr.copy()
 		try:
 			del gg.vs[NAA]
 		except KeyError: # WORKAROUND igraph bug #571440

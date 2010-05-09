@@ -360,11 +360,6 @@ def infer_arcs(mem, total, inverse=False, ratio=None):
 	return edges, arc_a
 
 
-def graph_copy(g):
-	return Graph(len(g.vs), g.get_edgelist(), g.is_directed(), dict((attr, g[attr]) for attr in g.attributes()),
-	  dict((attr, g.vs[attr]) for attr in g.vertex_attributes()), dict((attr, g.es[attr]) for attr in g.edge_attributes()))
-
-
 def graph_prune_arcs(graph, vlist):
 	"""
 	Prunes arcs from the given graph. A node is only allowed to have incoming
