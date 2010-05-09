@@ -28,6 +28,9 @@ for i in *.md.txt; do
 	if [ "$i" -ot "../$OUT" ]; then continue; fi
 
 	sed \
+	  -e 's/\\pred/\\mathtt{\\mathrm{pred}}\\,/g' \
+	  -e 's/\\succ/\\mathtt{\\mathrm{succ}}\\,/g' \
+	  -e 's/\\nbr/\\mathtt{\\mathrm{nbr}}\\,/g' \
 	  -e 's/\\dom/\\mathtt{\\mathrm{dom}}\\,/g' \
 	  -e 's/\\img/\\mathtt{\\mathrm{img}}\\,/g' \
 	  -e 's/\\src/\\mathtt{\\mathrm{src}}\\,/g' \

@@ -511,7 +511,7 @@ class SampleStats(object):
 		  self.id_h[nsid] for nsid in self.getTagInfo(tag).prod.iterkeys()])
 
 		srcout = len(set(chain(*(g.successors(i) for i in src))))
-		dstout = len(set(chain(*(g.predecessors(i) for i in dst))))
+		dstin = len(set(chain(*(g.predecessors(i) for i in dst))))
 
 		if AAT_A not in g.es:
 			g.es[AAT_A] = [-log(attr) for attr in g.es[AAT]]
@@ -525,7 +525,7 @@ class SampleStats(object):
 			#dstcl.append(sum(exp(-lengths[i]) for i in src))
 			#dstcl.append(exp(-min(lengths[i] for i in src)))
 
-		return (srcout, dstout), (max(dstcl), sum(dstcl), sum(dstcl)/len(dstcl)), dstcl
+		return (srcout, dstin), (max(dstcl), sum(dstcl), sum(dstcl)/len(dstcl)), dstcl
 
 
 	def getAllCloseness(self):

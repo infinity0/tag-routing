@@ -164,7 +164,7 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 			File base = new File(dir_idx, addr.toString());
 			if (!base.isDirectory()) { return null; }
 			idx = new DirectoryIndex<N, W>(base);
-			System.out.println("loaded index at :" + addr);
+			//System.out.println("loaded index at :" + addr);
 			indexes_unwrap.put(addr, idx);
 		}
 		return idx;

@@ -101,7 +101,7 @@ Flickr also infers tag _clusters_, which are sets of tags that occur frequently
 among common photos. (They seem to use an algorithm which infers each cluster
 from on a seed triple of tags.) A tag may belong to more than one cluster; this
 often corresponds to its different semantic senses. We do not add this cluster
-data directly to producers, but we do use it to generate content relationships.
+data directly to producers, but we use it to generate resource relationships.
 
 ### Crawl strategy
 
@@ -128,7 +128,7 @@ the tags with the highest similarities as representative tags, or _rep-tags_.
 We also score documents based on which rep-tags are associated with them; the
 highest-scored are labelled as representative documents, or _rep-documents_.
 
-We generate content relationships as follows: for each producer $p_0$ we select
+We generate resource relationships as follows: for each producer $p_0$ we select
 the producers whose resource sets contain many of its rep-documents. We call
 these the _related producers_. For each related producer $p$, we infer tags to
 link to it with, by calculating intersections between the rep-tags of $p$, and
@@ -139,7 +139,7 @@ predictable selection of tags, than merely taking the intersection of the
 rep-tags of $p_0$ and $p$. This was hoped to be "more realistic", though this
 is obviously open to considerable debate.
 
-We then produce indexes according to their resource sets and these content
+We then produce indexes according to their resource sets and these resource
 relationships, using the method described [above](#object-production).
 
 Our data set does not have any natural entities that, we believe, can provide
@@ -165,7 +165,7 @@ not consider the details of each detected algorithm; rather, we only wanted a
 quick-and-easy way to achieve the properties listed above.
 
 We construct the resource set of each super-producer from the union of those of
-their child producers. We generate content relationships in a similar way to
+their child producers. We generate resource relationships in a similar way to
 our original producers, and produce tgraphs similarly too.
 
 Lastly, we generate ptables. We simply have each user-producer link to the
@@ -176,52 +176,157 @@ are taken straight from the unprocessed data set.
 
 # Measurements
 
-- ./run.sh -d../z/small -s51114580@N00 -i1000 -n64 -v2 google
-- ./run.sh -d../z/small -s8072015@N04 -i1000 -n256 -v3 google
-stats.closeness("8072015@N04", "google")
-stats.closeness("51114580@N00", "google")
+_We were far behind schedule by the time we finished coding both the search
+application and the sample generator, and so we had very little time to devise
+a comprehensive and precise set of tests. What follows is our attempt to derive
+some specific measurement metrics that might give a meaningful, if extremely
+rough, idea on the performance of our system, in the limited time we had left._
+
+_The actual execution of these measurements on the results we obtained, are
+described in [testing - full testing](execute.html#full-testing)._
+
+## Address scheme
 
 - compare inferred address scheme with true address scheme
 - test whether these match our expectations (nodes further out are "more general")
-- basically, some measure of how similar two graphs are?
+[MORE]
 
-query test:
+Two measures of address scheme "similarity":
 
-1. score (f1_score, precision, recall)
-2. steps to run the algorithm
-3. closeness(id, tag)
+Local
+:	We calculate the ideal scheme from our crawl data, restricted to only the
+	tags that are part of the subject scheme.
+World
+:	We calculate the ideal scheme from our entire crawl data, limited to $n$
+	tags, where $n$ is the number of tags in the subject scheme.
 
-(1) is dependent variable, it's what we're interested in
-(2) is not that interesting since we expect recall better, and
-(3) independent variable
+In both cases, we score the subject address scheme using the Jaccard index
+(|intersection| / |union|) over the two edge sets (subject vs ideal), which
+gives a measure of their similarity (0 is worst, 1 is best).
 
-plot (1) against (3) for a small set of (2)
-set of (2) we can take to be [32, 64, 128, 256]
+## Query results
 
+Given a map of queries to their results $\{ (z,t) : R \}$ we want a way of
+scoring the result, and comparing this against a measurement of how ideally
+"hard" the query would have been to satisfy.
 
-more sophisticated score would take into account the distance between results docs and actual docs
+In terms of plotting a graph, the query rating is our independent variable, and
+the results score is our dependent variable.
 
+### Results score
 
+There are a few standard ways of scoring a set of results for a query. Let $S$
+be the documents associated with tag $t$ (which we know from our data sample),
+and $R$ be the results returned by our search application. Then:
 
- This provides a measure of how quickly
-information can flow from one area of the graph to another, assuming
-only the structure of the graph, and perfect conditions.
+Precision
+:	$p = |R \cap S| / |R|$
+Recall
+:	$r = |R \cap S| / |S|$
+F1-score
+:	$f = 2pr / (p+r) = 2 |R \cap S| / (|S| + |R|)$
 
-[1] provides a definition of closeness:
+It is widely acknowledged that acheiving high $p$ _and_ $r$ is hard, so we will
+consider these separately. $f$ is just the harmonic mean of $p$ and $r$, which
+will be high only if both $p$ and $r$ are high.
 
-  C(s) = sum[t in G] { 2 ^ -d(s,t) }
+### Query rating
 
-where s,t are vertices, and d(s,t) is the length of the shortest path
-between them. We extend this to subsets of vertices:
+As for the "difficulty" of a query, we were not aware of any existing metric
+that could be neatly applied to our system, with all its network components. So
+we tried to come up with our own metric.
 
-  C(S, T) = sum[t in T] { mean[s in S] { 2 ^ -d(s, t) } }
+The "difficulty" can be interpreted as the "closeness" between a seed identity,
+and the subject tag for a query. This is a vague concept, so we must find a way
+to make it specific. We use the following approach (which is very arbitrary,
+but the best we could come up with in the time we had left):
 
-The values in our graph are probabilities, which is a multiplicative
-distance metric. Converting this to an additive metric means taking the
-negative log (ie. converting to entropy), giving d(s,t) = -log p(s,t).
-This is the form we actually calculate.
+We start by looking at existing measures of closeness. One standard definition
+for the closeness of a node $v$ in a graph, is the inverse-sum of the geodesic
+distances to all other nodes[REF]. This does not work for disconnected graphs
+where distances can be infinite; variants that work around this, include using
+the sum-inverse[REF] and sum-inverse-exponent[REF] of the distances instead.
 
-TODO needs tweaking, why min/sum/max/etc/whatever? and also normalise
-against "size" of tag
+We look at this last version more closely; its advantages include having closed
+formulas for closeness in simple graphs (stars, lines, etc). The closeness of a
+node $v$ in graph $G = (V, E)$ is defined:
 
-[1] Dangalchev, C. Residual closeness in networks, 2006.
+$$
+C(v_0, G) = \sum_{v \in V \setminus v_0} 2^{-d_G(v_0, v)}
+$$
+
+where $d_G(v_0, v)$ is the geodesic distance from $v_0$ to $v$ in $G$.
+
+A rough interpretation for this is how easily one can get from $v_0$ to all the
+other parts of the graph as a whole. Hand-waving, this is along the lines of
+what we want to use as the "difficulty" of a query - getting from our source
+identity to the relevant target documents.
+
+Before we continue, we should make precise exactly what we want to get from,
+and what we want to get to. Our search application starts from a seed identity
+$z$, and traverses several networks to reach a set of result documents $R$
+hopefully relevant to $t$. We can make our "closeness" measure derivation
+easier, by considering only one network plane - the indexes network.
+
+We define "source" nodes $V_s$ to be the indexes that are present in $z$'s own
+ptable, plus some of indexes present in the ptables of their friends.[^meassr]
+We define "target" nodes $V_t$ to be the indexes that hold documents associated
+to $t$. This problem is now reduced to finding the "closeness" from $V_s$ to
+$V_t$, in the same graph (i.e. the indexes network).
+
+[^meassr]: for our sample data, we select the "personal index" of each friend,
+ie. the index produced from the user-producer of that friend, rather than the
+group-producers. This reduces the cost of the calculation, whilst keeping the
+basic idea of what we want to measure.
+
+We can tweak the above measure to give the closeness of $v_0$ relative to a
+subset $V_t$ of the nodes, rather than the entire graph:
+
+$$
+C(v_0, V_t) = \sum_{v \in V_t} 2^{-d_G(v_0, v)}
+$$
+
+(We leave out the $\setminus v_0$ requirement; this was only added in [REF] so
+the closeness of an isolated graph is $0$. Further, $v_0$ is always present
+in $V$, so it always removes a constant value; however in our extension below,
+this isn't true, and we mustn't make an arbitrary non-constant adjustment.)
+
+We can tweak this further, to give the closeness of a set of nodes $V_s$
+relative to $V_t$, rather than a single source node:
+
+$$
+C(V_s, V_t) = \sum_{v \in V_t} \sum_{u \in V_s} 2^{-d_G(u, v)} / |V_s|
+$$
+
+We have $|V_s|$ as a normalisation factor because we doesn't need to traverse
+through all the seed indexes to reach a target index; on the other hand, we
+don't use $min_{u \in V_s}$ either, because having more seed indexes will
+result in more work, since we can't predict which index is the minimum.
+
+(Of course, the above definitions all assume an additive distance relation. So
+in our calculations, we first convert probability attributes to entropy ones.)
+
+Our intuition is that $C(V_s, V_t)$ will increase linearly [MORE]
+
+A more sophisticated rating metric might be to calculate the smallest multipath
+between $V_s$ and $V_t$ (i.e. minimal subgraph that contains all paths from
+$V_s$ to $V_t$). However, this will probably be much more complex to calculate
+efficiently; we did not have any time to explore this.
+
+### Query steps
+
+A third variable that we have so far ignored above is the number of steps to
+run our search application for - recall that there is no termination condition
+other than what the user says, and beyond that, searching the entire network.
+
+As the number of steps increases, we expect that recall will increase, whereas
+precision will increase until "near" results are exhausted, then hopefully
+only decrease slightly. It would be nice to evaluate this more precisely, but
+we have no time for this.
+
+However, it's trivial to have the system print out a results report after a
+given number of steps $s$, then continue and repeat. We will do this for all
+queries, with $s \in \{ 32, 64, 128, 256 \}$, and plot (results score) vs
+(query rating) as described above, for the results at each of these steps, and
+make brief comments on these sets of evaluations.
+

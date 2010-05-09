@@ -6,34 +6,39 @@
 ## Glossary
 
 arc
-:	a directed relation $e = (v_s, v_t)$ from node $v_s$ to node $v_t$.
+:	A directed relation $e = (v_s, v_t)$ from node $v_s$ to node $v_t$.
+degree, in-degree, out-degree (of a node-set $V$)
+:	See "neighbour (of a node-set $V$)". the *-degree is just the number of
+	*-neighbours
 document
-:	a storage object that can be the target of some query. This could include
+:	A storage object that can be the target of some query. This could include
 	(eg.) multimedia or software; for simplicity, we'll refer to these all as
 	"document".
 identity
-:	a node ("user") on the social network
-in-arc, in-degree, in-node (of a subject node)
-:	respectively: (an incoming arc, the total number of incoming arcs, a
-	neighbour on the other side of an incoming arc) of the subject node.
+:	A node ("user") on the social network
+independent union (of a set of probabilities $P$)
+:	The probability of at least one event in $P$, assuming all the events are
+	independent, given by $1 - \prod_{p \in P} (1 - p)$.
 local view
-:	for a remote object $x$, the local view $\ddotx$ holds the parts of $x$
-	that have been retrieved from the network, ie. data that is immediately
-	available to the local system. $\ddotx$ has the ability to distinguish
-	between items found not to exist in $x$, and items not yet loaded.
-neighbour (of a subject node)
-:	a node separated from the subject node by a single arc
+:	For a remote object $x$, the local view holds the parts of $x$ that have
+	been retrieved from the network, ie. data that is immediately available to
+	the local system. It can distinguish between items found not to exist in
+	$x$, and items not yet loaded.
+neighbour, in-node, out-node (of a node $v$)
+:	A node separated from $v$ by a single arc. We abbreviate "in-neighbour",
+	"out-neighbour" to just "in-node", "out-node". We denote the set of all
+	neighbours, in-nodes, out-nodes, of $v$ as $\nbrv$, $\predv$, $\succv$.
+neighbour, in-node, out-node (of a node-set $V$)
+:	We define $\nbrV = (\bigcup_{v \in V} \nbrv) \setminus V$; and $\predV$,
+	$\succV$ similarly.
 node
-:	in the context of a graph or a network, a unique individual
-out-arc, out-degree, out-node (of a subject node)
-:	respectively: (an outgoing arc, the total number of outgoing arcs, a
-	neighbour on the other side of an outgoing arc) of the subject node.
-semantics
-:	this term is used in two different senses; hopefully the context should
-	give enough disambiguation: the meaning of tags, w.r.t. the end-user; or
-	the meaning of some concept, wrt. the theory of this system.
+:	In the context of a graph or a network, a unique individual
+resource relationship, route
+:	We write $p \rightarrow^t p'$ to mean that $p$ points to $p'$ via tag $t$.
+	In the relevant contexts (e.g. if $p$, $p'$ are tgraphs / indexes), this
+	also means that $p$ defines an arc $(t, p')$ as a resource.
 tag
-:	a semantic unit used to describe documents in a useful way to end users.
+:	A semantic unit used to describe documents in a useful way to end users.
 
 ## Data structures
 
@@ -124,7 +129,10 @@ etc etc etc
 [MORE]
 
 
-http://research.microsoft.com/en-us/projects/trueskill/details.aspx
+TrueSkill http://research.microsoft.com/en-us/projects/trueskill/details.aspx
+
+Dangalchev, C. Residual closeness in networks, 2006.
+
 
 
 # Meta

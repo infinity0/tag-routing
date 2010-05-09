@@ -1,9 +1,5 @@
 == Urgent tasks ==
 
-DOCUMENT NOW:
-- notation of resource links: $p_0 \rightarrow^t p$.
-- what "independent union" means
-
 <object data="../stat/tags.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
 
 POTENTIAL CUTS:
@@ -17,6 +13,7 @@ POTENTIAL CUTS:
 	derivation "routing - constructing output" - <97
 - execution:
 	derivation "The type of attributes can also be parameterised" - <177
+	derivation "We start by looking at existing measures of closeness" - 560
 (~750)
 "The interaction between layers is co-ordinated by implementing each layer as a state machine"
 
