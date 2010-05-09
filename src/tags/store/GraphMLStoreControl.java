@@ -8,8 +8,10 @@ import tags.util.Union.U2;
 import tags.util.Maps.U2Map;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 
 import tags.io.TypedXMLGraph;
 import org.apache.commons.collections15.map.ReferenceMap;
@@ -48,8 +50,9 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 	final protected TypedXMLGraph<T_PTB, N, U, S> socnet;
 	final protected ReferenceMap<N, Map<T_PTB, Map<N, S>>> idsuccs;
 	final protected ReferenceMap<N, TypedXMLGraph<T_TGR, N, U, W>> tgraphs;
-	final protected Map<N, DirectoryTGraph<N, U, W>> tgraphs_unwrap;
 	final protected ReferenceMap<N, TypedXMLGraph<T_IDX, N, U, W>> indexes;
+	final protected Map<N, DirectoryTGraph<N, U, W>> tgraphs_unwrap;
+	final protected Map<N, DirectoryIndex<N, W>> indexes_unwrap;
 
 	/**
 	** @see #GraphMLStoreControl(File)
@@ -78,6 +81,7 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 		this.tgraphs = new ReferenceMap<N, TypedXMLGraph<T_TGR, N, U, W>>();
 		this.indexes = new ReferenceMap<N, TypedXMLGraph<T_IDX, N, U, W>>();
 		this.tgraphs_unwrap = new HashMap<N, DirectoryTGraph<N, U, W>>();
+		this.indexes_unwrap = new HashMap<N, DirectoryIndex<N, W>>();
 	}
 
 	@Override public Map<N, S> getFriends(N id) throws IOException {
@@ -108,6 +112,9 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 	}
 
 	@Override public U2Map<N, N, W> getIndexOutgoing(N addr, N src) throws IOException {
+		DirectoryIndex<N, W> idxu = getIndexUnwrap(addr);
+		if (idxu != null) { return idxu.getOutgoing(src); }
+
 		TypedXMLGraph<T_IDX, N, U, W> idx = getIndex(addr);
 		Map<T_IDX, Map<N, W>> out = idx.getSuccessorTypedMap(src);
 		if (out == null) { return null; } // can't use ?: due to shitty broken type inference
@@ -138,14 +145,29 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 	** @return {@code null} if the TGraph doesn't exist as a DirectoryTGraph
 	*/
 	protected DirectoryTGraph<N, U, W> getTGraphUnwrap(N addr) throws IOException {
-		DirectoryTGraph<N, U, W> graph = tgraphs_unwrap.get(addr);
-		if (graph == null) {
+		DirectoryTGraph<N, U, W> tgr = tgraphs_unwrap.get(addr);
+		if (tgr == null) {
 			File base = new File(dir_tgr, addr.toString());
 			if (!base.isDirectory()) { return null; }
-			graph = new DirectoryTGraph<N, U, W>(base);
-			tgraphs_unwrap.put(addr, graph);
+			tgr = new DirectoryTGraph<N, U, W>(base);
+			tgraphs_unwrap.put(addr, tgr);
 		}
-		return graph;
+		return tgr;
+	}
+
+	/**
+	** @return {@code null} if the TGraph doesn't exist as a DirectoryTGraph
+	*/
+	protected DirectoryIndex<N, W> getIndexUnwrap(N addr) throws IOException {
+		DirectoryIndex<N, W> idx = indexes_unwrap.get(addr);
+		if (idx == null) {
+			File base = new File(dir_idx, addr.toString());
+			if (!base.isDirectory()) { return null; }
+			idx = new DirectoryIndex<N, W>(base);
+			System.out.println("loaded index at :" + addr);
+			indexes_unwrap.put(addr, idx);
+		}
+		return idx;
 	}
 
 	/**
@@ -154,23 +176,34 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 	protected TypedXMLGraph<T_TGR, N, U, W> getTGraph(N addr) throws IOException {
 		TypedXMLGraph<T_TGR, N, U, W> graph = tgraphs.get(addr);
 		if (graph == null) {
-			graph = makeTypedXMLGraph(T_TGR.class);
-			graph.load(GZIPReader(new File(dir_tgr, addr.toString() + ".graphmlz")));
-			graph.setVertexPrimaryKey(NODE_ID);
-			graph.setDefaultVertexAttribute(NODE_ATTR);
-			graph.setDefaultEdgeAttribute(ARC_ATTR);
+			try {
+				graph = makeTypedXMLGraph(T_TGR.class);
+				graph.load(GZIPReader(new File(dir_tgr, addr.toString() + ".graphmlz")));
+				graph.setVertexPrimaryKey(NODE_ID);
+				graph.setDefaultVertexAttribute(NODE_ATTR);
+				graph.setDefaultEdgeAttribute(ARC_ATTR);
+			} catch (RuntimeException e) {
+				throw new IOException("couldn't initialise tgraph: " + addr, e);
+			}
 			tgraphs.put(addr, graph);
 		}
 		return graph;
 	}
 
+	/**
+	** @throws IOException if the TGraph doesn't exist as a TypedXMLGraph
+	*/
 	protected TypedXMLGraph<T_IDX, N, U, W> getIndex(N addr) throws IOException {
 		TypedXMLGraph<T_IDX, N, U, W> graph = indexes.get(addr);
 		if (graph == null) {
-			graph = makeTypedXMLGraph(T_IDX.class);
-			graph.load(GZIPReader(new File(dir_idx, addr.toString() + ".graphmlz")));
-			graph.setVertexPrimaryKey(NODE_ID);
-			graph.setDefaultEdgeAttribute(ARC_ATTR);
+			try {
+				graph = makeTypedXMLGraph(T_IDX.class);
+				graph.load(GZIPReader(new File(dir_idx, addr.toString() + ".graphmlz")));
+				graph.setVertexPrimaryKey(NODE_ID);
+				graph.setDefaultEdgeAttribute(ARC_ATTR);
+			} catch (RuntimeException e) {
+				throw new IOException("couldn't initialise index: " + addr, e);
+			}
 			indexes.put(addr, graph);
 		}
 		return graph;
@@ -188,6 +221,7 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 	public enum T_TGR { t, g }
 	public enum T_IDX { d, t, h }
 	public enum T_TGR_UNW { w, t, g }
+	public enum T_IDX_UNW { d, h }
 
 	public static Reader GZIPReader(File fn) throws IOException {
 		return new InputStreamReader(new GZIPInputStream(new FileInputStream(fn)));
@@ -205,30 +239,41 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 		}
 	}
 
-	public static class DirectoryTGraph<N, U, W> {
+	public static class DirectoryIndex<N, W> extends DirectoryContainer<N, W> {
 
-		final public File base;
-		final protected ReferenceMap<String, Map<String, List>> buckets;
+		protected SoftReference<Set<N>> node_set;
+
+		public DirectoryIndex(File base) throws IOException {
+			super(base);
+			this.node_set = new SoftReference<Set<N>>(null);
+		}
+
+		protected Set<N> getNodeSet() throws IOException {
+			Set<N> nset = node_set.get();
+			if (nset == null) {
+				nset = new HashSet<N>(this.<List<N>>cast(parseJSON("nodes", true)));
+				if (nset == null) { throw new IOException("node set doesn't exist"); }
+				node_set = new SoftReference<Set<N>>(nset);
+			}
+			return nset;
+		}
+
+		public U2Map<N, N, W> getOutgoing(N src) throws IOException {
+			if (!getNodeSet().contains(src)) { return null; }
+			return super.getOutgoing(src, T_IDX_UNW.d.ordinal(), T_IDX_UNW.h.ordinal());
+		}
+
+	}
+
+	public static class DirectoryTGraph<N, U, W> extends DirectoryContainer<N, W> {
+
 		protected SoftReference<Map<N, U>> node_map;
 
-		final protected long mask;
-		final protected String fmtstr;
-		final protected Map attributes;
-
-		@SuppressWarnings("unchecked")
 		public DirectoryTGraph(File base) throws IOException {
-			if (!base.isDirectory()) {
-				throw new IllegalArgumentException("not a directory: " + base);
-			}
-			this.base = base;
-			this.buckets = new ReferenceMap<String, Map<String, List>>();
-			this.attributes = parseJSON("attributes", false);
-			this.mask = (Long)attributes.remove("mask");
-			this.fmtstr = "%0" + Long.toHexString(mask).length() + "x";
+			super(base);
 			this.node_map = new SoftReference<Map<N, U>>(null);
 		}
 
-		@SuppressWarnings("unchecked")
 		public U getNodeAttr(N src) throws IOException {
 			U attr = getNodeMap().get(src);
 			//System.out.println("loaded " + src + " in " + base + ": " + attr);
@@ -238,41 +283,64 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 			//return tuple == null? null: (U)tuple.get(T_TGR_UNW.w.ordinal());
 		}
 
-		@SuppressWarnings("unchecked")
-		public U2Map<N, N, W> getOutgoing(N src) throws IOException {
-			List tuple = getTuple(src);
-			if (tuple == null) { return null; }
-			Map<N, W> out_t = (Map)tuple.get(T_TGR_UNW.t.ordinal());
-			//System.out.println(out_t.keySet());
-			Map<N, W> out_g = (Map)tuple.get(T_TGR_UNW.g.ordinal());
-			return Maps.uniteDisjoint(out_t, out_g);
-		}
-
-		@SuppressWarnings("unchecked")
 		protected Map<N, U> getNodeMap() throws IOException {
 			Map<N, U> nmap = node_map.get();
 			if (nmap == null) {
-				nmap = (Map<N, U>)parseJSON("nodes", true);
+				nmap = cast(parseJSON("nodes", true));
 				if (nmap == null) { throw new IOException("node map doesn't exist"); }
 				node_map = new SoftReference<Map<N, U>>(nmap);
 			}
 			return nmap;
 		}
 
-		@SuppressWarnings("unchecked")
-		protected Map parseJSON(String addr, boolean ignore) throws IOException {
+		public U2Map<N, N, W> getOutgoing(N src) throws IOException {
+			if (!getNodeMap().containsKey(src)) { return null; }
+			return super.getOutgoing(src, T_TGR_UNW.t.ordinal(), T_TGR_UNW.g.ordinal());
+		}
+
+	}
+
+	public static class DirectoryContainer<N, W> {
+
+		final public File base;
+		final protected ReferenceMap<String, Map<String, List>> buckets;
+
+		final protected long mask;
+		final protected String fmtstr;
+		final protected Map attributes;
+
+		public DirectoryContainer(File base) throws IOException {
+			if (!base.isDirectory()) {
+				throw new IllegalArgumentException("not a directory: " + base);
+			}
+			this.base = base;
+			this.buckets = new ReferenceMap<String, Map<String, List>>();
+			this.attributes = cast(parseJSON("attributes", false));
+			this.mask = this.<Long>cast(attributes.remove("mask"));
+			this.fmtstr = "%0" + Long.toHexString(mask).length() + "x";
+		}
+
+		protected U2Map<N, N, W> getOutgoing(N src, int i_map0, int i_map1) throws IOException {
+			List tuple = getTuple(src);
+			if (tuple == null) { return null; }
+			Map<N, W> out_t = cast(tuple.get(i_map0));
+			//System.out.println(out_t.keySet());
+			Map<N, W> out_g = cast(tuple.get(i_map1));
+			return Maps.uniteDisjoint(out_t, out_g);
+		}
+
+		protected Object parseJSON(String addr, boolean ignore) throws IOException {
 			try {
 				File fn = new File(base, addr+EXT);
 				if (!fn.exists() && ignore) { return new HashMap(); }
-				return (Map)JSON.get().parse(GZIPReader(fn));
+				return JSON.get().parse(GZIPReader(fn));
 			} catch (ParseException e) {
-				throw new IOException("bad data format", e);
+				throw badData(e);
 			} catch (ClassCastException e) {
-				throw new IOException("bad data format", e);
+				throw badData(e);
 			}
 		}
 
-		@SuppressWarnings("unchecked")
 		protected List getTuple(N src) throws IOException {
 			String tag = src.toString();
 			CRC32 crc = new CRC32();
@@ -281,7 +349,7 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 
 			Map<String, List> bucket = buckets.get(bid);
 			if (bucket == null) {
-				bucket = (Map<String, List>)parseJSON(bid, true);
+				bucket = cast(parseJSON(bid, true));
 				buckets.put(bid, bucket);
 			}
 			return bucket.get(tag);
@@ -294,6 +362,22 @@ public class GraphMLStoreControl<N, U, W, S> implements StoreControl<N, N, N, U,
 				return new JSONParser();
 			}
 		};
+
+		/**
+		** @throws IOException if the cast failed
+		*/
+		@SuppressWarnings("unchecked")
+		final protected static <T> T cast(Object o) throws IOException {
+			try {
+				return (T)o;
+			} catch (ClassCastException e) {
+				throw badData(e);
+			}
+		}
+
+		final protected static IOException badData(Exception e) {
+			return new IOException("bad data format", e);
+		}
 
 	}
 

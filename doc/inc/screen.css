@@ -21,9 +21,14 @@ h1.title { margin-top: 0; }
 	z-index: 99;
 }
 
+#mainmenu li.aux {
+	float: right;
+	margin-right: 1.6em;
+}
+
 #mainmenu li {
 	display: inline;
-	margin: 0 1em;
+	margin: 0 0.8em;
 }
 
 #TOC {

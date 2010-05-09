@@ -20,18 +20,12 @@ POTENTIAL CUTS:
 (~750)
 "The interaction between layers is co-ordinated by implementing each layer as a state machine"
 
-TODO NOW:
+== Tasks ==
+
+algorithm
 - actually implement the traversal algorithms described in design.md.txt;
   current implementation uses much simpler and more questionable algorithms.
-
-FIXME NOW:
 - make a better ValueComposer, turns out Mean*Composer is actually pretty shit
-- needs to give bigger weight to arcs/nodes defined by *lots of people* (cf.
-  youtube's decision to drop the star ratings and just go for like/dislike)
-- add this to the analysis
-- security implications here...
-
-== Tasks ==
 
 scraper has deadlock issues
 - commitGroupPhotos is leaking, but not commitUserPhotos...
