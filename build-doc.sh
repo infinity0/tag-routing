@@ -4,10 +4,12 @@
 SRC="doc"
 BLD="build/doc"
 DOC="site"
+INC="inc"
 RES="res"
 
 mkdir -p "$DOC"
-cp -alT "$SRC/$RES" "$DOC/$RES"
+cp -falT "$SRC/$INC" "$DOC/$INC"
+cp -falT "$SRC/$RES" "$DOC/$RES"
 mkdir -p "$BLD"
 
 cd "$SRC"
@@ -34,7 +36,7 @@ for i in *.md.txt; do
 	  -e 's/\\row/\\mathtt{\\mathrm{row}}\\,/g' \
 	  -e 's/\\col/\\mathtt{\\mathrm{col}}\\,/g' \
 	  -e 's/\\com/\\mathtt{\\mathrm{com}}\\,/g' \
-	"$i" | pandoc -s --toc --smart -c "$RES/common.css" --latexmathml="$RES/LaTeXMathML.js" \
+	"$i" | pandoc -s --toc --smart -c "$INC/common.css" --latexmathml="$INC/LaTeXMathML.js" \
 	  -H "../$SRC/header.html" -B "../$SRC/body_header.html" -A "../$SRC/body_footer.html" > "../$OUT"
 	echo "built $OUT"
 done

@@ -313,22 +313,22 @@ networks have a power-law distribution in several properties, the easiest one
 to calculate being the node degree.
 
 Firstly, we verified that our crawl of the social network satisfies a power-law
-distribution:
+distribution in node-degree:
 
-[DIAG]
+[DIAG] socgr.svg
 
 This is a relatively small sample size (256), but it is clear that it does
 follow the expected distribution.
 
-Then, we tested for a power-law distribution over our generated indexes and
-tgraphs[^testar]:
+Then, we tested for a power-law distribution in node-degree over our generated
+indexes and tgraphs[^testar]:
 
 [^testar]: we model an arc $p_0 \rightarrow p$ if a content-relationship $p_0
 \rightarrow^t p$ exists for any tag $t$.
 
-[DIAG]
+[DIAG] sprdgr.svg
 
-[DIAG]
+[DIAG] prodgr.svg
 
 Clearly, the tgraphs network satisfies a power-law distribution. The plot for
 the indexes network has a split in the data; this can be explained by the way
@@ -340,12 +340,20 @@ explains the discrepancy between odd/even degree frequencies[^testdg].
 We confirmed this by counting only in-degree / out-degree, which both give
 clear power-law distributions:
 
-[DIAG]
+[DIAG] prodgr_i.svg
 
-[DIAG]
+[DIAG] prodgr_o.svg
+
+We also tested for a power-law distribution in the document-count for each tag,
+over our crawled tags:
+
+[DIAG] tags.svg
+
+This suggests that our primary design intuition about being able to partition
+up the space of documents is achievable.[MORE] detailed justification maybe
 
 [^testdg]: this also applies for the social network sample and the generated
-tgraphs network. This discrepancy was not present in these cases, we think,
+tgraphs network. This discrepancy was not visible in these cases, we think,
 because the sample sizes were much smaller.
 
 ## Initial tests
@@ -389,10 +397,12 @@ would have taken us far beyond our time and resource constraints.
 
 ## Full testing
 
-We took a sample of 16 identities and 16 tags [HOW]?
+We took a random sample of 16 identities from our social network crawl, and 16
+tags from our tags crawl.
 
+For each of these, we measured the closeness....
 
-For each of these, we measured the
+[TODO][MORE]
 
 
 

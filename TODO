@@ -4,6 +4,8 @@ DOCUMENT NOW:
 - notation of resource links: $p_0 \rightarrow^t p$.
 - what "independent union" means
 
+<object data="../stat/tags.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
+
 POTENTIAL CUTS:
 - intro:
 	"Another issue is the " - 83
@@ -17,7 +19,6 @@ POTENTIAL CUTS:
 	derivation "The type of attributes can also be parameterised" - <177
 (~750)
 "The interaction between layers is co-ordinated by implementing each layer as a state machine"
-
 
 TODO NOW:
 - actually implement the traversal algorithms described in design.md.txt;
