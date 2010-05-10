@@ -326,7 +326,7 @@ we have no time for this.
 
 However, it's trivial to have the system print out a results report after a
 given number of steps $s$, then continue and repeat. We will do this for all
-queries, with $s \in \{ 32, 64, 128, 256 \}$, and plot (results score) vs
-(query rating) as described above, for the results at each of these steps, and
-make brief comments on these sets of evaluations.
+queries, with $s \in \{ 32, 64, 128 \}$, and plot (results score) vs (query
+rating) as described above, for the results at each of these steps, and make
+brief comments on these sets of evaluations.
 

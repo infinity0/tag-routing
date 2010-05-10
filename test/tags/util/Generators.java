@@ -75,4 +75,6 @@ final public class Generators {
 		return order;
 	}
 
+	public enum TTT { no1, no2, yes }
+
 }

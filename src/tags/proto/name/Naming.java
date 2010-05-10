@@ -272,14 +272,7 @@ extends LayerService<QueryProcess<?, T, A, U, W, S, ?>, Naming.State, Naming.MRe
 				Thread.sleep(proc.env.interval);
 			} while (srv.hasPending() || srv_node.hasPending());
 
-			//try{
 			assert getCompletedTags().contains(tag);
-			//} catch (AssertionError e) {
-			//	for (LocalTGraph<T, A, U, W> view: local.values()) {
-			//		System.out.println(view.addr + " " + view.getCompletedTags() + " " + view.nodeMap() + "\n" + view.arcMap());
-			//	}
-			//	throw e;
-			//}
 
 		} catch (InterruptedException e) {
 			throw new UnsupportedOperationException(e); // FIXME HIGH

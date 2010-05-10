@@ -14,6 +14,7 @@ import java.util.AbstractSet;
 import java.util.AbstractMap;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.NoSuchElementException;
 
 /**
 ** Utilities for {@link Map}s.
@@ -47,6 +48,10 @@ final public class Maps {
 
 		@Override public int hashCode() {
 			return (key == null? 0: key.hashCode()) ^ (getValue() == null? 0: getValue().hashCode());
+		}
+
+		@Override public String toString() {
+			return getKey() + "=" + getValue();
 		}
 
 	}
@@ -88,24 +93,44 @@ final public class Maps {
 		return immutableEntry(en.getKey(), en.getValue());
 	}
 
-	/**
-	** Returns a comparator over the entries of a map, given a comparator for
-	** the values. If the comparator is {@code null}, natural ordering is used.
-	*/
-	public static <K, V> Comparator<Map.Entry<K, V>> entryValueComparator(final Comparator<V> cmp) {
-		return cmp == null?
-		new Comparator<Map.Entry<K, V>>() {
-			@SuppressWarnings("unchecked")
-			@Override public int compare(Map.Entry<K, V> en0, Map.Entry<K, V> en1) {
-				return ((Comparable<V>)en0.getValue()).compareTo(en1.getValue());
+	@SuppressWarnings("unchecked")
+	public static <K, V> Map.Entry<K, V> maxEntryByValue(Map<K, V> map) {
+		Iterator<Map.Entry<K, V>> it = map.entrySet().iterator();
+		Map.Entry<K, V> cur = it.next();
+		K curkey = cur.getKey();
+		V curval = cur.getValue();
+
+		while (it.hasNext()) {
+			Map.Entry<K, V> next = it.next();
+			K nextkey = next.getKey();
+			V nextval = next.getValue();
+			if (((Comparable<V>)nextval).compareTo(curval) > 0) {
+				curkey = nextkey;
+				curval = nextval;
 			}
-		}:
-		new Comparator<Map.Entry<K, V>>() {
-			@Override public int compare(Map.Entry<K, V> en0, Map.Entry<K, V> en1) {
-				return cmp.compare(en0.getValue(), en1.getValue());
-			}
-		};
+		}
+		return Maps.<K, V>immutableEntry(curkey, curval);
 	}
+
+	public static <K, V> Map.Entry<K, V> maxEntryByValue(Map<K, V> map, Comparator<? super V> cmp) {
+		if (cmp == null) { return maxEntryByValue(map); }
+		Iterator<Map.Entry<K, V>> it = map.entrySet().iterator();
+		Map.Entry<K, V> cur = it.next();
+		K curkey = cur.getKey();
+		V curval = cur.getValue();
+
+		while (it.hasNext()) {
+			Map.Entry<K, V> next = it.next();
+			K nextkey = next.getKey();
+			V nextval = next.getValue();
+			if (cmp.compare(nextval, curval) > 0) {
+				curkey = nextkey;
+				curval = nextval;
+			}
+		}
+		return Maps.<K, V>immutableEntry(curkey, curval);
+	}
+
 
 	/**
 	** @see #domain(Iterable)

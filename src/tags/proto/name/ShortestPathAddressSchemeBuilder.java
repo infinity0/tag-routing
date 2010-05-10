@@ -37,6 +37,8 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 
 	@Override public AddressScheme<T, A, W> buildAddressScheme(FullTGraph<T, A, U, W> graph, Set<T> completed, final T seed) {
 		ProtoAddressScheme<T, A, W> scheme = new ProtoAddressScheme<T, A, W>(seed, null);
+		scheme.setTagAttribute(seed, dmetric.getSeedAttr());
+		// FIXME HIGH ugly hack, remove this when we add DistanceMetric to be a part of AddressScheme
 
 		if (!completed.contains(seed)) {
 			scheme.setIncomplete();
@@ -95,6 +97,9 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 				continue;
 			}
 			T tag = node.getT0();
+			U srcu = graph.nodeMap().K0Map().get(tag);
+			scheme.setTagAttribute(tag, dmetric.getAttrFromDistance(seedu, srcu, cur.dist));
+			//System.out.println("set attribute for tag " + tag);
 
 			// tag is not fully loaded, set as incomplete
 			if (!completed.contains(tag)) {
@@ -104,7 +109,6 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 			}
 
 			// "relax" all out-neighbours
-			U srcu = graph.nodeMap().K0Map().get(tag);
 			for (Map.Entry<U2<T, A>, X2<U, W>> en: graph.getOutgoingT(tag).attrMap().entrySet()) {
 				U2<T, A> nb = en.getKey();
 				U dstu = en.getValue()._0;
@@ -123,10 +127,8 @@ public class ShortestPathAddressSchemeBuilder<T, A, U, W, D> implements AddressS
 				}
 			}
 
-			if (!tag.equals(seed)) {
-				scheme.pushNode(node, parent, graph.getIncomingT(tag).nodeAttrMap().K0Map().keySet());
-			}
-			scheme.setTagAttribute(tag, dmetric.getAttrFromDistance(seedu, srcu, cur.dist));
+			if (tag.equals(seed)) { continue; }
+			scheme.pushNode(node, parent, graph.getIncomingT(tag).nodeAttrMap().K0Map().keySet());
 		}
 
 		return scheme;

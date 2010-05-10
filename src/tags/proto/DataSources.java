@@ -116,6 +116,10 @@ public class DataSources<R, L, S> {
 		}
 	}
 
+	public S inferScore(R src) {
+		return score_inf.inferScore(incoming, seed_score, src);
+	}
+
 	/**
 	** Marks a data source as being in use, and creates an empty local view and
 	** infers a score for it.
@@ -133,7 +137,7 @@ public class DataSources<R, L, S> {
 		}
 		L view = view_fac.createLocalView(src, this);
 		local.put(src, view);
-		score.put(src, score_inf.inferScore(incoming, seed_score, src));
+		score.put(src, inferScore(src));
 		return view;
 	}
 
@@ -144,7 +148,7 @@ public class DataSources<R, L, S> {
 		// OPT NORM could do this incrementally instead of re-calculating entire thing
 		score.clear();
 		for (R addr: local.keySet()) {
-			score.put(addr, score_inf.inferScore(incoming, seed_score, addr));
+			score.put(addr, inferScore(addr));
 		}
 	}
 

@@ -50,9 +50,9 @@ public class ProbabilityDistanceMetric implements DistanceMetric<Probability, Pr
 		try {
 			return srcu.conditionalInverse(arcw, dstu);
 		} catch (IllegalArgumentException e) {
-			System.err.println("tried to calculate P(t|s) from P(s)=" + srcu.val + " P(t)=" + dstu.val + " P(s|t)=" + arcw.val);
+			//System.err.println("tried to calculate P(t|s) from P(s)=" + srcu.val + " P(t)=" + dstu.val + " P(s|t)=" + arcw.val);
 			//throw e;
-			return new Probability(1.0);
+			return Probability.MAX_VALUE;
 		}
 	}
 
@@ -81,6 +81,10 @@ public class ProbabilityDistanceMetric implements DistanceMetric<Probability, Pr
 
 	@Override public int compare(Probability d0, Probability d1) {
 		return Double.compare(d1.val, d0.val); // higher probability is "nearer"
+	}
+
+	@Override public Probability getSeedAttr() {
+		return Probability.MAX_VALUE;
 	}
 
 }

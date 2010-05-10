@@ -30,10 +30,12 @@ import tags.util.Arc;
 import tags.util.ProxyMap;
 import tags.util.MapQueue;
 import tags.util.BaseMapQueue;
+import java.util.Collection;
 import java.util.Set;
 import java.util.Map;
 import java.util.HashSet;
 import java.util.HashMap;
+import java.util.EnumMap;
 
 /**
 ** DOCUMENT.
@@ -121,25 +123,50 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 			case REQ_MORE_DATA:
 				// OPT NORM this is really really really wasteful
 				updateResults(scheme);
+
+				Map<ActionChoice, W> choices = new EnumMap<ActionChoice, W>(ActionChoice.class);
+
 				Map.Entry<A, W> idx_en = scheme.getMostRelevant(results.K1Map());
+				if (idx_en != null) {
+					A idx = idx_en.getKey();
+					assert !source.getIncoming(idx).isEmpty();
+					Collection<W> probs = scoreLookups(scheme, idx, getLookups(scheme, idx)).values();
+					choices.put(ActionChoice.add_idx, mod_lku_scr.getPotential(probs));
+				}
+				if (!hasNothingToDo()) {
+					choices.put(ActionChoice.con_lku, queue.peekValue());
+				}
+				if (scheme.isIncomplete()) {
+					T tag = scheme.getIncomplete();
+					Map<A, Set<T>> plku = new HashMap<A, Set<T>>();
+					// OPT LOW use a Maps.fromKeys(keys, value) view instead
+					for (A idx: source.localMap().keySet()) { plku.put(idx, Collections.singleton(tag)); }
+					Collection<W> probs = scoreLookups(scheme, plku).values();
+					choices.put(ActionChoice.add_tag, mod_lku_scr.getPotential(probs));
+				}
 
-				if (idx_en == null) {
-					if (hasNothingToDo()) {
-						// nothing to do, pass request to naming layer
-						proc.naming.recv(Naming.MRecv.REQ_MORE_DATA);
-					}
+				if (choices.isEmpty()) {
+					proc.naming.recv(Naming.MRecv.REQ_MORE_DATA);
+					return;
+				}
 
-				} else {
-					// TODO HIGH need to review this later; the algorithm was decided ad-hoc and
-					// without any forethought. maybe if the difference is above some threshold.
-					if (hasNothingToDo() || scheme.compare(idx_en.getValue(), queue.peekValue()) > 0) {
-						// add an index as a data source
-						A idx = idx_en.getKey();
-						results.K1Map().remove(idx);
-						// TODO HIGH probably limit the number of indexes that can be added before
-						// receiving data back from the network
-						addDataSourceAndLookups(scheme, idx);
-					}
+				Map.Entry<ActionChoice, W> en = scheme.getMostRelevant(choices);
+				//System.out.println(choices + " " + en);
+				switch (en.getKey()) {
+				case con_lku:
+					// continue with lookups
+					break;
+				case add_idx:
+					// add a new index
+					A idx = idx_en.getKey();
+					results.K1Map().remove(idx);
+					// TODO HIGH probably limit the number of indexes that can be added before
+					// receiving data back from the network
+					//addDataSourceAndLookups(scheme, idx);
+					break;
+				case add_tag:
+					proc.naming.recv(Naming.MRecv.REQ_MORE_DATA);
+					break;
 				}
 
 				return;
@@ -157,6 +184,8 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 		return results;
 	}
 
+	private enum ActionChoice { add_idx, con_lku, add_tag }
+
 	private transient Map<A, Set<T>> _completed;
 	public Map<A, Set<T>> getCompletedLookups() {
 		if (_completed == null) {
@@ -169,8 +198,7 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 		return _completed;
 	}
 
-	public int countLookups() {
-		// FIXME HIGH java.util.ConcurrentModificationException observed here, synchronize
+	public synchronized int countLookups() {
 		int s = 0;
 		for (Set<T> tag: completed.values()) {
 			s += tag.size();
@@ -187,9 +215,9 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 	}
 
 	// TODO HIGH this is a major hack...
-	volatile protected int pending = 0;
-	protected boolean hasNothingToDo() {
-		return queue.isEmpty() && pending == 0;
+	protected Set<Lookup<T, A>> pending = new HashSet<Lookup<T, A>>();
+	protected synchronized boolean hasNothingToDo() {
+		return queue.isEmpty() && pending.isEmpty();
 	}
 
 	protected void runLookups() {
@@ -197,9 +225,12 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 
 		try {
 			do {
-				while (pending < proc.env.parallel_idx_lku && !queue.isEmpty()) {
-					srv.submit(Services.newTask(queue.remove()));
-					++pending;
+				synchronized (this) {
+					while (pending.size() < proc.env.parallel_idx_lku && !queue.isEmpty()) {
+						Lookup<T, A> lku = queue.remove();
+						srv.submit(Services.newTask(lku));
+						pending.add(lku);
+					}
 				}
 
 				while (srv.hasComplete()) {
@@ -218,8 +249,10 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 						Set<T> tags = completed.get(lku.idx);
 						if (tags == null) { completed.put(lku.idx, tags = new HashSet<T>()); }
 						tags.add(lku.tag);
+
+						boolean removed = pending.remove(lku);
+						assert removed;
 					}
-					--pending;
 				}
 
 				Thread.sleep(proc.env.interval);
@@ -238,17 +271,29 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 		proc.log("addDataSourceAndLookups: " + addr);
 		// FIXME HIGH sync/race bug here, this method might be called twice with the same argument
 		source.useSource(addr);
-		Map<Lookup<T, A>, W> lku_score = scoreLookups(scheme, Collections.singletonMap(addr, getLookups(scheme, addr)));
-		for (Map.Entry<Lookup<T, A>, W> en: lku_score.entrySet()) { queue.add(en.getKey(), en.getValue()); }
+		submitLookupsToRunQueue(scoreLookups(scheme, Collections.singletonMap(addr, getLookups(scheme, addr))));
 	}
 
 	protected void addLookupsFromNewAddressScheme(AddressScheme<T, A, W> scheme) {
 		proc.log("addLookupsFromNewAddressScheme: " + scheme.tagSet());
 		Map<A, Set<T>> lookups = getLookups(scheme);
 		synchronized (this) { Maps.multiMapRemoveAll(lookups, completed); }
-		Map<Lookup<T, A>, W> lku_score = scoreLookups(scheme, lookups);
 		queue.clear();
-		for (Map.Entry<Lookup<T, A>, W> en: lku_score.entrySet()) { queue.add(en.getKey(), en.getValue()); }
+		submitLookupsToRunQueue(scoreLookups(scheme, lookups));
+	}
+
+	protected synchronized void submitLookupsToRunQueue(Map<Lookup<T, A>, W> lku_score) {
+		for (Map.Entry<Lookup<T, A>, W> en: lku_score.entrySet()) {
+			Lookup<T, A> lku = en.getKey();
+			// skip already running
+			if (pending.contains(lku)) { continue; }
+			// skip already completed
+			Set<T> tags = completed.get(lku.idx);
+			if (tags != null && tags.contains(lku.tag)) { continue; }
+			//System.out.println("add " + lku + " to queue");
+			//System.out.println("add " + lku + " to " + queue.map().keySet());
+			queue.add(lku, en.getValue());
+		}
 	}
 
 	protected synchronized void updateResults(AddressScheme<T, A, W> scheme) {
@@ -289,6 +334,10 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 				tags.addAll(scheme.ancestorMap().K0Map().get(tag));
 			}
 		}
+		// seed tag has no ancestors; if idx's incoming tags consist only of the seed tag,
+		// then the loop won't actually add the seed tag
+		tags.add(scheme.seedTag());
+		assert !tags.isEmpty();
 		return tags;
 	}
 
@@ -302,10 +351,23 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 			A idx = en.getKey();
 			Set<T> tags = en.getValue();
 			S idxs = source.scoreMap().get(idx);
+			assert idxs != null;
 
 			for (T tag: tags) {
 				lku_score.put(Lookup.make(idx, tag), mod_lku_scr.getLookupScore(idxs, scheme.arcAttrMap().get(tag)));
 			}
+		}
+		return lku_score;
+	}
+
+	/**
+	** DOCUMENT
+	*/
+	protected Map<Lookup<T, A>, W> scoreLookups(AddressScheme<T, A, W> scheme, A idx, Set<T> tags) {
+		Map<Lookup<T, A>, W> lku_score = new HashMap<Lookup<T, A>, W>();
+		S idxs = source.inferScore(idx);
+		for (T tag: tags) {
+			lku_score.put(Lookup.make(idx, tag), mod_lku_scr.getLookupScore(idxs, scheme.arcAttrMap().get(tag)));
 		}
 		return lku_score;
 	}

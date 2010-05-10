@@ -11,6 +11,8 @@ import java.util.Map;
 /**
 ** DOCUMENT.
 **
+** TODO HIGH {@link DistanceMetric} should at least be a field of this class
+**
 ** @param <T> Type of tag
 ** @param <A> Type of address
 ** @param <W> Type of arc-attribute
@@ -74,6 +76,11 @@ public interface AddressScheme<T, A, W> extends Comparator<W> {
 
 	public T getIncomplete();
 
+	/**
+	** DOCUMENT
+	**
+	** "Higher" score is better.
+	*/
 	public Comparator<W> comparator();
 
 	/**

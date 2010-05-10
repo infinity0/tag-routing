@@ -122,4 +122,12 @@ implements Comparable<Probability>, Formattable {
 		return new Probability(val);
 	}
 
+	public static Probability unionInd(Iterable<Probability> prob) {
+		double union = 1;
+		for (Probability p: prob) {
+			union *= (1 - p.val);
+		}
+		return new Probability(1 - union);
+	}
+
 }

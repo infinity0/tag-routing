@@ -47,4 +47,9 @@ public interface DistanceMetric<D, U, W> extends Comparator<D> {
 	*/
 	public int compare(D d0, D d1);
 
+	/**
+	** FIXME HIGH ugly hack, remove this when we add DistanceMetric to be a part of AddressScheme
+	*/
+	public W getSeedAttr();
+
 }

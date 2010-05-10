@@ -70,7 +70,7 @@ extends LayerService<QueryProcess<I, ?, A, ?, ?, S, Z>, Contact.State, Contact.M
 
 			return;
 		case IDLE:
-			throw new MessageRejectedException("not implemented");
+			throw new MessageRejectedException("received request for more friends; not implemented");
 		}
 	}
 

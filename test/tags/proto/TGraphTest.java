@@ -3,6 +3,7 @@ package tags.proto;
 
 import junit.framework.TestCase;
 import tags.util.Generators;
+import tags.util.Generators.TTT;
 import tags.util.Maps;
 
 import tags.util.SPUProbabilityInferer;
@@ -72,6 +73,15 @@ public class TGraphTest extends TestCase {
 		}
 
 		// TODO HIGH some more tests...
+	}
+
+	public void testAddrSchemeMostRelevant() {
+		AddressScheme<TTT, Long, Probability> scheme = new ProtoAddressScheme<TTT, Long, Probability>(TTT.yes, null);
+		Map<TTT, Probability> test = new EnumMap<TTT, Probability>(TTT.class);
+		test.put(TTT.yes, Probability.MAX_VALUE);
+		test.put(TTT.no1, Probability.MIN_VALUE);
+		test.put(TTT.no2, new Probability(0.5));
+		assertTrue(scheme.getMostRelevant(test).getKey() == TTT.yes);
 	}
 
 	/**

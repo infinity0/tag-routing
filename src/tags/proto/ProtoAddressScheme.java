@@ -43,8 +43,8 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 
 	/**
 	** Construct a new scheme with the given tag as the zeroth (ie. seed) tag.
-	** If {@code cmp} is used, then {@link #getMostRelevant(Set)} will use the
-	** natural ordering for {@code <W>} (it must be {@link Comparable}).
+	** If {@code cmp} is {@code null}, then {@link #getMostRelevant(Set)} will
+	** use the natural ordering for {@code <W>} (cast to {@link Comparable}).
 	*/
 	public ProtoAddressScheme(T src, Comparator<W> cmp) {
 		this.cmp = cmp;
@@ -121,7 +121,7 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 
 	@Override public <K> Map.Entry<K, W> getMostRelevant(Map<K, W> map) {
 		if (map.isEmpty()) { return null; }
-		return Maps.<K, W>immutableEntry(Collections.max(map.entrySet(), Maps.<K, W>entryValueComparator(cmp)));
+		return Maps.maxEntryByValue(map, cmp);
 	}
 
 	@Override public Map.Entry<T, W> getMostRelevant(Set<T> tags) {
@@ -201,6 +201,7 @@ public class ProtoAddressScheme<T, A, W> implements AddressScheme<T, A, W> {
 			if (outgoing.containsKey(t)) {
 				outgoing.get(t).add(node);
 				tinc.add(t);
+				tpre.add(t);
 				tpre.addAll(ancestor.K0Map().get(t));
 			}
 		}

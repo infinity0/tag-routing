@@ -929,11 +929,11 @@ added to the table.
 
 The choice of expansion method proceeds as follows. Define the _potential_
 
-- of a not-yet-added tag $t$, to be the independent union of the potentials of
-  its lookups over all rows $h$.
-- of a not-yet-added index $h$, to be the independent union of the potentials
-  of the lookups that _would be selected_ if $h$ were to be added as a row.
-- of the current lookups queue, to be the highest potential of any lookup
+- of a not-yet-added tag $t$, to be the highest potential of any $(t, h)$ over
+  all rows $h$.
+- of a not-yet-added index $h$, to be the highest potential of any $(t, h)$
+  that _would be selected_ if $h$ were to be added as a row.
+- of the current lookups queue, to be the highest potential of any $(t, h)$
   currently contained within it.
 
 We compare the potential of the incomplete tag $t$, the new-index candidate
