@@ -12,3 +12,11 @@ body {
 	text-align: justify;
 	font-family: "Georgia";
 }
+
+h1 {
+	page-break-before: always;
+}
+
+h1.title {
+	page-break-before: auto;
+}

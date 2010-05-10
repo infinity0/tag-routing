@@ -4,11 +4,9 @@
 
 POTENTIAL CUTS:
 - design:
-	derivation "adding components to a path" - 53
 	derivation "score inferer" - <211
 	derivation "value composer" - <253
-	derivation "routing - constructing output" - <97
-(~500)
+(~400)
 "The interaction between layers is co-ordinated by implementing each layer as a state machine"
 
 unfortun time resource limit constraint

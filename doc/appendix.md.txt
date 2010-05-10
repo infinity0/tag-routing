@@ -110,6 +110,54 @@ For convenience, let this also apply to arc-attribute maps, ie. $\rft E_A =
 
 ## Derivations
 
+### Ranking results
+
+Aggregating the information from various indexes gives us a map $E_{\barh}$ of
+tag-document arcs to attributes. For all $(t, d) : w$, where $w = P(t|d)$, we
+want to normalise this to $(t_0, d) : w'$, where $w' = P(t_0|d)$.
+
+For any tag $t$, let $[t_i]_0^n$ be the shortest path from $t_0$ to $t$, where
+$t = t_n$. From the address scheme, we have the distance between $t$ and $t_0$:
+
+$$
+D(t) = D[t_i]_0^n = \prod_{i=0}^{n-1} P(t_{i+1}|t_i)
+$$
+
+If we assume that the pairs $P(t_{i+1}|t_i)$, along with $P(t_n|d)$, are all
+independent[^routin] of each other, then we have:
+
+$$
+\begin{array}{rl}
+D(t)
+=& \prod_{i=0}^{n-1} P(t_{i+1}|t_i) \\
+=& \prod_{i=0}^{n-1} P(t_{i+1}|t_i, \ldots, t_0) \\
+=& P(t_n, \ldots, t_1|t_0) \\
+\end{array}
+$$
+
+so that:
+
+$$
+\begin{array}{rl}
+D(t) \frac{P(t_0)}{P(t_n)} P(t_n|d)
+=& P(t_n, \ldots, t_1|t_0) \frac{P(t_0)}{P(t_n)} P(t_n|d) \\
+=& P(t_{n-1}, \ldots, t_0|t_n) P(t_n|d) \\
+=& P(t_n, \ldots, t_0|d) \\
+\end{array}
+$$
+
+Since $[t_i]$ is the shortest path, we assume that $P(t_n, \ldots, t_0|d)
+\approx P(t_0|d)$. So, for each $(t, d) : w$, we have:
+
+$$
+w' = D(t) \frac{P(t_0)}{P(t)} w
+$$
+
+as an approximation.
+
+[^routin]: This assumption is unlikely to be true, but it's a common assumption
+in information retrieval, and appears to give reasonable results.
+
 ### Type-parameters
 
 Our design uses several types of objects without making any comment on their
@@ -141,7 +189,6 @@ We end up with seven generic type parameters in total, which are all present in
 the unified interface to the storage layer (`StoreControl`): `<I>` identity,
 `<T>` tag, `<A>` address, `<U>` node-attribute, `<W>` arc-attribute, `<S>`
 score, `<Z>` identity-score.
-
 
 ### Closeness
 
