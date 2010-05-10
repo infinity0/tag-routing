@@ -453,8 +453,8 @@ class SampleStats(object):
 		self.id_h = dict((intern(nsid), vid) for vid, nsid in enumerate(self.prodgr.vs[NID]))
 
 
-	def degreeLogLogPlot(self, g, fp=None, type=ALL):
-		gen = ((log(1+deg), log(1+freq)) for deg, freq in sorted(freq(g.degree(type=type)).iteritems()))
+	def degreePlot(self, g, fp=None, type=ALL):
+		gen = sorted(freq(g.degree(type=type)).iteritems())
 		if not fp: return list(gen)
 		for k, v in gen:
 			print >>fp, k, v

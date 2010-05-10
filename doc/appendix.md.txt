@@ -259,7 +259,11 @@ result in more work, since we can't predict which index is the minimum.
 Of course, the above definitions all assume an additive distance relation. So
 in our calculations, we first convert probability attributes to entropy ones.
 
+## Results
 
+### Query closeness
+
+[DIAG] iframe table
 
 ## Future work
 
