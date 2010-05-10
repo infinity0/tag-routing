@@ -47,7 +47,9 @@ public class ProbabilityIndexComposer<T, A> implements IndexComposer<T, A, Proba
 	** #alpha_2} of 2^-1.
 	*/
 	public ProbabilityIndexComposer() {
-		this(0.0625, 0.5);
+		// FIXME NOW refactor this so it's easier to edit
+		//this(0.0625, 0.5);
+		this(1.0, 1.0);
 	}
 
 	/**

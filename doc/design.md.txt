@@ -165,21 +165,7 @@ Identity
 :	$\forall a,b \in S : D(a,b) = I \iff a = b$
 
 This is consistent with the intuitive notion that "adding components to a path
-never makes it shorter":
-
-$$
-\begin{array} {rcll}
-\forall a,b,c \in S :\\
-             I & \sqsubseteq & D(b,c)              & \quad M \textrm{ non-negative } \\
-D(a,b) \circ I & \sqsubseteq & D(a,b) \circ D(b,c) & \quad M \textrm{ linearly ordered } \\
-        D(a,b) & \sqsubseteq & D(a,b) \circ D(b,c) & \quad \textrm{ identity element } \\
-\end{array}
-$$
-
-A **distance metric** also satisfies $\forall a,b,c \in S : D(a,c) \sqsubseteq
-D(a,b) \circ D(c,b)$, ie. _symmetry_ ("forwards backwards are equally long")
-and _triangle inequality_ ("direct path is shortest"); we won't consider these
-restrictions here.
+never makes it shorter".
 
 We refer to the tuple $(M, I, \sqsubseteq, \circ)$ as the _relation type_. A
 probability-based relation of type $((0, 1], 1, \geq, \times)$ can be converted
@@ -195,16 +181,11 @@ D[t_0, t_1].\cdots.D[t_{n-1}, t_n]$.
 A significant flaw is the lack of a "natural" interpretation for what this
 measure represents. It also gives no information about tag triples, and hence
 cannot distinguish between cases where triple intersection sizes differ greatly
-- although this is more a problem with the tgraph design.[^addrdm]
+- although this is more a problem with the tgraph design.
 
-[^addrdm]: Note also that it isn't a distance _metric_, as it satisfies neither
-symmetry nor the triangle inequality. We were (and still are) unaware of any
-theory that comments on if this is a bad thing, from a routing perspective.
-
-Unfortunately, we didn't have time to explore these issues deeply, to find
-better alternatives. However, it does satisfy the distance relation axioms,
-meaning that we can use Dijkstra's algorithm to construct routing schemes, so
-we decided to stick with it.
+Unfortunately, we didn't have time to find better alternatives. It does satisfy
+the distance relation axioms, meaning that we can use Dijkstra's algorithm to
+construct routing schemes, so we decided to stick with it.
 
 ## Information aggregation
 
@@ -252,15 +233,14 @@ naming      tgraphs                         tags, tag-tag relationships
 routing     indexes                         tag-document relationships
 ---------------------------------------------------------------------------
 
-One can see here that indexes and tgraphs take the position of both agent and
+We can see here that indexes and tgraphs take the position of both agent and
 resource. The output of the social layer is a resource-value map; the naming
 and routing layers both use this as an agent-score map.
 
-As agents, neither tgraphs nor indexes define explicit agent-score judgements.
-In addition to this, they represent immutable information, rather than social
-identities. These were conscious design choices - to encapsulate the problem of
-trust and authentication into a social layer, away from the issues of naming
-and routing.
+Neither tgraphs nor indexes define explicit agent-score judgements. Further,
+they represent immutable information, rather than social identities. These were
+conscious design choices - to encapsulate the problem of authentication and
+trust into a social layer, away from the issues of naming and routing.
 
 This does mean that the problem is different from that of a trust metric. We
 won't attempt to formalise this, but intuitively, for a given non-seed agent
@@ -295,7 +275,13 @@ multiplication - as well as a simple space of values - $[0, 1]$.[^attrva]
 
 [^attrva]: More sophisticated attributes might describe a belief distribution
 over its possible values. When aggregating multiple judgements that agree with
-each other, we could reduce the variance of the aggregated attribute.[EXTN]
+each other, we could reduce the variance of the aggregated attribute.
+We can then use an algorithm that
+reduces the variance of an aggregated distribution, formed from many similar
+values. (Using the mean would fit this, as per the Central Limit Theorem.) A
+recently-developed system for evaulating skill over the result of many games,
+uses similar principles.[REF] [MORE]
+[EXTN]
 
 In some contexts, the set of useful resources is sparse over the set of all
 possible resources[^attrsp] - e.g. if the attribute represents an endorsement,
@@ -310,16 +296,6 @@ we address this issue by requiring an input heuristic that can help to resolve
 this ambiguity, based on other information.
 
 [^attrsp]: from a given agent's point of view
-
-A related idea is negative attributes, which would represent a judgement that
-the resource is malicious or dangerous in some sense, rather than neutral or
-"useless". In a system where it's possible to act aggressively, these weights
-could provide information on who to attack (or set up defences against).
-
-It's not clear how this applies to our system, which is a network of data and
-so only supports passive traps rather than active attacks. It's also unclear
-how probability-based attributes could be extended to work this way. So for
-now, we ignore this possibility.[EXTN]
 
 ### Simplification
 
@@ -346,7 +322,7 @@ Return
 We follow this approach in our project. Even these simpler problems, however,
 are fairly deep, and developing robust techniques to solve them could take up a
 whole other project. Given our time constraints, we only implement a crude and
-simple solution for each of these, which are given below. [EXTN]
+simple solution for each of these. [EXTN]
 
 (Note that "infer scores" is a generalisation of trust metrics, which use an
 implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$, i.e. a single
@@ -595,14 +571,6 @@ Note that data retrieval can in theory proceed until the entire network has
 been searched. In practice, we only automatically send requests for more data
 until a set number of results have been returned; after that we wait for user
 input before retrieving more.
-
-The interaction between layers is co-ordinated by implementing each layer as a
-state machine - it cannot receive requests during a state transition (ie. when
-it is currently processing a previous request). This simplifies the execution
-logic, and reduces the number of critical objects that need to be synchronised
-on. The state machines generally follow the pattern of `[NEW → AWAIT_INPUT ↔
-IDLE]`; specific cases are discussed in the _traversing objects_ sections of
-the various layers, below.
 
 [^laytb]: Our implementation doesn't actually use a table structure, but this
 is a simple and useful description, which is basically equivalent.

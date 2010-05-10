@@ -5,9 +5,6 @@
 
 ## Background
 
-Searching for information is an essential component of any network. Without it,
-there might as well not be a network in the first place.
-
 The world wide web is the largest information network ever created; currently,
 search is a service; providers employ crawlers to navigate this network, and
 extract and summarise information from the documents visited, into a form which
@@ -34,14 +31,6 @@ published an article that the CEO disliked. [REF]
 [^censor2]: Google was also forced by the Chinese government to censor many
 search results from its service in China. [REF]
 
-Another issue is the depth and granularity of search topics. Most of us don't
-use a search provider for every item of information we need; instead, we often
-issue a query that gives us a selection of related sites from all over the web,
-then manually browse within these sites to target our needs more precisely. In
-addition, some websites have non-public information, or specialist knowledge
-that generic search algorithms aren't able to index effectively. In these
-cases, central index databases are inadequate.
-
 An alternative approach is to perform dynamic routing using query semantics.
 Instead of a simple client-provider model where a single query is a single
 transaction, we propose a co-operative model where queries are routed between
@@ -54,12 +43,6 @@ Of course, decentralised systems have their own issues, and these are briefly
 discussed [below](#potential-issues). We believe that these are all practical
 issues that are ultimately solvable in the long run, whereas centralisation is
 an inherent problem in itself.
-
-Imagine your browser acting like a router; you type in a search query and it
-automatically follows links between pages to reach what you want. Of course,
-this is a long way off, and it may well be beyond the capabilities of current
-hardware and networks, but hopefully this project makes a useful contribution
-in that direction.
 
 ## Related systems
 

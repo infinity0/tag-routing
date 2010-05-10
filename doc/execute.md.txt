@@ -15,30 +15,25 @@ so we chose Apache Ant for our build system. This is fairly simple and flexible
 enough for our purposes. Maven was also considered, but dropped as we didn't
 think our project needed such a heavyweight solution.
 
-We spent a moderate amount of our effort creating test code as part of the
-development process. We did _not_ attempt to write a unit test for every single
-class that was implemented. This is not feasible for many classes, since many
-of them are components of a larger system, and cannot function at all without
-the entire system in place. However, for utility functions, data structure
-classes, and other "standalone" components, we did write fairly extensive tests
-for all of these. In our experience, they are the most critical components to
-test, and eliminating bugs early helps greatly when finally testing the actual
+We spent a moderate amount of effort creating test code during the development
+process. We did _not_ attempt to write a unit test for every single class. This
+is not feasible for many classes, which are components of a larger system and
+cannot function at all without the entire system in place. However, for utility
+functions, data structure classes, and other "standalone" components, we did
+write fairly extensive tests. In our experience, they are the most critical
+components, and eliminating bugs early helps greatly when finally testing the
 application-specific logic. We used JUnit as the framework for our tests; this
 is easily integrated into the build process via Ant.
-
-Our repository has a fairly simple layout; we have seperate source directories
-for application code and test code, and a source directory for documentation.
-We used github to publish and backup our repository.
 
 ## Search application
 
 We decided to develop the search application in Java. We were aware that our
 design had many areas for future improvement, so we wanted our implementation
 to be easily maintainable and extensible. We felt that the strict type safety
-and class inheritance of Java would aid in achieving such a goal, because it
-allows us to design a system architecture (and its component interfaces) to be
-both self-enforcing and self-documenting. This is especially useful when coding
-individual classes, where it's easy to forget about the overall picture.
+and class inheritance of Java would aid in achieving such a goal; it allows us
+to design a system architecture (and its component interfaces) to be both
+self-enforcing and self-documenting. This is useful when coding individual
+classes, where it's easy to forget about the overall picture.
 
 ### Structure
 
@@ -86,25 +81,21 @@ The prototype implementation code can be divided into:
 The general utilities can be further divided into:
 
 `tags.util.*`
-:	Data-structure related utilities. Our object specifications are fairly
-	abstract, and an easy way to implement them was to construct them out of
-	union and tuple types. These aren't a native part of Java, so we built our
-	own. We also implemented many methods for performing complex operations on
-	maps, needed because our objects are all node-map/arc-map combinations. Our
-	crude score-inferer and value-composer are both implemented here, as well
-	as Probability and Entropy classes that ensure their values are restricted
-	to the correct ranges.
+:	Data-structure related utilities. Our object specifications are abstract;
+	an easy way to implement them was to construct them out of union and tuple
+	types. These aren't a native part of Java, so we built our own. We also
+	implemented many methods for performing complex operations on maps, because
+	our objects are all node-map/arc-map combinations. Our crude score-inferer
+	and value-composer are both implemented here.
 `tags.util.exec.*`
-:	Base classes for our execution architecture. `java.util.concurrent` is
-	highly abstract and lacking in context-specific implementations. We weren't
-	aware of any simple, light, easy-to-learn execution frameworks for Java, so
-	we wrote our own. This includes `TaskService`, similar to `Executor` but
-	accepts general objects to act on; and `MessageReceiver`, a basic interface
-	for a simple execution framework based on message passing.
+:	Our execution architecture. `java.util.concurrent` is highly abstract and
+	lacking in context-specific implementations, and we weren't aware of any
+	simple, easy-to-learn alternatives, so we wrote our own. This includes
+	`TaskService`, similar to `Executor` but accepts general objects to act on;
+	and `MessageReceiver`, a basic interface for message passing.
 `tags.io.*`
-:	This only contains deserialisation classes for GraphML, and was not needed
-	until late on during the development process, when we had to extend a large
-	part of JUNG's GraphML reader code - see [below](#data-format).
+:	This only contains deserialisation classes for GraphML - see
+	[below](#data-format).
 
 ### Design patterns
 
@@ -128,54 +119,32 @@ We also used the _factory_ and _builder_ patterns to make object creation code
 more extensible. Use cases include creating local views of remote objects, and
 deserialising objects from input streams.
 
+The interaction between layers is co-ordinated by implementing each layer as a
+state machine - it cannot receive requests during a state transition (ie. when
+it is currently processing a previous request). This simplifies the execution
+logic, and reduces the critical objects that need to be synchronised on.
+
 ### Generics
 
 We made heavy use of generics in our implementation. In our experience, this is
-a useful tool in both enforcing type safety, and in writing re-usable code.
-
-Our design uses several types of objects without making any comment on their
-type; these include tags, object addresses (in the storage layer), and social
-identities. These are perfect candidates for generic type parameters.
-
-The type of attributes can also be parameterised. Although we use probability
-for all of our attributes, this is a part of our specification that is separate
-from the overall architecture of the system. A full list of theoretically
-distinct types is:
-
-   Source                              Description
--- ----------------------------------- -----------------------------------
-1. agent score (social)                social identity trust score
-2. resource value (social) (tgraphs)   rating score for tgraphs
-3. resource value (social) (indexes)   rating score for indexes
-4. agent score (naming)                rating score for tgraphs
-5. resource value (naming) (node)      tag size
-6. resource value (naming) (arc)       tag-tag similarity
-7. agent score (routing)               rating score for indexes
-8. resource value (routing)            tag-document similarity
-
-(2,4) are the same, and (3,7) are the same, which leaves us with six attribute
-types. In the end we felt it prudent to merge (6,8) into a single arc-attribute
-type, and also merge (2,4,3,7) into a single score type. This leaves us with
-four distinct attribute types, which arguably is still too much; however, we
-believe our code is modular enough to support this level of flexibility.
-
-We end up with seven generic type parameters in total, which are all present in
-the unified interface to the storage layer (`StoreControl`): `<I>` identity,
-`<T>` tag, `<A>` address, `<U>` node-attribute, `<W>` arc-attribute, `<S>`
-score, `<Z>` identity-score.
+a useful tool both in enforcing type safety, and in writing re-usable code. We
+use seven generic type parameters, which arguably is too much; however, we
+believe our code is modular enough to support this level of flexibility. For a
+full discussion, see [type parameters](appendix.html#type-parameters) in the
+appendix.
 
 ## Sample generator
 
 We decided to develop the sample generator in Python. We did not need the code
 here to be as strictly well-designed as for the search application. Also, by
-this point we were already far behind schedule - we felt using Python would
-help recover some of this, due to its simplicity and the ease of exploring new
-libraries (via the interactive interpreter).
+this point we were already far behind schedule; we felt using Python would help
+to recover some of this, due to its simplicity and the ease of exploring new
+libraries via the interactive interpreter.
 
 We did run into many problems, such as poor high-level multithreading support,
 and performance and memory leak issues which became important at the scales we
 were processing data at (we had initially overlooked this). However, ultimately
-it probably did save us time, and it's unclear that using a more low-level
+it probably did save us time, and it's uncertain that using a more low-level
 language would've helped the performance issues significantly.
 
 ### Libraries
@@ -214,20 +183,19 @@ corresponding to a Python module:
 ### Performance
 
 We had to deal with many performance issues during the implementation of the
-sample generator. Despite our choice of using python, these weren't CPU-bounded
-issues, but actually most involved inefficient use of blocking operations.
+sample generator. Despite our choice of python, these weren't CPU-bounded
+issues, but mostly involved inefficient use of blocking operations.
 
 #### Network IO
 
-Our Flickr API library, flickrapi, uses blocking IO to send and receive network
-data, which results in a few seconds' wait before each API call completes. This
-was too slow for our purposes.
+Our Flickr API library, flickrapi, uses blocking IO for network communication,
+which results in a few seconds' wait before each API call completes.
 
-To optimise this, we used multithreading to start many IO requests in parallel.
-We also extended flickrapi to use persistent HTTP connections (per thread),
-instead of opening a new TCP connection for each API call. Since the threads'
-major task is only to wait for a system call to return, the lack of true
-multithreading in Python (due to the GIL[REF]) is not a problem in this case.
+To speed this up, we used multithreading to start many calls in parallel. We
+also extended flickrapi to use persistent HTTP connections (per thread), rather
+than opening a new TCP connection for each call. Since each thread's task is
+only to wait for a system call to return, the lack of true multithreading in
+Python (due to the GIL[REF]) was not a problem.
 
 An alternative approach would be to use an asynchronous event-based IO model,
 like the popular Twisted library[REF]. However, we never intended the sample
@@ -288,34 +256,32 @@ much larger sets of data. However, unforeseen difficulties (detailed elsewhere)
 along with our time constraint, meant that we had to cut back on these.
 
 The original plan was to generate a sample from a crawl of several thousand
-users. However, when we tested our generator with successively larger crawl
-sizes, it became clear that this was impossible with the resources available,
-even with our heavy optimisations.
+users. However, it soon became clear that this would be impossible with our
+resources, even with our heavy optimisations.
 
-We did an initial crawl of 16 users starting from a randomly selected seed, to
-verify that the sample generator was working correctly. We extended the crawl
-to 313 groups, and retrieved 11,000 photos and 6,457 tags. We then generated
-329 indexes and 56 tgraphs. We ran the search application on this sample; in
-most cases it could find most documents associated with a tag in a reasonable
-amount of lookups, just because the network was so small.
+To verify that the sample generator was working correctly, we did an initial
+crawl of 16 users starting from a randomly selected seed. We also crawled 313
+groups, and retrieved 11,000 photos and 6,457 tags. We generated 329 indexes
+and 56 tgraphs. We ran the search application on this sample; in most cases it
+could find most documents associated with a tag in a reasonable amount of
+lookups, just because the network was so small.
 
 The largest complete sample we managed to achieve was from an inital crawl of
-256 users. We extended the crawl to 8,597 groups, and retrieved 411,872 photos
-and 128,409 tags. We then generated 8,853 indexes and 438 tgraphs.
+256 users and 8,597 groups. We retrieved 411,872 photos and 128,409 tags, and
+generated 8,853 indexes and 438 tgraphs.
 
 ## Sample integrity
 
-Before proceeding with testing our search application, we first did some basic
-integrity tests on our generated sample. It is a common observation that social
-networks have a power-law distribution in several properties, the easiest one
-to calculate being the node degree.
+Before proceeding with full testing, we first did some basic integrity tests on
+our generated sample. Social networks generally have a power-law distribution
+in several properties, the easiest one to calculate being the node degree.
 
 Firstly, we verified that our crawl of the social network satisfies a power-law
 distribution in node-degree:
 
 [DIAG] socgr.svg
 
-This is a relatively small sample size (256), but it is clear that it does
+This is a relatively small sample size (256), but it's clear that it does
 follow the expected distribution.
 
 Then, we tested for a power-law distribution in node-degree over our generated
@@ -347,10 +313,10 @@ over our crawled tags:
 
 [DIAG] tags.svg
 
-This may indicate that our intention on forming a hierarchical partition over
-the space of tags is achievable on this data set. However, another reason for
-this distribution could be that a few users upload lots of photos with the same
-tags, without necessarily indicating any structure over the entire tag space.
+This could indicate that our idea on hierarchical partition over the tags is
+achievable on this data set. On the other hand, it could be that a few users
+uploaded lots of photos with the same tags, without necessarily indicating any
+structure over the entire tag space.
 
 [^testdg]: this also applies for the social network sample and the generated
 tgraphs network. This discrepancy was not visible in these cases, we think,
@@ -368,45 +334,41 @@ separate data sources. At first, these differed greatly.
 
 [DIAG] comparing early address schemes
 
-The basic problem seems to be that, at least some agents will give high values
-for resources that don't "deserve" them, even when all agents are honest. So,
-assuming that most gaps are due to lack of information, will bias the final
-result towards this inaccuracy, and sometimes will even supersede a value for
-another resource, that many agents agreed with.
+It seems that, at least some agents will give high values for resources that
+don't "deserve" them, even when all agents are honest. So, assuming that most
+gaps are due to lack of information, will bias the final result towards this
+inaccuracy, and will sometimes supersede a value for another resource that many
+agents did agree with.
 
 A much better way of combining resource values would be to model them as belief
-distributions, as suggested previously. We can then use an algorithm that
-reduces the variance of an aggregated distribution, formed from many similar
-values. (Using the mean would fit this, as per the Central Limit Theorem.) A
-recently-developed system for evaulating skill over the result of many games,
-uses similar principles.[REF]
+distributions, as suggested previously. We didn't attempt this, since it would
+require redesigning our entire prototype to reason about distributions and not
+probabilities, which is much more complex.
 
-We didn't have time to implement this, since it would require redesigning our
-prototype to reason about distributions and not probabilities, which is much
-more complex. Instead, we just set all our $\alpha$ to be a constant $1$. This
-at least allows resources with many "good" value-ratings, to override ones that
-have less. (Likewise, YouTube recently switched from a mean-based 5-star rating
-system to one that instead counts the number of like/dislike votes.) After we
-made this change, the ideal vs. generated address schemes were much more alike.
+Instead, we just set all our $\alpha$ to a constant $1$. This at least allows
+resources with many "good" value-ratings, to override ones that have less.
+(Likewise, YouTube recently switched from a mean-based 5-star rating system to
+one that instead counts the number of like/dislike votes.) After we made this
+change, the ideal vs. generated address schemes were much more similar.
 
 [^explad]: i.e. according to our model of the [address
 space](design.html#structured-address-space), rather than "theoretically
 perfect"
 
-Unfortunately, we didn't devise any tests for how well the score-inferer works.
-This would involve simulating an attack on the system; doing this properly
-would have taken us far beyond our time and resource constraints.
+We didn't devise any tests for how well the score-inferer works. This would
+involve simulating an attack on the system; this would have taken us far beyond
+our time and resource constraints.[EXTN]
 
 ## Full testing
 
 We take a random sample of 16 identities from our social network crawl, limited
 to only the users that have between 4 (inclusive) and 64 (exclusive) outgoing
-contacts.
+contacts. This accounts for 118 users, or 0.46 of the total, with 2 above and
+136 below the range.
 
-This accounts for 118 users, or 0.46 of the total, with 2 above and 136 below
-the range. We do this because in our preliminary testing, anything lower ends
-up asking the social layer for more friends (which we have not implemented),
-and anything higher uses up our RAM as it tries to load all friends' ptables.
+We do this because anything lower ends up asking the social layer for more
+friends (which we have not implemented), and anything higher uses up our RAM as
+it tries to load all the seed objects from friends' ptables.
 
 We believe that this still gives a useful indication on how our system works;
 users with less than 4 friends should be able to obtain results, once we
@@ -414,18 +376,17 @@ implement the social layer more fully.
 
 We take a random sample of 16 tags from our tags crawl, limited to only the
 tags that have between 4 (inclusive) and 4096 (exclusive) associated documents.
-
 This accounts for 68,808 tags, or 0.54 of the total, with 59,427 above and 174
-above the range. We do this for the same reason as above - lower tags give very
-little results, whereas higher ones use up our RAM. This goes slightly against
-one of the original aims, to find even rare documents, but we have tried to
-keep the threshold low, at 4 documents, rather than a higher value.
+above the range.
+
+We do this for the same reason as above - lower tags give very little results,
+whereas higher ones use up our RAM. This goes against one of the original aims,
+to find even rare documents, but we have tried to keep the threshold low, at 4
+documents, rather than a higher value.
 
 From these, we constructed 256 queries by pairing each seed identity with each
-subject tag.
-
-We calculated the [closeness](evaluate.html#query-rating) for each query,
-and also the out-degree of $V_s$ and in-degree of $V_t$.[^fullde]
+subject tag. We calculated the [closeness](evaluate.html#query-rating) for each
+query, and also the out-degree of $V_s$ and in-degree of $V_t$.[^fullde]
 
 [^fullde]: definition of "degree" of a set of nodes is given in the glossary.
 

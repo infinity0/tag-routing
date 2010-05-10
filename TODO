@@ -3,18 +3,12 @@
 <object data="../stat/tags.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
 
 POTENTIAL CUTS:
-- intro:
-	"Another issue is the " - 83
-	"Imagine your browser " - 57
 - design:
 	derivation "adding components to a path" - 53
 	derivation "score inferer" - <211
 	derivation "value composer" - <253
 	derivation "routing - constructing output" - <97
-- execution:
-	derivation "The type of attributes can also be parameterised" - <177
-	derivation "We start by looking at existing measures of closeness" - 560
-(~750)
+(~500)
 "The interaction between layers is co-ordinated by implementing each layer as a state machine"
 
 unfortun time resource limit constraint

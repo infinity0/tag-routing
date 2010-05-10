@@ -240,79 +240,20 @@ that could be neatly applied to our system, with all its network components. So
 we tried to come up with our own metric.
 
 The "difficulty" can be interpreted as the "closeness" between a seed identity,
-and the subject tag for a query. This is a vague concept, so we must find a way
-to make it specific. We use the following approach (which is very arbitrary,
-but the best we could come up with in the time we had left):
-
-We start by looking at existing measures of closeness. One standard definition
-for the closeness of a node $v$ in a graph, is the inverse-sum of the geodesic
-distances to all other nodes[REF]. This does not work for disconnected graphs
-where distances can be infinite; variants that work around this, include using
-the sum-inverse[REF] and sum-inverse-exponent[REF] of the distances instead.
-
-We look at this last version more closely; its advantages include having closed
-formulas for closeness in simple graphs (stars, lines, etc). The closeness of a
-node $v$ in graph $G = (V, E)$ is defined:
-
-$$
-C(v_0, G) = \sum_{v \in V \setminus v_0} 2^{-d_G(v_0, v)}
-$$
-
-where $d_G(v_0, v)$ is the geodesic distance from $v_0$ to $v$ in $G$.
-
-A rough interpretation for this is how easily one can get from $v_0$ to all the
-other parts of the graph as a whole. Hand-waving, this is along the lines of
-what we want to use as the "difficulty" of a query - getting from our source
-identity to the relevant target documents.
-
-Before we continue, we should make precise exactly what we want to get from,
-and what we want to get to. Our search application starts from a seed identity
-$z$, and traverses several networks to reach a set of result documents $R$
-hopefully relevant to $t$. We can make our "closeness" measure derivation
-easier, by considering only one network plane - the indexes network.
-
-We define "source" nodes $V_s$ to be the indexes that are present in $z$'s own
-ptable, plus some of indexes present in the ptables of their friends.[^meassr]
-We define "target" nodes $V_t$ to be the indexes that hold documents associated
-to $t$. This problem is now reduced to finding the "closeness" from $V_s$ to
-$V_t$, in the same graph (i.e. the indexes network).
-
-[^meassr]: for our sample data, we select the "personal index" of each friend,
-ie. the index produced from the user-producer of that friend, rather than the
-group-producers. This reduces the cost of the calculation, whilst keeping the
-basic idea of what we want to measure.
-
-We can tweak the above measure to give the closeness of $v_0$ relative to a
-subset $V_t$ of the nodes, rather than the entire graph:
-
-$$
-C(v_0, V_t) = \sum_{v \in V_t} 2^{-d_G(v_0, v)}
-$$
-
-(We leave out the $\setminus v_0$ requirement; this was only added in [REF] so
-the closeness of an isolated graph is $0$. Further, $v_0$ is always present
-in $V$, so it always removes a constant value; however in our extension below,
-this isn't true, and we mustn't make an arbitrary non-constant adjustment.)
-
-We can tweak this further, to give the closeness of a set of nodes $V_s$
-relative to $V_t$, rather than a single source node:
+and the subject tag for a query. This is vague, we need a more specific measure
+for our tests. We use the following:
 
 $$
 C(V_s, V_t) = \sum_{v \in V_t} \sum_{u \in V_s} 2^{-d_G(u, v)} / |V_s|
 $$
 
-We have $|V_s|$ as a normalisation factor because we doesn't need to traverse
-through all the seed indexes to reach a target index; on the other hand, we
-don't use $min_{u \in V_s}$ either, because having more seed indexes will
-result in more work, since we can't predict which index is the minimum.
+where $V_s$, $V_t$ are the sets of indexes we start from and end at; and
+$d_G(u, v)$ is the geodesic distance between two indexes $u$, $v$. For a more
+detailed discussion, see [closeness](appendix.html#closeness) in the appendix.
 
-(Of course, the above definitions all assume an additive distance relation. So
-in our calculations, we first convert probability attributes to entropy ones.)
-
-A more sophisticated rating metric might be to calculate the smallest multipath
-between $V_s$ and $V_t$ (i.e. minimal subgraph that contains all paths from
-$V_s$ to $V_t$). However, this will probably be much more complex to calculate
-efficiently; we did not have any time to explore this.
+A more sophisticated rating metric might be to calculate the total length of
+the minimal subgraph which holds all non-redundant paths from $V_s$ to $V_t$.
+However, this will be more complex to calculate efficiently.[EXTN]
 
 ### Query steps
 
