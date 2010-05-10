@@ -62,3 +62,7 @@ h1.title { margin-top: 0; }
 	left: -0.8em;
 	cursor: pointer;
 }
+
+#TOC li div.pageno {
+	display: none;
+}

@@ -58,8 +58,8 @@ function getSectDeep(node, lev, list) {
 window.onload = function() {
 	var toc = document.getElementById("TOC");
 	disableSelection(toc);
-	var sect = toc.firstChild.getElementsByTagName('ul');
 
+	var sect = toc.firstChild.getElementsByTagName('ul');
 	for (var i=0; i<sect.length; ++i) {
 		var li = sect[i].parentNode;
 		var obj = document.createElement('span');
@@ -95,6 +95,16 @@ window.onload = function() {
 	for (var i=0; i<list.length; ++i) {
 		incSect(list[i]);
 	}
+
+	var line = toc.firstChild.getElementsByTagName('a');
+	for (var i=0; i<line.length; ++i) {
+		ah = line[i]
+		obj = document.createElement('div');
+		obj.appendChild(document.createTextNode(ah.title));
+		obj.className = "pageno";
+		ah.parentNode.insertBefore(obj, ah);
+	}
+
 }
 
 /*]]>*/

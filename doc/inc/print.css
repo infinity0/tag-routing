@@ -20,3 +20,22 @@ h1 {
 h1.title {
 	page-break-before: auto;
 }
+
+#TOC > ul {
+	margin-left: -1em;
+}
+
+#TOC li {
+	list-style-type: none;
+}
+
+#TOC li > a {
+	display: block;
+	text-decoration: none;
+	border-bottom: 1px dotted black;
+	color: black;
+}
+
+#TOC li div.pageno {
+	float: right;
+}

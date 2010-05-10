@@ -7,6 +7,14 @@ DOC="site"
 INC="inc"
 RES="res"
 
+case $1 in
+-f | --force )
+	force="yes"
+	shift
+	;;
+esac
+
+
 mkdir -p "$DOC"
 cp -falT "$SRC/$INC" "$DOC/$INC"
 cp -falT "$SRC/$RES" "$DOC/$RES"
@@ -25,7 +33,7 @@ done
 
 for i in *.md.txt; do
 	OUT="$DOC/${i%.md.txt}.html"
-	if [ "$i" -ot "../$OUT" ]; then continue; fi
+	if [ -z "$force" -a "$i" -ot "../$OUT" ]; then continue; fi
 
 	sed \
 	  -e 's/\\pred/\\mathtt{\\mathrm{pred}}\\,/g' \
