@@ -109,7 +109,7 @@ public class QueryStateTextFormatter<T, A, W> implements QueryStateFormatter<T, 
 	** given iterable.
 	*/
 	public static <T> int maxSize(Iterable<T> it) {
-		int max = 0;
+		int max = 1;// FIXME LOW or 0
 		for (T o: it) {
 			int sz = o.toString().length();
 			if (sz > max) { max = sz; }

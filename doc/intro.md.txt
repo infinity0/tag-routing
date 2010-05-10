@@ -89,10 +89,9 @@ peer-to-peer networks: Search methods, _Computer Networks_, **Volume 50**,
 [10.1016/j.comnet.2006.02.001](http://www.sciencedirect.com/science/article/B6VRG-4JD0XYW-1/2/07e1ec0ba8cbe65f8f094cd99612b149).
 
 Existing research into peer-to-peer semantic search includes [^sem1][^sem2].
-None of these are currently deployed in real systems, and we were unaware of
-them during the initial stages of our project. A discussion of these systems
-and how they relate to our project is given [later](#comparison), after our
-system has been described first.
+None of these are currently deployed in real systems; we were unaware of them
+during the initial stages of our project, and our design differs considerably
+from these.
 
 [^sem1]: [REF] REMINDIN'
 [^sem2]: [REF] Harnessing.
@@ -223,13 +222,4 @@ key in a lookup table. We exclude compound queries (multiple phrases composed
 with e.g. intersections, unions, differences). This helps to keep the basic
 problem simple; compound query methods can be developed later, and arguably on
 top of a solution to this simpler problem.
-
-
-# Comparison
-
-Our design differs considerably from these; for example, REMINDIN's design is
-more ontology focused, whereas ours draws from existing non-semantic routing
-principles, DHTs in particular. Our design also has a well-defined (albeit
-underdeveloped) model of the address space (unlike Harnessing). [MORE] also
-move this to a better place...
 

@@ -283,26 +283,25 @@ graphs that were generated, by running them through Graphviz[REF].
 
 # Testing
 
-We had originally planned to do much more extensive testing of our system, and
-for much larger sets of data. However, time constraints...
-unforeseen difficulties, mostly related to performance, unexpectedly large data
-sets, etc etc [MORE]
-
-We did an initial crawl of 16 users starting from a randomly selected seed, to
-verify that the sample generator was working correctly. We extended the crawl
-to 313 groups, and retrieved 11000 photos and 6457 tags. We then generated 329
-indexes and 56 tgraphs. We ran the search application on this sample; in most
-cases it was able to find most of the documents associated with a tag with a
-reasonable amount of lookups, just because this network was so small.
+We had originally planned to do more extensive testing of our system, and for
+much larger sets of data. However, unforeseen difficulties (detailed elsewhere)
+along with our time constraint, meant that we had to cut back on these.
 
 The original plan was to generate a sample from a crawl of several thousand
 users. However, when we tested our generator with successively larger crawl
 sizes, it became clear that this was impossible with the resources available,
 even with our heavy optimisations.
 
+We did an initial crawl of 16 users starting from a randomly selected seed, to
+verify that the sample generator was working correctly. We extended the crawl
+to 313 groups, and retrieved 11,000 photos and 6,457 tags. We then generated
+329 indexes and 56 tgraphs. We ran the search application on this sample; in
+most cases it could find most documents associated with a tag in a reasonable
+amount of lookups, just because the network was so small.
+
 The largest complete sample we managed to achieve was from an inital crawl of
-256 users. We extended the crawl to 8597 groups, and retrieved 411872 photos
-and 128409 tags. We then generated 8853 indexes and 438 tgraphs.
+256 users. We extended the crawl to 8,597 groups, and retrieved 411,872 photos
+and 128,409 tags. We then generated 8,853 indexes and 438 tgraphs.
 
 ## Sample integrity
 
@@ -367,7 +366,7 @@ To start with, we compared the "ideal"[^explad] address scheme for the sample,
 with the address scheme that our search application generated from all the
 separate data sources. At first, these differed greatly.
 
-[MORE] results tables
+[DIAG] comparing early address schemes
 
 The basic problem seems to be that, at least some agents will give high values
 for resources that don't "deserve" them, even when all agents are honest. So,
@@ -409,11 +408,70 @@ subject tag.
 We calculated the [closeness](evaluate.html#query-rating) for each query,
 and also the out-degree of $V_s$ and in-degree of $V_t$.[^fullde]
 
-[^fullde]: definition of "degree" of a set of nodes is given in the glossary.[MORE]
+[^fullde]: definition of "degree" of a set of nodes is given in the glossary.
 
-[TODO][MORE]
+compare closeness vs those degree measures [MORE]
+
+[DIAG]
+
+Run tests [MORE]
+
+[DIAG]
+
+(tests looks very shaky atm, some give a minor fraction of all available
+results, some give nothing, a few go haywire)
 
 # Conclusions
 
-[MORE]
+We greatly underestimated the complexity of our system. It took us far longer
+than expected to develop a satisfactory general theoretical framework, as well
+as all the low-level specific details that a prototype would have to implement.
+The size of our eventual design also added many practical development obstacles
+in the form of finding libraries, debugging, performance issues, etc.
+
+We don't think the work load could have been signficantly reduced. An aim of
+the project was to implement our inital specification; removing any component
+would have defeated the whole point. We were also required to collect data to
+test the system with. This had to be compatible with our system; cutting down
+any component would have rendered the exercise pointless.
+
+Our test results were not satisfactory. Although initial tests on a tiny sample
+seemed promising, results on a significantly-sized network were poor. [MORE]
+
+A case could certainly be made for the sample data being of poor quality. When
+evaluating generated address schemes, we found that even "ideal" schemes were
+not very intuitive (see above). Granted, our sample generation methods were
+ad-hoc, but the products should still largely resemble the source crawl data.
+
+This also raises the question of what a good data sample would be like, which
+would require a better understanding of the address space model we proposed (or
+another model altogether).
+
+We had too high an expectation of our system. Instead of attempting a general
+performance test under many varying queries, we should have selected a few
+distinctive queries, and focused on extracting the maximum information possible
+from the query process in each case, studying each trace in greater depth. Our
+actual approach gave a data set that was too wide-ranging to digest in a short
+time, and threw away critical information about the exact query state.
+
+On the up side however, we have developed a framework which uses some fairly
+simple ideas, and built a complex system by combining these. Our design is
+highly modular, and the extensible components are well-defined and shielded
+from each other, so that future improvements in one component should not need a
+complete restructuring of the entire system.
+
+A full list of directions for taking this project further is available in the
+appendix[LINK]. The most important ones, in our view, would be:
+
+- review the model of the address space
+- find a better data sample to run tests on
+- explore better resource-value metrics
+
+In conclusion, and despite all the setbacks, we think this project has been a
+useful endeavour. Even though it has not demonstrably succeeded in its original
+aims, it has given us a better understanding and overview of the problems that
+must be solved in order to build a complex decentralised system, and the amount
+of work involved in doing so. We hope that our project has been interesting to
+readers, and that our contribution can be built upon in the future.
+
 

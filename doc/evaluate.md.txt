@@ -3,7 +3,17 @@
 
 # Generating data
 
-[MORE] why we need to generate data.
+Since our system is entirely new, there are no existing samples of data which
+can be directly for its objects. Rather than generate entirely new data from
+scratch, we decided to collect data from existing resource-sharing services,
+and process it to fit our data model.
+
+This has several advantages. It saves us from having to develop a model of how
+agents interact with regards to resources, which is hard to emulate well. It
+also helps us to make a crude evaluation on well the system is working - much
+of the theory depends upon concepts like tag "size" and tag-tag "similarity",
+which we will have intuitive expectations for if the tags are real phrases, but
+not if they are randomly generated data.
 
 ## Model
 
@@ -63,16 +73,6 @@ are unrelated, so if a similarity for a particular relation is low then we just
 ignore this altogether and skip adding the arc to the resulting tgraph.
 
 ## Application
-
-Rather than generate entirely new data from scratch, we decided to collect data
-from existing resource-sharing services, and process it to fit our data model.
-
-This has several advantages. It saves us from having to develop a model of how
-agents interact with regards to resources, which is hard to emulate well. It
-also helps us to make a crude evaluation on well the system is working - much
-of the theory depends upon concepts like tag "size" and tag-tag "similarity",
-which we will have intuitive expectations for if the tags are real phrases, but
-not if they are randomly generated data.
 
 We were aware of three online services based around social sharing of content:
 Flickr[REF] (photos), Last.fm[REF] (music), and Delicious[REF] (bookmarks). We
@@ -187,11 +187,10 @@ described in [testing - full testing](execute.html#full-testing)._
 
 ## Address scheme
 
-- compare inferred address scheme with true address scheme
-- test whether these match our expectations (nodes further out are "more general")
-[MORE]
-
-Two measures of address scheme "similarity":
+Our search application infers an address scheme from the tgraphs network. We
+want a way of comparing this against an "ideal" address scheme (as implied by
+our theoretical model and the actual data sample). We use two different senses
+of "ideal":
 
 Local
 :	We calculate the ideal scheme from our crawl data, restricted to only the
@@ -229,6 +228,10 @@ F1-score
 It is widely acknowledged that acheiving high $p$ _and_ $r$ is hard, so we will
 consider these separately. $f$ is just the harmonic mean of $p$ and $r$, which
 will be high only if both $p$ and $r$ are high.
+
+There are also ways to evaluate results' ranking. However, we did not give any
+special considerating for ranking documents, nor for ranking our sample data.
+In any case, we didn't have the time to explore such evaluation metrics;
 
 ### Query rating
 
@@ -305,8 +308,6 @@ result in more work, since we can't predict which index is the minimum.
 
 (Of course, the above definitions all assume an additive distance relation. So
 in our calculations, we first convert probability attributes to entropy ones.)
-
-Our intuition is that $C(V_s, V_t)$ will increase linearly [MORE]
 
 A more sophisticated rating metric might be to calculate the smallest multipath
 between $V_s$ and $V_t$ (i.e. minimal subgraph that contains all paths from

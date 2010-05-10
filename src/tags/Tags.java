@@ -21,6 +21,7 @@ import tags.ui.ResultsReporter;
 import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
+import java.util.concurrent.ExecutionException;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -106,7 +107,12 @@ public class Tags {
 			BasicProcess<K> proc = QueryTypes.makeProtoProcess(id, tag, env);
 			proc.attachLogger(agt.log);
 			agt.log.info("Starting query " + proc);
-			agt.runUntilAfter(proc, steps, new FileResultsReporter(basedir, proc), selectSteps(steps));
+			try {
+				agt.runUntilAfter(proc, steps, new FileResultsReporter(basedir, proc), selectSteps(steps));
+			} catch (ExecutionException e) {
+				// TODO NOW add to report
+				e.printStackTrace(System.err);
+			}
 			agt.log.info("----");
 			agt.log.info("----");
 		}

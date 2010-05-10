@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Collections;
 import java.util.Arrays;
 import java.util.logging.Logger;
+import java.util.concurrent.ExecutionException;
 
 /**
 ** This class handles execution of {@link QueryProcess}s and reports their
@@ -44,7 +45,7 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 	/**
 	** @see #runUntilAfter(QueryProcess, int, ResultsReporter, int[])
 	*/
-	public void runUntilAfter(QueryProcess<I, T, A, U, W, S, Z> proc, int n) {
+	public void runUntilAfter(QueryProcess<I, T, A, U, W, S, Z> proc, int n) throws ExecutionException {
 		runUntilAfter(proc, n, null, null);
 	}
 
@@ -57,7 +58,9 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 	** @param report Reporter to send reports to
 	** @param rsteps Steps at which to send reports
 	*/
-	public void runUntilAfter(QueryProcess<I, T, A, U, W, S, Z> proc, int n, ResultsReporter report, int[] rsteps) {
+	public void runUntilAfter(
+		QueryProcess<I, T, A, U, W, S, Z> proc, int n, ResultsReporter report, int[] rsteps
+	) throws ExecutionException {
 		// get some results
 		while (proc.getResults() == null || proc.getResults().isEmpty()) {
 			nextStep(proc);
@@ -97,14 +100,14 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 		}
 	}
 
-	public void nextStep(QueryProcess<I, T, A, U, W, S, Z> proc) {
+	public void nextStep(QueryProcess<I, T, A, U, W, S, Z> proc) throws ExecutionException {
 		try {
 			proc.getMoreData();
 			log.fine(proc + " " + proc.getStatus() + " " + proc.getStats());
 		} catch (MessageRejectedException e) {
 			String msg = e.getMessage();
 			if (!msg.equals("bad timing") && !msg.substring(0,15).equals("invalid message")) {
-				log.fine(e.getMessage());
+				throw new ExecutionException("non-trivial message rejection", e);
 			}
 		}
 		try { Thread.sleep(interval); } catch (InterruptedException e) { }

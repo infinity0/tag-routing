@@ -134,6 +134,23 @@ TrueSkill http://research.microsoft.com/en-us/projects/trueskill/details.aspx
 Dangalchev, C. Residual closeness in networks, 2006.
 
 
+## Comparison
+
+Our design differs considerably from these; for example, REMINDIN's design is
+more ontology focused, whereas ours draws from existing non-semantic routing
+principles, DHTs in particular. Our design also has a well-defined (albeit
+underdeveloped) model of the address space (unlike Harnessing). [MORE]
+
+
+# Derivations
+
+(put long derivations here)
+
+
+# Future work
+
+(basically scrape all the [EXTN] tags from the rest of the text)
+
 
 # Meta
 
