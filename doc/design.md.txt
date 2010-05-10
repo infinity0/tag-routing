@@ -104,6 +104,8 @@ should be both straightforward and natural.
 
 ## Structured address space
 
+[DIAG] (ip subnets, etc)
+
 As discussed earlier, many routing schemes use a structured address space that
 has two (sometimes implicit) properties over its subspaces:
 
@@ -115,6 +117,8 @@ matching the subnet prefix against the entries in the routing table. For DHTs,
 both "size" and "similarity" are defined with the choice of address space. In
 the case of semantic routing, a tag's "size" corresponds to how "general" it
 is, and its "similarity" to another tag corresponds to how related they are.
+
+[DIAG] (tag similarities, etc)
 
 There are various methods of defining a mathematical space over semantic tags.
 In the end, we settled on a simple probabilistic model. We interpret the set

@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Arrays;
 
 /**
 ** DOCUMENT.
@@ -28,8 +29,11 @@ public class ProbabilityLookupScorer implements LookupScorer<Probability, Probab
 	}
 
 	public Probability getPotential(Collection<Probability> lkuw) {
-		return Collections.max(lkuw);
-		//return Probability.unionInd(lkuw);
+		// FIXME HIGH this is a hack...
+		//return Collections.max(lkuw);
+		Probability m = Collections.max(lkuw);
+		return Probability.unionInd(Arrays.asList(m, m, m, m));
+		//return new Probability(Probability.unionInd(lkuw).val / 4);
 	}
 
 	/**

@@ -17,6 +17,8 @@ POTENTIAL CUTS:
 (~750)
 "The interaction between layers is co-ordinated by implementing each layer as a state machine"
 
+unfortun time resource limit constraint
+
 == Tasks ==
 
 algorithm

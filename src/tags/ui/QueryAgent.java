@@ -89,14 +89,21 @@ public class QueryAgent<I, T, A, U, W, S, Z> {
 			log.info(proc + " " + proc.getStatus() + " " + proc.getStats());
 			showResults(res, proc);
 
-			String[] lines;
-			log.finer("================");
-			lines = fmt.formatAddressScheme(proc.naming.getAddressScheme());
-			for (String line: lines) { log.finer(line); }
-			log.finer("================");
-			lines = fmt.formatLookups(proc.routing.getCompletedLookups(), proc.naming.getAddressScheme().tagSet());
-			for (String line: lines) { log.finer(line); }
-			log.finer("================");
+			try{
+				String[] lines;
+				log.finer("================");
+				lines = fmt.formatAddressScheme(proc.naming.getAddressScheme());
+				for (String line: lines) { log.finer(line); }
+				log.finer("================");
+				lines = fmt.formatLookups(proc.routing.getCompletedLookups(), proc.naming.getAddressScheme().tagSet());
+				for (String line: lines) { log.finer(line); }
+				log.finer("================");
+			} catch (RuntimeException e) {
+				// FIXME NORM
+				// sometimes we get a ConcurrentModificationException, no time to fix right now
+				System.err.println("ignoring RuntimeException: ");
+				e.printStackTrace(System.err);
+			}
 		}
 	}
 

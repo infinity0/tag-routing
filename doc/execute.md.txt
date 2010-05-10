@@ -399,8 +399,27 @@ would have taken us far beyond our time and resource constraints.
 
 ## Full testing
 
-We took a random sample of 16 identities from our social network crawl, and 16
-tags from our tags crawl.
+We take a random sample of 16 identities from our social network crawl, limited
+to only the users that have between 4 (inclusive) and 64 (exclusive) outgoing
+contacts.
+
+This accounts for 118 users, or 0.46 of the total, with 2 above and 136 below
+the range. We do this because in our preliminary testing, anything lower ends
+up asking the social layer for more friends (which we have not implemented),
+and anything higher uses up our RAM as it tries to load all friends' ptables.
+
+We believe that this still gives a useful indication on how our system works;
+users with less than 4 friends should be able to obtain results, once we
+implement the social layer more fully.
+
+We take a random sample of 16 tags from our tags crawl, limited to only the
+tags that have between 4 (inclusive) and 4096 (exclusive) associated documents.
+
+This accounts for 68,808 tags, or 0.54 of the total, with 59,427 above and 174
+above the range. We do this for the same reason as above - lower tags give very
+little results, whereas higher ones use up our RAM. This goes slightly against
+one of the original aims, to find even rare documents, but we have tried to
+keep the threshold low, at 4 documents, rather than a higher value.
 
 From these, we constructed 256 queries by pairing each seed identity with each
 subject tag.
@@ -421,50 +440,77 @@ Run tests [MORE]
 (tests looks very shaky atm, some give a minor fraction of all available
 results, some give nothing, a few go haywire)
 
+## Comments
+
+Our results are mainly poor. Rather than giving meaningful performance trends
+as we hoped, we ended up with small result sets for each query, giving a
+scattered sample of mostly low scores.
+
+Instead of attempting such a general performance test as we did, we should have
+focused on a few distinctive queries, and examined these in detail. In the end,
+we got more useful information about our implementation by tracing the process
+of a query, rather than by looking at our test results.
+
+It was typical to obtain several dozen seed tgraphs, and several hundred seed
+indexes. Our design is to query all of these for each additional tag, which
+reduces performance as most of them will be irrelevant. This was the result of
+a flawed data generation model; most flickr users do belong to many groups, but
+not all of these are suitable as a seed. A better approach would point to most
+groups only via resource relationships, rather than in ptables.[EXTN]
+
+Our prototype turned out to be highly dependent on the traversal algorithm in
+the routing layer. This seems to be a result of implementing the naming and
+contact layers to execute only when requested - the routing layer then has to
+make a choice between asking for data from lower layers, or to continue with
+itself. The choice algorithm we specified [LINK] turned out to be poor, and we
+had to tweak it manually. Even then, we would get sporadic behaviour, such as
+choosing to increase the address scheme many times in a row, then choosing to
+continue with lookups many times. [DIAG] (give an example in the appendix?)
+
+The system should work better, if we instead ran every layer in parallel. This
+would increase the complexity of synchronization, but we wouldn't need to
+devise complex choice algorithms in the routing layer. We would need each layer
+to pause itself automatically, but this seems much simpler.[EXTN]
+
+A case could certainly be made for the sample data being of poor quality. When
+evaluating generated address schemes, we found that even the "ideal" schemes
+were not very intuitive (see above). Granted, our sample generation was ad-hoc,
+but its products should still largely resemble the source crawl data. This also
+raises the question of what a good data sample would be like, which requires a
+better understanding of our address space model (or a different model).
+
+
 # Conclusions
 
-We greatly underestimated the complexity of our system. It took us far longer
-than expected to develop a satisfactory general theoretical framework, as well
-as all the low-level specific details that a prototype would have to implement.
-The size of our eventual design also added many practical development obstacles
-in the form of finding libraries, debugging, performance issues, etc.
+We greatly underestimated the complexity of the problem we set for ourselves.
+It took far longer than expected to develop a satisfactory general theoretical
+framework, as well as all the low-level specific details that a prototype would
+have to implement. The size of our eventual design also added many practical
+development obstacles such as finding libraries, debugging, performance, etc.
 
 We don't think the work load could have been signficantly reduced. An aim of
 the project was to implement our inital specification; removing any component
 would have defeated the whole point. We were also required to collect data to
 test the system with. This had to be compatible with our system; cutting down
-any component would have rendered the exercise pointless.
+any component would have rendered this pointless, too.
 
-Our test results were not satisfactory. Although initial tests on a tiny sample
-seemed promising, results on a significantly-sized network were poor. [MORE]
+Our results were not satisfactory. Although initial tests on a tiny sample
+seemed promising, results for a significantly-sized network were poor. There
+are many possible reasons for this, discussed [above](#comments); however,
+ultimately this means that we had far too high an expectation of our system.
 
-A case could certainly be made for the sample data being of poor quality. When
-evaluating generated address schemes, we found that even "ideal" schemes were
-not very intuitive (see above). Granted, our sample generation methods were
-ad-hoc, but the products should still largely resemble the source crawl data.
-
-This also raises the question of what a good data sample would be like, which
-would require a better understanding of the address space model we proposed (or
-another model altogether).
-
-We had too high an expectation of our system. Instead of attempting a general
-performance test under many varying queries, we should have selected a few
-distinctive queries, and focused on extracting the maximum information possible
-from the query process in each case, studying each trace in greater depth. Our
-actual approach gave a data set that was too wide-ranging to digest in a short
-time, and threw away critical information about the exact query state.
-
-On the up side however, we have developed a framework which uses some fairly
-simple ideas, and built a complex system by combining these. Our design is
-highly modular, and the extensible components are well-defined and shielded
-from each other, so that future improvements in one component should not need a
-complete restructuring of the entire system.
+On the up side, we have developed a decentralised semantic searching framework
+out of fairly simple initial ideas. Although the system as a whole is highly
+complex, it is made from the combination of many individual modules. These are
+all well-defined and shielded from each other, so that future improvements in
+one component should not need a complete restructuring of the entire system.
 
 A full list of directions for taking this project further is available in the
 appendix[LINK]. The most important ones, in our view, would be:
 
+- make the layers run fully in parallel
 - review the model of the address space
-- find a better data sample to run tests on
+- find a better data source to run tests on
 - explore better resource-value metrics
 
 In conclusion, and despite all the setbacks, we think this project has been a
