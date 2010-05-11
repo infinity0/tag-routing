@@ -199,3 +199,24 @@ necessary given our resource limits.
   the basic problem simple; compound query methods can be developed later, and
   arguably on top of a solution to this simpler problem.
 
+_The following assumptions refer to our data model, which is discussed in the
+next chapter - refer there if clarification is needed._
+
+- We consider **objects to be immutable**. For example, we intended the sharing
+  of indexes via ptable pointers to be a space-saving measure, instead of an
+  action of delegation. In this respect, our objects are more like git commits
+  rather than web pages, and object links are more like git submodule pointers
+  rather than web hyperlinks.
+
+  This data model is more secure, and in our system it also keeps the issue of
+  trust contained in the social layer, a property that some components depend
+  on. However, the immutability is an implicit assumption, which is neither
+  enforced nor verified in any system component. The idea was to leave this to
+  the storage layer; real deployments of the system should keep this in mind.
+
+- Our project only considers how we **navigate the networks** of objects to
+  satisfy a search query. It ignores the problem of how these objects would be
+  constructed and maintained. However, the data models are fairly simple, and
+  is inspired by ordinary human linking habits. So these tasks should be both
+  straightforward and natural.
+

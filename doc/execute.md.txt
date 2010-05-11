@@ -290,8 +290,8 @@ follow the expected distribution.
 Then, we tested for a power-law distribution in node-degree over our generated
 indexes and tgraphs[^testar]:
 
-[^testar]: we model an arc $p_0 \rightarrow p$ if a resource relationship $p_0
-\rightarrow^t p$ exists for any tag $t$.
+[^testar]: we model an arc $p_0 \rightarrow p$ if a route $p_0 \rightarrow^t p$
+exists for any tag $t$.
 
 [DIAG] sprdgr.svg
 
@@ -419,8 +419,8 @@ It was typical to obtain several dozen seed tgraphs, and several hundred seed
 indexes. Our design is to query all of these for each additional tag, which
 reduces performance as most of them will be irrelevant. This was the result of
 a flawed data generation model; most flickr users do belong to many groups, but
-not all of these are suitable as a seed. A better approach would point to most
-groups only via resource relationships, rather than in ptables.[EXTN]
+not all of these are suitable as a seed. A better approach would be to point to
+most groups only via routes, rather than in ptables.[EXTN]
 
 Our prototype turned out to be highly dependent on the traversal algorithm in
 the routing layer. This seems to be a result of implementing the naming and

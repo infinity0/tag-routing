@@ -40,15 +40,16 @@ The basic generative object, we call a **producer**. Each producer has:
 
 Producers represent data agents rather than social identities - that is, they
 can produce indexes and tgraphs. Producers can link together in a _resource
-relationship_; we write $p_0 \rightarrow^t p$ to mean that $p_0$ points to $p$
-via a tag $t$. (Note again this is _not_ equivalent to a social relationship.)
+relationship_, or _route_; we write $p_0 \rightarrow^t p$ to mean that $p_0$
+points to $p$ via a tag $t$. (Note again this is _not_ equivalent to a social
+relationship.)
 
-Each resource relationship $p_0 \rightarrow^t p$ has an associated attribute
-$w$, indicating the similarity of $t$ to $p$. For simplicity's sake, we only
-calculate $w$ given $t$ and $p$, and ignore $p_0$. From our specification, any
-arc $(t, d)$ should have attribute $w = P(t|d)$. So given a $(t, p)$, we
-consider $p$ as a set of documents (its resource set) and calculate $w$ to be
-the independent union of $P(t|d)$ over $d \in p$.
+Each route $p_0 \rightarrow^t p$ has an associated attribute $w$, indicating
+the similarity of $t$ to $p$. For simplicity's sake, we only calculate $w$
+given $t$ and $p$, and ignore $p_0$. From our specification, any arc $(t, d)$
+should have attribute $w = P(t|d)$. So given a $(t, p)$, we consider $p$ as a
+set of documents (its resource set) and calculate $w$ to be the independent
+union of $P(t|d)$ over $d \in p$.
 
 ### Object production
 
@@ -58,9 +59,9 @@ working environment, as per our assumptions. Attributes for tag-index arcs are
 taken from the similarity scores for the index's producer, as calculated above.
 
 Generating a tgraph is more complex; we first construct an estimate $|\breveD|$
-of $|D|$ from the point of view of a source producer $p_0$. One approach is to
-take the independent union of $P(p) = |p|/|D|$ over $p \in succ(p_0) \cup p_0$.
-The resource sets of neighbouring producers should be positively correlated, so
+of $|D|$ from the view of a source producer $p_0$. One approach is to take the
+independent union of $P(p) = |p|/|D|$ over $p \in succ(p_0) \cup p_0$. The
+resource sets of neighbouring producers should be positively correlated, so
 this will give a size that is larger than the actual union of their resource
 sets. This is intended to give a result close to what real producers would
 estimate the network size to be (from their own view).
@@ -101,7 +102,7 @@ Flickr also infers tag _clusters_, which are sets of tags that occur frequently
 among common photos. (They seem to use an algorithm which infers each cluster
 from a seed tag-triple.) A tag may belong to more than one cluster; this often
 corresponds to its different semantic senses. We do not add this cluster data
-directly to producers, but we use it to generate resource relationships.
+directly to producers, but we use it to generate routes.
 
 ### Crawl strategy
 
@@ -128,19 +129,19 @@ the tags with the highest similarities as representative tags, or _rep-tags_.
 We also score documents based on which rep-tags are associated with them; the
 highest-scored are labelled as representative documents, or _rep-documents_.
 
-We generate resource relationships as follows: for each producer $p_0$ we
-select other producers whose resource sets contain many rep-documents of $p_0$.
-We call these the _related producers_. For each related producer $p$, we infer
-tags to link to it with, by calculating intersections between the rep-tags of
-$p$, and each cluster of the rep-tags of $p_0$.
+We generate routes as follows: for each producer $p_0$ we select producers
+whose resource sets contain many rep-documents of $p_0$. We call these the
+_related producers_. For each related producer $p$, we infer tags to link to it
+with, by calculating intersections between the rep-tags of $p$, and each
+cluster of the rep-tags of $p_0$.
 
 This (arguably convoluted) method is intended to give a wider-ranging and less
 predictable selection of tags, than merely taking the intersection of the
 rep-tags of $p_0$ and $p$. This was hoped to be "more realistic", though this
 is obviously open to considerable debate.
 
-We then produce indexes according to their resource sets and these resource
-relationships, using the method described [previously](#object-production).
+We then produce indexes according to their resource sets and these routes,
+using the method described [previously](#object-production).
 
 Our data set does not have any natural entities that, we believe, can provide
 an adequate naming service, as tgraphs are supposed to. (None of our other
@@ -165,8 +166,8 @@ not consider the details of each detected algorithm; rather, we only wanted a
 quick-and-easy way to achieve the properties listed above.
 
 We construct the resource set of each super-producer from the union of those of
-their child producers. We generate resource relationships in a similar way to
-our original producers, and produce tgraphs similarly too.
+their child producers. We generate routes in a similar way to our original
+producers, and produce tgraphs similarly too.
 
 Lastly, we generate ptables. We simply have each user-producer link to the
 producers for the groups it belongs to (for indexes) and the super-producers
@@ -196,8 +197,8 @@ Local
 :	We calculate the ideal scheme from our crawl data, restricted to only the
 	tags that are part of the subject scheme.
 World
-:	We calculate the ideal scheme from our entire crawl data, limited to $n$
-	tags, where $n$ is the number of tags in the subject scheme.
+:	We calculate the ideal scheme from our entire crawl data, limited to the
+	nearest $n$ tags, where $n$ is the number of tags in the subject scheme.
 
 In both cases, we score the subject address scheme using the Jaccard index
 (|intersection| / |union|) over the two edge sets (subject vs ideal), which

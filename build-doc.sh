@@ -35,7 +35,10 @@ for i in *.md.txt; do
 	OUT="$DOC/${i%.md.txt}.html"
 	if [ -z "$force" -a "$i" -ot "../$OUT" ]; then continue; fi
 
+	# first regexp is a hackaround a markdown deficiency
+	# others are self-defined math operators
 	sed \
+	  -e 's/^  \(\w\)/    \1/g' \
 	  -e 's/\\pred/\\mathtt{\\mathrm{pred}}\\,/g' \
 	  -e 's/\\succ/\\mathtt{\\mathrm{succ}}\\,/g' \
 	  -e 's/\\nbr/\\mathtt{\\mathrm{nbr}}\\,/g' \

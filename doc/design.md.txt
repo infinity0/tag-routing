@@ -59,32 +59,6 @@ listing the indexes and tgraphs that it values highly, and other identities it
 trusts. By exploring this network, we can infer a set of trusted objects from
 which to initiate our search.
 
-### Mutability of objects
-
-[MOVE] probably to "working assumptions"
-
-We consider objects to be immutable. For instance, we intended the sharing of
-indexes via ptable pointers to be a space-saving measure, instead of a gesture
-of delegation. In this respect, our objects are more like git commits rather
-than web pages, and object links are more like git submodule pointers rather
-than web hyperlinks.
-
-This data model is more secure, and in our system it also keeps the issue of
-trust contained in the social layer, a property that some components depend on.
-However, the immutability is an implicit assumption, which is neither enforced
-nor verified in any system component. The intention was to leave this to the
-storage layer; real deployments of the system should keep this in mind.
-
-### Data collection
-
-[MOVE] probably to "working assumptions"
-
-Finally, our project only considers how we navigate the networks of objects to
-satisfy a search query. It ignores the problem of how these objects would be
-constructed and maintained. However, the data models are fairly simple, and is
-heavily inspired by ordinary human linking habits. So creating these objects
-should be both straightforward and natural.
-
 ## Structured address space
 
 [DIAG] (ip subnets, etc)
