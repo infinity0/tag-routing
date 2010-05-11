@@ -27,6 +27,7 @@ h1.title {
 
 #TOC li {
 	list-style-type: none;
+	border-left: 1pt ridge black;
 }
 
 #TOC li > a {

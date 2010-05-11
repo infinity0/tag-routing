@@ -11,6 +11,16 @@ TrueSkill http://research.microsoft.com/en-us/projects/trueskill/details.aspx
 
 Dangalchev, C. Residual closeness in networks, 2006.
 
+[SURV]: John Risson, Tim Moors, Survey of research towards robust
+peer-to-peer networks: Search methods, _Computer Networks_, **Volume 50**,
+**Issue 17**, 5 December 2006, Pages 3485-3521, ISSN 1389-1286, DOI:
+[10.1016/j.comnet.2006.02.001](http://www.sciencedirect.com/science/article/B6VRG-4JD0XYW-1/2/07e1ec0ba8cbe65f8f094cd99612b149).
+
+[REF] REMINDIN'
+
+[REF] Harnessing.
+
+
 ## Comparison
 
 Our design differs considerably from these; for example, REMINDIN's design is
@@ -26,8 +36,8 @@ underdeveloped) model of the address space (unlike Harnessing). [MORE]
 arc
 :	A directed relation $e = (v_s, v_t)$ from node $v_s$ to node $v_t$.
 degree, in-degree, out-degree (of a node-set $V$)
-:	See "neighbour (of a node-set $V$)". the *-degree is just the number of
-	*-neighbours
+:	See "neighbour (of a node-set $V$)". the \*-degree is just the number of
+	\*-neighbours
 document
 :	A storage object that can be the target of some query. This could include
 	(eg.) multimedia or software; for simplicity, we'll refer to these all as
@@ -416,6 +426,25 @@ hardware and networks, but hopefully this project makes a useful contribution
 in that direction.
 
 
+## Theory
+
+We explored many different ideas before implementation began, and during
+implementation we weeded out the ones which seemed to lead nowhere. Afterwards,
+surviving ideas were explored further, and simplified or generalised.[^simp]
+
+As such, there are a few aspects of our design which may seem inelegant or
+imperfect in the context of the theories described below. Unfortunately, we
+didn't have time to go back and refine them; but we have tried to point these
+out where relevant. None of these flaws, we think, are serious enough to defeat
+the basic purpose of the design that we implemented.
+
+[^simp]: For example, information aggregation was originally only considered
+for the naming and routing layers, and was completely ignored for the social
+layer. During implementation we realised that trust metrics could not resolve
+conflicts between ptable entries, and only afterwards did we formulate the
+expression of the general problem.
+
+
 ## Distance relation
 
 A **distance metric** also satisfies $\forall a,b,c \in S : D(a,c) \sqsubseteq
@@ -454,3 +483,4 @@ We used github to publish and backup our repository.
 
 as well as Probability and Entropy classes that ensure their values are restricted
 to the correct ranges
+

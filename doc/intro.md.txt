@@ -12,11 +12,11 @@ is suitable for insertion into a database. "Searching the web" usually means
 querying these pre-built databases, rather than dynamically routing your way
 through the web's content.
 
-Preparing and maintaining the database is extremely resource-intensive for a
-large network, which results in high barriers to entry. The utility of a search
-service increases with how much of the network it covers; new providers must
-recreate a database of comparable size before clients will switch, or else use
-indexing algorithms that produce decidedly better results than alternatives.
+Preparing and maintaining the search database is extremely resource-intensive
+for a large network, which results in high barriers to entry. The utility of a
+search service increases with how much of the network it covers; new providers
+must recreate a database of comparable size before clients will switch, or else
+use indexing algorithms that produce decidedly better results than competitors.
 
 This creates conditions of oligopoly, which is inherently vulnerable to both
 abuse and attack. Large providers are trusted by a great number of clients, so
@@ -40,7 +40,7 @@ be fine-tuned using local information. In addition, clients will have a wider
 choice of who to trust.
 
 Of course, decentralised systems have their own issues, and these are briefly
-discussed [below](#potential-issues). We believe that these are all practical
+discussed [later](#potential-issues). We believe that these are all practical
 issues that are ultimately solvable in the long run, whereas centralisation is
 an inherent problem in itself.
 
@@ -53,31 +53,23 @@ models, but some common themes include:
 
 Key-based routing
 :	The network defines an address space and a distance metric, where each
-	address is represented by a binary key. (DHTs, Freenet, GNUnet)
+	address is represented by a binary key. (DHTs, Freenet, GNUnet[REF])
 Mesh networks
 :	Various heuristics are used to maintain structure and performance, such as
-	random walks, bandwidth detection, index delegation, etc. (Gnutella)
+	random walks, bandwidth detection, index delegation, etc. (Gnutella[REF])
 Social relationships
 :	Nodes prefer to peer with trusted friends. This provides better security
-	properties, and a more predictable network structure. (OneSwarm, Freenet)
+	properties, and a more predictable network structure. (OneSwarm, Freenet[REF])
 
-A more comprehensive survey of peer-to-peer searching is presented in [^surv1].
+A more comprehensive survey of peer-to-peer searching is presented in [REF]].
 Using the terminology of that paper, this project develops and evaluates a
 _probability-based model_ of information retrieval intended to support
 _comprehensive keyword search_ (as opposed to _partial keyword search_).
 
-[^surv1]: John Risson, Tim Moors, Survey of research towards robust
-peer-to-peer networks: Search methods, _Computer Networks_, **Volume 50**,
-**Issue 17**, 5 December 2006, Pages 3485-3521, ISSN 1389-1286, DOI:
-[10.1016/j.comnet.2006.02.001](http://www.sciencedirect.com/science/article/B6VRG-4JD0XYW-1/2/07e1ec0ba8cbe65f8f094cd99612b149).
-
-Existing research into peer-to-peer semantic search includes [^sem1][^sem2].
+Existing research into peer-to-peer semantic search include [REF]][REF]].
 None of these are currently deployed in real systems; we were unaware of them
 during the initial stages of our project, and our design differs considerably
 from these.
-
-[^sem1]: [REF] REMINDIN'
-[^sem2]: [REF] Harnessing.
 
 
 # Preparation
@@ -89,8 +81,9 @@ to existing search providers, although obviously our prototype will be nowhere
 near as sophisticated nor efficient. Core functional aspects include:
 
 Semantics
-:	Query subjects have semantic relevance to the results, so the routing
-	algorithm and address scheme must reflect this.
+:	Query subjects have a dynamic user-supplied meaning, rather than a static
+	system-defined meaning; the routing algorithm and address scheme must
+	reflect this.
 Reach
 :	It should be feasible to locate all the data matching a given query on the
 	entire network (or connected component).
@@ -101,8 +94,8 @@ Robustness
 Most major currently-deployed systems have at least one incompatibility with
 the above. For example, DHTs are scalable, and will reach data if it exists on
 the network, but addresses have no relation to the semantics of the data. Many
-mesh networks (eg. Gnutella) can perform keyword search, but do not attempt to
-reach all relevant data on the network.
+mesh networks (eg. Gnutella[REF]) can perform keyword search, but do not
+attempt to reach all relevant data on the network.
 
 ## Potential issues
 
@@ -110,7 +103,7 @@ A system which must route queries between autonomous providers will obviously
 be slower than a system that only needs to query a single provider. At present,
 this is signficiant - web search engines return results almost instantaneously,
 whereas DHT queries on a medium-sized network might take a minute to complete.
-However, systems only get better, not worse, and so by the time research in
+However, technology only gets better, not worse, and so by the time research in
 this area is mature, it's entirely possible that performance will have improved
 beyond the limit of human perceptibility.
 
@@ -127,7 +120,7 @@ acknowledged that building these to be both scalable and secure is a difficult
 problem. However, nothing suggests that this is an inherently impossible task;
 and once a problem is solved, future generations may reap the benefits without
 having to expend the initial development cost. Recent designs based on social
-networks have been promising, and we will use this as an inspiration.
+networks have been promising, and we will use this as an inspiration.[REF]
 
 ## Initial observations
 
@@ -147,27 +140,27 @@ allows for fairly simple, yet effective, routing algorithms.
 
 [^dhtperf]: eg. expected number of hops for a lookup
 
-An informal explanation is that a numerical address space can be partitioned
-hierarchically, eg. by taking successively larger prefixes of an address. This
-allows greedy routing to work effectively, ie. by finding the neighbour which
-shares the smallest partition with the desired target node (in IP routing, this
-is just "longest-prefix-match", which we are all familiar with).
+Informally, a numerical address space can be partitioned hierarchically, e.g.
+by taking successively larger prefixes of an address. This allows greedy
+routing to work effectively, ie. by finding the neighbour which shares the
+smallest partition with the desired target node. (In IP routing, this is just
+"longest-prefix-match", which we are all familiar with.)
 
 [DIAG] diagram of hierarchical partitioning, [REF] kleinberg "small world"
 
-Two of these ideas seemed to fit well together - if we made the query-shifting
-aspect of "human" routing more precise, by using the idea of a structured
-address space, then this could also allow for a simple routing algorithm.
+Two of these ideas seemed to fit well together: we can try to make the
+query-shifting aspect of "human" routing more precise, by using the idea of a
+structured address space. This could then allow for a simple routing algorithm.
 Semantic tags are not as naturally structured as numerical addresses however,
 and a significant part of our time would be spent in developing a theoretical
 model of a partitionable and navigable space over tags.
 
-We did not have specific ideas on how to ensure the global reach of a query.
-Using tags as addresses means that each address points to many resources; being
-able to reach all the resources for a single tag is equivalent to being able to
-reach any arbitrary resource for that tag. Our DHT-inspired design aims to
-support the latter; however, bounding the cost of finding extra resources is a
-more complex problem, which we didn't have time to explore.[EXTN]
+As for ensuring the global reach of a query, if we use tags as addresses then
+each address will point to many resources. Being able to reach all resources
+for a single tag is equivalent to being able to reach any arbitrary resource
+for that tag. Our DHT-inspired design aims to support the latter; however,
+bounding the cost of finding extra resources is a more complex problem, which
+we didn't have time to explore.[EXTN]
 
 Finally, we based our system on a social foundation. Research has shown that
 analysing network structure can offer resistance against malicious information.
@@ -178,31 +171,31 @@ and sybil detection algorithms such as SybilInfer[REF].
 
 ## Working assumptions
 
-Since the aim of the project is fairly ambitious, we want to repeat as little
-work as possible. Therefore, we make various assumptions about the environment
-that our system will run under. Some of these are reasonable, and some of these
-are fairly restrictive; however, we feel they are prudent and necessary given
-our resource limits.
+Since the aim of the project is fairly ambitious, we want to replicate as
+little work as possible. Therefore, we make various assumptions about the
+environment that our system will run under. Some of these are reasonable, and
+some of these are fairly restrictive; however, we feel they are prudent and
+necessary given our resource limits.
 
-Locating known objects is essentially a solved problem: the internet and DHTs
-both offer ways to retrieve objects based on a globally unique address. Without
-this primitive we cannot continue; data must be stored somewhere, and it must
-be accessible to arbitrary agents on the network.
+- **Locating known objects is essentially a solved problem**: the internet and
+  DHTs both offer ways to retrieve objects based on a globally unique address.
+  Without this primitive we cannot continue; data must be stored somewhere, and
+  it must be accessible to arbitrary agents on the network.
 
-We assume that objects are always available. In a real network, this can be
-implemented with proxy services, or it might be a property of the network (e.g.
-DHTs). This simplifies our design, since it allows us to avoid dealing with the
-issue of churn, by delegating it to an external component.
+- We assume that **objects are always available**. In a real network, this can
+  be implemented with proxy services, or it might be a property of the network
+  (e.g. DHTs). This simplifies our design, since it allows us to avoid dealing
+  with the issue of churn, by delegating it to an external component.
 
-This assumption also forces us to design an iterative routing algorithm rather
-than a recursive one. Since data cannot forward queries onto other pieces of
-data, a client must process it themselves, determine which objects to retrieve
-next, then retrieve those, etc. Hopefully, our design can be adapted into a
-recursive one, but we won't consider this problem.
+- This assumption also forces us to design an **iterative routing algorithm**
+  rather than a recursive one. Since data cannot forward queries onto other
+  pieces of data, a client must process it themselves, determine which objects
+  to retrieve next, then retrieve those, etc. Hopefully, our design can be
+  adapted into a recursive one, but we won't consider this problem.
 
-Finally, we only consider single-phrase queries, that correspond to a single
-key in a lookup table. We exclude compound queries (multiple phrases composed
-with e.g. intersections, unions, differences). This helps to keep the basic
-problem simple; compound query methods can be developed later, and arguably on
-top of a solution to this simpler problem.
+- Finally, we only consider **single-phrase queries**, that correspond to a
+  single key in a lookup table. We exclude compound queries (multiple phrases
+  composed with e.g. intersections, unions, differences). This helps to keep
+  the basic problem simple; compound query methods can be developed later, and
+  arguably on top of a solution to this simpler problem.
 

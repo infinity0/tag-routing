@@ -86,7 +86,8 @@ The general utilities can be further divided into:
 	types. These aren't a native part of Java, so we built our own. We also
 	implemented many methods for performing complex operations on maps, because
 	our objects are all node-map/arc-map combinations. Our crude score-inferer
-	and value-composer are both implemented here.
+	and value-composer are both implemented here, as well as Probability and
+	Entropy classes that ensure their values are appropriately restricted.
 `tags.util.exec.*`
 :	Our execution architecture. `java.util.concurrent` is highly abstract and
 	lacking in context-specific implementations, and we weren't aware of any
@@ -94,8 +95,9 @@ The general utilities can be further divided into:
 	`TaskService`, similar to `Executor` but accepts general objects to act on;
 	and `MessageReceiver`, a basic interface for message passing.
 `tags.io.*`
-:	This only contains deserialisation classes for GraphML - see
-	[below](#data-format).
+:	This contains deserialisation classes for GraphML, which we had to code
+	because existing utilities weren't good enough - see the [data
+	format](#data-format) section.
 
 ### Design patterns
 
@@ -183,8 +185,8 @@ corresponding to a Python module:
 ### Performance
 
 We had to deal with many performance issues during the implementation of the
-sample generator. Despite our choice of python, these weren't CPU-bounded
-issues, but mostly involved inefficient use of blocking operations.
+sample generator. Although we used Python, it was not the main cause of these
+issues; the CPU-intensive methods were all C libraries.
 
 #### Network IO
 
@@ -197,10 +199,11 @@ than opening a new TCP connection for each call. Since each thread's task is
 only to wait for a system call to return, the lack of true multithreading in
 Python (due to the GIL[REF]) was not a problem.
 
-An alternative approach would be to use an asynchronous event-based IO model,
-like the popular Twisted library[REF]. However, we never intended the sample
-generator to be production code, so we preferred the simplicity of threads,
-over the flexibility and performance of event-based models.
+An alternative approach would be to use an asynchronous event-based IO model
+(the _reactor_ pattern), like the popular Twisted library[REF]. However, we
+never intended the sample generator to be production code, so we preferred the
+simplicity of threads, over the flexibility and performance of event-based
+models.
 
 #### Serialisation
 
@@ -460,11 +463,11 @@ seemed promising, results for a significantly-sized network were poor. There
 are many possible reasons for this, discussed [above](#comments); however,
 ultimately this means that we had far too high an expectation of our system.
 
-On the up side, we have developed a decentralised semantic searching framework
-out of fairly simple initial ideas. Although the system as a whole is highly
-complex, it is made from the combination of many individual modules. These are
-all well-defined and shielded from each other, so that future improvements in
-one component should not need a complete restructuring of the entire system.
+On the up side however, we have developed a decentralised semantic searching
+framework out of fairly simple initial ideas. Although the system as a whole is
+highly complex, it is made from a combination of many individual modules. These
+are all well-defined and shielded from each other, so that future improvements
+in one component should not need a complete restructuring of the entire system.
 
 A full list of directions for taking this project further is available in the
 appendix[LINK]. The most important ones, in our view, would be:
@@ -474,7 +477,7 @@ appendix[LINK]. The most important ones, in our view, would be:
 - find a better data source to run tests on
 - explore better resource-value metrics
 
-In conclusion, and despite all the setbacks, we think this project has been a
+In conclusion, and despite the setbacks, we think this project has been a
 useful endeavour. Even though it has not demonstrably succeeded in its original
 aims, it has given us a better understanding and overview of the problems that
 must be solved in order to build a complex decentralised system, and the amount

@@ -3,28 +3,12 @@
 
 # Theory
 
-We explored many different ideas before implementation began, and during
-implementation we weeded out the ones which seemed to lead nowhere. Afterwards,
-surviving ideas were explored further, and simplified or generalised.[^simp]
-
-As such, there are a few aspects of our design which may seem inelegant or
-imperfect in the context of the theories described below. Unfortunately, we
-didn't have time to go back and refine them; but we have tried to point these
-out where relevant. None of these flaws, we think, are serious enough to defeat
-the basic purpose of the design that we implemented.
-
-[^simp]: For example, information aggregation was originally only considered
-for the naming and routing layers, and was completely ignored for the social
-layer. During implementation we realised that trust metrics could not resolve
-conflicts between ptable entries, and only afterwards did we formulate the
-expression of the general problem.
-
-## System design
-
 _This section describes the overall concepts of our system, and the reasoning
 for our design choices. More precise details, such as the exact contents of the
 various objects introduced, and how the search algorithm processes these
 objects, are given in the [architecture](#architecture) section._
+
+## System design
 
 We start off with the analogy of an **index** being a routing table. Tags are
 addresses, documents are hosts, and routes are semantic relationships between
@@ -39,11 +23,10 @@ strategy games, it could instead list it only under "strategy games".
 A consistent model for this is developed in [address space](#address-space).
 That gives us another type of object, a tag graph, or **tgraph**, which defines
 relationships between tags. Following the principle of compacting information
-again, we need some way to route between these tgraphs. At this point, you
-might worry that we'll continue with this ad-infinitum, inventing more layers
-of meta-objects; but no, we stop here, and actually we use tgraphs to route
-between themselves. That is, tgraphs also use tags for addresses, and list
-related tgraphs under entries for the appropriate tags.[LESS]
+again, we need some way to route between these tgraphs. Rather than inventing
+more layers of meta-objects, we use tgraphs to route between themselves. That
+is, tgraphs also use tags for addresses, and list related tgraphs under entries
+for the appropriate tags.
 
 To explain why this isn't a problem:
 
@@ -54,9 +37,9 @@ To explain why this isn't a problem:
 - More people are likely to have an idea of what a tag's related tags are,
   since this is part of everyday communication. So a neighbourhood of tgraphs
   will cover a larger section of the network.
-- The previous observation also applies to the initiator - most queries are
-  made with some understanding of what the tag means. In the worst case, the
-  system can just ask the user to supply their own "related tags".
+- The previous observation also applies to the query initiator - most of the
+  time, they have some understanding of what the tag means. In the worst case,
+  the system can just ask them to supply their own "related tags".
 
 This principle can be summed up as "language unites". Just as the ubiquity of
 mathematics allows numerical addresses to be routed over, we exploit the
@@ -106,7 +89,7 @@ should be both straightforward and natural.
 
 [DIAG] (ip subnets, etc)
 
-As discussed earlier, many routing schemes use a structured address space that
+As discussed earlier[REF], routing schemes use a structured address space that
 has two (sometimes implicit) properties over its subspaces:
 
 - A measure of the size of the subspace
@@ -121,12 +104,12 @@ is, and its "similarity" to another tag corresponds to how related they are.
 [DIAG] (tag similarities, etc)
 
 There are various methods of defining a mathematical space over semantic tags.
-In the end, we settled on a simple probabilistic model. We interpret the set
-of all documents as a probability space:
+[REF] In the end, we settled on a simple probabilistic model. We interpret the
+set of all documents as a probability space:
 
 - Each document $d \in D$ is an outcome, all equally likely
 - Each tag $t \in T$ is an event, consisting of all documents tagged with $t$.
-  (interpreted as a set, $t = \{ d \in D : d \textrm{ tagged with } t \}$.)
+  (interpreted as a set, $t = \{ d \in D : d$ tagged with $t \}$.)
 
 We can interpret $P(t)$ as the size of $t$, and $P(t_0|t)$ as the similarity of
 $t$ to $t_0$. These are fairly straightforward to calculate (ie. count the
@@ -355,16 +338,16 @@ $$
 p_{ax} = s_a.k^i
 $$
 
-Again, this is a very crude model, which ignores several important factors and
-assumes that $k$ is universally constant. However, we weren't able (in the time
-given) to develop any significantly better models, so we've stuck with it for
-our prototype. We try to given an underestimate of $k$, to give a bias towards
+Again, this is a very crude model, which simplifies several important factors
+and assumes that $k$ is universally constant. However, we weren't able (in the
+time given) to develop any significantly better models, so we stick with it for
+our prototype. We try to give an underestimate of $k$, to give a bias towards
 agents nearer our seed set, which hopefully offers slightly more resistance to
 simple attacks. Our prototype uses $k = 2^{-4}$.
 
 #### Value-composer
 
-Here we explore a crude algorithm to aggregate value judgements from a set of
+Here we explore an algorithm to aggregate value judgements from a set of
 agents. This is required by all the layers, and the model presented here is
 general enough to be applied to all of these.
 
