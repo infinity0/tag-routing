@@ -6,8 +6,8 @@
   <meta name="generator" content="pandoc" />
   <meta name="author" content="Ximin Luo" />
   <meta name="date" content="" />
-  <link rel="stylesheet" href="res/common.css" type="text/css" />
-  <script src="res/LaTeXMathML.js" type="text/javascript"
+  <link rel="stylesheet" href="inc/common.css" type="text/css" />
+  <script src="inc/LaTeXMathML.js" type="text/javascript"
   ></script
   >
   <script type="text/javascript">
@@ -70,8 +70,8 @@
   window.onload = function() {
   	var toc = document.getElementById("TOC");
   	disableSelection(toc);
-  	var sect = toc.firstChild.getElementsByTagName('ul');
   
+  	var sect = toc.firstChild.getElementsByTagName('ul');
   	for (var i=0; i<sect.length; ++i) {
   		var li = sect[i].parentNode;
   		var obj = document.createElement('span');
@@ -107,6 +107,16 @@
   	for (var i=0; i<list.length; ++i) {
   		incSect(list[i]);
   	}
+  
+  	var line = toc.firstChild.getElementsByTagName('a');
+  	for (var i=0; i<line.length; ++i) {
+  		ah = line[i]
+  		obj = document.createElement('div');
+  		obj.appendChild(document.createTextNode(ah.title));
+  		obj.className = "pageno";
+  		ah.parentNode.insertBefore(obj, ah);
+  	}
+  
   }
   
   /*]]>*/
@@ -114,6 +124,14 @@
 </head>
 <body>
 <h1 class="title">Evaluation</h1>
+<ul id="mainmenu">
+<li><a href="intro.html">introduction</a></li>
+<li><a href="design.html">design</a></li>
+<li><a href="evaluate.html">evaluation</a></li>
+<li><a href="execute.html">execution</a></li>
+<li><a href="appendix.html">appendix</a></li>
+<li class="aux"><a href="api/index.html">javadoc</a></li>
+</ul>
 <div id="TOC"
 ><ul
   ><li
@@ -121,8 +139,8 @@
       >Generating data</a
       ><ul
       ><li
-	><a href="#model"
-	  >Model</a
+	><a href="#abstract-data-model"
+	  >Abstract data model</a
 	  ><ul
 	  ><li
 	    ><a href="#producer"
@@ -155,38 +173,28 @@
 	></ul
       ></li
     ><li
-    ><a href="#evaluation"
-      >Evaluation</a
+    ><a href="#measurements"
+      >Measurements</a
       ><ul
       ><li
-	><a href="#test-networks"
-	  >Test networks</a
-	  ><ul
-	  ><li
-	    ><a href="#inter-node-properties"
-	      >Inter-node properties</a
-	      ></li
-	    ><li
-	    ><a href="#intra-node-properties"
-	      >Intra-node properties</a
-	      ></li
-	    ><li
-	    ><a href="#generation-algorithms"
-	      >Generation algorithms</a
-	      ></li
-	    ></ul
+	><a href="#address-scheme"
+	  >Address scheme</a
 	  ></li
 	><li
-	><a href="#simulation"
-	  >Simulation</a
+	><a href="#query-results"
+	  >Query results</a
 	  ><ul
 	  ><li
-	    ><a href="#request-models"
-	      >Request models</a
+	    ><a href="#results-score"
+	      >Results score</a
 	      ></li
 	    ><li
-	    ><a href="#network-conditions"
-	      >Network conditions</a
+	    ><a href="#query-rating"
+	      >Query rating</a
+	      ></li
+	    ><li
+	    ><a href="#query-steps"
+	      >Query steps</a
 	      ></li
 	    ></ul
 	  ></li
@@ -201,11 +209,13 @@
     >Generating data</a
     ></h1
   ><p
-  >[MORE] why we need to generate data.</p
-  ><div id="model"
+  >Since our system is entirely new, there are no existing samples of data which can be directly for its objects. Rather than generate entirely new data from scratch, we decided to collect data from existing resource-sharing services, and process it to fit our data model.</p
+  ><p
+  >This has several advantages. It saves us from having to develop a model of how agents interact with regards to resources, which is hard to emulate well. It also helps us to make a crude evaluation on well the system is working - much of the theory depends upon concepts like tag “size” and tag-tag “similarity”, which we will have intuitive expectations for if the tags are real phrases, but not if they are randomly generated data.</p
+  ><div id="abstract-data-model"
   ><h2
     ><a href="#TOC"
-      >Model</a
+      >Abstract data model</a
       ></h2
     ><p
     >We assume the following environment:</p
@@ -231,7 +241,7 @@
       ><p
       >The basic generative object, we call a <strong
 	>producer</strong
-	>. This is a node that produces resources. Each producer has:</p
+	>. Each producer has:</p
       ><ul
       ><li
 	>a resource set, representing the documents that it knows about</li
@@ -243,19 +253,21 @@
       ><p
       >Producers represent data agents rather than social identities - that is, they can produce indexes and tgraphs. Producers can link together in a <em
 	>resource relationship</em
+	>, or <em
+	>route</em
 	>; we write <span class="LaTeX"
 	>$p_0 \rightarrow^t p$</span
-	> to mean that a producer <span class="LaTeX"
+	> to mean that <span class="LaTeX"
 	>$p_0$</span
-	> points to another producer <span class="LaTeX"
+	> points to <span class="LaTeX"
 	>$p$</span
 	> via a tag <span class="LaTeX"
 	>$t$</span
-	>. (Note again that this is <em
+	>. (Note again this is <em
 	>not</em
 	> equivalent to a social relationship.)</p
       ><p
-      >Each resource relationship <span class="LaTeX"
+      >Each route <span class="LaTeX"
 	>$p_0 \rightarrow^t p$</span
 	> has an associated attribute <span class="LaTeX"
 	>$w$</span
@@ -263,7 +275,7 @@
 	>$t$</span
 	> to <span class="LaTeX"
 	>$p$</span
-	>. For simplicity’s sake, in our model we will only calculate <span class="LaTeX"
+	>. For simplicity’s sake, we only calculate <span class="LaTeX"
 	>$w$</span
 	> given <span class="LaTeX"
 	>$t$</span
@@ -271,19 +283,17 @@
 	>$p$</span
 	>, and ignore <span class="LaTeX"
 	>$p_0$</span
-	>.</p
-      ><p
-      >From our specification, an arc <span class="LaTeX"
+	>. From our specification, any arc <span class="LaTeX"
 	>$(t, d)$</span
 	> should have attribute <span class="LaTeX"
 	>$w = P(t|d)$</span
-	>. Since <span class="LaTeX"
+	>. So given a <span class="LaTeX"
+	>$(t, p)$</span
+	>, we consider <span class="LaTeX"
 	>$p$</span
-	> is essentially just a set of documents, we take <span class="LaTeX"
-	>$(t, p) : w$</span
-	> with <span class="LaTeX"
+	> as a set of documents (its resource set) and calculate <span class="LaTeX"
 	>$w$</span
-	> being the independent union of <span class="LaTeX"
+	> to be the independent union of <span class="LaTeX"
 	>$P(t|d)$</span
 	> over <span class="LaTeX"
 	>$d \in p$</span
@@ -300,10 +310,10 @@
 	>. Attributes for tag-document arcs are taken from the working environment, as per our assumptions. Attributes for tag-index arcs are taken from the similarity scores for the index’s producer, as calculated above.</p
       ><p
       >Generating a tgraph is more complex; we first construct an estimate <span class="LaTeX"
-	>$s'$</span
+	>$|\breveD|$</span
 	> of <span class="LaTeX"
 	>$|D|$</span
-	> from the point of view of a source producer <span class="LaTeX"
+	> from the view of a source producer <span class="LaTeX"
 	>$p_0$</span
 	>. One approach is to take the independent union of <span class="LaTeX"
 	>$P(p) = |p|/|D|$</span
@@ -319,10 +329,6 @@
     ><a href="#TOC"
       >Application</a
       ></h2
-    ><p
-    >Rather than generate entirely new data from scratch, we decided to collect data from existing resource-sharing services, and process it to fit our data model.</p
-    ><p
-    >This has several advantages. It saves us from having to develop a model of how agents interact with regards to resources, which is hard to emulate well. It also helps us to make a crude evaluation on well the system is working - much of the theory depends upon concepts like tag “size” and tag-tag “similarity”, which we will have intuitive expectations for if the tags are real phrases, but not if they are randomly generated data.</p
     ><p
     >We were aware of three online services based around social sharing of content: Flickr[REF] (photos), Last.fm[REF] (music), and Delicious[REF] (bookmarks). We briefly investigated each of their APIs to see which would be most suitable to base our test data on.</p
     ><p
@@ -341,7 +347,7 @@
       ><p
       >Flickr also infers tag <em
 	>clusters</em
-	>, which are sets of tags that occur frequently among common photos. (They seem to use an algorithm which infers each cluster from on a seed triple of tags.) A tag may belong to more than one cluster; this often corresponds to its different semantic senses. We do not add this cluster data directly to producers, but we do use it to generate content relationships.</p
+	>, which are sets of tags that occur frequently among common photos. (They seem to use an algorithm which infers each cluster from a seed tag-triple.) A tag may belong to more than one cluster; this often corresponds to its different semantic senses. We do not add this cluster data directly to producers, but we use it to generate routes.</p
       ></div
     ><div id="crawl-strategy"
     ><h3
@@ -369,9 +375,11 @@
 	>rep-documents</em
 	>.</p
       ><p
-      >We generate content relationships as follows: for each producer <span class="LaTeX"
+      >We generate routes as follows: for each producer <span class="LaTeX"
 	>$p_0$</span
-	> we select the producers whose resource sets contain many of its rep-documents. We call these the <em
+	> we select producers whose resource sets contain many rep-documents of <span class="LaTeX"
+	>$p_0$</span
+	>. We call these the <em
 	>related producers</em
 	>. For each related producer <span class="LaTeX"
 	>$p$</span
@@ -387,8 +395,8 @@
 	>$p$</span
 	>. This was hoped to be “more realistic”, though this is obviously open to considerable debate.</p
       ><p
-      >We then produce indexes according to their resource sets and these content relationships, using the method described <a href="#object-production"
-	>above</a
+      >We then produce indexes according to their resource sets and these routes, using the method described <a href="#object-production"
+	>previously</a
 	>.</p
       ><p
       >Our data set does not have any natural entities that, we believe, can provide an adequate naming service, as tgraphs are supposed to. (None of our other social service candidates had such functionality either.) However, we do have preconceived ideas of the information tgraphs would contain, and how they would be structured. So we generate new producers from the existing producers, for producing tgraphs. Our model aims to satisfy the following properties:</p
@@ -407,151 +415,172 @@
 	>not</em
 	> intended to have a deep theoretical basis, and we did not consider the details of each detected algorithm; rather, we only wanted a quick-and-easy way to achieve the properties listed above.</p
       ><p
-      >We construct the resource set of each super-producer from the union of those of their child producers. We generate content relationships in a similar way to our original producers, and produce tgraphs similarly too.</p
+      >We construct the resource set of each super-producer from the union of those of their child producers. We generate routes in a similar way to our original producers, and produce tgraphs similarly too.</p
       ><p
       >Lastly, we generate ptables. We simply have each user-producer link to the producers for the groups it belongs to (for indexes) and the super-producers that they in turn belong to (for tgraphs). Social relationships between users are taken straight from the unprocessed data set.</p
       ></div
     ></div
   ></div
-><div id="evaluation"
+><div id="measurements"
 ><h1
   ><a href="#TOC"
-    >Evaluation</a
+    >Measurements</a
     ></h1
-  ><ul
-  ><li
-    >./run.sh -d../z/small -s51114580@N00 -i1000 -n64 -v2 google</li
-    ><li
-    ><p
-      >./run.sh -d../z/small -s8072015@N04 -i1000 -n256 -v3 google</p
-      ></li
-    ><li
-    >compare inferred address scheme with true address scheme</li
-    ><li
-    >test whether these match our expectations (nodes further out are “more general”)</li
-    ><li
-    ><p
-      >basically, some measure of how similar two graphs are?</p
-      ></li
-    ></ul
   ><p
-  >query test:</p
-  ><ol style="list-style-type: decimal;"
-  ><li
-    >score (f1_score, precision, recall)</li
-    ><li
-    >steps to run the algorithm</li
-    ><li
-    ><p
-      >closeness(id, tag)</p
-      ></li
-    ><li
-    >is dependent variable, it’s what we’re interested in</li
-    ><li
-    >is not that interesting since we expect recall better, and</li
-    ><li
-    ><p
-      >independent variable</p
-      ></li
-    ></ol
+  ><em
+    >We were far behind schedule by the time we finished coding both the search application and the sample generator, and so we had very little time to devise a comprehensive and precise set of tests. What follows is our attempt to derive some specific measurement metrics that might give a meaningful, if extremely rough, idea on the performance of our system, in the limited time we had left.</em
+    ></p
   ><p
-  >plot (1) against (3) for a small set of (2) set of (2) we can take to be [32, 64, 128, 256]</p
-  ><p
-  >more sophisticated score would take into account the distance between results docs and actual docs</p
-  ><div id="test-networks"
+  ><em
+    >The actual execution of these measurements on the results we obtained, are described in <a href="execute.html#full-testing"
+      >testing - full testing</a
+      >.</em
+    ></p
+  ><div id="address-scheme"
   ><h2
     ><a href="#TOC"
-      >Test networks</a
+      >Address scheme</a
       ></h2
-    ><div id="inter-node-properties"
-    ><h3
-      ><a href="#TOC"
-	>Inter-node properties</a
-	></h3
-      ><ul
-      ><li
-	>neighbour count (ie. degree) distribution</li
-	><li
-	>neighbour semantic relation distribution</li
-	></ul
-      ></div
-    ><div id="intra-node-properties"
-    ><h3
-      ><a href="#TOC"
-	>Intra-node properties</a
-	></h3
-      ><ul
-      ><li
-	>semantic unity (how “related” its tags are)</li
-	><li
-	>semantic specialty (how “general” its tags are)</li
-	></ul
-      ></div
-    ><div id="generation-algorithms"
-    ><h3
-      ><a href="#TOC"
-	>Generation algorithms</a
-	></h3
-      ><ul
-      ><li
-	>Use network formed by extracted data (“real world”)</li
-	><li
-	>Barabási-Albert model (preferential attachment)</li
-	><li
-	>scale-free</li
-	><li
-	>not small-world; according to wikipedia:<ul
-	  ><li
-	    >clustering coefficient is power-law, similar to hierarchical networks</li
-	    ><li
-	    >small-world networks have constant clustering coefficient</li
-	    ></ul
-	  ></li
-	><li
-	>TODO etc. read up on network theory.</li
-	><li
-	>hierarchies</li
-	><li
-	>other structures?</li
-	></ul
-      ><p
-      >Ideally we want a single algorithm which takes as input, various parameters for the properties listed in the previous two sections, and outputs a random graph with those properties.</p
-      ></div
+    ><p
+    >Our search application infers an address scheme from the tgraphs network. We want a way of comparing this against an “ideal” address scheme (as implied by our theoretical model and the actual data sample). We use two different senses of “ideal”:</p
+    ><dl
+    ><dt
+      >Local</dt
+      ><dd
+      >We calculate the ideal scheme from our crawl data, restricted to only the tags that are part of the subject scheme.</dd
+      ><dt
+      >World</dt
+      ><dd
+      >We calculate the ideal scheme from our entire crawl data, limited to the nearest <span class="LaTeX"
+	>$n$</span
+	> tags, where <span class="LaTeX"
+	>$n$</span
+	> is the number of tags in the subject scheme.</dd
+      ></dl
+    ><p
+    >In both cases, we score the subject address scheme using the Jaccard index (|intersection| / |union|) over the two edge sets (subject vs ideal), which gives a measure of their similarity (0 is worst, 1 is best).</p
     ></div
-  ><div id="simulation"
+  ><div id="query-results"
   ><h2
     ><a href="#TOC"
-      >Simulation</a
+      >Query results</a
       ></h2
-    ><div id="request-models"
+    ><p
+    >Given a map of queries to their results <span class="LaTeX"
+      >$\{ (z,t) : R \}$</span
+      > we want a way of scoring the result, and comparing this against a measurement of how ideally “hard” the query would have been to satisfy.</p
+    ><p
+    >In terms of plotting a graph, the query rating is our independent variable, and the results score is our dependent variable.</p
+    ><div id="results-score"
     ><h3
       ><a href="#TOC"
-	>Request models</a
+	>Results score</a
 	></h3
+      ><p
+      >There are a few standard ways of scoring a set of results for a query. Let <span class="LaTeX"
+	>$S$</span
+	> be the documents associated with tag <span class="LaTeX"
+	>$t$</span
+	> (which we know from our data sample), and <span class="LaTeX"
+	>$R$</span
+	> be the results returned by our search application. Then:</p
+      ><dl
+      ><dt
+	>Precision</dt
+	><dd
+	><span class="LaTeX"
+	  >$p = |R \cap S| / |R|$</span
+	  ></dd
+	><dt
+	>Recall</dt
+	><dd
+	><span class="LaTeX"
+	  >$r = |R \cap S| / |S|$</span
+	  ></dd
+	><dt
+	>F1-score</dt
+	><dd
+	><span class="LaTeX"
+	  >$f = 2pr / (p+r) = 2 |R \cap S| / (|S| + |R|)$</span
+	  ></dd
+	></dl
+      ><p
+      >It is widely acknowledged that acheiving high <span class="LaTeX"
+	>$p$</span
+	> <em
+	>and</em
+	> <span class="LaTeX"
+	>$r$</span
+	> is hard, so we will consider these separately. <span class="LaTeX"
+	>$f$</span
+	> is just the harmonic mean of <span class="LaTeX"
+	>$p$</span
+	> and <span class="LaTeX"
+	>$r$</span
+	>, which will be high only if both <span class="LaTeX"
+	>$p$</span
+	> and <span class="LaTeX"
+	>$r$</span
+	> are high.</p
+      ><p
+      >There are also ways to evaluate results’ ranking. However, we did not give any special consideration for ranking documents, nor for ranking our sample data. In any case, we didn’t have the time to explore such evaluation metrics;</p
       ></div
-    ><div id="network-conditions"
+    ><div id="query-rating"
     ><h3
       ><a href="#TOC"
-	>Network conditions</a
+	>Query rating</a
 	></h3
-      ><ul
-      ><li
-	>perfect conditions</li
-	><li
-	>random failure</li
-	><li
-	>malicious attacks - under the assumptions of “abstract storage network”, only attacks vs the entire network can occur on the naming / routing planes. attacks vs individuals on the social plane is a separate topic, ignore here<ul
-	  ><li
-	    >attacks vs most well-connected nodes</li
-	    ><li
-	    >MORE</li
-	    ></ul
-	  ></li
-	></ul
+      ><p
+      >As for the “difficulty” of a query, we were not aware of any existing metric that could be neatly applied to our system, with all its network components. So we tried to come up with our own metric.</p
+      ><p
+      >The “difficulty” can be interpreted as the “closeness” between a seed identity, and the subject tag for a query. This is vague, we need a more specific measure for our tests. We use the following:</p
+      ><p
+      ><span class="LaTeX"
+	>$$
+C(V_s, V_t) = \sum_{v \in V_t} \sum_{u \in V_s} 2^{-d_G(u, v)} / |V_s|
+$$</span
+	></p
+      ><p
+      >where <span class="LaTeX"
+	>$V_s$</span
+	>, <span class="LaTeX"
+	>$V_t$</span
+	> are the sets of indexes we start from and end at; and <span class="LaTeX"
+	>$d_G(u, v)$</span
+	> is the geodesic distance between two indexes <span class="LaTeX"
+	>$u$</span
+	>, <span class="LaTeX"
+	>$v$</span
+	>. For a more detailed discussion, see <a href="appendix.html#closeness"
+	>closeness</a
+	> in the appendix.</p
+      ><p
+      >A more sophisticated rating metric might be to calculate the total length of the minimal subgraph which holds all non-redundant paths from <span class="LaTeX"
+	>$V_s$</span
+	> to <span class="LaTeX"
+	>$V_t$</span
+	>. However, this would be more complex to calculate efficiently.[EXTN]</p
+      ></div
+    ><div id="query-steps"
+    ><h3
+      ><a href="#TOC"
+	>Query steps</a
+	></h3
+      ><p
+      >A third variable that we have so far ignored above is the number of steps to run our search application for - recall that there is no termination condition other than what the user says, and beyond that, searching the entire network.</p
+      ><p
+      >As the number of steps increases, we expect that recall will increase, whereas precision will increase until “near” results are exhausted, then hopefully only decrease slightly. It would be nice to evaluate this more precisely, but we have no time for this.</p
+      ><p
+      >However, it’s trivial to have the system print out a results report after a given number of steps <span class="LaTeX"
+	>$s$</span
+	>, then continue and repeat. We will do this for all queries, with <span class="LaTeX"
+	>$s \in \{ 16, 32, 64 \}$</span
+	>, and plot (results score) vs (query rating) as described above, for the results at each of these steps, and make brief comments on these sets of evaluations.</p
       ></div
     ></div
   ></div
 >
+
 </body>
 </html>
 

@@ -1,13 +1,13 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
-  <title>Design and architecture</title>
+  <title>Design</title>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="author" content="Ximin Luo" />
   <meta name="date" content="" />
-  <link rel="stylesheet" href="res/common.css" type="text/css" />
-  <script src="res/LaTeXMathML.js" type="text/javascript"
+  <link rel="stylesheet" href="inc/common.css" type="text/css" />
+  <script src="inc/LaTeXMathML.js" type="text/javascript"
   ></script
   >
   <script type="text/javascript">
@@ -70,8 +70,8 @@
   window.onload = function() {
   	var toc = document.getElementById("TOC");
   	disableSelection(toc);
-  	var sect = toc.firstChild.getElementsByTagName('ul');
   
+  	var sect = toc.firstChild.getElementsByTagName('ul');
   	for (var i=0; i<sect.length; ++i) {
   		var li = sect[i].parentNode;
   		var obj = document.createElement('span');
@@ -107,68 +107,40 @@
   	for (var i=0; i<list.length; ++i) {
   		incSect(list[i]);
   	}
+  
+  	var line = toc.firstChild.getElementsByTagName('a');
+  	for (var i=0; i<line.length; ++i) {
+  		ah = line[i]
+  		obj = document.createElement('div');
+  		obj.appendChild(document.createTextNode(ah.title));
+  		obj.className = "pageno";
+  		ah.parentNode.insertBefore(obj, ah);
+  	}
+  
   }
   
   /*]]>*/
   </script>
 </head>
 <body>
-<h1 class="title">Design and architecture</h1>
+<h1 class="title">Design</h1>
+<ul id="mainmenu">
+<li><a href="intro.html">introduction</a></li>
+<li><a href="design.html">design</a></li>
+<li><a href="evaluate.html">evaluation</a></li>
+<li><a href="execute.html">execution</a></li>
+<li><a href="appendix.html">appendix</a></li>
+<li class="aux"><a href="api/index.html">javadoc</a></li>
+</ul>
 <div id="TOC"
 ><ul
   ><li
-    ><a href="#introduction"
-      >Introduction</a
-      ><ul
-      ><li
-	><a href="#background"
-	  >Background</a
-	  ></li
-	><li
-	><a href="#related-systems"
-	  >Related systems</a
-	  ></li
-	></ul
-      ></li
-    ><li
-    ><a href="#preparation"
-      >Preparation</a
-      ><ul
-      ><li
-	><a href="#objectives"
-	  >Objectives</a
-	  ></li
-	><li
-	><a href="#potential-issues"
-	  >Potential issues</a
-	  ></li
-	><li
-	><a href="#initial-observations"
-	  >Initial observations</a
-	  ></li
-	><li
-	><a href="#working-assumptions"
-	  >Working assumptions</a
-	  ></li
-	></ul
-      ></li
-    ><li
     ><a href="#theory"
       >Theory</a
       ><ul
       ><li
 	><a href="#system-design"
 	  >System design</a
-	  ><ul
-	  ><li
-	    ><a href="#mutability-of-objects"
-	      >Mutability of objects</a
-	      ></li
-	    ><li
-	    ><a href="#data-collection"
-	      >Data collection</a
-	      ></li
-	    ></ul
 	  ></li
 	><li
 	><a href="#structured-address-space"
@@ -185,16 +157,22 @@
 	  >Information aggregation</a
 	  ><ul
 	  ><li
-	    ><a href="#simplification"
-	      >Simplification</a
-	      ></li
-	    ><li
-	    ><a href="#use-contexts"
-	      >Use contexts</a
-	      ></li
-	    ><li
 	    ><a href="#attributes"
 	      >Attributes</a
+	      ></li
+	    ><li
+	    ><a href="#simplification"
+	      >Simplification</a
+	      ><ul
+	      ><li
+		><a href="#score-inferer"
+		  >Score-inferer</a
+		  ></li
+		><li
+		><a href="#value-composer"
+		  >Value-composer</a
+		  ></li
+		></ul
 	      ></li
 	    ></ul
 	  ></li
@@ -223,8 +201,8 @@
 	    ></ul
 	  ></li
 	><li
-	><a href="#abstraction-layers"
-	  >Abstraction layers</a
+	><a href="#layers"
+	  >Layers</a
 	  ><ul
 	  ><li
 	    ><a href="#contact"
@@ -289,288 +267,58 @@
       >Practical details</a
       ><ul
       ><li
-	><a href="#system-components"
-	  >System components</a
+	><a href="#using-the-value-composer"
+	  >Using the value-composer</a
 	  ><ul
 	  ><li
-	    ><a href="#using-the-value-composer"
-	      >Using the value-composer</a
-	      ><ul
-	      ><li
-		><a href="#on-ptables"
-		  >On ptables</a
-		  ></li
-		><li
-		><a href="#on-tgraphs"
-		  >On tgraphs</a
-		  ></li
-		><li
-		><a href="#on-indexes"
-		  >On indexes</a
-		  ></li
-		></ul
+	    ><a href="#on-ptables"
+	      >On ptables</a
 	      ></li
 	    ><li
-	    ><a href="#traversing-objects-3"
-	      >Traversing objects</a
-	      ><ul
-	      ><li
-		><a href="#naming-layer"
-		  >Naming layer</a
-		  ></li
-		><li
-		><a href="#routing-layer"
-		  >Routing layer</a
-		  ></li
-		></ul
+	    ><a href="#on-tgraphs"
+	      >On tgraphs</a
+	      ></li
+	    ><li
+	    ><a href="#on-indexes"
+	      >On indexes</a
 	      ></li
 	    ></ul
 	  ></li
 	><li
-	><a href="#optimisation"
-	  >Optimisation</a
+	><a href="#traversing-objects-3"
+	  >Traversing objects</a
 	  ><ul
 	  ><li
-	    ><a href="#data-structures-1"
-	      >Data structures</a
+	    ><a href="#naming-layer"
+	      >Naming layer</a
 	      ></li
 	    ><li
-	    ><a href="#retrieval-of-remote-objects"
-	      >Retrieval of remote objects</a
-	      ></li
-	    ><li
-	    ><a href="#caching-storage-objects"
-	      >Caching storage objects</a
-	      ></li
-	    ><li
-	    ><a href="#incremental-state-updates"
-	      >Incremental state updates</a
+	    ><a href="#routing-layer"
+	      >Routing layer</a
 	      ></li
 	    ></ul
 	  ></li
 	></ul
-      ></li
-    ><li
-    ><a href="#design"
-      >Design</a
-      ><ul
-      ><li
-	><a href="#score-inferer"
-	  >Score-inferer</a
-	  ></li
-	><li
-	><a href="#value-composer"
-	  >Value-composer</a
-	  ></li
-	></ul
-      ></li
-    ><li
-    ><a href="#comparison"
-      >Comparison</a
       ></li
     ></ul
   ></div
 >
-<div id="introduction"
-><h1
-  ><a href="#TOC"
-    >Introduction</a
-    ></h1
-  ><div id="background"
-  ><h2
-    ><a href="#TOC"
-      >Background</a
-      ></h2
-    ><p
-    >Searching for information is an essential component of any network. Without it, there might as well not be a network in the first place.</p
-    ><p
-    >The world wide web is the largest information network ever created; currently, search is a service; providers employ crawlers to navigate this network, and extract and summarise information from the documents visited, into a form which is suitable for insertion into a database. “Searching the web” usually means querying these pre-built databases, rather than dynamically routing your way through the web’s content.</p
-    ><p
-    >Preparing and maintaining the database is extremely resource-intensive for a large network, which results in high barriers to entry. The utility of a search service increases with how much of the network it covers; new providers must recreate a database of comparable size before clients will switch, or else use indexing algorithms that produce decidedly better results than alternatives.</p
-    ><p
-    >This creates conditions of oligopoly, which is inherently vulnerable to both abuse and attack. Large providers are trusted by a great number of clients, so more people are affected when this trust is broken. We have already seen cases of providers censoring their search results, both voluntarily<sup
-      ><a href="#fn1" class="footnoteRef" id="fnref1"
-	>1</a
-	></sup
-      > and under coercion<sup
-      ><a href="#fn2" class="footnoteRef" id="fnref2"
-	>2</a
-	></sup
-      >. Privacy is also a concern: providers can monitor client usage of the service, and build up a profile of personal activities.</p
-    ><p
-    >Another issue is the depth and granularity of search topics. Most of us don’t use a search provider for every item of information we need; instead, we often issue a query that gives us a selection of related sites from all over the web, then manually browse within these sites to target our needs more precisely. In addition, some websites have non-public information, or specialist knowledge that generic search algorithms aren’t able to index effectively. In these cases, central index databases are inadequate.</p
-    ><p
-    >An alternative approach is to perform dynamic routing using query semantics. Instead of a simple client-provider model where a single query is a single transaction, we propose a co-operative model where queries are routed between autonomous providers, and results aggregated for the end user. Small providers can index their own local sections of the network, and access and results can be fine-tuned using local information. In addition, clients will have a wider choice of who to trust.</p
-    ><p
-    >Of course, decentralised systems have their own issues, and these are briefly discussed <a href="#potential-issues"
-      >below</a
-      >. We believe that these are all practical issues that are ultimately solvable in the long run, whereas centralisation is an inherent problem in itself.</p
-    ><p
-    >Imagine your browser acting like a router; you type in a search query and it automatically follows links between pages to reach what you want. Of course, this is a long way off, and it may well be beyond the capabilities of current hardware and networks, but hopefully this project makes a useful contribution in that direction.</p
-    ></div
-  ><div id="related-systems"
-  ><h2
-    ><a href="#TOC"
-      >Related systems</a
-      ></h2
-    ><p
-    >There are many existing systems which use decentralised, co-operative, dynamic routing algorithms, such as the internet and various peer-to-peer overlay networks. There are a great variety of different objectives, approaches, and models, but some common themes include:</p
-    ><dl
-    ><dt
-      >Key-based routing</dt
-      ><dd
-      >The network defines an address space and a distance metric, where each address is represented by a binary key. (DHTs, Freenet, GNUnet)</dd
-      ><dt
-      >Mesh networks</dt
-      ><dd
-      >Various heuristics are used to maintain structure and performance, such as random walks, bandwidth detection, index delegation, etc. (Gnutella)</dd
-      ><dt
-      >Social relationships</dt
-      ><dd
-      >Nodes prefer to peer with trusted friends. This provides better security properties, and a more predictable network structure. (OneSwarm, Freenet)</dd
-      ></dl
-    ><p
-    >A more comprehensive survey of peer-to-peer searching is presented in <sup
-      ><a href="#fn3" class="footnoteRef" id="fnref3"
-	>3</a
-	></sup
-      >. Using the terminology of that paper, this project develops and evaluates a <em
-      >probability-based model</em
-      > of information retrieval intended to support <em
-      >comprehensive keyword search</em
-      > (as opposed to <em
-      >partial keyword search</em
-      >).</p
-    ><p
-    >Existing research into peer-to-peer semantic search includes <sup
-      ><a href="#fn4" class="footnoteRef" id="fnref4"
-	>4</a
-	></sup
-      ><sup
-      ><a href="#fn5" class="footnoteRef" id="fnref5"
-	>5</a
-	></sup
-      >. None of these are currently deployed in real systems, and we were unaware of them during the initial stages of our project. A discussion of these systems and how they relate to our project is given <a href="#comparison"
-      >later</a
-      >, after our system has been described first.</p
-    ></div
-  ></div
-><div id="preparation"
-><h1
-  ><a href="#TOC"
-    >Preparation</a
-    ></h1
-  ><div id="objectives"
-  ><h2
-    ><a href="#TOC"
-      >Objectives</a
-      ></h2
-    ><p
-    >We intend to build a system that can potentially offer a similar functionality to existing search providers, although obviously our prototype will be nowhere near as sophisticated nor efficient. Core functional aspects include:</p
-    ><dl
-    ><dt
-      >Semantics</dt
-      ><dd
-      >Query subjects have semantic relevance to the results, so the routing algorithm and address scheme must reflect this.</dd
-      ><dt
-      >Reach</dt
-      ><dd
-      >It should be feasible to locate all the data matching a given query on the entire network (or connected component).</dd
-      ><dt
-      >Robustness</dt
-      ><dd
-      >Query paths and returned results should be resistant against subversion, such as spam floods or data poisoning.</dd
-      ></dl
-    ><p
-    >Most major currently-deployed systems have at least one incompatibility with the above. For example, DHTs are scalable, and will reach data if it exists on the network, but addresses have no relation to the semantics of the data. Many mesh networks (eg. Gnutella) can perform keyword search, but do not attempt to reach all relevant data on the network.</p
-    ></div
-  ><div id="potential-issues"
-  ><h2
-    ><a href="#TOC"
-      >Potential issues</a
-      ></h2
-    ><p
-    ><em
-      >Here, we briefly discuss issues surrounding a decentralised architecture, and present ways of addressing these issues, or else explain why we think they are not a significant problem in the context of this project.</em
-      ></p
-    ><p
-    >A system which must route queries between autonomous providers will obviously be slower than a system that only needs to query a single provider. At present, this is noticeable and signficiant - eg. Google returns results for the entire web almost instantaneously, whereas DHT queries on a medium-sized network might take a minute to complete. However, systems only get better, not worse, and hardware will improve in the years to come. By the time research in this area is well-developed, it’s entirely possible that performance will have improved beyond the limit of human perceptibility.</p
-    ><p
-    >Existing large service providers might have little incentive to participate in a co-operatiave search system, since they are each competing for control over the market. However, this is less of a factor for smaller providers who would otherwise be unable to attract many users, since their intention is only to provide search capabilities. In principle, this is no different from displaying links to other websites to help your visitors find what they want - linking to useful content increases your own utility, even if this is not reciprocated.</p
-    ><p
-    >As for constructing a decentralised system in the first place, it’s widely acknowledged that building these to be both scalable and secure is a difficult problem. However, nothing suggests that this is an inherently impossible task; and once a problem is solved, future generations may reap the benefits without having to expend the initial development cost. Recent designs based on social networks have been promising, and we will use this as an inspiration.</p
-    ></div
-  ><div id="initial-observations"
-  ><h2
-    ><a href="#TOC"
-      >Initial observations</a
-      ></h2
-    ><p
-    >Our first ideas drew upon our experiences and pre-conceptions on how we humans try to locate things. Two themes stand out:</p
-    ><ul
-    ><li
-      >keeping knowledge on who knows what, and use this to direct query routes.</li
-      ><li
-      >shifting the query subject to increase recall or precision - eg. broadening increases the recall, and re-specialising increases the precision</li
-      ></ul
-    ><p
-    >We also drew from our existing background knowledge on decentralised storage networks, such as Freenet and other Distributed Hash Tables. DHTs are very efficient and scalable, most systems giving O(log n) performance<sup
-      ><a href="#fn6" class="footnoteRef" id="fnref6"
-	>6</a
-	></sup
-      > in the size of the network. These generally have a well-defined address space with a distance metric, where each address can be represented as a binary key. This allows for fairly simple, yet effective, routing algorithms.</p
-    ><p
-    >An informal explanation is that a numerical address space can be partitioned hierarchically, eg. by taking successively larger prefixes of an address. This allows greedy routing to work effectively, ie. by finding the neighbour which shares the smallest partition with the desired target node (in IP routing, this is just “longest-prefix-match”, which we are all familiar with).</p
-    ><p
-    >[DIAG] diagram of hierarchical partitioning, [REF] kleinberg “small world”</p
-    ><p
-    >Two of these ideas seemed to fit well together - if we made the query-shifting aspect of “human” routing more precise, by using the idea of a structured address space, then this could also allow for a simple routing algorithm. Semantic tags are not as naturally structured as numerical addresses however, and a significant part of our time would be spent in developing a theoretical model of a partitionable and navigable space over tags.</p
-    ><p
-    >We did not have any specific initial ideas on how to ensure the global reach of a search request. Using tags as addresses means that each address holds many resources; being able to reach all the resources for a single tag is equivalent to being able to reach any arbitrary resource for that tag. Our DHT-inspired design aims to support the latter; however, bounding the cost of finding extra resources is a more complex problem, which we didn’t get the chance to explore. [EXTN]</p
-    ><p
-    >Finally, we chose to base our system upon a foundation of social relationships. Recent research has shown that analysing network structure can be effective in resisting malicious information. A major reason is because social relationships are much more expensive to attack than simple indexing algorithms that make naive assumptions about input data. Examples include Google’s PageRank[REF], trust metrics such as Advogato[REF], and sybil detection algorithms such as SybilInfer[REF].</p
-    ></div
-  ><div id="working-assumptions"
-  ><h2
-    ><a href="#TOC"
-      >Working assumptions</a
-      ></h2
-    ><p
-    >Since the aim of the project is fairly ambitious, we want to repeat as little work as possible. Therefore, we make various assumptions about the environment that our system will run under. Some of these are reasonable, and some of these are fairly restrictive; however, we feel they are prudent and necessary in the context of this project.</p
-    ><p
-    >Locating known objects is essentially a solved problem: the internet and DHTs both offer ways to retrieve objects based on a globally unique address. Without this primitive we cannot continue at all; data has to be stored somewhere, and it has to be accessible to an arbitrary subset of the network.</p
-    ><p
-    >Additionally, we assume that objects are always available. In a real network, this can be implemented with proxy services (servers that lend out storage and guarantee continuous access to this), or it might be a property of the storage network (eg. DHTs). This simplifies our design, since it allows us to avoid dealing with the issue of churn, by delegating it to an external component.</p
-    ><p
-    >This also forces us to consider an iterative routing algorithm rather than a recursive one. Since data cannot forward queries onto other pieces of data, a lient must process it themselves, determine which objects to retrieve next, then retrieve those, etc. Hopefully, our design can be adapted into a recursive one without much effort, but we won’t give special consideration to this.</p
-    ><p
-    >Importantly, we will only consider single-phrase queries, where each “phrase” corresponds to a single entry in a lookup table. We exclude compound queries, ie. multiple phrases composed with operations such as intersections, unions, differences, etc. This helps to keep the basic problem simple; compound query methods can be developed later, and arguably on top of a solution to this simpler problem.</p
-    ></div
-  ></div
-><div id="theory"
+<div id="theory"
 ><h1
   ><a href="#TOC"
     >Theory</a
     ></h1
   ><p
-  >In this chapter, we discuss the theoretical ideas behind the system. We experimented with many different ideas before the code development began, and during development we weeded out the ones which seemed to lead to a dead end. Afterwards, the surviving ideas were explored further, and simplified or generalised.<sup
-    ><a href="#fn7" class="footnoteRef" id="fnref7"
-      >7</a
-      ></sup
+  ><em
+    >This section describes the overall concepts of our system, and the reasoning for our design choices. More precise details, such as the exact contents of the various objects introduced, and how the search algorithm processes these objects, are given in the <a href="#architecture"
+      >architecture</a
+      > section.</em
     ></p
-  ><p
-  >As such, there are a few aspects of our system design which may seem inelegant or imperfect in the context of the theories described below. Unfortunatly, we didn’t have enough time to go back and refine them; but we have tried to point these out in the appropriate parts of the architecture section. None of these flaws, we think, are serious enough to defeat the basic purpose of the design that we implemented.</p
   ><div id="system-design"
   ><h2
     ><a href="#TOC"
       >System design</a
       ></h2
-    ><p
-    ><em
-      >This section describes the overall concepts of our system, and the reasoning for our design choices. More precise details, such as the exact contents of the various objects introduced, and how the search algorithm processes these objects, are given in the <a href="#architecture"
-	>architecture</a
-	> section.</em
-      ></p
     ><p
     >We start off with the analogy of an <strong
       >index</strong
@@ -580,7 +328,7 @@
       >address space</a
       >. That gives us another type of object, a tag graph, or <strong
       >tgraph</strong
-      >, which defines relationships between tags. Following the principle of compacting information again, we need some way to route between these tgraphs. At this point, you might worry that we’ll continue with this ad-infinitum, inventing more layers of meta-objects; but no, we stop here, and actually we use tgraphs to route between themselves. That is, tgraphs also use tags for addresses, and list related tgraphs under entries for the appropriate tags.</p
+      >, which defines relationships between tags. Following the principle of compacting information again, we need some way to route between these tgraphs. Rather than inventing more layers of meta-objects, we use tgraphs to route between themselves. That is, tgraphs also use tags for addresses, and list related tgraphs under entries for the appropriate tags.</p
     ><p
     >To explain why this isn’t a problem:</p
     ><ul
@@ -593,7 +341,7 @@
       ><li
       >More people are likely to have an idea of what a tag’s related tags are, since this is part of everyday communication. So a neighbourhood of tgraphs will cover a larger section of the network.</li
       ><li
-      >The previous observation also applies to the initiator - most queries are made with some understanding of what the tag means. In the worst case, the system can just ask the user to supply their own “related tags”.</li
+      >The previous observation also applies to the query initiator - most of the time, they have some understanding of what the tag means. In the worst case, the system can just ask them to supply their own “related tags”.</li
       ></ul
     ><p
     >This principle can be summed up as “language unites”. Just as the ubiquity of mathematics allows numerical addresses to be routed over, we exploit the semi-ubiquity of language to allow tags to be routed over.</p
@@ -603,28 +351,6 @@
     >Each identity on the social network defines a preference table, or <strong
       >ptable</strong
       >, listing the indexes and tgraphs that it values highly, and other identities it trusts. By exploring this network, we can infer a set of trusted objects from which to initiate our search.</p
-    ><div id="mutability-of-objects"
-    ><h3
-      ><a href="#TOC"
-	>Mutability of objects</a
-	></h3
-      ><p
-      >[MOVE] probably to “working assumptions”</p
-      ><p
-      >We consider objects to be immutable. For instance, we intended the sharing of indexes via ptable pointers to be a space-saving measure, instead of a gesture of delegation. In this respect, our objects are more like git commits rather than web pages, and object links are more like git submodule pointers rather than web hyperlinks.</p
-      ><p
-      >This data model is more secure, and in our system it also keeps the issue of trust contained in the social layer, a property that some components depend on. However, the immutability is an implicit assumption, which is neither enforced nor verified in any system component. The intention was to leave this to the storage layer; real deployments of the system should keep this in mind.</p
-      ></div
-    ><div id="data-collection"
-    ><h3
-      ><a href="#TOC"
-	>Data collection</a
-	></h3
-      ><p
-      >[MOVE] probably to “working assumptions”</p
-      ><p
-      >Finally, our project only considers how we navigate the networks of objects to satisfy a search query. It ignores the problem of how these objects would be constructed and maintained. However, the data models are fairly simple, and is heavily inspired by ordinary human linking habits. So creating these objects should be both straightforward and natural.</p
-      ></div
     ></div
   ><div id="structured-address-space"
   ><h2
@@ -632,7 +358,9 @@
       >Structured address space</a
       ></h2
     ><p
-    >As discussed earlier, many routing schemes use a structured address space that has two (sometimes implicit) properties over its subspaces:</p
+    >[DIAG] (ip subnets, etc)</p
+    ><p
+    >As discussed earlier[REF], routing schemes use a structured address space that has two (sometimes implicit) properties over its subspaces:</p
     ><ul
     ><li
       >A measure of the size of the subspace</li
@@ -642,7 +370,9 @@
     ><p
     >In CIDR, “size” is given by the subnet mask, and “similarity” is given by matching the subnet prefix against the entries in the routing table. For DHTs, both “size” and “similarity” are defined with the choice of address space. In the case of semantic routing, a tag’s “size” corresponds to how “general” it is, and its “similarity” to another tag corresponds to how related they are.</p
     ><p
-    >There are various methods of defining a mathematical space over semantic tags. In the end, we settled on a simple probabilistic model. We interpret the set of all documents as a probability space:</p
+    >[DIAG] (tag similarities, etc)</p
+    ><p
+    >There are various methods of defining a mathematical space over semantic tags. [REF] In the end, we settled on a simple probabilistic model. We interpret the set of all documents as a probability space:</p
     ><ul
     ><li
       >Each document <span class="LaTeX"
@@ -654,7 +384,9 @@
 	> is an event, consisting of all documents tagged with <span class="LaTeX"
 	>$t$</span
 	>. (interpreted as a set, <span class="LaTeX"
-	>$t = \{ d \in D : d \textrm{ tagged with } t \}$</span
+	>$t = \{ d \in D : d$</span
+	> tagged with <span class="LaTeX"
+	>$t \}$</span
 	>.)</li
       ></ul
     ><p
@@ -671,8 +403,8 @@
       >. These are fairly straightforward to calculate (ie. count the relevant documents and normalise), so this process can in theory be automated.</p
     ><p
     >This information can be stored as a graph, where each tag is a node and each tag-tag relationship is an arc. Node attributes are sizes, and arc attributes are similarity scores<sup
-      ><a href="#fn8" class="footnoteRef" id="fnref8"
-	>8</a
+      ><a href="#fn1" class="footnoteRef" id="fnref1"
+	>1</a
 	></sup
       >. We’ll call this a tag-graph, or tgraph for short.</p
     ><p
@@ -681,8 +413,8 @@
       > as the union event of all its tags, ie. <span class="LaTeX"
       >$g = \bigcup_{t \in g} t$</span
       ><sup
-      ><a href="#fn9" class="footnoteRef" id="fnref9"
-	>9</a
+      ><a href="#fn2" class="footnoteRef" id="fnref2"
+	>2</a
 	></sup
       >. Any tgraph that wishes to refer to <span class="LaTeX"
       >$g$</span
@@ -725,28 +457,7 @@
 	  ></dd
 	></dl
       ><p
-      >This is consistent with the intuitive notion that “adding components to a path never makes it shorter”:</p
-      ><p
-      ><span class="LaTeX"
-	>$$
-\begin{array} {rcll}
-\forall a,b,c \in S :\\
-             I & \sqsubseteq & D(b,c)              & \quad M \textrm{ non-negative } \\
-D(a,b) \circ I & \sqsubseteq & D(a,b) \circ D(b,c) & \quad M \textrm{ linearly ordered } \\
-        D(a,b) & \sqsubseteq & D(a,b) \circ D(b,c) & \quad \textrm{ identity element } \\
-\end{array}
-$$</span
-	></p
-      ><p
-      >A <strong
-	>distance metric</strong
-	> also satisfies <span class="LaTeX"
-	>$\forall a,b,c \in S : D(a,c) \sqsubseteq D(a,b) \circ D(c,b)$</span
-	>, ie. <em
-	>symmetry</em
-	> (“forwards backwards are equally long”) and <em
-	>triangle inequality</em
-	> (“direct path is shortest”); we won’t consider these restrictions here.</p
+      >This is consistent with the intuitive notion that “adding components to a path never makes it shorter”.</p
       ><p
       >We refer to the tuple <span class="LaTeX"
 	>$(M, I, \sqsubseteq, \circ)$</span
@@ -766,13 +477,9 @@ $$</span
 	>$D[t_i]_0^n = D[t_0, t_1].\cdots.D[t_{n-1}, t_n]$</span
 	>.</p
       ><p
-      >There are various flaws with this. In our view, a significant flaw is the lack of a “natural” interpretation as to what this thing represents. It also gives no information about tag triples, and hence cannot distinguish between cases where triple-intersections differ greatly; although this is really a problem with the tgraph design.<sup
-	><a href="#fn10" class="footnoteRef" id="fnref10"
-	  >10</a
-	  ></sup
-	></p
+      >A significant flaw is the lack of a “natural” interpretation for what this measure represents. It also gives no information about tag triples, and hence cannot distinguish between cases where triple intersection sizes differ greatly - although this is more a problem with the tgraph design.</p
       ><p
-      >Unfortunately, we didn’t have enough time to explore these issues very deeply, or to come up with better alternatives. It does satisfy the distance relation axioms, so we decided to stick with it.</p
+      >Unfortunately, we didn’t have time to find better alternatives. It does satisfy the distance relation axioms, meaning that we can use Dijkstra’s algorithm to construct routing schemes, so we decided to stick with it.</p
       ></div
     ></div
   ><div id="information-aggregation"
@@ -834,6 +541,99 @@ $$</span
       ></dl
     ><p
     >This can be represented as a table. [DIAG] cols = resources, rows = agents</p
+    ><p
+    >In the context of our system design:</p
+    ><table
+    ><col width="15%"
+       /><col width="40%"
+       /><col width="40%"
+       /><thead
+      ><tr class="header"
+	><th align="left"
+	  >layer</th
+	  ><th align="left"
+	  >agent</th
+	  ><th align="left"
+	  >resource</th
+	  ></tr
+	></thead
+      ><tbody
+      ><tr class="odd"
+	><td align="left"
+	  >social</td
+	  ><td align="left"
+	  >identities and their ptables</td
+	  ><td align="left"
+	  >indexes, tgraphs</td
+	  ></tr
+	><tr class="even"
+	><td align="left"
+	  >naming</td
+	  ><td align="left"
+	  >tgraphs</td
+	  ><td align="left"
+	  >tags, tag-tag relationships</td
+	  ></tr
+	><tr class="odd"
+	><td align="left"
+	  >routing</td
+	  ><td align="left"
+	  >indexes</td
+	  ><td align="left"
+	  >tag-document relationships</td
+	  ></tr
+	></tbody
+      ></table
+    ><p
+    >We can see here that indexes and tgraphs take the position of both agent and resource. The output of the social layer is a resource-value map; the naming and routing layers both use this as an agent-score map.</p
+    ><p
+    >Neither tgraphs nor indexes define explicit agent-score judgements. Further, they represent immutable information, rather than social identities. These were conscious design choices - to encapsulate the problem of authentication and trust into a social layer, away from the issues of naming and routing.</p
+    ><p
+    >This does mean that the problem is different from that of a trust metric. We won’t attempt to formalise this, but intuitively, for a given non-seed agent <span class="LaTeX"
+      >$a$</span
+      >, we want to infer its score based on how much arbitrary endorsements of the seed agents <em
+      >extend</em
+      > to it, rather than how much the seed agents should <em
+      >trust</em
+      > it. A crude attempt at a solution is <a href="#score-inferer"
+      >score-inferer</a
+      >.</p
+    ><div id="attributes"
+    ><h3
+      ><a href="#TOC"
+	>Attributes</a
+	></h3
+      ><p
+      >So far, we haven’t discussed what the attributes should actually represent. In any usage scenario, they should at least satisfy the following properties:</p
+      ><ul
+      ><li
+	>The attribute should be some well-defined property that can be measured or estimated. Any single value of the attribute should mean the same thing to all agents, rather than being left up to agents’ own interpretation.</li
+	><li
+	>Attribute values should not be treated as authoritative, since in our model we only ever receive data from agents, whom we assume to have a limited view of the entire network. There will always be inconsistency between different agents; the system should account for this.</li
+	></ul
+      ><p
+      >In the case of perfectly honest agents, it is hoped that inconsistencies will work to cancel each other out. In the case of a system under attack, this will not be the case. However, only looking at the received values for attributes cannot distinguish between an attack and actual value differences; so this must be detected in some other way. Our project won’t present any methods for doing this, but network structure analysis is a common approach type.[EXTN]</p
+      ><p
+      >The exact attribute types we use are discussed <a href="#data-structures"
+	>elsewhere</a
+	>. Generally, we use probability-based attributes, which are well-defined and can be estimated by agents. It also gives a simple way of combining attributes - multiplication - as well as a simple space of values - <span class="LaTeX"
+	>$[0, 1]$</span
+	>.<sup
+	><a href="#fn3" class="footnoteRef" id="fnref3"
+	  >3</a
+	  ></sup
+	></p
+      ><p
+      >In some contexts, the set of useful resources is sparse over the set of all possible resources<sup
+	><a href="#fn4" class="footnoteRef" id="fnref4"
+	  >4</a
+	  ></sup
+	> - e.g. if the attribute represents an endorsement, or a non-trivial binary relationship. In such cases, we’d like to not define the non-useful resource at all, implicitly marking it with a neutral or “zero” attribute, to save space and redundancy.</p
+      ><p
+      >However, this raises a problem when aggregating information - we now can’t distinguish whether an agent implicitly regards a resource as useless, or just that it doesn’t know about it. In our crude <a href="#value-composer"
+	>value-composer</a
+	>, we address this issue by requiring an input heuristic that can help to resolve this ambiguity, based on other information.</p
+      ></div
     ><div id="simplification"
     ><h3
       ><a href="#TOC"
@@ -890,114 +690,206 @@ $$</span
 	  ></dd
 	></dl
       ><p
-      >We follow this approach in our project. Even these simpler problems, however, are fairly deep, and developing robust techniques to solve them could take up a whole other project. Our prototype implemenation only attempts crude and simple solutions to each component. [EXTN]</p
+      >We follow this approach in our project. Even these simpler problems, however, are fairly deep, and developing robust techniques to solve them could take up a whole other project. Given our time constraints, we only implement a crude and simple solution for each of these. [EXTN]</p
       ><p
-      >(Note that the first component is a generalisation of trust metrics, which use an implicit seed agent-score map of the form <span class="LaTeX"
+      >(Note that “infer scores” is a generalisation of trust metrics, which use an implicit seed agent-score map of the form <span class="LaTeX"
 	>$\{ a_0 : s_{max} \}$</span
 	>, i.e. a single root agent mapped to the maximum score.)</p
-      ></div
-    ><div id="use-contexts"
-    ><h3
-      ><a href="#TOC"
-	>Use contexts</a
-	></h3
-      ><p
-      >In the context of our system design:</p
-      ><table
-      ><col width="15%"
-	 /><col width="40%"
-	 /><col width="40%"
-	 /><thead
-	><tr class="header"
-	  ><th align="left"
-	    >layer</th
-	    ><th align="left"
-	    >agent</th
-	    ><th align="left"
-	    >resource</th
-	    ></tr
-	  ></thead
-	><tbody
-	><tr class="odd"
-	  ><td align="left"
-	    >social</td
-	    ><td align="left"
-	    >identities and their ptables</td
-	    ><td align="left"
-	    >indexes, tgraphs</td
-	    ></tr
-	  ><tr class="even"
-	  ><td align="left"
-	    >naming</td
-	    ><td align="left"
-	    >tgraphs</td
-	    ><td align="left"
-	    >tags, tag-tag relationships</td
-	    ></tr
-	  ><tr class="odd"
-	  ><td align="left"
-	    >routing</td
-	    ><td align="left"
-	    >indexes</td
-	    ><td align="left"
-	    >tag-document relationships</td
-	    ></tr
-	  ></tbody
-	></table
-      ><p
-      >One can see here that indexes and tgraphs take the position of both agent and resource. The output of the social layer is a resource-value map; the naming and routing layers both use this as an agent-score map.</p
-      ><p
-      >As agents, neither tgraphs nor indexes define explicit agent-score judgements. In addition to this, they represent immutable information, rather than social identities. These were conscious design choices - to encapsulate the problem of trust and authentication into a social layer, away from the problem of naming and routing.</p
-      ><p
-      >This does mean that the problem is different from that of a trust metric. We won’t attempt to formalise this, but intuitively, for a given non-seed agent <span class="LaTeX"
-	>$a$</span
-	>, we want to infer its score based on how much arbitrary endorsements of the seed agents <em
-	>extend</em
-	> to it, rather than how much the seed agents should <em
-	>trust</em
-	> it. A crude attempt at a solution is <a href="#score-inferer"
-	>score-inferer</a
-	>.</p
-      ></div
-    ><div id="attributes"
-    ><h3
-      ><a href="#TOC"
-	>Attributes</a
-	></h3
-      ><p
-      >So far, we haven’t discussed what the attributes should actually represent. In any usage scenario, they should at least satisfy the following properties:</p
-      ><ul
-      ><li
-	>The attribute should be some well-defined property that can be measured or estimated. Any single value of the attribute should mean the same thing to all agents, rather than being left up to agents’ own interpretation.</li
-	><li
-	>Attribute values should not be treated as authoritative, since in our model we only ever receive data from agents, whom we assume to have a limited view of the entire network. There will always be inconsistency between different agents; the system should account for this.</li
-	></ul
-      ><p
-      >In the case of perfectly honest agents, it is hoped that inconsistencies will work to cancel each other out. In the case of a system under attack, this will not be the case. However, only looking at the received values for attributes cannot distinguish between an attack and actual value differences; so this must be detected in some other way. Our project won’t present any methods for doing this, but network structure analysis is a common approach type.[EXTN]</p
-      ><p
-      >The exact attribute types we use are discussed <a href="#data-structures"
-	>elsewhere</a
-	>. Generally, we use probability-based attributes, which are well-defined and can be estimated by agents. It also gives a simple way of combining attributes - multiplication - as well as a simple space of values - <span class="LaTeX"
-	>$[0, 1]$</span
-	>.<sup
-	><a href="#fn11" class="footnoteRef" id="fnref11"
-	  >11</a
-	  ></sup
-	></p
-      ><p
-      >In some contexts, the set of useful resources is sparse over the set of all possible resources<sup
-	><a href="#fn12" class="footnoteRef" id="fnref12"
-	  >12</a
-	  ></sup
-	> - e.g. if the attribute represents an endorsement, or a non-trivial binary relationship. In such cases, we’d like to not define the non-useful resource at all, implicitly marking it with a neutral or “zero” attribute, to save space and redundancy.</p
-      ><p
-      >However, this raises a problem when aggregating information - we now can’t distinguish whether an agent implicitly regards a resource as useless, or just that it doesn’t know about it. In our crude <a href="#value-composer"
-	>value-composer</a
-	>, we address this issue by requiring an input heuristic that can help to resolve this ambiguity, based on other information.</p
-      ><p
-      >A related idea is negative attributes, which would represent a judgement that the resource is malicious or dangerous in some sense, rather than neutral or “useless”. In a system where it’s possible to act aggressively, these weights could provide information on who to attack (or set up defences against).</p
-      ><p
-      >It’s not clear how this applies to our system, which is a network of data and so only supports passive traps rather than active attacks. It’s also unclear how probability-based attributes could be extended to work this way. So for now, we ignore this possibility.[EXTN]</p
+      ><div id="score-inferer"
+      ><h4
+	><a href="#TOC"
+	  >Score-inferer</a
+	  ></h4
+	><p
+	>This is intended only for use by the naming and routing layers. As mentioned earlier, our approach is to estimate the probability of reaching a given agent from the seeds.</p
+	><p
+	>Let <span class="LaTeX"
+	  >$x$</span
+	  > be the agent we want to infer a score for. A simple model is to assign a path-score for the shortest path between <span class="LaTeX"
+	  >$x$</span
+	  > and each seed agent <span class="LaTeX"
+	  >$a$</span
+	  >, then take the <em
+	  >independent union</em
+	  > of all of these path-scores:</p
+	><p
+	><span class="LaTeX"
+	  >$$
+s_x = 1 - \prod_a (1 - p_{ax})
+$$</span
+	  ></p
+	><p
+	>Note that this is open to attack by multiple colluding seed nodes, which breaks the assumption of independence.</p
+	><p
+	>Let <span class="LaTeX"
+	  >$k$</span
+	  > represent the probability that an endorsement of a subject also implies endorsement of an arbitrary neighbour, and let <span class="LaTeX"
+	  >$i$</span
+	  > be the number of steps in the shortest path from <span class="LaTeX"
+	  >$a$</span
+	  > to <span class="LaTeX"
+	  >$x$</span
+	  >. Then <span class="LaTeX"
+	  >$k^i$</span
+	  > is a rough estimate for the probability that an endorsement extends to a node <span class="LaTeX"
+	  >$i$</span
+	  > steps away. Combining this with the weight of the original endorsement gives:</p
+	><p
+	><span class="LaTeX"
+	  >$$
+p_{ax} = s_a.k^i
+$$</span
+	  ></p
+	><p
+	>Again, this is a very crude model, which simplifies several important factors and assumes that <span class="LaTeX"
+	  >$k$</span
+	  > is universally constant. However, we weren’t able (in the time given) to develop any significantly better models, so we stick with it for our prototype. We try to give an underestimate of <span class="LaTeX"
+	  >$k$</span
+	  >, to give a bias towards agents nearer our seed set, which hopefully offers slightly more resistance to simple attacks. Our prototype uses <span class="LaTeX"
+	  >$k = 2^{-4}$</span
+	  >.</p
+	></div
+      ><div id="value-composer"
+      ><h4
+	><a href="#TOC"
+	  >Value-composer</a
+	  ></h4
+	><p
+	>Here we explore an algorithm to aggregate value judgements from a set of agents. This is required by all the layers, and the model presented here is general enough to be applied to all of these.</p
+	><p
+	>It’s impossible to determine the accuracy of the input data from only the data itself, since any input is potentially true. We need either a pre-existing expection of what the information should look like, or a model of how its meta-information (eg. its source agents) affects its accuracy. Both approaches are outside of the scope of this project.[EXTN]</p
+	><p
+	>For our prototype, we use a very basic algorithm - the score-weighted mean of each agent’s value judgement for that resource. In our case, both the score and the value are bounded, and it’s hoped that this can hinder some basic attacks against mean-based composers (eg. judging a value to be infinity).</p
+	><p
+	>Recall the problem specification:</p
+	><dl
+	><dt
+	  >Given</dt
+	  ><dd
+	  ><ul
+	    ><li
+	      >a set of agents, with their inferred score, and resource-value maps <span class="LaTeX"
+		>$$
+a : (s, \{ r : v \})
+$$</span
+		></li
+	      ></ul
+	    ></dd
+	  ><dt
+	  >Return</dt
+	  ><dd
+	  ><ul
+	    ><li
+	      >a target resource-value map <span class="LaTeX"
+		>$$
+r : v
+$$</span
+		></li
+	      ></ul
+	    ></dd
+	  ></dl
+	><p
+	>The score-weighted mean value for resource <span class="LaTeX"
+	  >$r$</span
+	  >, over all agents, is:</p
+	><p
+	><span class="LaTeX"
+	  >$$
+\bar v_r = \frac{\sum_{a} s_a v_{ar}}{\sum_a s_a}
+$$</span
+	  ></p
+	><p
+	>However, not every agent will have a judgement for <span class="LaTeX"
+	  >$r$</span
+	  >, so some <span class="LaTeX"
+	  >$v_{ar}$</span
+	  > may be undefined. In such cases, we make an estimate <span class="LaTeX"
+	  >$\hat v_{ar}$</span
+	  > instead.</p
+	><p
+	><span class="LaTeX"
+	  >$$
+\bar v_r = \frac{\sum_{a} s_a \hat v_{ar}}{\sum_a s_a}
+\quad ; \quad
+\hat v_{ar} = \left\{ \begin{array}{llr} \\
+  v_{ar} & : r \in R_a & (0) \\
+  \alpha(a,r).0 + (1 - \alpha(a,r)).\bar v_r & : r \notin R_a & (1) \\
+\end{array} \right
+$$</span
+	  ></p
+	><p
+	>where <span class="LaTeX"
+	  >$\alpha(a,r)$</span
+	  > is the probability that agent <span class="LaTeX"
+	  >$a$</span
+	  > has judged resource <span class="LaTeX"
+	  >$r$</span
+	  > to be worthless, given <span class="LaTeX"
+	  >$(1)$</span
+	  >.</p
+	><p
+	>The above definition has <span class="LaTeX"
+	  >$\bar v_r$</span
+	  > on the RHS; after rearranging, we get:</p
+	><p
+	><span class="LaTeX"
+	  >$$
+% should be \dfrac but LaTeXMathML doesn't support amsmath commands...
+\bar v_r = \frac{\sum_{a:(0)} s_a v_{ar}}{\sum_a s_a \alpha_0(a,r)}
+\quad ; \quad
+\alpha_0(a,r) = \left\{ \begin{array}{ll} \\
+  1 & : (0) \\
+  \alpha(a,r) & : (1) \\
+\end{array} \right
+$$</span
+	  ></p
+	><p
+	>The behaviour of <span class="LaTeX"
+	  >$\alpha$</span
+	  > will depend greatly on the context in which the above formula is used. Our system deals with two types of resources, nodes and arcs; we note the following observations when implementing heuristics for <span class="LaTeX"
+	  >$\alpha$</span
+	  >:</p
+	><p
+	><strong
+	  >For a node</strong
+	  > <span class="LaTeX"
+	  >$v$</span
+	  >, there is no information that could be used to perform any heuristic: a node not in the map, has no information relating to it in the map. However, it may be possible to extract information from other sources, such as the friends for a ptable. These are context-specific and are explored in the appropriate sections.</p
+	><p
+	><strong
+	  >For an arc</strong
+	  > <span class="LaTeX"
+	  >$e = (v_s, v_t)$</span
+	  >, we have some extra information. The meaning of <span class="LaTeX"
+	  >$e$</span
+	  > is fully determined by <span class="LaTeX"
+	  >$v_s$</span
+	  >, <span class="LaTeX"
+	  >$v_t$</span
+	  >, which means that the agent is able to judge <span class="LaTeX"
+	  >$e$</span
+	  > if it “knows about” both <span class="LaTeX"
+	  >$v_s$</span
+	  > and <span class="LaTeX"
+	  >$v_t$</span
+	  >. We can estimate this notion with <span class="LaTeX"
+	  >$v \in \mathtt{\mathrm{rft}}\, E$</span
+	  >. That is, if <span class="LaTeX"
+	  >$e \notin \mathtt{\mathrm{dom}}\, E$</span
+	  > but <span class="LaTeX"
+	  >$v_s, v_t \in \mathtt{\mathrm{rft}}\, E$</span
+	  >, then it’s likely that there is no such relation.<sup
+	  ><a href="#fn5" class="footnoteRef" id="fnref5"
+	    >5</a
+	    ></sup
+	  ></p
+	><p
+	>Brief discussions of specific applications of all of the above is given in the <a href="#using-the-value-composer"
+	  >relevant sub-sections</a
+	  >.</p
+	><p
+	>More sophisticated methods include training on a prototype network, or dynamic learning from an active network. However, it must be noted that the theoretical model for this component is not particularly robust anyway, so the benefit-cost ratio of such methods is likely to be low.</p
+	></div
       ></div
     ></div
   ></div
@@ -1011,10 +903,6 @@ $$</span
     ><a href="#TOC"
       >Data structures</a
       ></h2
-    ><p
-    ><em
-      >In this section we present a specification of the data objects that our system uses, their structure, semantics, and expected contents.</em
-      ></p
     ><div id="ptable"
     ><h3
       ><a href="#TOC"
@@ -1147,10 +1035,10 @@ $$</span
 	>), and so relations with near-neutral attribute values may be omitted at the maintainer’s discretion, even if they are aware of them. Algorithms that process this data structure should be aware of this.</p
       ></div
     ></div
-  ><div id="abstraction-layers"
+  ><div id="layers"
   ><h2
     ><a href="#TOC"
-      >Abstraction layers</a
+      >Layers</a
       ></h2
     ><p
     >Our search application is partitioned into layers (contact, naming, routing), each encapsulating components that process information from the corresponding data planes. This allows all the layers to run concurrently; operations that retrieve remote objects do not block other layers, so that can do other work whilst waiting for the results.</p
@@ -1160,8 +1048,8 @@ $$</span
     ><li
       ><p
 	>A set of data sources (agents and their judgements). These may be large data structures, so we follow a model that supports partial loading - the “local view” of the object. This can be visualised as a table, where the rows are agents, and columns are resources. Each cell can hold an attribute, or a sentinel value (“not yet loaded” or “attribute doesn’t exist”).<sup
-	  ><a href="#fn13" class="footnoteRef" id="fnref13"
-	    >13</a
+	  ><a href="#fn6" class="footnoteRef" id="fnref6"
+	    >6</a
 	    ></sup
 	  ></p
 	></li
@@ -1186,16 +1074,10 @@ $$</span
       ></ul
     ><p
     >Upper layers can request more input data from lower layers, if needed<sup
-      ><a href="#fn14" class="footnoteRef" id="fnref14"
-	>14</a
+      ><a href="#fn7" class="footnoteRef" id="fnref7"
+	>7</a
 	></sup
       >. The top layer (routing) receives requests from the user, and the bottom layer (contact) uses data from the social network only, independently of any query. Note that data retrieval can in theory proceed until the entire network has been searched. In practice, we only automatically send requests for more data until a set number of results have been returned; after that we wait for user input before retrieving more.</p
-    ><p
-    >The interaction between layers is co-ordinated by implementing each layer as a state machine - it cannot receive requests during a state transition (ie. when it is currently processing a previous request). This simplifies the execution logic, and reduces the number of critical objects that need to be synchronised on. The state machines generally follow the pattern of <code
-      >[NEW &#8594; AWAIT_INPUT &#8596; IDLE]</code
-      >; specific cases are discussed in the <em
-      >traversing objects</em
-      > sections of the various layers, below.</p
     ><p
     >To give an overview of the layers and how they fit together, below is a table of the inputs and outputs of each layer:</p
     ><table
@@ -1542,69 +1424,17 @@ $$</span
 	  >$w' = P(t_0|d)$</span
 	  >.</p
 	><p
-	>For any tag <span class="LaTeX"
+	>For each <span class="LaTeX"
 	  >$t$</span
 	  >, let <span class="LaTeX"
-	  >$[t_i]_0^n$</span
-	  > be the shortest path from <span class="LaTeX"
-	  >$t_0$</span
-	  > to <span class="LaTeX"
-	  >$t$</span
-	  >, where <span class="LaTeX"
-	  >$t = t_n$</span
-	  >. From the address scheme, we have the distance between <span class="LaTeX"
+	  >$D(t)$</span
+	  > be the distance between <span class="LaTeX"
 	  >$t$</span
 	  > and <span class="LaTeX"
 	  >$t_0$</span
-	  >:</p
-	><p
-	><span class="LaTeX"
-	  >$$
-D(t) = D[t_i]_0^n = \prod_{i=0}^{n-1} P(t_{i+1}|t_i)
-$$</span
-	  ></p
-	><p
-	>If we assume that the pairs <span class="LaTeX"
-	  >$P(t_{i+1}|t_i)$</span
-	  >, along with <span class="LaTeX"
-	  >$P(t_n|d)$</span
-	  >, are all independent<sup
-	  ><a href="#fn15" class="footnoteRef" id="fnref15"
-	    >15</a
-	    ></sup
-	  > of each other, then we have:</p
-	><p
-	><span class="LaTeX"
-	  >$$
-\begin{array}{rl}
-D(t)
-=& \prod_{i=0}^{n-1} P(t_{i+1}|t_i) \\
-=& \prod_{i=0}^{n-1} P(t_{i+1}|t_i, \ldots, t_0) \\
-=& P(t_n, \ldots, t_1|t_0) \\
-\end{array}
-$$</span
-	  ></p
-	><p
-	>so that:</p
-	><p
-	><span class="LaTeX"
-	  >$$
-\begin{array}{rl}
-D(t) \frac{P(t_0)}{P(t_n)} P(t_n|d)
-=& P(t_n, \ldots, t_1|t_0) \frac{P(t_0)}{P(t_n)} P(t_n|d) \\
-=& P(t_{n-1}, \ldots, t_0|t_n) P(t_n|d) \\
-=& P(t_n, \ldots, t_0|d) \\
-\end{array}
-$$</span
-	  ></p
-	><p
-	>Since <span class="LaTeX"
-	  >$[t_i]$</span
-	  > is the shortest path, we assume that <span class="LaTeX"
-	  >$P(t_n, \ldots, t_0|d) \approx P(t_0|d)$</span
-	  >. So, for each <span class="LaTeX"
+	  >, as taken from the address scheme. For each <span class="LaTeX"
 	  >$(t, d) : w$</span
-	  >, we have:</p
+	  >, we calculate:</p
 	><p
 	><span class="LaTeX"
 	  >$$
@@ -1612,11 +1442,15 @@ w' = D(t) \frac{P(t_0)}{P(t)} w
 $$</span
 	  ></p
 	><p
-	>and generate a results map <span class="LaTeX"
+	>and add <span class="LaTeX"
 	  >$d : w'$</span
-	  > for the user. If a document is pointed to by more than one tag, we get a <span class="LaTeX"
+	  > to our results map for the user. If a document is pointed to by more than one tag, we get a <span class="LaTeX"
 	  >$w'$</span
-	  > for each tag; we simple pick the most favourable one and only use that.</p
+	  > for each tag; we simply use the most favourable one.</p
+	><p
+	>For a derivation of this, see <a href="appendix.html#ranking-results"
+	  >ranking results</a
+	  > in the appendix.</p
 	></div
       ><div id="traversing-objects-2"
       ><h4
@@ -1634,746 +1468,307 @@ $$</span
   ><a href="#TOC"
     >Practical details</a
     ></h1
-  ><div id="system-components"
+  ><div id="using-the-value-composer"
   ><h2
     ><a href="#TOC"
-      >System components</a
+      >Using the value-composer</a
       ></h2
-    ><div id="using-the-value-composer"
+    ><p
+    >To recap, <span class="LaTeX"
+      >$\alpha(a, r)$</span
+      > is the probability that <span class="LaTeX"
+      >$a$</span
+      > judges <span class="LaTeX"
+      >$r$</span
+      > to be worthless (as opposed to not knowing about it), given that <span class="LaTeX"
+      >$r \notin A_a$</span
+      >.</p
+    ><div id="on-ptables"
     ><h3
       ><a href="#TOC"
-	>Using the value-composer</a
+	>On ptables</a
 	></h3
       ><p
-      >To recap, <span class="LaTeX"
+      >Various factors that could affect <span class="LaTeX"
 	>$\alpha(a, r)$</span
-	> is the probability that <span class="LaTeX"
+	> include the size of the ptable (how many resources <span class="LaTeX"
 	>$a$</span
-	> judges <span class="LaTeX"
+	> knows about in total), and whether their friends also know about <span class="LaTeX"
 	>$r$</span
-	> to be worthless (as opposed to not knowing about it), given that <span class="LaTeX"
-	>$r \notin A_a$</span
+	>. Developing a satisfactory model of this would be complicated, and the benefits are unclear. Complex models generally need more information, which raises the cost of calculation.</p
+      ><p
+      >Due to these reasons, for our prototype we simply set <span class="LaTeX"
+	>$\alpha$</span
+	> to be constant. As a preliminary estimate, we’ll use a low value of <span class="LaTeX"
+	>$2^{-4}$</span
+	>, intended to convey the notion that most agents only have a limited view of the network.</p
+      ></div
+    ><div id="on-tgraphs"
+    ><h3
+      ><a href="#TOC"
+	>On tgraphs</a
+	></h3
+      ><p
+      >Attribute of a node <span class="LaTeX"
+	>$v$</span
+	>: with tgraphs, node-attributes are expected to be defined if the agent has information to do this, regardless of what the actual attribute value is. So we set <span class="LaTeX"
+	>$\alpha = 0$</span
 	>.</p
-      ><div id="on-ptables"
-      ><h4
-	><a href="#TOC"
-	  >On ptables</a
-	  ></h4
-	><p
-	>Various factors that could affect <span class="LaTeX"
-	  >$\alpha(a, r)$</span
-	  > include the size of the ptable (how many resources <span class="LaTeX"
-	  >$a$</span
-	  > knows about in total), and whether their friends also know about <span class="LaTeX"
-	  >$r$</span
-	  >. Developing a satisfactory model of this would be complicated, and the benefits are unclear. Complex models generally need more information, which raises the cost of calculation.</p
-	><p
-	>Due to these reasons, for our prototype we simply set <span class="LaTeX"
-	  >$\alpha$</span
-	  > to be constant. As a preliminary estimate, we’ll use a low value of <span class="LaTeX"
-	  >$2^{-4}$</span
-	  >, intended to convey the notion that most agents only have a limited view of the network.</p
-	></div
-      ><div id="on-tgraphs"
-      ><h4
-	><a href="#TOC"
-	  >On tgraphs</a
-	  ></h4
-	><p
-	>Attribute of a node <span class="LaTeX"
-	  >$v$</span
-	  >: with tgraphs, node-attributes are expected to be defined if the agent has information to do this, regardless of what the actual attribute value is. So we set <span class="LaTeX"
-	  >$\alpha = 0$</span
-	  >.</p
-	><p
-	>Attribute of an arc <span class="LaTeX"
-	  >$e$</span
-	  >: as discussed in <a href="#value-composer"
-	  >value-composer</a
-	  >, we can make a distinction between arcs whose endpoints are both defined in the graph, and the opposite case. So we’ll use two constants, a high <span class="LaTeX"
-	  >$\alpha_1$</span
-	  > for the former, and a low <span class="LaTeX"
-	  >$\alpha_2$</span
-	  > for the latter.</p
-	><p
-	>A further tweak for node attributes is to take the geometric mean instead of the arithmetic mean, by converting probabilities to entropies before passing them through the composer, then reverting the result back. This is because we expect agents’ views of the network to follow a power-law distribution, which means the judgements for a tag’s size will be distributed in the same way. Taking the arithmetic mean of probabilities would bias the result in favour of larger sizes.</p
-	></div
-      ><div id="on-indexes"
-      ><h4
-	><a href="#TOC"
-	  >On indexes</a
-	  ></h4
-	><p
-	>As in the case of tgraphs, we use two constants for the two cases of arcs, a high <span class="LaTeX"
-	  >$\alpha_1$</span
-	  > and a low <span class="LaTeX"
-	  >$\alpha_2$</span
-	  >.</p
-	></div
+      ><p
+      >Attribute of an arc <span class="LaTeX"
+	>$e$</span
+	>: as discussed in <a href="#value-composer"
+	>value-composer</a
+	>, we can make a distinction between arcs whose endpoints are both defined in the graph, and the opposite case. So we’ll use two constants, a high <span class="LaTeX"
+	>$\alpha_1$</span
+	> for the former, and a low <span class="LaTeX"
+	>$\alpha_2$</span
+	> for the latter.</p
+      ><p
+      >A further tweak for node attributes is to take the geometric mean instead of the arithmetic mean, by converting probabilities to entropies before passing them through the composer, then reverting the result back. This is because we expect agents’ views of the network to follow a power-law distribution, which means the judgements for a tag’s size will be distributed in the same way. Taking the arithmetic mean of probabilities would bias the result in favour of larger sizes.</p
       ></div
-    ><div id="traversing-objects-3"
+    ><div id="on-indexes"
     ><h3
       ><a href="#TOC"
-	>Traversing objects</a
-	></h3
-      ><div id="naming-layer"
-      ><h4
-	><a href="#TOC"
-	  >Naming layer</a
-	  ></h4
-	><p
-	>First a definition: we say a tag <span class="LaTeX"
-	  >$t$</span
-	  > is <em
-	  >completely loaded</em
-	  > (or <em
-	  >complete</em
-	  > for short) in <span class="LaTeX"
-	  >$g$</span
-	  > if the attributes for itself, all its out-arcs, and all its out-nodes have been loaded. This is the maximum amount of information that can be retrieved from the current set of resources, for calculating the distance between <span class="LaTeX"
-	  >$t$</span
-	  > and its out-nodes. The address scheme constructor needs this.</p
-	><p
-	>Recall that a layer has a table holding the local views of agents’ judgements. We mark a column for a tag-resource <span class="LaTeX"
-	  >$t$</span
-	  > as <em
-	  >complete</em
-	  > in the table, if <span class="LaTeX"
-	  >$t$</span
-	  > is <em
-	  >complete</em
-	  > in all rows <span class="LaTeX"
-	  >$g$</span
-	  > currently in the table.</p
-	><p
-	>We initialise the table rows from the seed tgraphs <span class="LaTeX"
-	  >$G_s$</span
-	  >, and start with no columns. The table can be expanded in two possible ways:</p
-	><dl
-	><dt
-	  >Add a row</dt
-	  ><dd
-	  ><p
-	    >For a new tgraph <span class="LaTeX"
-	      >$g$</span
-	      >, <em
-	      >completely load</em
-	      > all the tags that are currently complete in the table, so that the addition of <span class="LaTeX"
-	      >$g$</span
-	      > as a row does not make any (previously completed tags) incomplete.</p
-	    ></dd
-	  ><dt
-	  >Add a column</dt
-	  ><dd
-	  ><p
-	    >For a new tag <span class="LaTeX"
-	      >$t$</span
-	      >, <em
-	      >completely load</em
-	      > it in all rows <span class="LaTeX"
-	      >$g$</span
-	      >, so that <span class="LaTeX"
-	      >$t$</span
-	      > is then complete in the table.</p
-	    ></dd
-	  ></dl
-	><p
-	>After each wave of new data, the aggregated resource-value map, and then the address scheme, is recalculated.</p
-	><p
-	>We have the address scheme constructor stop when it reaches a tag which is not complete in the table. Of course we could continue with incomplete information, but we thought it would be more prudent to wait until all the relevant data becomes available. This should help to reduce instability in the output, which is important because another layer (routing) uses it; if it varies wildly between successive waves then that layer might not work so well.</p
-	><p
-	>So the address scheme will have a maximum of one incomplete tag, and possibly references to tgraphs not yet added to our table. The incomplete tag, along with the tgraph with the “shortest-distance-to-source”, become valid candidates for being added to the table.</p
-	><p
-	>In choosing between the expansion methods, we prefer adding columns to adding rows; we only add a new row if there is no incomplete tag to add, or if it is “further” than some predefined threshold, relative to the nearest tgraph. (In our prototype, we set this to <span class="LaTeX"
-	  >$2^{-2}$</span
-	  >.)</p
-	><p
-	>This preference is based on the assumption that most naming needs should be satisfiable by a small neighbourhood around our seeds, and that judgements of tag-tag relationships should be similar across the entire network. (If someone claims to know a tag’s related tags, then it’s likely that this knowledge covers a large part of all related tags defined by the entire network.)</p
-	></div
-      ><div id="routing-layer"
-      ><h4
-	><a href="#TOC"
-	  >Routing layer</a
-	  ></h4
-	><p
-	>Define the <em
-	  >potential</em
-	  > of a lookup <span class="LaTeX"
-	  >$(t, h)$</span
-	  > to be <span class="LaTeX"
-	  >$P(t_0, t, h)$</span
-	  >. We estimate this as <span class="LaTeX"
-	  >$P(t_0|t) P(t|h) P(h)$</span
-	  ><sup
-	  ><a href="#fn16" class="footnoteRef" id="fnref16"
-	    >16</a
-	    ></sup
-	  >, which assumes that <span class="LaTeX"
-	  >$P(t_0|t)$</span
-	  >, <span class="LaTeX"
-	  >$P(h)$</span
-	  > are independent.</p
-	><p
-	>As with the other layers, we have a table of loaded attributes. In this layer however, we can be more focused when searching through indexes. Instead of looking up all the tags for an entire row, we only partially load each row; all non-loaded cells are assumed to be non-existent in the index for the row, until they are loaded.</p
-	><p
-	>We initialise the table rows from the seed indexes <span class="LaTeX"
-	  >$H_s$</span
-	  >, and an empty address scheme (ie. no columns). The table can be expanded in two possible ways:</p
-	><dl
-	><dt
-	  >Add a row</dt
-	  ><dd
-	  ><p
-	    >For a new index <span class="LaTeX"
-	      >$h$</span
-	      >, select all tags that lie on a path between <span class="LaTeX"
-	      >$t_s$</span
-	      > and <span class="LaTeX"
-	      >$t_0$</span
-	      > in the address scheme, where <span class="LaTeX"
-	      >$t_s$</span
-	      > is any tag that we reached <span class="LaTeX"
-	      >$h$</span
-	      > by.</p
-	    ></dd
-	  ><dt
-	  >On address scheme update</dt
-	  ><dd
-	  ><p
-	    >Our prototype implementation has no way of detecting how the address scheme changed, so we just re-add all the rows as above. For seed rows, we select <em
-	      >all</em
-	      > tags in the address scheme, since “reached-by” doesn’t apply to seed tags. Of course, lookups that have already completed, are skipped.</p
-	    ></dd
-	  ></dl
-	><p
-	>Unlike naming, no other functional component is dependent on the output of this layer; the results are only returned to the user. So we shift our focus from output stability to responsiveness - updating results as soon as possible when new information arrives.</p
-	><p
-	>We retrieve data asynchronously, with pending lookups held in a priority queue, ordered by lookup potential. When the user asks for more results, we return immediately after picking an expansion method and adding its relevant lookups to the queue, instead of waiting for them to finish. The user can poll query progress; each time this occurs, we generate aggregated results using the data retrieved so far.</p
-	><p
-	>The aggregated results might also contain references to new indexes as well as documents, in which case the most relevant index (scored in the same way as documents; this is described elsewhere) becomes a valid candidate for being added to the table.</p
-	><p
-	>The choice of expansion method proceeds as follows. Define the <em
-	  >potential</em
-	  ></p
-	><ul
-	><li
-	  >of a not-yet-added tag <span class="LaTeX"
-	    >$t$</span
-	    >, to be the independent union of the potentials of its lookups over all rows <span class="LaTeX"
-	    >$h$</span
-	    >.</li
-	  ><li
-	  >of a not-yet-added index <span class="LaTeX"
-	    >$h$</span
-	    >, to be the independent union of the potentials of the lookups that <em
-	    >would be selected</em
-	    > if <span class="LaTeX"
-	    >$h$</span
-	    > were to be added as a row.</li
-	  ><li
-	  >of the current lookups queue, to be the highest potential of any lookup currently contained within it.</li
-	  ></ul
-	><p
-	>We compare the potential of the incomplete tag <span class="LaTeX"
-	  >$t$</span
-	  >, the new-index candidate <span class="LaTeX"
-	  >$h$</span
-	  >, and the current lookups queue. (If any of these do not exist, they are ignored.) If the most favourable potential out of these is:</p
-	><ul
-	><li
-	  >that of the lookups queue, then we wait for lookups to continue</li
-	  ><li
-	  >that of <span class="LaTeX"
-	    >$t$</span
-	    >, then we request an address scheme update</li
-	  ><li
-	  >that of <span class="LaTeX"
-	    >$h$</span
-	    >, then we add it as a row</li
-	  ></ul
-	><p
-	>Finally, if all three are non-existent (ie. no pending lookups, no incomplete tag, and no indexes to add), then we request an address scheme update.</p
-	></div
-      ></div
-    ></div
-  ><div id="optimisation"
-  ><h2
-    ><a href="#TOC"
-      >Optimisation</a
-      ></h2
-    ><p
-    >[MOVE] to appendix</p
-    ><div id="data-structures-1"
-    ><h3
-      ><a href="#TOC"
-	>Data structures</a
-	></h3
-      ><ul
-      ><li
-	><code
-	  >ptable</code
-	  ><ul
-	  ><li
-	    >quick partition of <code
-	      >index</code
-	      > vs <code
-	      >tgraph</code
-	      > nodes [<span class="LaTeX"
-	      >$G_s$</span
-	      >, <span class="LaTeX"
-	      >$H_s$</span
-	      >]</li
-	    ><li
-	    >optionally order these by their score [possible future use]</li
-	    ></ul
-	  ></li
-	><li
-	><code
-	  >tgraph</code
-	  >, <code
-	  >index</code
-	  ><ul
-	  ><li
-	    >where applicable:</li
-	    ><li
-	    >quick lookup of node (and weight)</li
-	    ><li
-	    >quick lookup of node’s out-arcs (and weight) [routing, naming]</li
-	    ></ul
-	  ></li
-	><li
-	><code
-	  >index</code
-	  ><ul
-	  ><li
-	    >quick partition of tag’s to-<code
-	      >index</code
-	      > vs to-document arcs</li
-	    ><li
-	    >optionally order these by their score [routing]</li
-	    ></ul
-	  ></li
-	><li
-	><span class="LaTeX"
-	  >$\breveg$</span
-	  ><ul
-	  ><li
-	    >same as <code
-	      >tgraph</code
-	      ></li
-	    ></ul
-	  ></li
-	><li
-	><span class="LaTeX"
-	  >$p_s$</span
-	  >, <span class="LaTeX"
-	  >$\breveg$</span
-	  >, <span class="LaTeX"
-	  >$\breveG$</span
-	  >, <span class="LaTeX"
-	  >$\breveH$</span
-	  ><ul
-	  ><li
-	    >might want to make these use CombinedWeight objects instead of a float “weight”, which in the future could be expanded to include a variance…</li
-	    ></ul
-	  ></li
-	><li
-	><span class="LaTeX"
-	  >$\breveT$</span
-	  ><ul
-	  ><li
-	    >quick lookup of node (and weight)</li
-	    ><li
-	    >quick iteration through all nodes [<span class="LaTeX"
-	      >$\breveQ$</span
-	      >]</li
-	    ><li
-	    >quick comparison of nodes by their distance ordering [<span class="LaTeX"
-	      >$\breveP$</span
-	      >]</li
-	    ><li
-	    >quick lookup of node’s in-arcs (and weight) [<span class="LaTeX"
-	      >$\breveQ$</span
-	      >]</li
-	    ></ul
-	  ></li
-	><li
-	><span class="LaTeX"
-	  >$\ddotg \in \mathtt{\mathrm{img}}\, \breveG_*$</span
-	  >, <span class="LaTeX"
-	  >$\ddoth \in \mathtt{\mathrm{img}}\, \breveH_*$</span
-	  ><ul
-	  ><li
-	    >quick lookup of node (and weight)</li
-	    ><li
-	    >quick iteration through all nodes, arcs [<span class="LaTeX"
-	      >$\breveg$</span
-	      >]</li
-	    ><li
-	    >quick lookup of node`s in-arcs (and weight) [routing, naming]</li
-	    ><li
-	    >quick lookup of node’s out-arcs (and weight) [maybe needed by some scoring modules]</li
-	    ><li
-	    >quick one-time check that all of a node’s out-arcs (and weight) have been retrieved from the network [routing, naming]</li
-	    ></ul
-	  ></li
-	><li
-	><span class="LaTeX"
-	  >$\breveQ$</span
-	  >, <span class="LaTeX"
-	  >$\breveR$</span
-	  ><ul
-	  ><li
-	    >quick iteration of all lookups/results [<span class="LaTeX"
-	      >$\breveP$</span
-	      >, <span class="LaTeX"
-	      >$\breveh$</span
-	      >]</li
-	    ><li
-	    >an advanced implementation would allow items to be added and dynamically ordered in priority, bypassing the need to have <span class="LaTeX"
-	      >$\breveP$</span
-	      >, <span class="LaTeX"
-	      >$\breveh$</span
-	      >.</li
-	    ></ul
-	  ></li
-	></ul
-      ></div
-    ><div id="retrieval-of-remote-objects"
-    ><h3
-      ><a href="#TOC"
-	>Retrieval of remote objects</a
+	>On indexes</a
 	></h3
       ><p
-      >Usually we only need to retrieval part of a <code
-	>tgraph</code
-	> or <code
-	>index</code
-	>, eg. the weight of a single node, or its out-arcs.</p
-      ><ul
-      ><li
-	>eg. for quick “no” answer on lookups of storage objects - bloom filters</li
-	></ul
-      ></div
-    ><div id="caching-storage-objects"
-    ><h3
-      ><a href="#TOC"
-	>Caching storage objects</a
-	></h3
-      ><ul
-      ><li
-	>eg. cache commonly-retrieved objects like <code
-	  >ptable</code
-	  >s</li
-	></ul
-      ><p
-      >The contact layer is independent of any query, so this can be done in the background at any time. We can cache data for the layers above, which will help to increase performance for future queries. etc…</p
-      ><p
-      >[MORE] on incremental updates etc.</p
-      ></div
-    ><div id="incremental-state-updates"
-    ><h3
-      ><a href="#TOC"
-	>Incremental state updates</a
-	></h3
-      ><ul
-      ><li
-	>eg. when updating <span class="LaTeX"
-	  >$\breveG$</span
-	  > from <span class="LaTeX"
-	  >$\breveG_*$</span
-	  >, we should only need to recalculate the parts that are affected by the updated….</li
-	></ul
+      >As in the case of tgraphs, we use two constants for the two cases of arcs, a high <span class="LaTeX"
+	>$\alpha_1$</span
+	> and a low <span class="LaTeX"
+	>$\alpha_2$</span
+	>.</p
       ></div
     ></div
-  ></div
-><div id="design"
-><h1
-  ><a href="#TOC"
-    >Design</a
-    ></h1
-  ><p
-  >[MOVE] probably to “information aggregation”</p
-  ><div id="score-inferer"
+  ><div id="traversing-objects-3"
   ><h2
     ><a href="#TOC"
-      >Score-inferer</a
+      >Traversing objects</a
       ></h2
-    ><p
-    >Here we explore a crude algorithm to infer scores using the link structure of a data network. This is intended for use by the naming and routing layers, and as discussed previously, we base our model on the likelihood of reaching a given agent from the seeds.</p
-    ><p
-    >Let <span class="LaTeX"
-      >$x$</span
-      > be the agent we want to infer a score for. A simple model is to assign a path-score for the shortest path between <span class="LaTeX"
-      >$x$</span
-      > and each seed agent <span class="LaTeX"
-      >$a$</span
-      >, then take the independent union of all of these path-scores:</p
-    ><p
-    ><span class="LaTeX"
-      >$$
-s_x = 1 - \prod_a (1 - p_{ax})
-$$</span
-      ></p
-    ><p
-    >Note that this is open to attack by multiple colluding seed nodes, which breaks the assumption of independence.</p
-    ><p
-    >Let <span class="LaTeX"
-      >$k$</span
-      > represent the probability that an endorsement of a subject also implies endorsement of an arbitrary neighbour, and let <span class="LaTeX"
-      >$i$</span
-      > be the number of steps in the shortest path from <span class="LaTeX"
-      >$a$</span
-      > to <span class="LaTeX"
-      >$x$</span
-      >. Then <span class="LaTeX"
-      >$k^i$</span
-      > is a rough estimate for the probability that an endorsement extends to a node <span class="LaTeX"
-      >$i$</span
-      > steps away. Combining this with the weight of the original endorsement gives:</p
-    ><p
-    ><span class="LaTeX"
-      >$$
-p_{ax} = s_a.k^i
-$$</span
-      ></p
-    ><p
-    >Again, this is a very crude model, which ignores several important factors and assumes that <span class="LaTeX"
-      >$k$</span
-      > is universally constant. However, we weren’t able (in the time given) to develop any significantly better models, so we’ve stuck with it for our prototype. We try to given an underestimate of <span class="LaTeX"
-      >$k$</span
-      >, to give a bias towards agents nearer our seed set, which hopefully offers slightly more resistance to simple attacks. Our prototype uses <span class="LaTeX"
-      >$k = 2^{-4}$</span
-      >.</p
-    ></div
-  ><div id="value-composer"
-  ><h2
-    ><a href="#TOC"
-      >Value-composer</a
-      ></h2
-    ><p
-    >Here we explore a crude algorithm to aggregate value judgements from a set of agents. This is required by all the layers, and the model presented here is general enough to be applied to all of these.</p
-    ><p
-    >It’s impossible to determine the accuracy of the input data from only the data itself, since any input is potentially true. We need either a pre-existing expection of what the information should look like, or a model of how its meta-information (eg. its source agents) affects its accuracy. Both approaches are outside of the scope of this project.[EXTN]</p
-    ><p
-    >For our prototype, we use a very basic algorithm - the score-weighted mean of each agent’s value judgement for that resource. In our case, both the score and the value are bounded, and it’s hoped that this can hinder some basic attacks against mean-based composers (eg. judging a value to be infinity).</p
-    ><p
-    >Recall the problem specification:</p
-    ><dl
-    ><dt
-      >Given</dt
-      ><dd
-      ><ul
-	><li
-	  >a set of agents, with their inferred score, and resource-value maps <span class="LaTeX"
-	    >$$
-a : (s, \{ r : v \})
-$$</span
-	    ></li
-	  ></ul
-	></dd
+    ><div id="naming-layer"
+    ><h3
+      ><a href="#TOC"
+	>Naming layer</a
+	></h3
+      ><p
+      >First a definition: we say a tag <span class="LaTeX"
+	>$t$</span
+	> is <em
+	>completely loaded</em
+	> (or <em
+	>complete</em
+	> for short) in <span class="LaTeX"
+	>$g$</span
+	> if the attributes for itself, all its out-arcs, and all its out-nodes have been loaded. This is the maximum amount of information that can be retrieved from the current set of resources, for calculating the distance between <span class="LaTeX"
+	>$t$</span
+	> and its out-nodes. The address scheme constructor needs this.</p
+      ><p
+      >Recall that a layer has a table holding the local views of agents’ judgements. We mark a column for a tag-resource <span class="LaTeX"
+	>$t$</span
+	> as <em
+	>complete</em
+	> in the table, if <span class="LaTeX"
+	>$t$</span
+	> is <em
+	>complete</em
+	> in all rows <span class="LaTeX"
+	>$g$</span
+	> currently in the table.</p
+      ><p
+      >We initialise the table rows from the seed tgraphs <span class="LaTeX"
+	>$G_s$</span
+	>, and start with no columns. The table can be expanded in two possible ways:</p
+      ><dl
       ><dt
-      >Return</dt
-      ><dd
+	>Add a row</dt
+	><dd
+	><p
+	  >For a new tgraph <span class="LaTeX"
+	    >$g$</span
+	    >, <em
+	    >completely load</em
+	    > all the tags that are currently complete in the table, so that the addition of <span class="LaTeX"
+	    >$g$</span
+	    > as a row does not make any (previously completed tags) incomplete.</p
+	  ></dd
+	><dt
+	>Add a column</dt
+	><dd
+	><p
+	  >For a new tag <span class="LaTeX"
+	    >$t$</span
+	    >, <em
+	    >completely load</em
+	    > it in all rows <span class="LaTeX"
+	    >$g$</span
+	    >, so that <span class="LaTeX"
+	    >$t$</span
+	    > is then complete in the table.</p
+	  ></dd
+	></dl
+      ><p
+      >After each wave of new data, the aggregated resource-value map, and then the address scheme, is recalculated.</p
+      ><p
+      >We have the address scheme constructor stop when it reaches a tag which is not complete in the table. Of course we could continue with incomplete information, but we thought it would be more prudent to wait until all the relevant data becomes available. This should help to reduce instability in the output, which is important because another layer (routing) uses it; if it varies wildly between successive waves then that layer might not work so well.</p
+      ><p
+      >So the address scheme will have a maximum of one incomplete tag, and possibly references to tgraphs not yet added to our table. The incomplete tag, along with the tgraph with the “shortest-distance-to-source”, become valid candidates for being added to the table.</p
+      ><p
+      >In choosing between the expansion methods, we prefer adding columns to adding rows; we only add a new row if there is no incomplete tag to add, or if it is “further” than some predefined threshold, relative to the nearest tgraph. (In our prototype, we set this to <span class="LaTeX"
+	>$2^{-2}$</span
+	>.)</p
+      ><p
+      >This preference is based on the assumption that most naming needs should be satisfiable by a small neighbourhood around our seeds, and that judgements of tag-tag relationships should be similar across the entire network. (If someone claims to know a tag’s related tags, then it’s likely that this knowledge covers a large part of all related tags defined by the entire network.)</p
+      ></div
+    ><div id="routing-layer"
+    ><h3
+      ><a href="#TOC"
+	>Routing layer</a
+	></h3
+      ><p
+      >Define the <em
+	>potential</em
+	> of a lookup <span class="LaTeX"
+	>$(t, h)$</span
+	> to be <span class="LaTeX"
+	>$P(t_0, t, h)$</span
+	>. We estimate this as <span class="LaTeX"
+	>$P(t_0|t) P(t|h) P(h)$</span
+	><sup
+	><a href="#fn8" class="footnoteRef" id="fnref8"
+	  >8</a
+	  ></sup
+	>, which assumes that <span class="LaTeX"
+	>$P(t_0|t)$</span
+	>, <span class="LaTeX"
+	>$P(h)$</span
+	> are independent.</p
+      ><p
+      >As with other layers, we have a table of loaded attributes. Here however, we can be more focused when searching through indexes. Instead of looking up all the tags for an entire row, we only partially load each row; all non-loaded cells are assumed to be non-existent in the index for the row, until they are loaded.</p
+      ><p
+      >We initialise the table rows from the seed indexes <span class="LaTeX"
+	>$H_s$</span
+	>, and an empty address scheme (ie. no columns). The table can be expanded in two possible ways:</p
+      ><dl
+      ><dt
+	>Add a row</dt
+	><dd
+	><p
+	  >For a new index <span class="LaTeX"
+	    >$h$</span
+	    >, select all tags that lie on a path between <span class="LaTeX"
+	    >$t_s$</span
+	    > and <span class="LaTeX"
+	    >$t_0$</span
+	    > in the address scheme, where <span class="LaTeX"
+	    >$t_s$</span
+	    > is any tag that we reached <span class="LaTeX"
+	    >$h$</span
+	    > by.</p
+	  ></dd
+	><dt
+	>On address scheme update</dt
+	><dd
+	><p
+	  >Our prototype implementation has no way of detecting how the address scheme changed, so we just re-add all the rows as above. For seed rows, we select <em
+	    >all</em
+	    > tags in the address scheme, since “reached-by” doesn’t apply to seed tags. Of course, lookups that have already completed, are skipped.</p
+	  ></dd
+	></dl
+      ><p
+      >Unlike naming, no other functional component is dependent on the output of this layer; the results are only returned to the user. So we shift our focus from output stability to responsiveness - updating results as soon as possible when new information arrives.</p
+      ><p
+      >We retrieve data asynchronously, with pending lookups held in a priority queue, ordered by lookup potential. When the user asks for more results, we return immediately after picking an expansion method and adding its relevant lookups to the queue, instead of waiting for them to finish. The user can poll query progress; each time this occurs, we generate aggregated results using the data retrieved so far.</p
+      ><p
+      >The aggregated results might also contain references to new indexes as well as documents, in which case the most relevant index (scored in the same way as documents; this is described elsewhere) becomes a valid candidate for being added to the table.</p
+      ><p
+      >The choice of expansion method proceeds as follows. Define the <em
+	>potential</em
+	></p
       ><ul
+      ><li
+	>of a not-yet-added tag <span class="LaTeX"
+	  >$t$</span
+	  >, to be the highest potential of any <span class="LaTeX"
+	  >$(t, h)$</span
+	  > over all rows <span class="LaTeX"
+	  >$h$</span
+	  >.</li
 	><li
-	  >a target resource-value map <span class="LaTeX"
-	    >$$
-r : v
-$$</span
-	    ></li
-	  ></ul
-	></dd
-      ></dl
-    ><p
-    >The score-weighted mean value for resource <span class="LaTeX"
-      >$r$</span
-      >, over all agents, is:</p
-    ><p
-    ><span class="LaTeX"
-      >$$
-\bar v_r = \frac{\sum_{a} s_a v_{ar}}{\sum_a s_a}
-$$</span
-      ></p
-    ><p
-    >However, not every agent will have a judgement for <span class="LaTeX"
-      >$r$</span
-      >, so some <span class="LaTeX"
-      >$v_{ar}$</span
-      > may be undefined. In such cases, we make an estimate <span class="LaTeX"
-      >$\hat v_{ar}$</span
-      > instead.</p
-    ><p
-    ><span class="LaTeX"
-      >$$
-\bar v_r = \frac{\sum_{a} s_a \hat v_{ar}}{\sum_a s_a}
-\quad ; \quad
-\hat v_{ar} = \left\{ \begin{array}{llr} \\
-  v_{ar} & : r \in R_a & (0) \\
-  \alpha(a,r).0 + (1 - \alpha(a,r)).\bar v_r & : r \notin R_a & (1) \\
-\end{array} \right
-$$</span
-      ></p
-    ><p
-    >where <span class="LaTeX"
-      >$\alpha(a,r)$</span
-      > is the probability that agent <span class="LaTeX"
-      >$a$</span
-      > has judged resource <span class="LaTeX"
-      >$r$</span
-      > to be worthless, given <span class="LaTeX"
-      >$(1)$</span
-      >.</p
-    ><p
-    >The above definition has <span class="LaTeX"
-      >$\bar v_r$</span
-      > on the RHS; after rearranging, we get:</p
-    ><p
-    ><span class="LaTeX"
-      >$$
-% should be \dfrac but LaTeXMathML doesn't support amsmath commands...
-\bar v_r = \frac{\sum_{a:(0)} s_a v_{ar}}{\sum_a s_a \alpha_0(a,r)}
-\quad ; \quad
-\alpha_0(a,r) = \left\{ \begin{array}{ll} \\
-  1 & : (0) \\
-  \alpha(a,r) & : (1) \\
-\end{array} \right
-$$</span
-      ></p
-    ><p
-    >The behaviour of <span class="LaTeX"
-      >$\alpha$</span
-      > will depend greatly on the context in which the above formula is used. Our system deals with two types of resources, nodes and arcs; we note the following observations when implementing heuristics for <span class="LaTeX"
-      >$\alpha$</span
-      >:</p
-    ><p
-    ><strong
-      >For a node</strong
-      > <span class="LaTeX"
-      >$v$</span
-      >, there is no information that could be used to perform any heuristic: a node not in the map, has no information relating to it in the map. However, it may be possible to extract information from other sources, such as the friends for a ptable. These are context-specific and are explored in the appropriate sections.</p
-    ><p
-    ><strong
-      >For an arc</strong
-      > <span class="LaTeX"
-      >$e = (v_s, v_t)$</span
-      >, we have some extra information. The meaning of <span class="LaTeX"
-      >$e$</span
-      > is fully determined by <span class="LaTeX"
-      >$v_s$</span
-      >, <span class="LaTeX"
-      >$v_t$</span
-      >, which means that the agent is able to judge <span class="LaTeX"
-      >$e$</span
-      > if it “knows about” both <span class="LaTeX"
-      >$v_s$</span
-      > and <span class="LaTeX"
-      >$v_t$</span
-      >. We can estimate this notion with <span class="LaTeX"
-      >$v \in \mathtt{\mathrm{rft}}\, E$</span
-      >. That is, if <span class="LaTeX"
-      >$e \notin \mathtt{\mathrm{dom}}\, E$</span
-      > but <span class="LaTeX"
-      >$v_s, v_t \in \mathtt{\mathrm{rft}}\, E$</span
-      >, then it’s likely that there is no such relation.<sup
-      ><a href="#fn17" class="footnoteRef" id="fnref17"
-	>17</a
-	></sup
-      ></p
-    ><p
-    >Brief discussions of specific applications of all of the above is given in the <a href="#using-the-value-composer"
-      >relevant sub-sections</a
-      >.</p
-    ><p
-    >More sophisticated methods include training on a prototype network, or dynamic learning from an active network. However, it must be noted that the theoretical model for this component is not particularly robust anyway, so the benefit-cost ratio of such methods is likely to be low.</p
+	>of a not-yet-added index <span class="LaTeX"
+	  >$h$</span
+	  >, to be the highest potential of any <span class="LaTeX"
+	  >$(t, h)$</span
+	  > that <em
+	  >would be selected</em
+	  > if <span class="LaTeX"
+	  >$h$</span
+	  > were to be added as a row.</li
+	><li
+	>of the current lookups queue, to be the highest potential of any <span class="LaTeX"
+	  >$(t, h)$</span
+	  > currently contained within it.</li
+	></ul
+      ><p
+      >We compare the potential of the incomplete tag <span class="LaTeX"
+	>$t$</span
+	>, the new-index candidate <span class="LaTeX"
+	>$h$</span
+	>, and the current lookups queue. (If any of these do not exist, they are ignored.) If the most favourable potential out of these is:</p
+      ><ul
+      ><li
+	>that of the lookups queue, then we wait for lookups to continue</li
+	><li
+	>that of <span class="LaTeX"
+	  >$t$</span
+	  >, then we request an address scheme update</li
+	><li
+	>that of <span class="LaTeX"
+	  >$h$</span
+	  >, then we add it as a row</li
+	></ul
+      ><p
+      >Finally, if all three are non-existent (ie. no pending lookups, no incomplete tag, and no indexes to add), then we request an address scheme update.</p
+      ></div
     ></div
-  ></div
-><div id="comparison"
-><h1
-  ><a href="#TOC"
-    >Comparison</a
-    ></h1
-  ><p
-  >Our design differs considerably from these; for example, REMINDIN’s design is more ontology focused, whereas ours draws from existing non-semantic routing principles, DHTs in particular. Our design also has a well-defined (albeit underdeveloped) model of the address space (unlike Harnessing). [MORE] also move this to a better place…</p
   ></div
 ><div class="footnotes"
 ><hr
    /><ol
   ><li id="fn1"
     ><p
-      >Google stopped returning results to CNET’s website, because they published an article that the CEO disliked. [REF] <a href="#fnref1" class="footnoteBackLink" title="Jump back to footnote 1">↩</a></p
+      >In retrospect, it would probably be neater to use <span class="LaTeX"
+	>$P(t_0, t)$</span
+	> as arc attributes and store an undirected graph; they contain the same information. <a href="#fnref1" class="footnoteBackLink" title="Jump back to footnote 1">↩</a></p
       ></li
     ><li id="fn2"
     ><p
-      >Google was also forced by the Chinese government to censor many search results from its service in China. [REF] <a href="#fnref2" class="footnoteBackLink" title="Jump back to footnote 2">↩</a></p
+      >This interpretation gives no information on how well-connected a tgraph is, which would also affect its usefulness. However, in general, tgraphs are intended to hold highly compressed summaries on significant sections of the network, and the vast majority of naming needs should be satisfiable by a small neighbourhood around a seed set. In other words, we assume that routing between tgraphs won’t be a major practical issue, and brush this deficiency under the carpet.[EXTN] <a href="#fnref2" class="footnoteBackLink" title="Jump back to footnote 2">↩</a></p
       ></li
     ><li id="fn3"
     ><p
-      >John Risson, Tim Moors, Survey of research towards robust peer-to-peer networks: Search methods, <em
-	>Computer Networks</em
-	>, <strong
-	>Volume 50</strong
-	>, <strong
-	>Issue 17</strong
-	>, 5 December 2006, Pages 3485–3521, ISSN 1389–1286, DOI: <a href="http://www.sciencedirect.com/science/article/B6VRG-4JD0XYW-1/2/07e1ec0ba8cbe65f8f094cd99612b149"
-	>10.1016/j.comnet.2006.02.001</a
-	>. <a href="#fnref3" class="footnoteBackLink" title="Jump back to footnote 3">↩</a></p
+      >More sophisticated attributes might describe a belief distribution over its possible values. When aggregating multiple judgements that agree with each other, we could reduce the variance of the aggregated attribute. We can then use an algorithm that reduces the variance of an aggregated distribution, formed from many similar values. (Using the mean would fit this, as per the Central Limit Theorem.) A recently-developed system for evaulating skill over the result of many games, uses similar principles.[REF] [MORE] [EXTN] <a href="#fnref3" class="footnoteBackLink" title="Jump back to footnote 3">↩</a></p
       ></li
     ><li id="fn4"
     ><p
-      >[REF] REMINDIN’ <a href="#fnref4" class="footnoteBackLink" title="Jump back to footnote 4">↩</a></p
+      >from a given agent’s point of view <a href="#fnref4" class="footnoteBackLink" title="Jump back to footnote 4">↩</a></p
       ></li
     ><li id="fn5"
     ><p
-      >[REF] Harnessing. <a href="#fnref5" class="footnoteBackLink" title="Jump back to footnote 5">↩</a></p
+      >Or, the agent has overlooked <span class="LaTeX"
+	>$e$</span
+	>. We assume this is <em
+	>unlikely</em
+	> for the average agent, which is reasonable since we already trust them enough to be processing their judgement table. <a href="#fnref5" class="footnoteBackLink" title="Jump back to footnote 5">↩</a></p
       ></li
     ><li id="fn6"
     ><p
-      >eg. expected number of hops for a lookup <a href="#fnref6" class="footnoteBackLink" title="Jump back to footnote 6">↩</a></p
+      >Our implementation doesn’t actually use a table structure, but this is a simple and useful description, which is basically equivalent. <a href="#fnref6" class="footnoteBackLink" title="Jump back to footnote 6">↩</a></p
       ></li
     ><li id="fn7"
     ><p
-      >For example, originally the problem of information aggregation was considered only for the naming and routing layers, and was completely ignored for the social layer. During implementation it was realised that trust metrics could not resolve conflicts between ptable entries, and after implementation we formulated the theoretical expression of the general problem, given below. The discussion on the various issues of <a href="#information-aggregation"
-	>aggregation</a
-	> as related to our design was actually done during the preparation stage, but it was only afterwards that we realised how this fit into the general theory. <a href="#fnref7" class="footnoteBackLink" title="Jump back to footnote 7">↩</a></p
+      >eg. if all available seed indexes have been exhausted, and nothing useful returned, we need to ask for more. <a href="#fnref7" class="footnoteBackLink" title="Jump back to footnote 7">↩</a></p
       ></li
     ><li id="fn8"
-    ><p
-      >In retrospect, it would probably be neater to use <span class="LaTeX"
-	>$P(t_0, t)$</span
-	> as arc attributes and store an undirected graph; they contain the same information. <a href="#fnref8" class="footnoteBackLink" title="Jump back to footnote 8">↩</a></p
-      ></li
-    ><li id="fn9"
-    ><p
-      >This interpretation gives no information on how well-connected a tgraph is, which would also affect its usefulness. However, in general, tgraphs are intended to hold highly compressed summaries on significant sections of the network, and the vast majority of naming needs should be satisfiable by a small neighbourhood around a seed set. In other words, we assume that routing between tgraphs won’t be a major practical issue, and brush this deficiency under the carpet.[EXTN] <a href="#fnref9" class="footnoteBackLink" title="Jump back to footnote 9">↩</a></p
-      ></li
-    ><li id="fn10"
-    ><p
-      >Note also that it isn’t a distance <em
-	>metric</em
-	>, as it satisfies neither symmetry nor the triangle inequality. We were (and still are) unaware of any theory that comments on if this is a bad thing, from a routing perspective. Dijkstra’s algorithm, which we use to construct a routing scheme, only requires a distance relation rather than a metric. <a href="#fnref10" class="footnoteBackLink" title="Jump back to footnote 10">↩</a></p
-      ></li
-    ><li id="fn11"
-    ><p
-      >More sophisticated attributes might describe a belief distribution over its possible values. When aggregating multiple judgements that agree with each other, we could reduce the variance of the aggregated attribute.[EXTN] <a href="#fnref11" class="footnoteBackLink" title="Jump back to footnote 11">↩</a></p
-      ></li
-    ><li id="fn12"
-    ><p
-      >from a given agent’s point of view <a href="#fnref12" class="footnoteBackLink" title="Jump back to footnote 12">↩</a></p
-      ></li
-    ><li id="fn13"
-    ><p
-      >Our implementation doesn’t actually use a table structure, but this is a simple and useful description, which is basically equivalent. <a href="#fnref13" class="footnoteBackLink" title="Jump back to footnote 13">↩</a></p
-      ></li
-    ><li id="fn14"
-    ><p
-      >eg. if all available seed indexes have been exhausted, and nothing useful returned, we need to ask for more. <a href="#fnref14" class="footnoteBackLink" title="Jump back to footnote 14">↩</a></p
-      ></li
-    ><li id="fn15"
-    ><p
-      >This assumption is unlikely to be true, but it’s a common assumption in information retrieval, and appears to give reasonable results. <a href="#fnref15" class="footnoteBackLink" title="Jump back to footnote 15">↩</a></p
-      ></li
-    ><li id="fn16"
     ><p
       >ie. similarity of <span class="LaTeX"
 	>$t$</span
@@ -2385,19 +1780,12 @@ $$</span
 	>$t$</span
 	>, and score of <span class="LaTeX"
 	>$h$</span
-	>, respectively. <a href="#fnref16" class="footnoteBackLink" title="Jump back to footnote 16">↩</a></p
-      ></li
-    ><li id="fn17"
-    ><p
-      >Or, the agent has overlooked <span class="LaTeX"
-	>$e$</span
-	>. We assume this is <em
-	>unlikely</em
-	> for the average agent, which is reasonable since we already trust them enough to be processing their judgement table. <a href="#fnref17" class="footnoteBackLink" title="Jump back to footnote 17">↩</a></p
+	>, respectively. <a href="#fnref8" class="footnoteBackLink" title="Jump back to footnote 8">↩</a></p
       ></li
     ></ol
   ></div
 >
+
 </body>
 </html>
 

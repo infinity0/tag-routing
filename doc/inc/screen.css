@@ -1,0 +1,68 @@
+/* Display */
+
+.screenonly-block { display: block !important; }
+.screenonly-inline { display: inline !important; }
+
+/* Layout */
+body { padding-left: 16em; padding-top: 1em; }
+
+/* hack to get link-to-anchors working properly with the header menu */
+h1, h2, h3, h4, h5, h6 { margin-top: -22pt; padding-top: 22pt; }
+h1.title { margin-top: 0; }
+
+#mainmenu {
+	margin: 0;
+	padding: 0.5ex 1ex;
+	position: fixed;
+	top: 0; left: 0;
+	border-bottom: 1px solid black;
+	width: 100%;
+	background: wheat;
+	z-index: 99;
+}
+
+#mainmenu li.aux {
+	float: right;
+	margin-right: 1.6em;
+}
+
+#mainmenu li {
+	display: inline;
+	margin: 0 0.8em;
+}
+
+#TOC {
+	box-sizing: border-box; -moz-box-sizing: border-box;
+	position: fixed; top: 2em; left: 0;
+	height: 100%; width: 16em;
+	overflow: auto;
+	padding-right: 0.8em;
+	margin: 0;
+}
+
+#TOC ul {
+	padding-left: 1em;
+	list-style-type: none;
+	display: block;
+}
+
+#TOC li { position: relative; }
+
+#TOC li > a {
+	display: block;
+	width: 16em;
+	height: 100%;
+	text-decoration: none;
+}
+
+#TOC li > a:hover { background: #f66; }
+
+#TOC .toggle {
+	position: absolute;
+	left: -0.8em;
+	cursor: pointer;
+}
+
+#TOC li div.pageno {
+	display: none;
+}

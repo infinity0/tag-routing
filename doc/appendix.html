@@ -1,0 +1,1341 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Appendices</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Ximin Luo" />
+  <meta name="date" content="" />
+  <link rel="stylesheet" href="inc/common.css" type="text/css" />
+  <script src="inc/LaTeXMathML.js" type="text/javascript"
+  ></script
+  >
+  <script type="text/javascript">
+  /*<![CDATA[*/
+  
+  inc='\u25b9'; dec='\u25bf';
+  ina='\u25b8'; dea='\u25be';
+  
+  function toggleSect(sect) {
+  	if (sect.style.display == 'none') {
+  		sect.style.display = 'block';
+  		sect.parentNode.firstChild.firstChild.nodeValue = dea;
+  		return true;
+  	} else {
+  		sect.style.display = 'none';
+  		sect.parentNode.firstChild.firstChild.nodeValue = ina;
+  		return false;
+  	}
+  }
+  
+  function incSect(sect) {
+  	sect.style.display = 'block';
+  	sect.parentNode.firstChild.firstChild.nodeValue = dec;
+  }
+  
+  function decSect(sect) {
+  	sect.style.display = 'none';
+  	sect.parentNode.firstChild.firstChild.nodeValue = inc;
+  }
+  
+  function disableSelection(target){
+  	if ('MozUserSelect' in target.style) {
+  		target.style.MozUserSelect = "none"
+  	} else if ('onselectstart' in target) {
+  		target.onselectstart = function() { return false; }
+  	} else {
+  		target.onmousedown = function(){ return false; }
+  	}
+  	target.style.cursor = "default";
+  }
+  
+  function getSectDeep(node, lev, list) {
+  	if (lev <= 0) { return; }
+  	switch (node.nodeName.toLowerCase()) {
+  	case 'ul':
+  		for (var i=0; i<node.childNodes.length; i++) {
+  			getSectDeep(node.childNodes.item(i), lev, list);
+  		}
+  		break;
+  	case 'li':
+  		var obj = node.lastChild;
+  		if (obj.nodeName.toLowerCase() == 'ul') {
+  			list[list.length] = obj;
+  			getSectDeep(obj, lev-1, list);
+  		}
+  		break;
+  	}
+  }
+  
+  window.onload = function() {
+  	var toc = document.getElementById("TOC");
+  	disableSelection(toc);
+  
+  	var sect = toc.firstChild.getElementsByTagName('ul');
+  	for (var i=0; i<sect.length; ++i) {
+  		var li = sect[i].parentNode;
+  		var obj = document.createElement('span');
+  		obj.appendChild(document.createTextNode(inc));
+  		obj.className = 'toggle screenonly-inline';
+  		obj.onclick = function(event) {
+  			var stat = toggleSect(this.parentNode.lastChild);
+  			if (!event.shiftKey) { return; }
+  
+  			var subs = this.parentNode.lastChild.getElementsByTagName('ul');
+  			if (stat) {
+  				for (var j=0; j<subs.length; ++j) {
+  					incSect(subs[j]);
+  				}
+  			} else {
+  				for (var j=0; j<subs.length; ++j) {
+  					decSect(subs[j]);
+  				}
+  			}
+  		}
+  		obj.onmouseover = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? ina: dea;
+  		}
+  		obj.onmouseout = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? inc: dec;
+  		}
+  		sect[i].style.display = 'none';
+  		li.insertBefore(obj, li.firstChild);
+  	}
+  
+  	var list = [];
+  	getSectDeep(toc.firstChild, 2, list);
+  	for (var i=0; i<list.length; ++i) {
+  		incSect(list[i]);
+  	}
+  
+  	var line = toc.firstChild.getElementsByTagName('a');
+  	for (var i=0; i<line.length; ++i) {
+  		ah = line[i]
+  		obj = document.createElement('div');
+  		obj.appendChild(document.createTextNode(ah.title));
+  		obj.className = "pageno";
+  		ah.parentNode.insertBefore(obj, ah);
+  	}
+  
+  }
+  
+  /*]]>*/
+  </script>
+</head>
+<body>
+<h1 class="title">Appendices</h1>
+<ul id="mainmenu">
+<li><a href="intro.html">introduction</a></li>
+<li><a href="design.html">design</a></li>
+<li><a href="evaluate.html">evaluation</a></li>
+<li><a href="execute.html">execution</a></li>
+<li><a href="appendix.html">appendix</a></li>
+<li class="aux"><a href="api/index.html">javadoc</a></li>
+</ul>
+<div id="TOC"
+><ul
+  ><li
+    ><a href="#bibliography"
+      >Bibliography</a
+      ><ul
+      ><li
+	><a href="#comparison"
+	  >Comparison</a
+	  ></li
+	></ul
+      ></li
+    ><li
+    ><a href="#appendices"
+      >Appendices</a
+      ><ul
+      ><li
+	><a href="#glossary"
+	  >Glossary</a
+	  ></li
+	><li
+	><a href="#notation"
+	  >Notation</a
+	  ><ul
+	  ><li
+	    ><a href="#simple-objects"
+	      >Simple objects</a
+	      ></li
+	    ><li
+	    ><a href="#composite-objects"
+	      >Composite objects</a
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><a href="#derivations"
+	  >Derivations</a
+	  ><ul
+	  ><li
+	    ><a href="#ranking-results"
+	      >Ranking results</a
+	      ></li
+	    ><li
+	    ><a href="#type-parameters"
+	      >Type-parameters</a
+	      ></li
+	    ><li
+	    ><a href="#closeness"
+	      >Closeness</a
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><a href="#results"
+	  >Results</a
+	  ><ul
+	  ><li
+	    ><a href="#query-closeness"
+	      >Query closeness</a
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><a href="#future-work"
+	  >Future work</a
+	  ></li
+	></ul
+      ></li
+    ><li
+    ><a href="#meta"
+      >Meta</a
+      ><ul
+      ><li
+	><a href="#interface"
+	  >Interface</a
+	  ></li
+	></ul
+      ></li
+    ><li
+    ><a href="#unfinished-notes"
+      >Unfinished notes</a
+      ><ul
+      ><li
+	><a href="#optimisation"
+	  >Optimisation</a
+	  ><ul
+	  ><li
+	    ><a href="#data-structures"
+	      >Data structures</a
+	      ></li
+	    ><li
+	    ><a href="#retrieval-of-remote-objects"
+	      >Retrieval of remote objects</a
+	      ></li
+	    ><li
+	    ><a href="#caching-storage-objects"
+	      >Caching storage objects</a
+	      ></li
+	    ><li
+	    ><a href="#incremental-state-updates"
+	      >Incremental state updates</a
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><a href="#test-networks"
+	  >Test networks</a
+	  ><ul
+	  ><li
+	    ><a href="#inter-node-properties"
+	      >Inter-node properties</a
+	      ></li
+	    ><li
+	    ><a href="#intra-node-properties"
+	      >Intra-node properties</a
+	      ></li
+	    ><li
+	    ><a href="#generation-algorithms"
+	      >Generation algorithms</a
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><a href="#simulation"
+	  >Simulation</a
+	  ><ul
+	  ><li
+	    ><a href="#request-models"
+	      >Request models</a
+	      ></li
+	    ><li
+	    ><a href="#network-conditions"
+	      >Network conditions</a
+	      ></li
+	    ></ul
+	  ></li
+	></ul
+      ></li
+    ><li
+    ><a href="#removed-text"
+      >Removed text</a
+      ><ul
+      ><li
+	><a href="#introduction"
+	  >Introduction</a
+	  ></li
+	><li
+	><a href="#theory"
+	  >Theory</a
+	  ></li
+	><li
+	><a href="#distance-relation"
+	  >Distance relation</a
+	  ></li
+	><li
+	><a href="#attributes"
+	  >Attributes</a
+	  ></li
+	><li
+	><a href="#project-infrastructure"
+	  >Project infrastructure</a
+	  ></li
+	><li
+	><a href="#search-application---structure"
+	  >Search application - structure</a
+	  ></li
+	></ul
+      ></li
+    ></ul
+  ></div
+>
+<div id="bibliography"
+><h1
+  ><a href="#TOC"
+    >Bibliography</a
+    ></h1
+  ><p
+  >etc etc etc [MORE]</p
+  ><p
+  >TrueSkill http://research.microsoft.com/en-us/projects/trueskill/details.aspx</p
+  ><p
+  >Dangalchev, C. Residual closeness in networks, 2006.</p
+  ><p
+  >peer-to-peer networks: Search methods, <em
+    >Computer Networks</em
+    >, <strong
+    >Volume 50</strong
+    >, <strong
+    >Issue 17</strong
+    >, 5 December 2006, Pages 3485–3521, ISSN 1389–1286, DOI: <a href="http://www.sciencedirect.com/science/article/B6VRG-4JD0XYW-1/2/07e1ec0ba8cbe65f8f094cd99612b149"
+    >10.1016/j.comnet.2006.02.001</a
+    >.</p
+  ><p
+  >[REF] REMINDIN’</p
+  ><p
+  >[REF] Harnessing.</p
+  ><div id="comparison"
+  ><h2
+    ><a href="#TOC"
+      >Comparison</a
+      ></h2
+    ><p
+    >Our design differs considerably from these; for example, REMINDIN’s design is more ontology focused, whereas ours draws from existing non-semantic routing principles, DHTs in particular. Our design also has a well-defined (albeit underdeveloped) model of the address space (unlike Harnessing). [MORE]</p
+    ></div
+  ></div
+><div id="appendices"
+><h1
+  ><a href="#TOC"
+    >Appendices</a
+    ></h1
+  ><div id="glossary"
+  ><h2
+    ><a href="#TOC"
+      >Glossary</a
+      ></h2
+    ><dl
+    ><dt
+      >arc</dt
+      ><dd
+      >A directed relation <span class="LaTeX"
+	>$e = (v_s, v_t)$</span
+	> from node <span class="LaTeX"
+	>$v_s$</span
+	> to node <span class="LaTeX"
+	>$v_t$</span
+	>.</dd
+      ><dt
+      >degree, in-degree, out-degree (of a node-set <span class="LaTeX"
+	>$V$</span
+	>)</dt
+      ><dd
+      >See “neighbour (of a node-set <span class="LaTeX"
+	>$V$</span
+	>)”. the *-degree is just the number of *-neighbours</dd
+      ><dt
+      >document</dt
+      ><dd
+      >A storage object that can be the target of some query. This could include (eg.) multimedia or software; for simplicity, we’ll refer to these all as “document”.</dd
+      ><dt
+      >identity</dt
+      ><dd
+      >A node (“user”) on the social network</dd
+      ><dt
+      >independent union (of a set of probabilities <span class="LaTeX"
+	>$P$</span
+	>)</dt
+      ><dd
+      >The probability of at least one event in <span class="LaTeX"
+	>$P$</span
+	>, assuming all the events are independent, given by <span class="LaTeX"
+	>$1 - \prod_{p \in P} (1 - p)$</span
+	>.</dd
+      ><dt
+      >local view</dt
+      ><dd
+      >For a remote object <span class="LaTeX"
+	>$x$</span
+	>, the local view holds the parts of <span class="LaTeX"
+	>$x$</span
+	> that have been retrieved from the network, ie. data that is immediately available to the local system. It can distinguish between items found not to exist in <span class="LaTeX"
+	>$x$</span
+	>, and items not yet loaded.</dd
+      ><dt
+      >neighbour, in-node, out-node (of a node <span class="LaTeX"
+	>$v$</span
+	>)</dt
+      ><dd
+      >A node separated from <span class="LaTeX"
+	>$v$</span
+	> by a single arc. We abbreviate “in-neighbour”, “out-neighbour” to just “in-node”, “out-node”. We denote the set of all neighbours, in-nodes, out-nodes, of <span class="LaTeX"
+	>$v$</span
+	> as <span class="LaTeX"
+	>$\mathtt{\mathrm{nbr}}\,v$</span
+	>, <span class="LaTeX"
+	>$\mathtt{\mathrm{pred}}\,v$</span
+	>, <span class="LaTeX"
+	>$\mathtt{\mathrm{succ}}\,v$</span
+	>.</dd
+      ><dt
+      >neighbour, in-node, out-node (of a node-set <span class="LaTeX"
+	>$V$</span
+	>)</dt
+      ><dd
+      >We define <span class="LaTeX"
+	>$\mathtt{\mathrm{nbr}}\,V = (\bigcup_{v \in V} \mathtt{\mathrm{nbr}}\,v) \setminus V$</span
+	>; and <span class="LaTeX"
+	>$\mathtt{\mathrm{pred}}\,V$</span
+	>, <span class="LaTeX"
+	>$\mathtt{\mathrm{succ}}\,V$</span
+	> similarly.</dd
+      ><dt
+      >node</dt
+      ><dd
+      >In the context of a graph or a network, a unique individual</dd
+      ><dt
+      >resource relationship, route</dt
+      ><dd
+      >We write <span class="LaTeX"
+	>$p \rightarrow^t p'$</span
+	> to mean that <span class="LaTeX"
+	>$p$</span
+	> points to <span class="LaTeX"
+	>$p'$</span
+	> via tag <span class="LaTeX"
+	>$t$</span
+	>. In the relevant contexts (e.g. if <span class="LaTeX"
+	>$p$</span
+	>, <span class="LaTeX"
+	>$p'$</span
+	> are tgraphs / indexes), this also means that <span class="LaTeX"
+	>$p$</span
+	> defines an arc <span class="LaTeX"
+	>$(t, p')$</span
+	> as a resource.</dd
+      ><dt
+      >tag</dt
+      ><dd
+      >A semantic unit used to describe documents in a useful way to end users.</dd
+      ></dl
+    ></div
+  ><div id="notation"
+  ><h2
+    ><a href="#TOC"
+      >Notation</a
+      ></h2
+    ><p
+    >Here, we document the notation we use for describing the data structures we use. All are implicitly finite in size.</p
+    ><dl
+    ><dt
+      >Partial function <span class="LaTeX"
+	>$f \subseteq X \to Y$</span
+	></dt
+      ><dd
+      >This is non-standard, but <span class="LaTeX"
+	>$f : X \to Y$</span
+	> is ambiguous - existing literature uses it to mean both a partial or a total function, depending on author.</dd
+      ></dl
+    ><div id="simple-objects"
+    ><h3
+      ><a href="#TOC"
+	>Simple objects</a
+	></h3
+      ><dl
+      ><dt
+	>Tuple <span class="LaTeX"
+	  >$X = ( a,b,\ldots )$</span
+	  ></dt
+	><dd
+	>an ordered container of items, of fixed size</dd
+	><dd
+	><ul
+	  ><li
+	    >the parentheses may be omitted when the context is clear</li
+	    ></ul
+	  ></dd
+	><dt
+	>Union <span class="LaTeX"
+	  >$U = ( a|b|\ldots )$</span
+	  ></dt
+	><dd
+	>a container holding a single value of any of the specified types</dd
+	><dd
+	><ul
+	  ><li
+	    >the parentheses may be omitted when the context is clear</li
+	    ></ul
+	  ></dd
+	><dt
+	>Map <span class="LaTeX"
+	  >$M = \{ x : y \}$</span
+	  ></dt
+	><dd
+	>a container that maps<sup
+	  ><a href="#fn1" class="footnoteRef" id="fnref1"
+	    >1</a
+	    ></sup
+	  > <span class="LaTeX"
+	  >$x$</span
+	  > to <span class="LaTeX"
+	  >$y$</span
+	  >.</dd
+	><dd
+	><ul
+	  ><li
+	    >write <span class="LaTeX"
+	      >$y_x$</span
+	      > to mean “the <span class="LaTeX"
+	      >$y$</span
+	      > that <span class="LaTeX"
+	      >$x$</span
+	      > maps to”.</li
+	    ><li
+	    >let <span class="LaTeX"
+	      >$x \in M$</span
+	      > mean the same thing as <span class="LaTeX"
+	      >$x \in \mathtt{\mathrm{dom}}\, M$</span
+	      >.</li
+	    ><li
+	    >the braces may be omitted when the context is clear</li
+	    ></ul
+	  ></dd
+	><dt
+	>List <span class="LaTeX"
+	  >$L = [ x_i ]_{i}$</span
+	  ></dt
+	><dd
+	>an ordered container of items, of unfixed size</dd
+	></dl
+      ></div
+    ><div id="composite-objects"
+    ><h3
+      ><a href="#TOC"
+	>Composite objects</a
+	></h3
+      ><p
+      >We make heavy use of these container objects:</p
+      ><ul
+      ><li
+	>maps <span class="LaTeX"
+	  >$V_A : V \to A$</span
+	  > of nodes to their attributes.</li
+	><li
+	>maps <span class="LaTeX"
+	  >$E_A : E \to A$</span
+	  > of arcs to their attributes.</li
+	></ul
+      ><p
+      >These are used in various combinations to represent graphs, inverted indexes, etc.</p
+      ><p
+      >For any set <span class="LaTeX"
+	>$E \subseteq V_s \times V_t$</span
+	> of arcs, define:</p
+      ><ul
+      ><li
+	><span class="LaTeX"
+	  >$\mathtt{\mathrm{src}}\, E = \{ v_s \in V_s : \exists v_t . (v_s, v_t) \in E \}$</span
+	  > ie. the set of nodes that the arcs point from.</li
+	><li
+	><span class="LaTeX"
+	  >$\mathtt{\mathrm{dst}}\, E = \{ v_t \in V_t : \exists v_s . (v_s, v_t) \in E \}$</span
+	  > ie. the set of nodes that the arcs point to.</li
+	><li
+	><span class="LaTeX"
+	  >$\mathtt{\mathrm{rft}}\, E = \mathtt{\mathrm{src}}\, E \cup \mathtt{\mathrm{dst}}\, E$</span
+	  > ie. the set of nodes that E refers to.</li
+	></ul
+      ><p
+      >For convenience, let this also apply to arc-attribute maps, ie. <span class="LaTeX"
+	>$\mathtt{\mathrm{rft}}\, E_A = \mathtt{\mathrm{rft}}\, E$</span
+	>.</p
+      ></div
+    ></div
+  ><div id="derivations"
+  ><h2
+    ><a href="#TOC"
+      >Derivations</a
+      ></h2
+    ><div id="ranking-results"
+    ><h3
+      ><a href="#TOC"
+	>Ranking results</a
+	></h3
+      ><p
+      >Aggregating the information from various indexes gives us a map <span class="LaTeX"
+	>$E_{\barh}$</span
+	> of tag-document arcs to attributes. For all <span class="LaTeX"
+	>$(t, d) : w$</span
+	>, where <span class="LaTeX"
+	>$w = P(t|d)$</span
+	>, we want to normalise this to <span class="LaTeX"
+	>$(t_0, d) : w'$</span
+	>, where <span class="LaTeX"
+	>$w' = P(t_0|d)$</span
+	>.</p
+      ><p
+      >For any tag <span class="LaTeX"
+	>$t$</span
+	>, let <span class="LaTeX"
+	>$[t_i]_0^n$</span
+	> be the shortest path from <span class="LaTeX"
+	>$t_0$</span
+	> to <span class="LaTeX"
+	>$t$</span
+	>, where <span class="LaTeX"
+	>$t = t_n$</span
+	>. From the address scheme, we have the distance between <span class="LaTeX"
+	>$t$</span
+	> and <span class="LaTeX"
+	>$t_0$</span
+	>:</p
+      ><p
+      ><span class="LaTeX"
+	>$$
+D(t) = D[t_i]_0^n = \prod_{i=0}^{n-1} P(t_{i+1}|t_i)
+$$</span
+	></p
+      ><p
+      >If we assume that the pairs <span class="LaTeX"
+	>$P(t_{i+1}|t_i)$</span
+	>, along with <span class="LaTeX"
+	>$P(t_n|d)$</span
+	>, are all independent<sup
+	><a href="#fn2" class="footnoteRef" id="fnref2"
+	  >2</a
+	  ></sup
+	> of each other, then we have:</p
+      ><p
+      ><span class="LaTeX"
+	>$$
+\begin{array}{rl}
+D(t)
+=& \prod_{i=0}^{n-1} P(t_{i+1}|t_i) \\
+=& \prod_{i=0}^{n-1} P(t_{i+1}|t_i, \ldots, t_0) \\
+=& P(t_n, \ldots, t_1|t_0) \\
+\end{array}
+$$</span
+	></p
+      ><p
+      >so that:</p
+      ><p
+      ><span class="LaTeX"
+	>$$
+\begin{array}{rl}
+D(t) \frac{P(t_0)}{P(t_n)} P(t_n|d)
+=& P(t_n, \ldots, t_1|t_0) \frac{P(t_0)}{P(t_n)} P(t_n|d) \\
+=& P(t_{n-1}, \ldots, t_0|t_n) P(t_n|d) \\
+=& P(t_n, \ldots, t_0|d) \\
+\end{array}
+$$</span
+	></p
+      ><p
+      >Since <span class="LaTeX"
+	>$[t_i]$</span
+	> is the shortest path, we assume that <span class="LaTeX"
+	>$P(t_n, \ldots, t_0|d) \approx P(t_0|d)$</span
+	>. So, for each <span class="LaTeX"
+	>$(t, d) : w$</span
+	>, we have:</p
+      ><p
+      ><span class="LaTeX"
+	>$$
+w' = D(t) \frac{P(t_0)}{P(t)} w
+$$</span
+	></p
+      ><p
+      >as an approximation.</p
+      ></div
+    ><div id="type-parameters"
+    ><h3
+      ><a href="#TOC"
+	>Type-parameters</a
+	></h3
+      ><p
+      >Our design uses several types of objects without making any comment on their type; these include tags, object addresses (in the storage layer), and social identities. These are perfect candidates for generic type parameters.</p
+      ><p
+      >The type of attributes can also be parameterised. Although we use probability for all of our attributes, this is a part of our specification that is separate from the overall architecture of the system. A full list of theoretically distinct types is:</p
+      ><table
+      ><thead
+	><tr class="header"
+	  ><th align="left"
+	    ></th
+	    ><th align="left"
+	    >Source</th
+	    ><th align="left"
+	    >Description</th
+	    ></tr
+	  ></thead
+	><tbody
+	><tr class="odd"
+	  ><td align="left"
+	    >1.</td
+	    ><td align="left"
+	    >agent score (social)</td
+	    ><td align="left"
+	    >social identity trust score</td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    >2.</td
+	    ><td align="left"
+	    >resource value (social) (tgraphs)</td
+	    ><td align="left"
+	    >rating score for tgraphs</td
+	    ></tr
+	  ><tr class="odd"
+	  ><td align="left"
+	    >3.</td
+	    ><td align="left"
+	    >resource value (social) (indexes)</td
+	    ><td align="left"
+	    >rating score for indexes</td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    >4.</td
+	    ><td align="left"
+	    >agent score (naming)</td
+	    ><td align="left"
+	    >rating score for tgraphs</td
+	    ></tr
+	  ><tr class="odd"
+	  ><td align="left"
+	    >5.</td
+	    ><td align="left"
+	    >resource value (naming) (node)</td
+	    ><td align="left"
+	    >tag size</td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    >6.</td
+	    ><td align="left"
+	    >resource value (naming) (arc)</td
+	    ><td align="left"
+	    >tag-tag similarity</td
+	    ></tr
+	  ><tr class="odd"
+	  ><td align="left"
+	    >7.</td
+	    ><td align="left"
+	    >agent score (routing)</td
+	    ><td align="left"
+	    >rating score for indexes</td
+	    ></tr
+	  ><tr class="even"
+	  ><td align="left"
+	    >8.</td
+	    ><td align="left"
+	    >resource value (routing)</td
+	    ><td align="left"
+	    >tag-document similarity</td
+	    ></tr
+	  ></tbody
+	></table
+      ><p
+      >(2,4) are the same, and (3,7) are the same, which leaves us with six attribute types. In the end we felt it prudent to merge (6,8) into a single arc-attribute type, and also merge (2,4,3,7) into a single score type. This leaves us with four distinct attribute types.</p
+      ><p
+      >We end up with seven generic type parameters in total, which are all present in the unified interface to the storage layer (<code
+	>StoreControl</code
+	>): <code
+	>&lt;I&gt;</code
+	> identity, <code
+	>&lt;T&gt;</code
+	> tag, <code
+	>&lt;A&gt;</code
+	> address, <code
+	>&lt;U&gt;</code
+	> node-attribute, <code
+	>&lt;W&gt;</code
+	> arc-attribute, <code
+	>&lt;S&gt;</code
+	> score, <code
+	>&lt;Z&gt;</code
+	> identity-score.</p
+      ></div
+    ><div id="closeness"
+    ><h3
+      ><a href="#TOC"
+	>Closeness</a
+	></h3
+      ><p
+      >We want to measure the closeness of a seed identity to a subject tag.</p
+      ><p
+      >We start by looking at existing measures of closeness. One standard definition for the closeness of a node <span class="LaTeX"
+	>$v$</span
+	> in a graph, is the inverse-sum of the geodesic distances to all other nodes[REF]. This does not work for disconnected graphs where distances can be infinite; variants that work around this, include using the sum-inverse[REF] and sum-inverse-exponent[REF] of the distances instead.</p
+      ><p
+      >We look at this last version more closely; its advantages include having closed formulas for closeness in simple graphs (stars, lines, etc). The closeness of a node <span class="LaTeX"
+	>$v_0$</span
+	> in graph <span class="LaTeX"
+	>$G = (V, E)$</span
+	> is defined:</p
+      ><p
+      ><span class="LaTeX"
+	>$$
+C(v_0, G) = \sum_{v \in V \setminus v_0} 2^{-d_G(v_0, v)}
+$$</span
+	></p
+      ><p
+      >where <span class="LaTeX"
+	>$d_G(v_0, v)$</span
+	> is the geodesic distance from <span class="LaTeX"
+	>$v_0$</span
+	> to <span class="LaTeX"
+	>$v$</span
+	> in <span class="LaTeX"
+	>$G$</span
+	>.</p
+      ><p
+      >A rough interpretation for this is how easily one can get from <span class="LaTeX"
+	>$v_0$</span
+	> to all the other parts of the graph as a whole. Hand-waving, this is along the lines of what we want to use as the “difficulty” of a query - getting from our source identity to the relevant target documents.</p
+      ><p
+      >Before we continue, we should make precise exactly what we want to get from, and what we want to get to. Our search application starts from a seed identity <span class="LaTeX"
+	>$z$</span
+	>, and traverses several networks to reach a set of result documents <span class="LaTeX"
+	>$R$</span
+	> hopefully relevant to <span class="LaTeX"
+	>$t$</span
+	>. We can make our “closeness” measure derivation easier, by considering only one network plane - the indexes network.</p
+      ><p
+      >We define “source” nodes <span class="LaTeX"
+	>$V_s$</span
+	> to be the indexes that are present in <span class="LaTeX"
+	>$z$</span
+	>’s own ptable, along with some of the indexes<sup
+	><a href="#fn3" class="footnoteRef" id="fnref3"
+	  >3</a
+	  ></sup
+	> present in the ptables of their friends. We define “target” nodes <span class="LaTeX"
+	>$V_t$</span
+	> to be the indexes that hold documents associated to <span class="LaTeX"
+	>$t$</span
+	>. This problem is now reduced to finding the “closeness” from <span class="LaTeX"
+	>$V_s$</span
+	> to <span class="LaTeX"
+	>$V_t$</span
+	>, in the same graph (i.e. the indexes network).</p
+      ><p
+      >We can tweak the above measure to give the closeness of <span class="LaTeX"
+	>$v_0$</span
+	> relative to a subset <span class="LaTeX"
+	>$V_t$</span
+	> of the nodes, rather than the entire graph:</p
+      ><p
+      ><span class="LaTeX"
+	>$$
+C(v_0, V_t) = \sum_{v \in V_t} 2^{-d_G(v_0, v)}
+$$</span
+	></p
+      ><p
+      >(We leave out the <span class="LaTeX"
+	>$\setminus v_0$</span
+	> requirement; this was only added in [REF] so the closeness of an isolated graph is <span class="LaTeX"
+	>$0$</span
+	>. Further, <span class="LaTeX"
+	>$v_0$</span
+	> is always present in <span class="LaTeX"
+	>$V$</span
+	>, so it always removes a constant value, but in our extension above and below, this isn’t true; we mustn’t make an arbitrary non-constant adjustment.)</p
+      ><p
+      >We can tweak this further, to give the closeness of a set of nodes <span class="LaTeX"
+	>$V_s$</span
+	> relative to <span class="LaTeX"
+	>$V_t$</span
+	>, rather than a single source node:</p
+      ><p
+      ><span class="LaTeX"
+	>$$
+C(V_s, V_t) = \sum_{v \in V_t} \sum_{u \in V_s} 2^{-d_G(u, v)} / |V_s|
+$$</span
+	></p
+      ><p
+      >We have <span class="LaTeX"
+	>$|V_s|$</span
+	> as a normalisation factor because we doesn’t need to traverse through all the seed indexes to reach a target index; on the other hand, we don’t use <span class="LaTeX"
+	>$min_{u \in V_s}$</span
+	> either, because having more seed indexes will result in more work, since we can’t predict which index is the minimum.</p
+      ><p
+      >Of course, the above definitions all assume an additive distance relation. So in our calculations, we first convert probability attributes to entropy ones.</p
+      ></div
+    ></div
+  ><div id="results"
+  ><h2
+    ><a href="#TOC"
+      >Results</a
+      ></h2
+    ><div id="query-closeness"
+    ><h3
+      ><a href="#TOC"
+	>Query closeness</a
+	></h3
+      ><p
+      >[DIAG] iframe table</p
+      ></div
+    ></div
+  ><div id="future-work"
+  ><h2
+    ><a href="#TOC"
+      >Future work</a
+      ></h2
+    ><p
+    >(basically scrape all the [EXTN] tags from the rest of the text)</p
+    ></div
+  ></div
+><div id="meta"
+><h1
+  ><a href="#TOC"
+    >Meta</a
+    ></h1
+  ><p
+  >These documents were prepared in <a href="http://johnmacfarlane.net/pandoc/"
+    >pandoc markdown</a
+    >.</p
+  ><div id="interface"
+  ><h2
+    ><a href="#TOC"
+      >Interface</a
+      ></h2
+    ><p
+    >Clicking the arrows next to the menus will toggle the visibility of their children. Shift-clicking will do this recursively for all descendents at all levels.</p
+    ></div
+  ></div
+><div id="unfinished-notes"
+><h1
+  ><a href="#TOC"
+    >Unfinished notes</a
+    ></h1
+  ><div id="optimisation"
+  ><h2
+    ><a href="#TOC"
+      >Optimisation</a
+      ></h2
+    ><p
+    >[MOVE] to appendix</p
+    ><div id="data-structures"
+    ><h3
+      ><a href="#TOC"
+	>Data structures</a
+	></h3
+      ><ul
+      ><li
+	><code
+	  >ptable</code
+	  ><ul
+	  ><li
+	    >quick partition of <code
+	      >index</code
+	      > vs <code
+	      >tgraph</code
+	      > nodes [<span class="LaTeX"
+	      >$G_s$</span
+	      >, <span class="LaTeX"
+	      >$H_s$</span
+	      >]</li
+	    ><li
+	    >optionally order these by their score [possible future use]</li
+	    ></ul
+	  ></li
+	><li
+	><code
+	  >tgraph</code
+	  >, <code
+	  >index</code
+	  ><ul
+	  ><li
+	    >where applicable:</li
+	    ><li
+	    >quick lookup of node (and weight)</li
+	    ><li
+	    >quick lookup of node’s out-arcs (and weight) [routing, naming]</li
+	    ></ul
+	  ></li
+	><li
+	><code
+	  >index</code
+	  ><ul
+	  ><li
+	    >quick partition of tag’s to-<code
+	      >index</code
+	      > vs to-document arcs</li
+	    ><li
+	    >optionally order these by their score [routing]</li
+	    ></ul
+	  ></li
+	><li
+	><span class="LaTeX"
+	  >$\breveg$</span
+	  ><ul
+	  ><li
+	    >same as <code
+	      >tgraph</code
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><span class="LaTeX"
+	  >$p_s$</span
+	  >, <span class="LaTeX"
+	  >$\breveg$</span
+	  >, <span class="LaTeX"
+	  >$\breveG$</span
+	  >, <span class="LaTeX"
+	  >$\breveH$</span
+	  ><ul
+	  ><li
+	    >might want to make these use CombinedWeight objects instead of a float “weight”, which in the future could be expanded to include a variance…</li
+	    ></ul
+	  ></li
+	><li
+	><span class="LaTeX"
+	  >$\breveT$</span
+	  ><ul
+	  ><li
+	    >quick lookup of node (and weight)</li
+	    ><li
+	    >quick iteration through all nodes [<span class="LaTeX"
+	      >$\breveQ$</span
+	      >]</li
+	    ><li
+	    >quick comparison of nodes by their distance ordering [<span class="LaTeX"
+	      >$\breveP$</span
+	      >]</li
+	    ><li
+	    >quick lookup of node’s in-arcs (and weight) [<span class="LaTeX"
+	      >$\breveQ$</span
+	      >]</li
+	    ></ul
+	  ></li
+	><li
+	><span class="LaTeX"
+	  >$\ddotg \in \mathtt{\mathrm{img}}\, \breveG_*$</span
+	  >, <span class="LaTeX"
+	  >$\ddoth \in \mathtt{\mathrm{img}}\, \breveH_*$</span
+	  ><ul
+	  ><li
+	    >quick lookup of node (and weight)</li
+	    ><li
+	    >quick iteration through all nodes, arcs [<span class="LaTeX"
+	      >$\breveg$</span
+	      >]</li
+	    ><li
+	    >quick lookup of node`s in-arcs (and weight) [routing, naming]</li
+	    ><li
+	    >quick lookup of node’s out-arcs (and weight) [maybe needed by some scoring modules]</li
+	    ><li
+	    >quick one-time check that all of a node’s out-arcs (and weight) have been retrieved from the network [routing, naming]</li
+	    ></ul
+	  ></li
+	><li
+	><span class="LaTeX"
+	  >$\breveQ$</span
+	  >, <span class="LaTeX"
+	  >$\breveR$</span
+	  ><ul
+	  ><li
+	    >quick iteration of all lookups/results [<span class="LaTeX"
+	      >$\breveP$</span
+	      >, <span class="LaTeX"
+	      >$\breveh$</span
+	      >]</li
+	    ><li
+	    >an advanced implementation would allow items to be added and dynamically ordered in priority, bypassing the need to have <span class="LaTeX"
+	      >$\breveP$</span
+	      >, <span class="LaTeX"
+	      >$\breveh$</span
+	      >.</li
+	    ></ul
+	  ></li
+	></ul
+      ></div
+    ><div id="retrieval-of-remote-objects"
+    ><h3
+      ><a href="#TOC"
+	>Retrieval of remote objects</a
+	></h3
+      ><p
+      >Usually we only need to retrieval part of a <code
+	>tgraph</code
+	> or <code
+	>index</code
+	>, eg. the weight of a single node, or its out-arcs.</p
+      ><ul
+      ><li
+	>eg. for quick “no” answer on lookups of storage objects - bloom filters</li
+	></ul
+      ></div
+    ><div id="caching-storage-objects"
+    ><h3
+      ><a href="#TOC"
+	>Caching storage objects</a
+	></h3
+      ><ul
+      ><li
+	>eg. cache commonly-retrieved objects like <code
+	  >ptable</code
+	  >s</li
+	></ul
+      ><p
+      >The contact layer is independent of any query, so this can be done in the background at any time. We can cache data for the layers above, which will help to increase performance for future queries. etc…</p
+      ><p
+      >[MORE] on incremental updates etc.</p
+      ></div
+    ><div id="incremental-state-updates"
+    ><h3
+      ><a href="#TOC"
+	>Incremental state updates</a
+	></h3
+      ><ul
+      ><li
+	>eg. when updating <span class="LaTeX"
+	  >$\breveG$</span
+	  > from <span class="LaTeX"
+	  >$\breveG_*$</span
+	  >, we should only need to recalculate the parts that are affected by the updated….</li
+	></ul
+      ></div
+    ></div
+  ><div id="test-networks"
+  ><h2
+    ><a href="#TOC"
+      >Test networks</a
+      ></h2
+    ><div id="inter-node-properties"
+    ><h3
+      ><a href="#TOC"
+	>Inter-node properties</a
+	></h3
+      ><ul
+      ><li
+	>neighbour count (ie. degree) distribution</li
+	><li
+	>neighbour semantic relation distribution</li
+	></ul
+      ></div
+    ><div id="intra-node-properties"
+    ><h3
+      ><a href="#TOC"
+	>Intra-node properties</a
+	></h3
+      ><ul
+      ><li
+	>semantic unity (how “related” its tags are)</li
+	><li
+	>semantic specialty (how “general” its tags are)</li
+	></ul
+      ></div
+    ><div id="generation-algorithms"
+    ><h3
+      ><a href="#TOC"
+	>Generation algorithms</a
+	></h3
+      ><ul
+      ><li
+	>Use network formed by extracted data (“real world”)</li
+	><li
+	>Barabási-Albert model (preferential attachment)</li
+	><li
+	>scale-free</li
+	><li
+	>not small-world; according to wikipedia:<ul
+	  ><li
+	    >clustering coefficient is power-law, similar to hierarchical networks</li
+	    ><li
+	    >small-world networks have constant clustering coefficient</li
+	    ></ul
+	  ></li
+	><li
+	>TODO etc. read up on network theory.</li
+	><li
+	>hierarchies</li
+	><li
+	>other structures?</li
+	></ul
+      ><p
+      >Ideally we want a single algorithm which takes as input, various parameters for the properties listed in the previous two sections, and outputs a random graph with those properties.</p
+      ></div
+    ></div
+  ><div id="simulation"
+  ><h2
+    ><a href="#TOC"
+      >Simulation</a
+      ></h2
+    ><div id="request-models"
+    ><h3
+      ><a href="#TOC"
+	>Request models</a
+	></h3
+      ></div
+    ><div id="network-conditions"
+    ><h3
+      ><a href="#TOC"
+	>Network conditions</a
+	></h3
+      ><ul
+      ><li
+	>perfect conditions</li
+	><li
+	>random failure</li
+	><li
+	>malicious attacks - under the assumptions of “abstract storage network”, only attacks vs the entire network can occur on the naming / routing planes. attacks vs individuals on the social plane is a separate topic, ignore here<ul
+	  ><li
+	    >attacks vs most well-connected nodes</li
+	    ><li
+	    >MORE</li
+	    ></ul
+	  ></li
+	></ul
+      ></div
+    ></div
+  ></div
+><div id="removed-text"
+><h1
+  ><a href="#TOC"
+    >Removed text</a
+    ></h1
+  ><div id="introduction"
+  ><h2
+    ><a href="#TOC"
+      >Introduction</a
+      ></h2
+    ><p
+    >Another issue is the depth and granularity of search topics. Most of us don’t use a search provider for every item of information we need; instead, we often issue a query that gives us a selection of related sites from all over the web, then manually browse within these sites to target our needs more precisely. In addition, some websites have non-public information, or specialist knowledge that generic search algorithms aren’t able to index effectively. In these cases, central index databases are inadequate.</p
+    ><p
+    >[…]</p
+    ><p
+    >Imagine your browser acting like a router; you type in a search query and it automatically follows links between pages to reach what you want. Of course, this is a long way off, and it may well be beyond the capabilities of current hardware and networks, but hopefully this project makes a useful contribution in that direction.</p
+    ></div
+  ><div id="theory"
+  ><h2
+    ><a href="#TOC"
+      >Theory</a
+      ></h2
+    ><p
+    >We explored many different ideas before implementation began, and during implementation we weeded out the ones which seemed to lead nowhere. Afterwards, surviving ideas were explored further, and simplified or generalised.<sup
+      ><a href="#fn4" class="footnoteRef" id="fnref4"
+	>4</a
+	></sup
+      ></p
+    ><p
+    >As such, there are a few aspects of our design which may seem inelegant or imperfect in the context of the theories described below. Unfortunately, we didn’t have time to go back and refine them; but we have tried to point these out where relevant. None of these flaws, we think, are serious enough to defeat the basic purpose of the design that we implemented.</p
+    ></div
+  ><div id="distance-relation"
+  ><h2
+    ><a href="#TOC"
+      >Distance relation</a
+      ></h2
+    ><p
+    >A <strong
+      >distance metric</strong
+      > also satisfies <span class="LaTeX"
+      >$\forall a,b,c \in S : D(a,c) \sqsubseteq D(a,b) \circ D(c,b)$</span
+      >, ie. <em
+      >symmetry</em
+      > (“forwards backwards are equally long”) and <em
+      >triangle inequality</em
+      > (“direct path is shortest”); we won’t consider these restrictions here.</p
+    ><p
+    >Note<sup
+      ><a href="#fn5" class="footnoteRef" id="fnref5"
+	>5</a
+	></sup
+      ></p
+    ></div
+  ><div id="attributes"
+  ><h2
+    ><a href="#TOC"
+      >Attributes</a
+      ></h2
+    ><p
+    >A related idea is negative attributes, which would represent a judgement that the resource is malicious or dangerous in some sense, rather than neutral or “useless”. In a system where it’s possible to act aggressively, these weights could provide information on who to attack (or set up defences against).</p
+    ><p
+    >It’s not clear how this applies to our system, which is a network of data and so only supports passive traps rather than active attacks. It’s also unclear how probability-based attributes could be extended to work this way. So for now, we ignore this possibility.[EXTN]</p
+    ></div
+  ><div id="project-infrastructure"
+  ><h2
+    ><a href="#TOC"
+      >Project infrastructure</a
+      ></h2
+    ><p
+    >Our repository has a fairly simple layout; we have seperate source directories for application code and test code, and a source directory for documentation. We used github to publish and backup our repository.</p
+    ></div
+  ><div id="search-application---structure"
+  ><h2
+    ><a href="#TOC"
+      >Search application - structure</a
+      ></h2
+    ><p
+    >as well as Probability and Entropy classes that ensure their values are restricted to the correct ranges</p
+    ></div
+  ></div
+><div class="footnotes"
+><hr
+   /><ol
+  ><li id="fn1"
+    ><p
+      >This is equivalent to a partial function: <span class="LaTeX"
+	>$M = \{ x_i \in X \mapsto y_i \in Y \}_i$</span
+	> means the same thing as <span class="LaTeX"
+	>$M \subseteq X \to Y$</span
+	>; however, the former is a better description of a static data structure. <a href="#fnref1" class="footnoteBackLink" title="Jump back to footnote 1">↩</a></p
+      ></li
+    ><li id="fn2"
+    ><p
+      >This assumption is unlikely to be true, but it’s a common assumption in information retrieval, and appears to give reasonable results. <a href="#fnref2" class="footnoteBackLink" title="Jump back to footnote 2">↩</a></p
+      ></li
+    ><li id="fn3"
+    ><p
+      >for our sample data, we select the “personal index” of each friend, ie. the index produced from the user-producer of that friend, rather than the group-producers. This reduces the cost of the calculation, whilst keeping the basic idea of what we want to measure. <a href="#fnref3" class="footnoteBackLink" title="Jump back to footnote 3">↩</a></p
+      ></li
+    ><li id="fn4"
+    ><p
+      >For example, information aggregation was originally only considered for the naming and routing layers, and was completely ignored for the social layer. During implementation we realised that trust metrics could not resolve conflicts between ptable entries, and only afterwards did we formulate the expression of the general problem. <a href="#fnref4" class="footnoteBackLink" title="Jump back to footnote 4">↩</a></p
+      ></li
+    ><li id="fn5"
+    ><p
+      >Note also that it isn’t a distance <em
+	>metric</em
+	>, as it satisfies neither symmetry nor the triangle inequality. We were (and still are) unaware of any theory that comments on if this is a bad thing, from a routing perspective. <a href="#fnref5" class="footnoteBackLink" title="Jump back to footnote 5">↩</a></p
+      ></li
+    ></ol
+  ></div
+>
+
+</body>
+</html>
+

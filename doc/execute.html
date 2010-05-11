@@ -1,0 +1,795 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Execution</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Ximin Luo" />
+  <meta name="date" content="" />
+  <link rel="stylesheet" href="inc/common.css" type="text/css" />
+  <script src="inc/LaTeXMathML.js" type="text/javascript"
+  ></script
+  >
+  <script type="text/javascript">
+  /*<![CDATA[*/
+  
+  inc='\u25b9'; dec='\u25bf';
+  ina='\u25b8'; dea='\u25be';
+  
+  function toggleSect(sect) {
+  	if (sect.style.display == 'none') {
+  		sect.style.display = 'block';
+  		sect.parentNode.firstChild.firstChild.nodeValue = dea;
+  		return true;
+  	} else {
+  		sect.style.display = 'none';
+  		sect.parentNode.firstChild.firstChild.nodeValue = ina;
+  		return false;
+  	}
+  }
+  
+  function incSect(sect) {
+  	sect.style.display = 'block';
+  	sect.parentNode.firstChild.firstChild.nodeValue = dec;
+  }
+  
+  function decSect(sect) {
+  	sect.style.display = 'none';
+  	sect.parentNode.firstChild.firstChild.nodeValue = inc;
+  }
+  
+  function disableSelection(target){
+  	if ('MozUserSelect' in target.style) {
+  		target.style.MozUserSelect = "none"
+  	} else if ('onselectstart' in target) {
+  		target.onselectstart = function() { return false; }
+  	} else {
+  		target.onmousedown = function(){ return false; }
+  	}
+  	target.style.cursor = "default";
+  }
+  
+  function getSectDeep(node, lev, list) {
+  	if (lev <= 0) { return; }
+  	switch (node.nodeName.toLowerCase()) {
+  	case 'ul':
+  		for (var i=0; i<node.childNodes.length; i++) {
+  			getSectDeep(node.childNodes.item(i), lev, list);
+  		}
+  		break;
+  	case 'li':
+  		var obj = node.lastChild;
+  		if (obj.nodeName.toLowerCase() == 'ul') {
+  			list[list.length] = obj;
+  			getSectDeep(obj, lev-1, list);
+  		}
+  		break;
+  	}
+  }
+  
+  window.onload = function() {
+  	var toc = document.getElementById("TOC");
+  	disableSelection(toc);
+  
+  	var sect = toc.firstChild.getElementsByTagName('ul');
+  	for (var i=0; i<sect.length; ++i) {
+  		var li = sect[i].parentNode;
+  		var obj = document.createElement('span');
+  		obj.appendChild(document.createTextNode(inc));
+  		obj.className = 'toggle screenonly-inline';
+  		obj.onclick = function(event) {
+  			var stat = toggleSect(this.parentNode.lastChild);
+  			if (!event.shiftKey) { return; }
+  
+  			var subs = this.parentNode.lastChild.getElementsByTagName('ul');
+  			if (stat) {
+  				for (var j=0; j<subs.length; ++j) {
+  					incSect(subs[j]);
+  				}
+  			} else {
+  				for (var j=0; j<subs.length; ++j) {
+  					decSect(subs[j]);
+  				}
+  			}
+  		}
+  		obj.onmouseover = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? ina: dea;
+  		}
+  		obj.onmouseout = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? inc: dec;
+  		}
+  		sect[i].style.display = 'none';
+  		li.insertBefore(obj, li.firstChild);
+  	}
+  
+  	var list = [];
+  	getSectDeep(toc.firstChild, 2, list);
+  	for (var i=0; i<list.length; ++i) {
+  		incSect(list[i]);
+  	}
+  
+  	var line = toc.firstChild.getElementsByTagName('a');
+  	for (var i=0; i<line.length; ++i) {
+  		ah = line[i]
+  		obj = document.createElement('div');
+  		obj.appendChild(document.createTextNode(ah.title));
+  		obj.className = "pageno";
+  		ah.parentNode.insertBefore(obj, ah);
+  	}
+  
+  }
+  
+  /*]]>*/
+  </script>
+</head>
+<body>
+<h1 class="title">Execution</h1>
+<ul id="mainmenu">
+<li><a href="intro.html">introduction</a></li>
+<li><a href="design.html">design</a></li>
+<li><a href="evaluate.html">evaluation</a></li>
+<li><a href="execute.html">execution</a></li>
+<li><a href="appendix.html">appendix</a></li>
+<li class="aux"><a href="api/index.html">javadoc</a></li>
+</ul>
+<div id="TOC"
+><ul
+  ><li
+    ><a href="#development"
+      >Development</a
+      ><ul
+      ><li
+	><a href="#project-infrastructure"
+	  >Project infrastructure</a
+	  ></li
+	><li
+	><a href="#search-application"
+	  >Search application</a
+	  ><ul
+	  ><li
+	    ><a href="#structure"
+	      >Structure</a
+	      ></li
+	    ><li
+	    ><a href="#design-patterns"
+	      >Design patterns</a
+	      ></li
+	    ><li
+	    ><a href="#generics"
+	      >Generics</a
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><a href="#sample-generator"
+	  >Sample generator</a
+	  ><ul
+	  ><li
+	    ><a href="#libraries"
+	      >Libraries</a
+	      ></li
+	    ><li
+	    ><a href="#structure-1"
+	      >Structure</a
+	      ></li
+	    ><li
+	    ><a href="#performance"
+	      >Performance</a
+	      ><ul
+	      ><li
+		><a href="#network-io"
+		  >Network IO</a
+		  ></li
+		><li
+		><a href="#serialisation"
+		  >Serialisation</a
+		  ></li
+		></ul
+	      ></li
+	    ></ul
+	  ></li
+	><li
+	><a href="#data-format"
+	  >Data format</a
+	  ></li
+	></ul
+      ></li
+    ><li
+    ><a href="#testing"
+      >Testing</a
+      ><ul
+      ><li
+	><a href="#sample-integrity"
+	  >Sample integrity</a
+	  ></li
+	><li
+	><a href="#initial-tests"
+	  >Initial tests</a
+	  ></li
+	><li
+	><a href="#full-testing"
+	  >Full testing</a
+	  ></li
+	><li
+	><a href="#comments"
+	  >Comments</a
+	  ></li
+	></ul
+      ></li
+    ><li
+    ><a href="#conclusions"
+      >Conclusions</a
+      ></li
+    ></ul
+  ></div
+>
+<div id="development"
+><h1
+  ><a href="#TOC"
+    >Development</a
+    ></h1
+  ><div id="project-infrastructure"
+  ><h2
+    ><a href="#TOC"
+      >Project infrastructure</a
+      ></h2
+    ><p
+    >From the beginning, we put the entire project under version control. We chose to use git; we feel that its content-oriented object model and its non-linear history model is more flexible than traditional centralised systems. It’s also fast and efficient, and we have the most experience with it.</p
+    ><p
+    >The main compilable component, the search application, was written in Java, and so we chose Apache Ant for our build system. This is fairly simple and flexible enough for our purposes. Maven was also considered, but dropped as we didn’t think our project needed such a heavyweight solution.</p
+    ><p
+    >We spent a moderate amount of effort creating test code during the development process. We did <em
+      >not</em
+      > attempt to write a unit test for every single class. This is not feasible for many classes, which are components of a larger system and cannot function at all without the entire system in place. However, for utility functions, data structure classes, and other “standalone” components, we did write fairly extensive tests. In our experience, they are the most critical components, and eliminating bugs early helps greatly when finally testing the application-specific logic. We used JUnit as the framework for our tests; this is easily integrated into the build process via Ant.</p
+    ></div
+  ><div id="search-application"
+  ><h2
+    ><a href="#TOC"
+      >Search application</a
+      ></h2
+    ><p
+    >We decided to develop the search application in Java. We were aware that our design had many areas for future improvement, so we wanted our implementation to be easily maintainable and extensible. We felt that the strict type safety and class inheritance of Java would aid in achieving such a goal; it allows us to design a system architecture (and its component interfaces) to be both self-enforcing and self-documenting. This is useful when coding individual classes, where it’s easy to forget about the overall picture.</p
+    ><div id="structure"
+    ><h3
+      ><a href="#TOC"
+	>Structure</a
+	></h3
+      ><p
+      >Our code structure can be divided into the following sections, each roughly corresponding to a Java package:</p
+      ><dl
+      ><dt
+	><code
+	  >tags.proto</code
+	  ></dt
+	><dd
+	>Prototype implementation of the search application</dd
+	><dt
+	><code
+	  >tags.store</code
+	  ></dt
+	><dd
+	>Adapters to provide a consistent interface for different storage layers</dd
+	><dt
+	><code
+	  >tags.util</code
+	  >, <code
+	  >tags.io</code
+	  ></dt
+	><dd
+	>General utilities that the rest of the application depends upon, but is not otherwise directly relevant to the theory of our system.</dd
+	><dt
+	><code
+	  >tags.ui</code
+	  ></dt
+	><dd
+	>Interfaces for presenting application information to the user</dd
+	></dl
+      ><p
+      >The prototype implementation code can be divided into:</p
+      ><dl
+      ><dt
+	><code
+	  >tags.proto.*</code
+	  > (objects)</dt
+	><dd
+	>The basic objects of our system (<code
+	  >PTable</code
+	  >, <code
+	  >TGraph</code
+	  >, <code
+	  >Index</code
+	  >) and utility classes for these. Some of the objects have multiple versions, which help to strip out unnecessary features based on use context - e.g. when we only need to represent a remote object, we only store outgoing arcs.</dd
+	><dt
+	><code
+	  >tags.proto.*</code
+	  > (process)</dt
+	><dd
+	>The execution architecture of our system. The main classes include:</dd
+	><dd
+	><dl
+	  ><dt
+	    ><code
+	      >LayerService</code
+	      ></dt
+	    ><dd
+	    >A template that all layers inherit from, which implements some basic functionality (e.g. receiving messages, holding query parameters) as described in <a href="design.html#layers"
+	      >architecture - layers</a
+	      >.</dd
+	    ><dt
+	    ><code
+	      >QueryProcess</code
+	      ></dt
+	    ><dd
+	    >An ongoing query. It holds references to all the state relevant to it, including each of the running layers.</dd
+	    ><dt
+	    ><code
+	      >QueryEnvironment</code
+	      ></dt
+	    ><dd
+	    >The environment of the query - the components that a query process needs, but is not specific to the query itself. This includes e.g. an <code
+	      >Executor</code
+	      ><sup
+	      ><a href="#fn1" class="footnoteRef" id="fnref1"
+		>1</a
+		></sup
+	      > for scheduling jobs, and the interface to the storage layer.</dd
+	    ></dl
+	  ></dd
+	><dt
+	><code
+	  >tags.proto.*.*</code
+	  > (layers)</dt
+	><dd
+	>The layers as described in <a href="design.html#layers"
+	  >architecture - layers</a
+	  >. The “algorithmic components” are represented by Java interfaces (plus basic implementations, also as described), to allow for future improvements.</dd
+	></dl
+      ><p
+      >The general utilities can be further divided into:</p
+      ><dl
+      ><dt
+	><code
+	  >tags.util.*</code
+	  ></dt
+	><dd
+	>Data-structure related utilities. Our object specifications are abstract; an easy way to implement them was to construct them out of union and tuple types. These aren’t a native part of Java, so we built our own. We also implemented many methods for performing complex operations on maps, because our objects are all node-map/arc-map combinations. Our crude score-inferer and value-composer are both implemented here, as well as Probability and Entropy classes that ensure their values are appropriately restricted.</dd
+	><dt
+	><code
+	  >tags.util.exec.*</code
+	  ></dt
+	><dd
+	>Our execution architecture. <code
+	  >java.util.concurrent</code
+	  > is highly abstract and lacking in context-specific implementations, and we weren’t aware of any simple, easy-to-learn alternatives, so we wrote our own. This includes <code
+	  >TaskService</code
+	  >, similar to <code
+	  >Executor</code
+	  > but accepts general objects to act on; and <code
+	  >MessageReceiver</code
+	  >, a basic interface for message passing.</dd
+	><dt
+	><code
+	  >tags.io.*</code
+	  ></dt
+	><dd
+	>This contains deserialisation classes for GraphML, which we had to code because existing utilities weren’t good enough - see the <a href="#data-format"
+	  >data format</a
+	  > section.</dd
+	></dl
+      ></div
+    ><div id="design-patterns"
+    ><h3
+      ><a href="#TOC"
+	>Design patterns</a
+	></h3
+      ><p
+      >The Java Collections Framework[REF] is simple and flexible, and we built most of our data structures on top of it. In many cases, these provide alternative views of existing structures, such as combining two maps into one, chaining many iterators together, etc. It is generally more space-efficient to expose each item as needed, rather than copying the entire collection and converting all the items at once. The <em
+	>proxy</em
+	> and <em
+	>decorator</em
+	> patterns are both useful in implementing such views; we made heavy use of our <code
+	>ProxyIterable</code
+	>, <code
+	>ProxyMap</code
+	> classes in constructing the more complex views.</p
+      ><p
+      >We found good use for the <em
+	>adapter</em
+	> pattern. Our <code
+	>StoreControl</code
+	> provides a consistent interface to interact with different storage layers; implementations wrap around and hide these differences. We implemented both the path-based score-inferer and the mean-based value-composer as general utility classes; adapters were also used to wrap this functionality inside an interface expected by the layers that used these components.</p
+      ><p
+      >We also used the <em
+	>factory</em
+	> and <em
+	>builder</em
+	> patterns to make object creation code more extensible. Use cases include creating local views of remote objects, and deserialising objects from input streams.</p
+      ><p
+      >The interaction between layers is co-ordinated by implementing each layer as a state machine - it cannot receive requests during a state transition (ie. when it is currently processing a previous request). This simplifies the execution logic, and reduces the critical objects that need to be synchronised on.</p
+      ></div
+    ><div id="generics"
+    ><h3
+      ><a href="#TOC"
+	>Generics</a
+	></h3
+      ><p
+      >We made heavy use of generics in our implementation. In our experience, this is a useful tool both in enforcing type safety, and in writing re-usable code. We use seven generic type parameters, which arguably is too much; however, we believe our code is modular enough to support this level of flexibility. For a full discussion, see <a href="appendix.html#type-parameters"
+	>type parameters</a
+	> in the appendix.</p
+      ></div
+    ></div
+  ><div id="sample-generator"
+  ><h2
+    ><a href="#TOC"
+      >Sample generator</a
+      ></h2
+    ><p
+    >We decided to develop the sample generator in Python. We did not need the code here to be as strictly well-designed as for the search application. Also, by this point we were already far behind schedule; we felt using Python would help to recover some of this, due to its simplicity and the ease of exploring new libraries via the interactive interpreter.</p
+    ><p
+    >We did run into many problems, such as poor high-level multithreading support, and performance and memory leak issues which became important at the scales we were processing data at (we had initially overlooked this). However, ultimately it probably did save us time, and it’s uncertain that using a more low-level language would’ve helped the performance issues significantly.</p
+    ><div id="libraries"
+    ><h3
+      ><a href="#TOC"
+	>Libraries</a
+	></h3
+      ><p
+      >We made use of the following external libraries:</p
+      ><dl
+      ><dt
+	>flickrapi[REF]</dt
+	><dd
+	>Python bindings for Flickr’s online API[REF].</dd
+	><dt
+	>python-futures[REF]</dt
+	><dd
+	>A high-level multithreading framework, inspired by <code
+	  >java.util.concurrent</code
+	  >. We used this to run flickrapi in parallel to reduce network IO waits; this is discussed below[LINK].</dd
+	><dt
+	>igraph[REF]</dt
+	><dd
+	>A general-purpose graph library written in C, with a python interface available. We used this to store and manipulate graph objects, and for data serialisation.</dd
+	></dl
+      ></div
+    ><div id="structure-1"
+    ><h3
+      ><a href="#TOC"
+	>Structure</a
+	></h3
+      ><p
+      >Our code structure can be divided into the following sections, each roughly corresponding to a Python module:</p
+      ><dl
+      ><dt
+	><code
+	  >tags.eval.crawl.flickr</code
+	  ></dt
+	><dd
+	>An extension of flickrapi, and code for data collection, as described in <a href="evaluate.html#application"
+	  >evaluation - generating data</a
+	  >.</dd
+	><dt
+	><code
+	  >tags.eval.objects</code
+	  ></dt
+	><dd
+	>Classes representing single objects, such as <code
+	  >Producer</code
+	  >, <code
+	  >Node</code
+	  >, a class for building graphs (<code
+	  >NodeSample</code
+	  >), and various classes for holding statistics about a sample or its components.</dd
+	><dt
+	><code
+	  >tags.eval.sample</code
+	  ></dt
+	><dd
+	>Classes for generating, writing, and calculating statistics for samples.</dd
+	><dt
+	><code
+	  >tags.eval.util</code
+	  >, <code
+	  >tags.eval.util.*</code
+	  ></dt
+	><dd
+	>Utility methods and classes that provide support for the rest of the code, but which is otherwise not directly relevant to the system.</dd
+	></dl
+      ></div
+    ><div id="performance"
+    ><h3
+      ><a href="#TOC"
+	>Performance</a
+	></h3
+      ><p
+      >We had to deal with many performance issues during the implementation of the sample generator. Although we used Python, it was not the main cause of these issues; the CPU-intensive methods were all C libraries.</p
+      ><div id="network-io"
+      ><h4
+	><a href="#TOC"
+	  >Network IO</a
+	  ></h4
+	><p
+	>Our Flickr API library, flickrapi, uses blocking IO for network communication, which results in a few seconds’ wait before each API call completes.</p
+	><p
+	>To speed this up, we used multithreading to start many calls in parallel. We also extended flickrapi to use persistent HTTP connections (per thread), rather than opening a new TCP connection for each call. Since each thread’s task is only to wait for a system call to return, the lack of true multithreading in Python (due to the GIL[REF]) was not a problem.</p
+	><p
+	>An alternative approach would be to use an asynchronous event-based IO model (the <em
+	  >reactor</em
+	  > pattern), like the popular Twisted library[REF]. However, we never intended the sample generator to be production code, so we preferred the simplicity of threads, over the flexibility and performance of event-based models.</p
+	></div
+      ><div id="serialisation"
+      ><h4
+	><a href="#TOC"
+	  >Serialisation</a
+	  ></h4
+	><p
+	>Since we were dealing with data sizes larger than our RAM, we needed to store (e.g.) semi-completed objects and request parameters on disk. At first, we used Python’s standard <code
+	  >pickle</code
+	  > module[REF] to de/serialise our objects, and the standard <code
+	  >shelve</code
+	  > module[REF] to store this data. This proved inadequate, and we had to optimise heavily.</p
+	><p
+	>The first major optimisation was to use a custom <code
+	  >pickle</code
+	  > format for <code
+	  >Graph</code
+	  > objects. <code
+	  >pickle</code
+	  > was leaking huge amounts of memory when deserialising large graphs; we tried to debug this, and discovered that storing the graph as a gzip-compressed GraphML is much more efficient (both in storage space and serialisation time)[REF] than the standard pickle format, and also solves the memory leak.</p
+	><p
+	>The next major optimisation was to store different components of a large object separately. The <code
+	  >shelve</code
+	  > module will deserialise an entire object when it’s requested; this turned out to be unnecessary most of the time. We ended up refactoring the <code
+	  >Producer</code
+	  > class into a state machine, and storing the state field in a separate table. When we want to check the state of a <code
+	  >Producer</code
+	  >, we query this other table first. Another optimisation was to store the commonly accessed parts of a <code
+	  >Graph</code
+	  > in an extra cache, which saves deserialising the entire <code
+	  >Graph</code
+	  >.</p
+	><p
+	>Further optimisations included switching from <code
+	  >shelve</code
+	  >’s default choice of database to <code
+	  >sqlite3</code
+	  >, and using the RAM-based <code
+	  >tmpfs</code
+	  > (we used a Debian system for development) to store short-lived temporary files.</p
+	></div
+      ></div
+    ></div
+  ><div id="data-format"
+  ><h2
+    ><a href="#TOC"
+      >Data format</a
+      ></h2
+    ><p
+    >We needed a common data format for sharing data between the search application and the sample generator. After a brief look into the formats available, we decided on GraphML[REF].</p
+    ><p
+    >There are very few clean, simple, Java graph libraries that have good support for serialising complex graphs. GraphML seemed to be better supported than the DOT format[REF], and JUNG is a library that we felt most suited our needs. Even so, we had to heavily subclass its <code
+      >GraphMLReader</code
+      >, which involved much poking around its implementation details, just to read attributes of the correct type. This also required reading a significant part of the GraphML specification.</p
+    ><p
+    >Luckily our graph library on the Python side, <code
+      >igraph</code
+      >, is good at both reading and writing GraphML, and we didn’t have to do any extra work here. It can also write in the DOT format, which meant we could visualise some of the simpler graphs that were generated, by running them through Graphviz[REF].</p
+    ></div
+  ></div
+><div id="testing"
+><h1
+  ><a href="#TOC"
+    >Testing</a
+    ></h1
+  ><p
+  >We had originally planned to do more extensive testing of our system, and for much larger sets of data. However, unforeseen difficulties (detailed elsewhere) along with our time constraint, meant that we had to cut back on these.</p
+  ><p
+  >The original plan was to generate a sample from a crawl of several thousand users. However, it soon became clear that this would be impossible with our resources, even with our heavy optimisations.</p
+  ><p
+  >To verify that the sample generator was working correctly, we did an initial crawl of 16 users starting from a randomly selected seed. We also crawled 313 groups, and retrieved 11,000 photos and 6,457 tags. We generated 329 indexes and 56 tgraphs. We ran the search application on this sample; in most cases it could find most documents associated with a tag in a reasonable amount of lookups, just because the network was so small.</p
+  ><p
+  >The largest complete sample we managed to achieve was from an inital crawl of 256 users and 8,597 groups. We retrieved 411,872 photos and 128,409 tags, and generated 8,853 indexes and 438 tgraphs.</p
+  ><div id="sample-integrity"
+  ><h2
+    ><a href="#TOC"
+      >Sample integrity</a
+      ></h2
+    ><p
+    >Before proceeding with full testing, we first did some basic integrity tests on our generated sample. Social networks generally have a power-law distribution in several properties, the easiest one to calculate being the node degree.</p
+    ><p
+    >Firstly, we verified that our crawl of the social network satisfies a power-law distribution in node-degree:</p
+    ><p
+    >[DIAG] socgr.svg</p
+    ><p
+    >This is a relatively small sample size (256), but it’s clear that it does follow the expected distribution.</p
+    ><p
+    >Then, we tested for a power-law distribution in node-degree over our generated indexes and tgraphs<sup
+      ><a href="#fn2" class="footnoteRef" id="fnref2"
+	>2</a
+	></sup
+      >:</p
+    ><p
+    >[DIAG] sprdgr.svg</p
+    ><p
+    >[DIAG] prodgr.svg</p
+    ><p
+    >Clearly, the tgraphs network satisfies a power-law distribution. The plot for the indexes network has a split in the data; this can be explained by the way we generated arcs. Simply put, if <span class="LaTeX"
+      >$p_0 \cap p_1$</span
+      > is similar in size to <span class="LaTeX"
+      >$p_0$</span
+      >, but much smaller than <span class="LaTeX"
+      >$p_1$</span
+      >, then we would generate <span class="LaTeX"
+      >$p_0 \rightarrow p_1$</span
+      > but not vice versa. Most of the time however, links will be bi-directional; this explains the discrepancy between odd/even degree frequencies<sup
+      ><a href="#fn3" class="footnoteRef" id="fnref3"
+	>3</a
+	></sup
+      >.</p
+    ><p
+    >We confirmed this by counting only in-degree / out-degree, which both give clear power-law distributions:</p
+    ><p
+    >[DIAG] prodgr_i.svg</p
+    ><p
+    >[DIAG] prodgr_o.svg</p
+    ><p
+    >We also tested for a power-law distribution in the document-count for each tag, over our crawled tags:</p
+    ><p
+    >[DIAG] tags.svg</p
+    ><p
+    >This could indicate that our idea on hierarchical partition over the tags is achievable on this data set. On the other hand, it could be that a few users uploaded lots of photos with the same tags, without necessarily indicating any structure over the entire tag space.</p
+    ></div
+  ><div id="initial-tests"
+  ><h2
+    ><a href="#TOC"
+      >Initial tests</a
+      ></h2
+    ><p
+    >Before proceeding with our suite of tests, we did a few initial tests for randomly-picked queries, to get an idea on how well the system was working.</p
+    ><p
+    >It became apparent that our mean-based value-composer was not very effective. To start with, we compared the “ideal”<sup
+      ><a href="#fn4" class="footnoteRef" id="fnref4"
+	>4</a
+	></sup
+      > address scheme for the sample, with the address scheme that our search application generated from all the separate data sources. At first, these differed greatly.</p
+    ><p
+    >[DIAG] comparing early address schemes</p
+    ><p
+    >It seems that, at least some agents will give high values for resources that don’t “deserve” them, even when all agents are honest. So, assuming that most gaps are due to lack of information, will bias the final result towards this inaccuracy, and will sometimes supersede a value for another resource that many agents did agree with.</p
+    ><p
+    >A much better way of combining resource values would be to model them as belief distributions, as suggested previously. We didn’t attempt this, since it would require redesigning our entire prototype to reason about distributions and not probabilities, which is much more complex.</p
+    ><p
+    >Instead, we just set all our <span class="LaTeX"
+      >$\alpha$</span
+      > to a constant <span class="LaTeX"
+      >$1$</span
+      >. This at least allows resources with many “good” value-ratings, to override ones that have less. (Likewise, YouTube recently switched from a mean-based 5-star rating system to one that instead counts the number of like/dislike votes.) After we made this change, the ideal vs. generated address schemes were much more similar.</p
+    ><p
+    >We didn’t devise any tests for how well the score-inferer works. This would involve simulating an attack on the system; this would have taken us far beyond our time and resource constraints.[EXTN]</p
+    ></div
+  ><div id="full-testing"
+  ><h2
+    ><a href="#TOC"
+      >Full testing</a
+      ></h2
+    ><p
+    >We take a random sample of 16 identities from our social network crawl, limited to only the users that have between 4 (inclusive) and 64 (exclusive) outgoing contacts. This accounts for 118 users, or 0.46 of the total, with 2 above and 136 below the range.</p
+    ><p
+    >We do this because anything lower ends up asking the social layer for more friends (which we have not implemented), and anything higher uses up our RAM as it tries to load all the seed objects from friends’ ptables.</p
+    ><p
+    >We believe that this still gives a useful indication on how our system works; users with less than 4 friends should be able to obtain results, once we implement the social layer more fully.</p
+    ><p
+    >We take a random sample of 16 tags from our tags crawl, limited to only the tags that have between 4 (inclusive) and 4096 (exclusive) associated documents. This accounts for 68,808 tags, or 0.54 of the total, with 59,427 above and 174 above the range.</p
+    ><p
+    >We do this for the same reason as above - lower tags give very little results, whereas higher ones use up our RAM. This goes against one of the original aims, to find even rare documents, but we have tried to keep the threshold low, at 4 documents, rather than a higher value.</p
+    ><p
+    >From these, we constructed 256 queries by pairing each seed identity with each subject tag. We calculated the <a href="evaluate.html#query-rating"
+      >closeness</a
+      > for each query, and also the out-degree of <span class="LaTeX"
+      >$V_s$</span
+      > and in-degree of <span class="LaTeX"
+      >$V_t$</span
+      >.<sup
+      ><a href="#fn5" class="footnoteRef" id="fnref5"
+	>5</a
+	></sup
+      ></p
+    ><p
+    >compare closeness vs those degree measures [MORE]</p
+    ><p
+    >[DIAG]</p
+    ><p
+    >Run tests [MORE]</p
+    ><p
+    >[DIAG]</p
+    ><p
+    >(tests looks very shaky atm, some give a minor fraction of all available results, some give nothing, a few go haywire)</p
+    ></div
+  ><div id="comments"
+  ><h2
+    ><a href="#TOC"
+      >Comments</a
+      ></h2
+    ><p
+    >Our results are mainly poor. Rather than giving meaningful performance trends as we hoped, we ended up with small result sets for each query, giving a scattered sample of mostly low scores.</p
+    ><p
+    >Instead of attempting such a general performance test as we did, we should have focused on a few distinctive queries, and examined these in detail. In the end, we got more useful information about our implementation by tracing the process of a query, rather than by looking at our test results.</p
+    ><p
+    >It was typical to obtain several dozen seed tgraphs, and several hundred seed indexes. Our design is to query all of these for each additional tag, which reduces performance as most of them will be irrelevant. This was the result of a flawed data generation model; most flickr users do belong to many groups, but not all of these are suitable as a seed. A better approach would be to point to most groups only via routes, rather than in ptables.[EXTN]</p
+    ><p
+    >Our prototype turned out to be highly dependent on the traversal algorithm in the routing layer. This seems to be a result of implementing the naming and contact layers to execute only when requested - the routing layer then has to make a choice between asking for data from lower layers, or to continue with itself. The choice algorithm we specified [LINK] turned out to be poor, and we had to tweak it manually. Even then, we would get sporadic behaviour, such as choosing to increase the address scheme many times in a row, then choosing to continue with lookups many times. [DIAG] (give an example in the appendix?)</p
+    ><p
+    >The system should work better, if we instead ran every layer in parallel. This would increase the complexity of synchronization, but we wouldn’t need to devise complex choice algorithms in the routing layer. We would need each layer to pause itself automatically, but this seems much simpler.[EXTN]</p
+    ><p
+    >A case could certainly be made for the sample data being of poor quality. When evaluating generated address schemes, we found that even the “ideal” schemes were not very intuitive (see above). Granted, our sample generation was ad-hoc, but its products should still largely resemble the source crawl data. This also raises the question of what a good data sample would be like, which requires a better understanding of our address space model (or a different model).</p
+    ></div
+  ></div
+><div id="conclusions"
+><h1
+  ><a href="#TOC"
+    >Conclusions</a
+    ></h1
+  ><p
+  >We greatly underestimated the complexity of the problem we set for ourselves. It took far longer than expected to develop a satisfactory general theoretical framework, as well as all the low-level specific details that a prototype would have to implement. The size of our eventual design also added many practical development obstacles such as finding libraries, debugging, performance, etc.</p
+  ><p
+  >We don’t think the work load could have been signficantly reduced. An aim of the project was to implement our inital specification; removing any component would have defeated the whole point. We were also required to collect data to test the system with. This had to be compatible with our system; cutting down any component would have rendered this pointless, too.</p
+  ><p
+  >Our results were not satisfactory. Although initial tests on a tiny sample seemed promising, results for a significantly-sized network were poor. There are many possible reasons for this, discussed <a href="#comments"
+    >above</a
+    >; however, ultimately this means that we had far too high an expectation of our system.</p
+  ><p
+  >On the up side however, we have developed a decentralised semantic searching framework out of fairly simple initial ideas. Although the system as a whole is highly complex, it is made from a combination of many individual modules. These are all well-defined and shielded from each other, so that future improvements in one component should not need a complete restructuring of the entire system.</p
+  ><p
+  >A full list of directions for taking this project further is available in the appendix[LINK]. The most important ones, in our view, would be:</p
+  ><ul
+  ><li
+    >make the layers run fully in parallel</li
+    ><li
+    >review the model of the address space</li
+    ><li
+    >find a better data source to run tests on</li
+    ><li
+    >explore better resource-value metrics</li
+    ></ul
+  ><p
+  >In conclusion, and despite the setbacks, we think this project has been a useful endeavour. Even though it has not demonstrably succeeded in its original aims, it has given us a better understanding and overview of the problems that must be solved in order to build a complex decentralised system, and the amount of work involved in doing so. We hope that our project has been interesting to readers, and that our contribution can be built upon in the future.</p
+  ></div
+><div class="footnotes"
+><hr
+   /><ol
+  ><li id="fn1"
+    ><p
+      ><code
+	>java.util.concurrent.Executor</code
+	>[REF] <a href="#fnref1" class="footnoteBackLink" title="Jump back to footnote 1">↩</a></p
+      ></li
+    ><li id="fn2"
+    ><p
+      >we model an arc <span class="LaTeX"
+	>$p_0 \rightarrow p$</span
+	> if a route <span class="LaTeX"
+	>$p_0 \rightarrow^t p$</span
+	> exists for any tag <span class="LaTeX"
+	>$t$</span
+	>. <a href="#fnref2" class="footnoteBackLink" title="Jump back to footnote 2">↩</a></p
+      ></li
+    ><li id="fn3"
+    ><p
+      >this also applies for the social network sample and the generated tgraphs network. This discrepancy was not visible in these cases, we think, because the sample sizes were much smaller. <a href="#fnref3" class="footnoteBackLink" title="Jump back to footnote 3">↩</a></p
+      ></li
+    ><li id="fn4"
+    ><p
+      >i.e. according to our model of the <a href="design.html#structured-address-space"
+	>address space</a
+	>, rather than “theoretically perfect” <a href="#fnref4" class="footnoteBackLink" title="Jump back to footnote 4">↩</a></p
+      ></li
+    ><li id="fn5"
+    ><p
+      >definition of “degree” of a set of nodes is given in the glossary. <a href="#fnref5" class="footnoteBackLink" title="Jump back to footnote 5">↩</a></p
+      ></li
+    ></ol
+  ></div
+>
+
+</body>
+</html>
+

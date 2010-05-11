@@ -1,0 +1,42 @@
+#mainmenu {
+	display: none;
+}
+
+h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
+	text-decoration: none;
+	color: black;
+}
+
+body {
+	font-size: 12pt;
+	text-align: justify;
+	font-family: "Georgia";
+}
+
+h1 {
+	page-break-before: always;
+}
+
+h1.title {
+	page-break-before: auto;
+}
+
+#TOC > ul {
+	margin-left: -1em;
+}
+
+#TOC li {
+	list-style-type: none;
+	border-left: 1pt ridge black;
+}
+
+#TOC li > a {
+	display: block;
+	text-decoration: none;
+	border-bottom: 1px dotted black;
+	color: black;
+}
+
+#TOC li div.pageno {
+	float: right;
+}

@@ -1,0 +1,384 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title>Introduction</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Ximin Luo" />
+  <meta name="date" content="" />
+  <link rel="stylesheet" href="inc/common.css" type="text/css" />
+  <script type="text/javascript">
+  /*<![CDATA[*/
+  
+  inc='\u25b9'; dec='\u25bf';
+  ina='\u25b8'; dea='\u25be';
+  
+  function toggleSect(sect) {
+  	if (sect.style.display == 'none') {
+  		sect.style.display = 'block';
+  		sect.parentNode.firstChild.firstChild.nodeValue = dea;
+  		return true;
+  	} else {
+  		sect.style.display = 'none';
+  		sect.parentNode.firstChild.firstChild.nodeValue = ina;
+  		return false;
+  	}
+  }
+  
+  function incSect(sect) {
+  	sect.style.display = 'block';
+  	sect.parentNode.firstChild.firstChild.nodeValue = dec;
+  }
+  
+  function decSect(sect) {
+  	sect.style.display = 'none';
+  	sect.parentNode.firstChild.firstChild.nodeValue = inc;
+  }
+  
+  function disableSelection(target){
+  	if ('MozUserSelect' in target.style) {
+  		target.style.MozUserSelect = "none"
+  	} else if ('onselectstart' in target) {
+  		target.onselectstart = function() { return false; }
+  	} else {
+  		target.onmousedown = function(){ return false; }
+  	}
+  	target.style.cursor = "default";
+  }
+  
+  function getSectDeep(node, lev, list) {
+  	if (lev <= 0) { return; }
+  	switch (node.nodeName.toLowerCase()) {
+  	case 'ul':
+  		for (var i=0; i<node.childNodes.length; i++) {
+  			getSectDeep(node.childNodes.item(i), lev, list);
+  		}
+  		break;
+  	case 'li':
+  		var obj = node.lastChild;
+  		if (obj.nodeName.toLowerCase() == 'ul') {
+  			list[list.length] = obj;
+  			getSectDeep(obj, lev-1, list);
+  		}
+  		break;
+  	}
+  }
+  
+  window.onload = function() {
+  	var toc = document.getElementById("TOC");
+  	disableSelection(toc);
+  
+  	var sect = toc.firstChild.getElementsByTagName('ul');
+  	for (var i=0; i<sect.length; ++i) {
+  		var li = sect[i].parentNode;
+  		var obj = document.createElement('span');
+  		obj.appendChild(document.createTextNode(inc));
+  		obj.className = 'toggle screenonly-inline';
+  		obj.onclick = function(event) {
+  			var stat = toggleSect(this.parentNode.lastChild);
+  			if (!event.shiftKey) { return; }
+  
+  			var subs = this.parentNode.lastChild.getElementsByTagName('ul');
+  			if (stat) {
+  				for (var j=0; j<subs.length; ++j) {
+  					incSect(subs[j]);
+  				}
+  			} else {
+  				for (var j=0; j<subs.length; ++j) {
+  					decSect(subs[j]);
+  				}
+  			}
+  		}
+  		obj.onmouseover = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? ina: dea;
+  		}
+  		obj.onmouseout = function() {
+  			this.firstChild.nodeValue = (this.parentNode.lastChild.style.display == 'none')? inc: dec;
+  		}
+  		sect[i].style.display = 'none';
+  		li.insertBefore(obj, li.firstChild);
+  	}
+  
+  	var list = [];
+  	getSectDeep(toc.firstChild, 2, list);
+  	for (var i=0; i<list.length; ++i) {
+  		incSect(list[i]);
+  	}
+  
+  	var line = toc.firstChild.getElementsByTagName('a');
+  	for (var i=0; i<line.length; ++i) {
+  		ah = line[i]
+  		obj = document.createElement('div');
+  		obj.appendChild(document.createTextNode(ah.title));
+  		obj.className = "pageno";
+  		ah.parentNode.insertBefore(obj, ah);
+  	}
+  
+  }
+  
+  /*]]>*/
+  </script>
+</head>
+<body>
+<h1 class="title">Introduction</h1>
+<ul id="mainmenu">
+<li><a href="intro.html">introduction</a></li>
+<li><a href="design.html">design</a></li>
+<li><a href="evaluate.html">evaluation</a></li>
+<li><a href="execute.html">execution</a></li>
+<li><a href="appendix.html">appendix</a></li>
+<li class="aux"><a href="api/index.html">javadoc</a></li>
+</ul>
+<div id="TOC"
+><ul
+  ><li
+    ><a href="#introduction"
+      >Introduction</a
+      ><ul
+      ><li
+	><a href="#background"
+	  >Background</a
+	  ></li
+	><li
+	><a href="#related-systems"
+	  >Related systems</a
+	  ></li
+	></ul
+      ></li
+    ><li
+    ><a href="#preparation"
+      >Preparation</a
+      ><ul
+      ><li
+	><a href="#objectives"
+	  >Objectives</a
+	  ></li
+	><li
+	><a href="#potential-issues"
+	  >Potential issues</a
+	  ></li
+	><li
+	><a href="#initial-observations"
+	  >Initial observations</a
+	  ></li
+	><li
+	><a href="#working-assumptions"
+	  >Working assumptions</a
+	  ></li
+	></ul
+      ></li
+    ></ul
+  ></div
+>
+<div id="introduction"
+><h1
+  ><a href="#TOC"
+    >Introduction</a
+    ></h1
+  ><div id="background"
+  ><h2
+    ><a href="#TOC"
+      >Background</a
+      ></h2
+    ><p
+    >The world wide web is the largest information network ever created; currently, search is a service; providers employ crawlers to navigate this network, and extract and summarise information from the documents visited, into a form which is suitable for insertion into a database. “Searching the web” usually means querying these pre-built databases, rather than dynamically routing your way through the web’s content.</p
+    ><p
+    >Preparing and maintaining the search database is extremely resource-intensive for a large network, which results in high barriers to entry. The utility of a search service increases with how much of the network it covers; new providers must recreate a database of comparable size before clients will switch, or else use indexing algorithms that produce decidedly better results than competitors.</p
+    ><p
+    >This creates conditions of oligopoly, which is inherently vulnerable to both abuse and attack. Large providers are trusted by a great number of clients, so more people are affected when this trust is broken. We have already seen cases of providers censoring their search results, both voluntarily<sup
+      ><a href="#fn1" class="footnoteRef" id="fnref1"
+	>1</a
+	></sup
+      > and under coercion<sup
+      ><a href="#fn2" class="footnoteRef" id="fnref2"
+	>2</a
+	></sup
+      >. Privacy is also a concern: providers can monitor client usage of the service, and build up a profile of personal activities.</p
+    ><p
+    >An alternative approach is to perform dynamic routing using query semantics. Instead of a simple client-provider model where a single query is a single transaction, we propose a co-operative model where queries are routed between autonomous providers, and results aggregated for the end user. Small providers can index their own local sections of the network, and access and results can be fine-tuned using local information. In addition, clients will have a wider choice of who to trust.</p
+    ><p
+    >Of course, decentralised systems have their own issues, and these are briefly discussed <a href="#potential-issues"
+      >later</a
+      >. We believe that these are all practical issues that are ultimately solvable in the long run, whereas centralisation is an inherent problem in itself.</p
+    ></div
+  ><div id="related-systems"
+  ><h2
+    ><a href="#TOC"
+      >Related systems</a
+      ></h2
+    ><p
+    >There are many existing systems which use decentralised, co-operative, dynamic routing algorithms, such as the internet and various peer-to-peer overlay networks. There are a great variety of different objectives, approaches, and models, but some common themes include:</p
+    ><dl
+    ><dt
+      >Key-based routing</dt
+      ><dd
+      >The network defines an address space and a distance metric, where each address is represented by a binary key. (DHTs, Freenet, GNUnet[REF])</dd
+      ><dt
+      >Mesh networks</dt
+      ><dd
+      >Various heuristics are used to maintain structure and performance, such as random walks, bandwidth detection, index delegation, etc. (Gnutella[REF])</dd
+      ><dt
+      >Social relationships</dt
+      ><dd
+      >Nodes prefer to peer with trusted friends. This provides better security properties, and a more predictable network structure. (OneSwarm, Freenet[REF])</dd
+      ></dl
+    ><p
+    >A more comprehensive survey of peer-to-peer searching is presented in [REF]]. Using the terminology of that paper, this project develops and evaluates a <em
+      >probability-based model</em
+      > of information retrieval intended to support <em
+      >comprehensive keyword search</em
+      > (as opposed to <em
+      >partial keyword search</em
+      >).</p
+    ><p
+    >Existing research into peer-to-peer semantic search include [REF]][REF]]. None of these are currently deployed in real systems; we were unaware of them during the initial stages of our project, and our design differs considerably from these.</p
+    ></div
+  ></div
+><div id="preparation"
+><h1
+  ><a href="#TOC"
+    >Preparation</a
+    ></h1
+  ><div id="objectives"
+  ><h2
+    ><a href="#TOC"
+      >Objectives</a
+      ></h2
+    ><p
+    >We intend to build a system that can potentially offer a similar functionality to existing search providers, although obviously our prototype will be nowhere near as sophisticated nor efficient. Core functional aspects include:</p
+    ><dl
+    ><dt
+      >Semantics</dt
+      ><dd
+      >Query subjects have a dynamic user-supplied meaning, rather than a static system-defined meaning; the routing algorithm and address scheme must reflect this.</dd
+      ><dt
+      >Reach</dt
+      ><dd
+      >It should be feasible to locate all the data matching a given query on the entire network (or connected component).</dd
+      ><dt
+      >Robustness</dt
+      ><dd
+      >Query paths and returned results should be resistant against subversion, such as spam floods or data poisoning.</dd
+      ></dl
+    ><p
+    >Most major currently-deployed systems have at least one incompatibility with the above. For example, DHTs are scalable, and will reach data if it exists on the network, but addresses have no relation to the semantics of the data. Many mesh networks (eg. Gnutella[REF]) can perform keyword search, but do not attempt to reach all relevant data on the network.</p
+    ></div
+  ><div id="potential-issues"
+  ><h2
+    ><a href="#TOC"
+      >Potential issues</a
+      ></h2
+    ><p
+    >A system which must route queries between autonomous providers will obviously be slower than a system that only needs to query a single provider. At present, this is signficiant - web search engines return results almost instantaneously, whereas DHT queries on a medium-sized network might take a minute to complete. However, technology only gets better, not worse, and so by the time research in this area is mature, it’s entirely possible that performance will have improved beyond the limit of human perceptibility.</p
+    ><p
+    >Existing large service providers might have little incentive to participate in a co-operatiave search system, since they are each competing for control over the market. However, this is less of a factor for smaller providers who would otherwise be unable to attract many users, since their intention is only to provide search capabilities. In principle, this is no different from displaying links to other websites to help your visitors find what they want - linking to useful content increases your own utility, even if this is not reciprocated.</p
+    ><p
+    >As for constructing a decentralised system in the first place, it’s widely acknowledged that building these to be both scalable and secure is a difficult problem. However, nothing suggests that this is an inherently impossible task; and once a problem is solved, future generations may reap the benefits without having to expend the initial development cost. Recent designs based on social networks have been promising, and we will use this as an inspiration.[REF]</p
+    ></div
+  ><div id="initial-observations"
+  ><h2
+    ><a href="#TOC"
+      >Initial observations</a
+      ></h2
+    ><p
+    >Our first ideas drew upon our experiences and pre-conceptions on how we humans try to locate things. Two themes stand out:</p
+    ><ul
+    ><li
+      >keeping knowledge on who knows what, and use this to direct query routes.</li
+      ><li
+      >shifting the query subject to increase recall or precision - eg. broadening increases the recall, and re-specialising increases the precision</li
+      ></ul
+    ><p
+    >We also drew from our existing background knowledge on decentralised storage networks, such as Freenet and other Distributed Hash Tables. DHTs are very efficient and scalable, most systems giving O(log n) performance<sup
+      ><a href="#fn3" class="footnoteRef" id="fnref3"
+	>3</a
+	></sup
+      > in the size of the network. These generally have a well-defined address space with a distance metric, where each address can be represented as a binary key. This allows for fairly simple, yet effective, routing algorithms.</p
+    ><p
+    >Informally, a numerical address space can be partitioned hierarchically, e.g. by taking successively larger prefixes of an address. This allows greedy routing to work effectively, ie. by finding the neighbour which shares the smallest partition with the desired target node. (In IP routing, this is just “longest-prefix-match”, which we are all familiar with.)</p
+    ><p
+    >[DIAG] diagram of hierarchical partitioning, [REF] kleinberg “small world”</p
+    ><p
+    >Two of these ideas seemed to fit well together: we can try to make the query-shifting aspect of “human” routing more precise, by using the idea of a structured address space. This could then allow for a simple routing algorithm. Semantic tags are not as naturally structured as numerical addresses however, and a significant part of our time would be spent in developing a theoretical model of a partitionable and navigable space over tags.</p
+    ><p
+    >As for ensuring the global reach of a query, if we use tags as addresses then each address will point to many resources. Being able to reach all resources for a single tag is equivalent to being able to reach any arbitrary resource for that tag. Our DHT-inspired design aims to support the latter; however, bounding the cost of finding extra resources is a more complex problem, which we didn’t have time to explore.[EXTN]</p
+    ><p
+    >Finally, we based our system on a social foundation. Research has shown that analysing network structure can offer resistance against malicious information. A major reason is because social relationships are much more expensive to attack than simple algorithms that make naive assumptions about input data. Examples include Google’s PageRank[REF], trust metrics such as Advogato[REF], and sybil detection algorithms such as SybilInfer[REF].</p
+    ></div
+  ><div id="working-assumptions"
+  ><h2
+    ><a href="#TOC"
+      >Working assumptions</a
+      ></h2
+    ><p
+    >Since the aim of the project is fairly ambitious, we want to replicate as little work as possible. Therefore, we make various assumptions about the environment that our system will run under. Some of these are reasonable, and some of these are fairly restrictive; however, we feel they are prudent and necessary given our resource limits.</p
+    ><ul
+    ><li
+      ><p
+	><strong
+	  >Locating known objects is essentially a solved problem</strong
+	  >: the internet and DHTs both offer ways to retrieve objects based on a globally unique address. Without this primitive we cannot continue; data must be stored somewhere, and it must be accessible to arbitrary agents on the network.</p
+	></li
+      ><li
+      ><p
+	>We assume that <strong
+	  >objects are always available</strong
+	  >. In a real network, this can be implemented with proxy services, or it might be a property of the network (e.g. DHTs). This simplifies our design, since it allows us to avoid dealing with the issue of churn, by delegating it to an external component.</p
+	></li
+      ><li
+      ><p
+	>This assumption also forces us to design an <strong
+	  >iterative routing algorithm</strong
+	  > rather than a recursive one. Since data cannot forward queries onto other pieces of data, a client must process it themselves, determine which objects to retrieve next, then retrieve those, etc. Hopefully, our design can be adapted into a recursive one, but we won’t consider this problem.</p
+	></li
+      ><li
+      ><p
+	>Finally, we only consider <strong
+	  >single-phrase queries</strong
+	  >, that correspond to a single key in a lookup table. We exclude compound queries (multiple phrases composed with e.g. intersections, unions, differences). This helps to keep the basic problem simple; compound query methods can be developed later, and arguably on top of a solution to this simpler problem.</p
+	></li
+      ></ul
+    ><p
+    ><em
+      >The following assumptions refer to our data model, which is discussed in the next chapter - refer there if clarification is needed.</em
+      ></p
+    ><ul
+    ><li
+      ><p
+	>We consider <strong
+	  >objects to be immutable</strong
+	  >. For example, we intended the sharing of indexes via ptable pointers to be a space-saving measure, instead of an action of delegation. In this respect, our objects are more like git commits rather than web pages, and object links are more like git submodule pointers rather than web hyperlinks.</p
+	><p
+	>This data model is more secure, and in our system it also keeps the issue of trust contained in the social layer, a property that some components depend on. However, the immutability is an implicit assumption, which is neither enforced nor verified in any system component. The idea was to leave this to the storage layer; real deployments of the system should keep this in mind.</p
+	></li
+      ><li
+      ><p
+	>Our project only considers how we <strong
+	  >navigate the networks</strong
+	  > of objects to satisfy a search query. It ignores the problem of how these objects would be constructed and maintained. However, the data models are fairly simple, and is inspired by ordinary human linking habits. So these tasks should be both straightforward and natural.</p
+	></li
+      ></ul
+    ></div
+  ></div
+><div class="footnotes"
+><hr
+   /><ol
+  ><li id="fn1"
+    ><p
+      >Google stopped returning results to CNET’s website, because they published an article that the CEO disliked. [REF] <a href="#fnref1" class="footnoteBackLink" title="Jump back to footnote 1">↩</a></p
+      ></li
+    ><li id="fn2"
+    ><p
+      >Google was also forced by the Chinese government to censor many search results from its service in China. [REF] <a href="#fnref2" class="footnoteBackLink" title="Jump back to footnote 2">↩</a></p
+      ></li
+    ><li id="fn3"
+    ><p
+      >eg. expected number of hops for a lookup <a href="#fnref3" class="footnoteBackLink" title="Jump back to footnote 3">↩</a></p
+      ></li
+    ></ol
+  ></div
+>
+
+</body>
+</html>
+
