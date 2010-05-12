@@ -344,10 +344,14 @@ inaccuracy, and will sometimes supersede a value for another resource that many
 agents did agree with.
 
 A much better way of combining resource values would be to model them as belief
-distributions, as suggested previously. We didn't attempt this, since it would
-require redesigning our entire prototype to reason about distributions and not
-probabilities, which is much more complex.
+distributions. We can use an aggregation algorithm that reduces the variance of
+an aggregated distribution, if formed from many similar values. (Using the mean
+would fit this, as per the Central Limit Theorem.) A recently-developed system
+for evaulating skill over the result of many games uses similar principles.[REF]
+[EXTN][MORE]footnote?
 
+We didn't attempt this, since it would require redesigning our entire prototype
+to reason about distributions and not probabilities, which is more complex.
 Instead, we just set all our $\alpha$ to a constant $1$. This at least allows
 resources with many "good" value-ratings, to override ones that have less.
 (Likewise, YouTube recently switched from a mean-based 5-star rating system to

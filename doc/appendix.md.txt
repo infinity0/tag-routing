@@ -122,9 +122,9 @@ For convenience, let this also apply to arc-attribute maps, ie. $\rft E_A =
 
 ### Ranking results
 
-Aggregating the information from various indexes gives us a map $E_{\barh}$ of
-tag-document arcs to attributes. For all $(t, d) : w$, where $w = P(t|d)$, we
-want to normalise this to $(t_0, d) : w'$, where $w' = P(t_0|d)$.
+The aggregated index is a map $E_{\barh}$ of tag-document arcs to attributes.
+For all $(t, d) : w$, with $w = P(t|d)$, we want to normalise this to $(t_0, d)
+: w'$, where $w' = P(t_0|d)$.
 
 For any tag $t$, let $[t_i]_0^n$ be the shortest path from $t_0$ to $t$, where
 $t = t_n$. From the address scheme, we have the distance between $t$ and $t_0$:
@@ -460,6 +460,31 @@ theory that comments on if this is a bad thing, from a routing perspective.
 
 
 ## Attributes
+
+So far, we haven't discussed what the attributes should actually represent. In
+any usage scenario, they should at least satisfy the following properties:
+
+- The attribute should be some well-defined property that can be measured or
+  estimated. Any single value of the attribute should mean the same thing to
+  all agents, rather than being left up to agents' own interpretation.
+- Attribute values should not be treated as authoritative, since in our model
+  we only ever receive data from agents, whom we assume to have a limited view
+  of the entire network. There will always be inconsistency between different
+  agents; the system should account for this.
+
+In the case of perfectly honest agents, it is hoped that inconsistencies will
+work to cancel each other out. In the case of a system under attack, this will
+not be the case. However, only looking at the received values for attributes
+cannot distinguish between an attack and actual value differences; so this must
+be detected in some other way. Our project won't present any methods for doing
+this, but network structure analysis is a common approach type.[EXTN]
+
+The exact attribute types we use are discussed [elsewhere](#data-structures).
+Generally, we use probability-based attributes, which are well-defined and can
+be estimated by agents. It also gives a simple way of combining attributes -
+multiplication - as well as a simple space of values - $[0, 1]$.[^attrva]
+
+[...]
 
 A related idea is negative attributes, which would represent a judgement that
 the resource is malicious or dangerous in some sense, rather than neutral or

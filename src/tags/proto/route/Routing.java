@@ -331,7 +331,11 @@ extends LayerService<QueryProcess<?, T, A, ?, W, S, ?>, Routing.State, Routing.M
 			// find all tags that we reached A by
 			for (T tag: view.getIncomingHarcAttrMap(idx).keySet()) {
 				// for each tag, select all "short" paths to that tag in scheme
-				tags.addAll(scheme.ancestorMap().K0Map().get(tag));
+				Set<T> anc = scheme.ancestorMap().K0Map().get(tag);
+				// FIXME HIGH if address scheme changes such that a tag is removed, this could be null
+				//assert anc != null;
+				if (anc == null) { continue; }
+				tags.addAll(anc);
 			}
 		}
 		// seed tag has no ancestors; if idx's incoming tags consist only of the seed tag,

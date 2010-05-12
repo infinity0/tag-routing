@@ -133,6 +133,7 @@ implements MapQueue<K, V> {
 	}
 
 	@Override public synchronized V peekValue() {
+		// FIXME HIGH NullPointerException occurred here from map.get, probably race condition
 		return map.get(queue.peek());
 	}
 

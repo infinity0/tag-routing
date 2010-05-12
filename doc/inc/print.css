@@ -22,11 +22,11 @@ h1.title {
 }
 
 #TOC > ul {
-	margin-left: -1em;
+	margin-left: -0.2em;
 }
 
 #TOC li {
-	list-style-type: none;
+	list-style-type: decimal;
 	border-left: 1pt ridge black;
 }
 

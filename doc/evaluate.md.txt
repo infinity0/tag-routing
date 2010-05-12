@@ -15,14 +15,13 @@ of the theory depends upon concepts like tag "size" and tag-tag "similarity",
 which we will have intuitive expectations for if the tags are real phrases, but
 not if they are randomly generated data.
 
-## Abstract data model
+## Data model
 
 We assume the following environment:
 
-- We have a world-set of documents $D$, and a world-set of tags $T$. Each
-  document has related tags, each associated with an attribute.
-- We have a social network of identities $Z$. Each identity has some known
-  friends.
+- A world-set of documents $D$, and a world-set of tags $T$. Each document has
+  related tags, each relation associated with an attribute.
+- A social network of identities $Z$. Each identity has some known friends.
 
 We present a framework for generating an index network and a tgraph network on
 top of this. The model is fairly simple; although we model agents as having

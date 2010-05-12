@@ -1,73 +1,301 @@
 % Design
 % Ximin Luo
 
-# Theory
+# Search framework
 
-_This section describes the overall concepts of our system, and the reasoning
-for our design choices. More precise details, such as the exact contents of the
-various objects introduced, and how the search algorithm processes these
-objects, are given in the [architecture](#architecture) section._
+Here, we present a high-level overview of the framework we developed, and the
+reasoning for our design choices. More specific details, such as object
+specifications and algorithm descriptions, are discussed [later](#details).
 
-## System design
+## Data model
 
-We start off with the analogy of an **index** being a routing table. Tags are
-addresses, documents are hosts, and routes are semantic relationships between
-a tag (address) and a document (host). Scalable routing tables must compact
-information together. Instead of defining a route to every single host on the
-network, it is divided up into subnets, and a single route defined for the
-entire subnet. Similarly, indexes shouldn't point to other indexes using all
-possible relevant tags, but it should summarise this information. Instead of
-listing a neighbouring index under entries for several dozen instances of e.g.
-strategy games, it could instead list it only under "strategy games".
+Our design uses a data model based on the analogy of tags being addresses. In
+the discussion below, we apply ideas such as _size_ and _similarity_ to tags.
+This is developed more precisely in [address space](#address-space); we omit it
+here to give an overview of the entire system.
 
-A consistent model for this is developed in [address space](#address-space).
-That gives us another type of object, a tag graph, or **tgraph**, which defines
-relationships between tags. Following the principle of compacting information
-again, we need some way to route between these tgraphs. Rather than inventing
-more layers of meta-objects, we use tgraphs to route between themselves. That
-is, tgraphs also use tags for addresses, and list related tgraphs under entries
-for the appropriate tags.
+A common theme is to collect information from distributed autonomous objects.
+All our objects are structures that map items (nodes, arcs) to attributes. To
+avoid potential ambiguity, we refer to such objects as _agents_[^dataob], and
+such items as _resources_.
 
-To explain why this isn't a problem:
+[^dataob]: We sometimes refer to the maintainers of these objects as agents;
+the exact meaning should be clear from context.
 
-- The set of documents is much larger than the set of semantically distinct
-  tags. Therefore, a map of tags to related _tags_ gives us more information
-  about the entire network, than a (similarly-sized) map of tags to related
-  _documents_.
-- More people are likely to have an idea of what a tag's related tags are,
-  since this is part of everyday communication. So a neighbourhood of tgraphs
-  will cover a larger section of the network.
-- The previous observation also applies to the query initiator - most of the
-  time, they have some understanding of what the tag means. In the worst case,
-  the system can just ask them to supply their own "related tags".
+### index
+
+[DIAG]
+
+An **index** is a set of arcs. Each arc is either a tag-document or tag-index
+relation, and its attribute represents their _similarity_.
+
+This is analogous to a routing table: tags are addresses, documents are hosts,
+and tag-document relationships are routes. We write $h \rightarrow^t d$ to mean
+that $h$ defines a route to $d$ via $t$.
+
+Scalable routing tables must compact information. Instead of defining a route
+to every host on a subnet, a single route is defined for the entire subnet.
+Likewise, indexes shouldn't point to other indexes using all possible relevant
+tags, but it should summarise this information. Rather than listing another
+index under entries for several dozen instances of e.g. strategy games, it
+could instead list it only under "strategy games".
+
+Along with a routing table, we need an address scheme to know which queries to
+make; this is discussed in the next section.
+
+### tgraph
+
+[DIAG]
+
+A **tgraph** (tag-graph) is a graph. Each node is a tag or a pointer to another
+tgraph, and its attribute represents its _size_. Each arc is either a tag-tag
+or tag-tgraph relation, and its attribute represents their _similarity_.
+
+This defines relationships between tags, which gives a precise way to perform
+query-shifting (as mentioned earlier). This is similar to a naming service, but
+instead of resolving names to an absolute address in a more structured space,
+it defines the relative _similarity_ between names.[^namela] (Note that in our
+system, names _are_ addresses.)
+
+[^namela]: We'll still call this the naming layer though, since it occupies the
+same place in the routing stack.
+
+We define routes between tgraphs in the same way as we do for indexes - using
+tags as addresses. This might seem problematic, since the point of tgraphs is
+to provide an address scheme over tags, but we need such a scheme to route
+between tgraphs. However, we believe that in practice this won't a problem:
+
+- We can try to construct the address scheme as we go along.
+
+- There are many more documents than (semantically distinct) tags. This should
+  mean that naming information is much more saturated than routing information,
+  and so routing between tgraphs isn't so vital. (Arguably, this is a part of
+  our own experience: people are likely to have an idea of what a tag's related
+  tags are, since this is part of everyday communication.)
+
+- The previous observation also applies to the query initiator - most people
+  will have some understanding of what their own query means. When unable to
+  proceed, the system could ask them to supply their own "related tags".
 
 This principle can be summed up as "language unites". Just as the ubiquity of
 mathematics allows numerical addresses to be routed over, we exploit the
 semi-ubiquity of language to allow tags to be routed over.
 
-Since we are routing between documents, rather than people or hosts, we split
-the social network from the indexes network and the tgraphs network. This gives
-us several advantages. It allows for space reductions - people often agree
-about things, so identical parts of indexes can be spun off into another index
-and pointed to instead of repeated. This model is more general; anything that
-applies to it must also apply to the case of one-index-per-person. It's also
-arguably more realistic, since we often agree with someone's judgements,
-without trusting them as friends.
+### ptable
 
-Each identity on the social network defines a preference table, or **ptable**,
-listing the indexes and tgraphs that it values highly, and other identities it
-trusts. By exploring this network, we can infer a set of trusted objects from
-which to initiate our search.
+A **ptable** (preference table) is a set of nodes. Each node is a pointer to an
+index or a tgraph, and its attribute represents how likely it can satisfy a
+query.
 
-## Structured address space
+Since we are routing between documents, rather than people, we split the social
+network from the tgraphs network and the indexes network. Each identity $z$ has
+an associated ptable. By exploring the ptables of our friends and other trusted
+peers, we can infer a set of trusted "seed" indexes and tgraphs to initiate our
+query from.
+
+This gives several advantages. It allows for space reductions - people often
+agree about things, so identical parts of objects can be spun off into another
+object, and pointed to instead of repeated. Also, this model is more general;
+anything that applies to it, also applies to the case of one-object-per-person.
+Finally, it's arguably more realistic, since we often agree with someone's
+judgements, without trusting them as friends.
+
+## Architecture
+
+Our search application is partitioned into layers (contact, naming, routing),
+each encapsulating components that process information from the corresponding
+data planes. This allows all the layers to run concurrently; operations that
+retrieve remote objects do not block other layers, so that they can do other
+work whilst waiting for the results.
+
+Each layer follows a basic structural template:
+
+- A set of **data sources** (agents). These may be large objects, so we follow
+  a model that supports partial loading - the "local view" of the object. This
+  can be visualised as a table, where the rows are agents, and columns are
+  resources. Each cell can hold an attribute, or a sentinel value ("not yet
+  loaded" or "attribute doesn't exist").
+
+- A **seed map** of agents to their scores, as input from lower layers.
+
+- A **score-inferer**, which uses the seed map and the data sources, to infer a
+  score for every agent in use.
+
+- A **value-composer**, which uses the inferred scores and the data sources, to
+  compose an aggregated data source.
+
+- An **output-factory**, which uses the aggregated object and additional input
+  from lower layers, to construct output for higher layers.
+
+- A **traversal algorithm** for reaching more agents and resources. The general
+  approach is to traverse routes, starting from seed agents and the query tag.
+
+[^laytb]: Our implementation doesn't actually use a table structure, but this
+is a simple and useful description, which is basically equivalent.
+
+[DIAG] single layer internals
+
+Higher layers can request more input data from lower layers, if needed[^layex].
+The top layer (routing) receives requests from the user, and the bottom layer
+(contact) uses data from the social network only, independently of any query.
+Note that data retrieval can in theory proceed until the entire network has
+been searched. In practice, we only automatically send requests for more data
+until a set number of results have been returned; after that we wait for user
+input before retrieving more.
+
+[^layex]: eg. if all available seed indexes have been exhausted, and nothing
+useful returned, we need to ask for more.
+
+[DIAG] layers and their data dependencies
+
+The above diagram depicts the inputs and outputs of each layer, and how they
+relate to each other and to the query initiator. Notes:
+
+Seed map
+:	The routing and naming layers both receive their seed map from the contact
+	layer. The contact layer itself implicitly receives a single seed identity,
+	the query initiator's own identity. (This can be thought of as a singleton
+	map of the seed identity mapped to the maximum possible score.)
+Other input/output
+:	The contact layer accepts no input other than the seed identity; it outputs
+	seed indexes and tgraphs. The naming layer accepts the query tag as extra
+	input, and outputs an address scheme. The routing layer accepts this
+	address scheme, and outputs a results table for the user.
+
+Some components have similar implementations in multiple layers, _in our
+prototype_. These are:
+
+Value-composer
+:	We use our [mean-based](#value-composer) value-composer in all the layers,
+	but with [different parameters](#picking-alpha) for each layer.
+Score-inferer
+:	For the contact layer, this is the job of the trust metric. For naming and
+	routing, we use our [path-based](#score-inferer) score-inferer. We model a
+	path $(x, x')$ only if the traversal algorithm has passed through a route
+	$x \rightarrow^t x'$[^scorla], and ignore all other routes. This is to
+	restrict our path hops only to the tags relevant to our query.
+
+[^scorla]: i.e. if the resource representing the route has been loaded into the
+table
+
+The output factories and the traversal algorithms are different for each layer;
+we will discuss each separately.
+
+### Contact
+
+This is the simplest layer. The problem of infering scores reduces down to that
+of a trust metric. This is an algorithm that assigns an objective score to each
+agent, given agents' subjective scores of other agents and a single seed agent.
+Developing a trust metric is beyond the scope of this project, and various
+algorithms exist already[REF]. A real deployment of this system would use the
+latest available methods; our prototype only returns an identity's immediate
+neighbours.[EXTN]
+
+**Constructing output** is straightforward. We have an aggregated ptable; we
+just split it up by object type to get two tables, one with only tgraphs in,
+and one with only indexes in.
+
+**Traversing objects** would normally be closely linked to the trust metric and
+its output. Since our prototype metric only returns the neighbours of the seed
+identity, there is nothing to traverse, and we skip this component for now.
+
+### Naming
+
+**Constructing output**. We construct an address scheme rooted at the query
+tag, by applying Dijkstra's algorithm to the aggregate tgraph. Node distance
+is given by the intersection-based [distance relation](#distance-relation).
+
+We don't use the shortest-path-tree directly as the address scheme; we instead
+use it to create a pruned copy of the aggregate tgraph, where nodes only have
+in-arcs from neighbours nearer to the root tag. This is intended to give extra
+flexibility. The resulting address scheme is then a directed acyclic graph,
+rather than a tree.
+
+**Traversing objects**. The address scheme is used by the routing layer for its
+operation. We therefore try to reduce instability between successive updates,
+by only constructing the address scheme from a self-contained set of data, i.e.
+a selection of tags such that all the tags are loaded in all the rows[^nametr].
+Output is only returned from the last time the table was in this condition, so
+in our implementation of this layer is effectively blocking. Our traversal
+algorithm therefore tries to achieve such a condition as quickly as possible.
+
+[^nametr]: which ensures that the part of the address scheme for these tags
+will stay the same even if we add another tag, and help to minimise the change
+if we add another row.
+
+We initialise the table rows from the seed tgraphs, and start with no tags.
+When we receive a request for more data, we can pick one of:
+
+- add a row, by loading all currently-used tags in it
+- add a tag, by loading it in all currently-used rows
+
+We choose this by comparing the "distance-to-root" of the next tag-to-be-added
+with that of the next tgraph-to-be-added. If both are non-existent, we pass the
+request onto the contact layer.
+
+We give preference to adding tags, and only add a row if its distance is
+significantly smaller than any tag candidate. This is based on the assumption
+that most naming needs should be satisfiable by a small neighbourhood around
+our seeds, and that judgements about tags should be similar over the entire
+network.
+
+### Routing
+
+**Constructing output**. Let $t_0$ be our query tag. In our aggregate index,
+for each $(t, d)$ arc with attribute $w$, we combine $w$ with the similarity
+between $t$ and $t_0$. This gives a $w'$ that represents the similarity between
+$t_0$ and the document.
+
+We collect all of these $d : w'$ into a results table. If we have more than one
+tag for a document $d$, we get more than one $w'$; we simply use the most
+favourable one. See [ranking results](appendix.html#ranking-results) for the
+specifics of how attributes are combined.
+
+[^routar]: There are also tag-index arcs; we ignore these for simplicity, but
+the same applies to these.
+
+**Traversing objects**. No other functional component depends on the output of
+this layer; the results are only returned to the user. So we shift our focus
+from stability to responsiveness - updating results as soon as possible when
+new information arrives. We retrieve data asynchronously, with pending lookups
+held in a priority queue, ordered by their "potential", a measure of how likely
+the lookup is to succeed based on the information we have so far. When the user
+polls for output, it is constructed from the data retrieved so far.
+
+We can also be more focused in what lookups to attempt. Instead of looking up
+all the tags in our address scheme for any index, we only lookup the tags that
+are related to the ones we originally reached that index by. (If this index is
+a seed, then we are forced to lookup all tags.)
+
+We initialise our table rows from the seed indexes, and an empty address scheme
+(ie. no columns). When we receive a request for more data, we can pick one of:
+
+- allow the currently queued lookups to continue, i.e. do nothing.
+- add another data source (row in the table), by selecting some lookups and
+  pushing this to the pending queue.
+- pass the request onto the naming layer, which will eventually update the
+  address scheme.
+
+We choose this by comparing the potential of the current lookups queue, and the
+potential of the lookups that _would be added_ if we were to add that source,
+or that new tag to the address scheme. If these are all empty or non-existent,
+we pass the request onto the naming layer.
+
+
+# Theory
+
+## Address space
 
 [DIAG] (ip subnets, etc)
 
-As discussed earlier[REF], routing schemes use a structured address space that
-has two (sometimes implicit) properties over its subspaces:
+As discussed [earlier](intro.html#initial-observations), routing schemes use a
+structured address space that has two properties over its address space:
 
-- A measure of the size of the subspace
-- A measure of the overlap or similarity between two subspace.
+- A measure of the size of an address[^addrse]
+- A measure of the overlap or similarity between two addresses.
+
+[^addrse]: To keep our words simple, we make no distinction between addresses
+and sets of addresses.
 
 In CIDR, "size" is given by the subnet mask, and "similarity" is given by
 matching the subnet prefix against the entries in the routing table. For DHTs,
@@ -78,38 +306,51 @@ is, and its "similarity" to another tag corresponds to how related they are.
 [DIAG] (tag similarities, etc)
 
 There are various methods of defining a mathematical space over semantic tags.
-[REF] In the end, we settled on a simple probabilistic model. We interpret the
-set of all documents as a probability space:
+[REF] In the end, we settled on a simple probabilistic model. Define:
 
-- Each document $d \in D$ is an outcome, all equally likely
-- Each tag $t \in T$ is an event, consisting of all documents tagged with $t$.
-  (interpreted as a set, $t = \{ d \in D : d$ tagged with $t \}$.)
+- $d \circ t$ represents the event ($d$ satisfies a query for $t$)
+- $B_{d,t}$ is a binary r.v. with $B_{d,t}(1) = P(d \circ t)$
+- $D$ is a r.v. evenly distributed over all documents.
+- $E_X(f(X))$ is the expected value of $f(X)$ over $X$.
 
-We can interpret $P(t)$ as the size of $t$, and $P(t_0|t)$ as the similarity of
-$t$ to $t_0$. These are fairly straightforward to calculate (ie. count the
-relevant documents and normalise), so this process can in theory be automated.
+$B_{d,t}$ are the "fundamental" variables of our representation of the world,
+that must be measured (somehow); the expressions given below are combinations
+of these. We define _similarity_ and _size_ as follows:
 
-This information can be stored as a graph, where each tag is a node and each
-tag-tag relationship is an arc. Node attributes are sizes, and arc attributes
-are similarity scores[^addrat]. We'll call this a tag-graph, or tgraph for short.
+- an index arc $(t, d)$ has _similarity_: $P(d \circ t) = B_{d,t}(1)$
 
-We are distributing this information across many objects, so each tgraph must
-be able to point to other tgraphs. As with indexes, we need to guide traversal
-between these objects. A simple model for this is to interpret a tgraph $g$ as
-the union event of all its tags, ie. $g = \bigcup_{t \in g} t$[^addrlk]. Any
-tgraph that wishes to refer to $g$ can represent it as a node in the graph,
-with size and similarity attributes following as for single tags.
+- a tgraph arc $(t, t')$ has _similarity_: $E_D(P(D \circ t | D \circ t'))$
 
-[^addrat]: In retrospect, it would probably be neater to use $P(t_0, t)$ as arc
-attributes and store an undirected graph; they contain the same information.
+- a tgraph node $(t)$ has _size_: $E_D(P(D \circ t))$
 
-[^addrlk]: This interpretation gives no information on how well-connected a
-tgraph is, which would also affect its usefulness. However, in general, tgraphs
-are intended to hold highly compressed summaries on significant sections of the
-network, and the vast majority of naming needs should be satisfiable by a small
-neighbourhood around a seed set. In other words, we assume that routing between
-tgraphs won't be a major practical issue, and brush this deficiency under the
-carpet.[EXTN]
+We interpret a tgraph $g$ as the union of all its tags, and an index $h$ as the
+union of all its documents[^addrlk]. Then:
+
+- an index arc $(t, h)$ has _similarity_: $P(\bigvee_{d \in h} d \circ t)$
+
+- a tgraph arc $(t, g)$ has _similarity_: $E_D(P(D \circ t | \bigvee_{t' \in g} D \circ t'))$
+
+- a tgraph node $(g)$ has _size_: $E_D(P(\bigvee_{t' \in g} D \circ t'))$
+
+[^addrlk]: These interpretations give no information on how well-connected the
+objects are, which would also affect its usefulness. We'll keep things simple
+and ignore this for now.
+
+In the rest of our analysis, we simplify this greatly. Instead of considering
+$B_{d,t}$ as a random variable, we take a "typical query" and collapse this
+down into either $0$ or $1$, so that either $d \circ t$ or not. Then in the
+average case, and defining $P(x) = E_D(P(D \circ x))$:
+
+- a tgraph arc $(t, t')$ has _similarity_: $P(t'|t) = \frac{|\{d \in D | d
+  \circ t' \wedge d \circ t\}|}{|\{d \in D | d \circ t\}|}$
+
+- a tgraph node $(t)$ has _size_: $P(t) = \frac{|\{d \in D | d \circ t\}|}{|D|}$
+
+and similarly for $(t, g)$ and $(g)$. This is arguably easier to visualise, and
+also gives a simple way to calculate these attributes.
+
+(In retrospect, it might have been better to use $P(t, t')$ for arc attributes
+and store an undirected tgraph; they contain the same information.)
 
 ### Distance relation
 
@@ -144,152 +385,24 @@ Unfortunately, we didn't have time to find better alternatives. It does satisfy
 the distance relation axioms, meaning that we can use Dijkstra's algorithm to
 construct routing schemes, so we decided to stick with it.
 
-## Information aggregation
+## Score-inferer
 
-Trust metrics and sybil detection algorithms are useful, but cannot support
-applications that must obtain value judgements _about resources_ from other
-agents. Define:
-
-Agent
-:	an entity which can give (and receive) score judgements
-Resource
-:	an entity which can only receive value judgements
-
-Each agent is associated with two maps: an agent-score map $\{ a : s \}$, and
-a resource-value map $\{ r : v \}$, which define their subjective judgements.
-A score represents how much an agent's judgements can be trusted; the meaning
-of a resource value is context-specific. The problem of information aggregation
-can then be formulated as:
+Here, we explore a crude algorithm to infer score ratings for a set of agents.
+This is required by the naming and routing layers. The agents there (tgraphs
+and indexes) represent immutable information, rather than social identities.
+This means that the problem is different from that of a trust metric. We won't
+attempt to formalise this, but intuitively, we infer scores based on how much
+the original endorsements of the seed agents _extend_ to agents, rather than
+how much the seed agents should _trust_ them.
 
 Given
-:	- a set of agents, with their agent-score and resource-value maps:
-	  $$
-	  a : (\{ a : s \} , \{ r : v \})
-	  $$
-	- a seed agent-score map:
-	  $$
-	  a : s
-	  $$
-Return
-:	- a target resource-value map, aggregated from the given information
-	  $$
-	  r : v
-	  $$
-
-This can be represented as a table. [DIAG] cols = resources, rows = agents
-
-In the context of our system design:
-
----------------------------------------------------------------------------
-layer       agent                           resource
------------ ------------------------------- -------------------------------
-social      identities and their ptables    indexes, tgraphs
-
-naming      tgraphs                         tags, tag-tag relationships
-
-routing     indexes                         tag-document relationships
----------------------------------------------------------------------------
-
-We can see here that indexes and tgraphs take the position of both agent and
-resource. The output of the social layer is a resource-value map; the naming
-and routing layers both use this as an agent-score map.
-
-Neither tgraphs nor indexes define explicit agent-score judgements. Further,
-they represent immutable information, rather than social identities. These were
-conscious design choices - to encapsulate the problem of authentication and
-trust into a social layer, away from the issues of naming and routing.
-
-This does mean that the problem is different from that of a trust metric. We
-won't attempt to formalise this, but intuitively, for a given non-seed agent
-$a$, we want to infer its score based on how much arbitrary endorsements of the
-seed agents _extend_ to it, rather than how much the seed agents should _trust_
-it. A crude attempt at a solution is [score-inferer](#score-inferer).
-
-### Attributes
-
-So far, we haven't discussed what the attributes should actually represent. In
-any usage scenario, they should at least satisfy the following properties:
-
-- The attribute should be some well-defined property that can be measured or
-  estimated. Any single value of the attribute should mean the same thing to
-  all agents, rather than being left up to agents' own interpretation.
-- Attribute values should not be treated as authoritative, since in our model
-  we only ever receive data from agents, whom we assume to have a limited view
-  of the entire network. There will always be inconsistency between different
-  agents; the system should account for this.
-
-In the case of perfectly honest agents, it is hoped that inconsistencies will
-work to cancel each other out. In the case of a system under attack, this will
-not be the case. However, only looking at the received values for attributes
-cannot distinguish between an attack and actual value differences; so this must
-be detected in some other way. Our project won't present any methods for doing
-this, but network structure analysis is a common approach type.[EXTN]
-
-The exact attribute types we use are discussed [elsewhere](#data-structures).
-Generally, we use probability-based attributes, which are well-defined and can
-be estimated by agents. It also gives a simple way of combining attributes -
-multiplication - as well as a simple space of values - $[0, 1]$.[^attrva]
-
-[^attrva]: More sophisticated attributes might describe a belief distribution
-over its possible values. When aggregating multiple judgements that agree with
-each other, we could reduce the variance of the aggregated attribute.
-We can then use an algorithm that
-reduces the variance of an aggregated distribution, formed from many similar
-values. (Using the mean would fit this, as per the Central Limit Theorem.) A
-recently-developed system for evaulating skill over the result of many games,
-uses similar principles.[REF] [MORE]
-[EXTN]
-
-In some contexts, the set of useful resources is sparse over the set of all
-possible resources[^attrsp] - e.g. if the attribute represents an endorsement,
-or a non-trivial binary relationship. In such cases, we'd like to not define
-the non-useful resource at all, implicitly marking it with a neutral or "zero"
-attribute, to save space and redundancy.
-
-However, this raises a problem when aggregating information - we now can't
-distinguish whether an agent implicitly regards a resource as useless, or just
-that it doesn't know about it. In our crude [value-composer](#value-composer),
-we address this issue by requiring an input heuristic that can help to resolve
-this ambiguity, based on other information.
-
-[^attrsp]: from a given agent's point of view
-
-### Simplification
-
-The above formulation of the problem can be usefully divided up into two
-components:
-
-**1. Infer scores for all agents**:
-
-Given
-:	- a set of agents, with their agent-score maps
+:	- a set of agents, each with paths to other agents
 	- a seed agent-score map
 Return
 :	- a target agent-score map, that covers all agents in the input
 
-and
-
-**2. Compose values for all resources, from the scored agents**:
-
-Given
-:	- a set of agents, with their inferred score, and resource-value maps
-Return
-:	- a target resource-value map
-
-We follow this approach in our project. Even these simpler problems, however,
-are fairly deep, and developing robust techniques to solve them could take up a
-whole other project. Given our time constraints, we only implement a crude and
-simple solution for each of these. [EXTN]
-
-(Note that "infer scores" is a generalisation of trust metrics, which use an
-implicit seed agent-score map of the form $\{ a_0 : s_{max} \}$, i.e. a single
-root agent mapped to the maximum score.)
-
-#### Score-inferer
-
-This is intended only for use by the naming and routing layers. As mentioned
-earlier, our approach is to estimate the probability of reaching a given agent
-from the seeds.
+We model paths between agents by selecting routes as discussed in the section
+on layer architecture.
 
 Let $x$ be the agent we want to infer a score for. A simple model is to assign
 a path-score for the shortest path between $x$ and each seed agent $a$, then
@@ -319,24 +432,11 @@ our prototype. We try to give an underestimate of $k$, to give a bias towards
 agents nearer our seed set, which hopefully offers slightly more resistance to
 simple attacks. Our prototype uses $k = 2^{-4}$.
 
-#### Value-composer
+## Value-composer
 
-Here we explore an algorithm to aggregate value judgements from a set of
-agents. This is required by all the layers, and the model presented here is
-general enough to be applied to all of these.
-
-It's impossible to determine the accuracy of the input data from only the data
-itself, since any input is potentially true. We need either a pre-existing
-expection of what the information should look like, or a model of how its
-meta-information (eg. its source agents) affects its accuracy. Both approaches
-are outside of the scope of this project.[EXTN]
-
-For our prototype, we use a very basic algorithm - the score-weighted mean of
-each agent's value judgement for that resource. In our case, both the score and
-the value are bounded, and it's hoped that this can hinder some basic attacks
-against mean-based composers (eg. judging a value to be infinity).
-
-Recall the problem specification:
+Here, we explore a crude algorithm to aggregate value judgements for a set of
+resources. This is required by all the layers, and the model presented here is
+general enough to be applied to all of these. The problem can be specified as:
 
 Given
 :	- a set of agents, with their inferred score, and resource-value maps
@@ -348,6 +448,17 @@ Return
 	$$
 	r : v
 	$$
+
+It's impossible to determine the accuracy of the input data from only the data
+itself, since any input is potentially true. We need either a pre-existing
+expection of what the information should look like, or a model of how its
+meta-information (eg. its source agents) affects its accuracy. Both approaches
+are outside of the scope of this project.[EXTN]
+
+We will use a very basic algorithm - the score-weighted mean of each agent's
+value judgement for that resource. In our case, both the score and the value
+are bounded, and it's hoped that this can hinder some basic attacks against
+mean-based composers (eg. judging a value to be infinity).
 
 The score-weighted mean value for resource $r$, over all agents, is:
 
@@ -374,475 +485,62 @@ The above definition has $\bar v_r$ on the RHS; after rearranging, we get:
 
 $$
 % should be \dfrac but LaTeXMathML doesn't support amsmath commands...
-\bar v_r = \frac{\sum_{a:(0)} s_a v_{ar}}{\sum_a s_a \alpha_0(a,r)}
+\bar v_r = \frac{\sum_{a:(0)} s_a v_{ar}}{\sum_a s_a \hat\alpha(a,r)}
 \quad ; \quad
-\alpha_0(a,r) = \left\{ \begin{array}{ll} \\
+\hat\alpha(a,r) = \left\{ \begin{array}{ll} \\
   1 & : (0) \\
   \alpha(a,r) & : (1) \\
 \end{array} \right
 $$
 
-The behaviour of $\alpha$ will depend greatly on the context in which the above
-formula is used. Our system deals with two types of resources, nodes and arcs;
-we note the following observations when implementing heuristics for $\alpha$:
-
-**For a node** $v$, there is no information that could be used to perform any
-heuristic: a node not in the map, has no information relating to it in the map.
-However, it may be possible to extract information from other sources, such as
-the friends for a ptable. These are context-specific and are explored in the
-appropriate sections.
-
-**For an arc** $e = (v_s, v_t)$, we have some extra information. The meaning of
-$e$ is fully determined by $v_s$, $v_t$, which means that the agent is able to
-judge $e$ if it "knows about" both $v_s$ and $v_t$. We can estimate this notion
-with $v \in \rft E$. That is, if $e \notin \dom E$ but $v_s, v_t \in \rft E$,
-then it's likely that there is no such relation.[^vcmped]
-
-[^vcmped]: Or, the agent has overlooked $e$. We assume this is _unlikely_ for
-the average agent, which is reasonable since we already trust them enough to
-be processing their judgement table.
-
-Brief discussions of specific applications of all of the above is given in the
-[relevant sub-sections](#using-the-value-composer).
-
-More sophisticated methods include training on a prototype network, or dynamic
-learning from an active network. However, it must be noted that the theoretical
-model for this component is not particularly robust anyway, so the benefit-cost
-ratio of such methods is likely to be low.
-
-
-# Architecture
-
-## Data structures
-
-### ptable
-
-DIAG
-
-Structure
-:	$$
-	p = \left[ \begin{array}{lrl} \\
-	  V_p =&   g|h &: u \\
-	\end{array} \right]
-	$$
-Description
-:	A map $V_p$ of nodes to attributes, where each node is a tgraph or an
-	index.
-Semantics
-:	Probability that the node can satisfy a query for an arbitrary tag.
-
-Each ptable is associated with some identity $z$ on the social network; the
-friend table of $z$, together with $V_p$, make up the judgement table for $z$
-as an agent.
-
-We assume that the set of useful resources is sparse over the set of possible
-resources ($G \cup H$), and so resources with near-neutral attribute values may
-be omitted at the identity's discretion, even if they are aware of them.
-Algorithms that process this data structure should be aware of this.
-
-### tgraph
-
-DIAG
-
-Structure
-:	$$
-	g = \left[ \begin{array}{lrl} \\
-	  V_g =&    t|g &: u \\
-	  E_g =& t, t|g &: w \\
-	\end{array} \right]
-	$$
-Description
-:	1. A map $V_g$ of nodes to attributes, where each node is a tag; and
-	2. A map $E_g$ of arcs to attributes, where each arc is a (tag, tgraph) or
-	   (tag, tag) relation.
-Semantics
-:	1. Size of the tag. (see [address space](#address-space))
-	2. Similarity of the target tag or tgraph, to the source tag.
-
-We assume that the size of a tag is useful information, irrespective of the
-actual value. There is no such thing as a "neutral" size, and maintainers are
-expected to define all tag sizes that they have knowledge of.
-
-We assume that the set of useful relations is sparse over the set of possible
-relations ($T \times (T \cup G)$), and so relations with near-neutral attribute
-values may be omitted at the maintainer's discretion, even if they are aware of
-them. Algorithms that process this data structure should be aware of this.
-
-### index
-
-DIAG
-
-Structure
-:	$$
-	h = \left[ \begin{array}{lrl} \\
-	  E_h =& t, d|h &: w \\
-	\end{array} \right]
-	$$
-Description
-:	A map $E_h$ of arcs to attributes, where each arc is a (tag, index) or
-	(tag, document) relation.
-Semantics
-:	Probability that the arc target will satisfy a query for the source tag.
-
-We assume that the set of useful relations is sparse over the set of possible
-relations ($T \times (D \cup H)$), and so relations with near-neutral attribute
-values may be omitted at the maintainer's discretion, even if they are aware of
-them. Algorithms that process this data structure should be aware of this.
-
-## Layers
-
-Our search application is partitioned into layers (contact, naming, routing),
-each encapsulating components that process information from the corresponding
-data planes. This allows all the layers to run concurrently; operations that
-retrieve remote objects do not block other layers, so that can do other work
-whilst waiting for the results.
-
-Each layer follows a basic structural template:
-
-- A set of data sources (agents and their judgements). These may be large data
-  structures, so we follow a model that supports partial loading - the "local
-  view" of the object. This can be visualised as a table, where the rows are
-  agents, and columns are resources. Each cell can hold an attribute, or a
-  sentinel value ("not yet loaded" or "attribute doesn't exist").[^laytb]
-
-- As input from lower layers, a seed map of data sources to their scores. Other
-  input might also be needed, depending on the specific layer.
-
-- An algorithm for reaching more agents and resources. Generally, this is done
-  by traversing out-arcs, starting with our seed data sources and the query
-  subject tag. The specific choice of which paths to follow first, depends on
-  both the layer and the implementation.
-
-- As output to upper layers, a resource-value map, or an object that is built
-  from such a map (in which case the map itself might not be made visible).
-
-- Various algorithmic components for constructing this output. These include at
-  least a score-inferer and a value-composer (see [information aggregation -
-  simplification](#simplification)). These components are independent from the
-  layer itself, and may be replaced with more sophisticated components.
-
-Upper layers can request more input data from lower layers, if needed[^layex].
-The top layer (routing) receives requests from the user, and the bottom layer
-(contact) uses data from the social network only, independently of any query.
-Note that data retrieval can in theory proceed until the entire network has
-been searched. In practice, we only automatically send requests for more data
-until a set number of results have been returned; after that we wait for user
-input before retrieving more.
-
-[^laytb]: Our implementation doesn't actually use a table structure, but this
-is a simple and useful description, which is basically equivalent.
-
-[^layex]: eg. if all available seed indexes have been exhausted, and nothing
-useful returned, we need to ask for more.
-
-To give an overview of the layers and how they fit together, below is a table
-of the inputs and outputs of each layer:
-
--------------------------------------------------------------------------------
-layer           requires                        provides
---------------- ------------------------------- -------------------------------
-routing         seed indexes $H_s$              results table $\bar h$
-                address scheme $\bar T$
-
-naming          seed tgraphs $G_s$              $\bar T$
-                query subject tag $t_0$
-
-contact         own identity $z_0$              $G_s$, $H_s$
--------------------------------------------------------------------------------
-
-Table: data dependency between layers [DIAG] pandoc table formatting not-so-good here
-
-### Contact
-
-Requires
-:	- implicit $z_0$, from the user
-Provides
-:	- $G_s$ to [naming](#naming)
-	- $H_s$ to [routing](#routing)
-
-#### Aggregating information
-
-Agent
-:	social identities
-Resource
-:	tgraphs, indexes
-Seed map
-:	implicitly, the input seed identity $z_0$ mapped to the maximum score.
-Score-inferer
-:	Here, the problem reduces down to that of a trust metric. Developing one
-	is outside the scope of this project, and various algorithms exist already
-	[REF]. A real deployment of this system would use the latest available
-	techniques; our prototype only returns an identity's immediate neighbours.
-	[EXTN]
-Value-composer
-:	Our prototype uses the crude [mean-based](#value-composer) value-composer.
-	For a discussion on what would be an appropriate $\alpha$ function to use,
-	see [using the value-composer: on ptables](#on-ptables).
-
-#### Constructing output
-
-We have two outputs to send to two different layers; we just split up our
-aggregate resource-value map by object type, to get $G_s$, $H_s$.
-
-#### Traversing objects
-
-This would normally be part of the trust metric component. Since our prototype
-only returns the direct neighbours of the seed identity, there is nothing to
-traverse, so we skip this component for now.
-
-### Naming
-
-Requires
-:	- $t_0$ from the user
-	- $G_s$ from [contact](#contact)
-Provides
-:	- $\bar T$ to [routing](#routing)
-
-#### Aggregating information
-
-Agent
-:	tgraphs
-Resource
-:	tags (nodes), tag-tag relationships (arcs)
-Seed map
-:	the input map $G_s$
-Score-inferer
-:	Our prototype uses the crude [path-based](#score-inferer) score-inferer. We
-	consider a route $g \rightarrow^t g'$ only if the traversal algorithm has
-	passed through it, which restricts it to tags relevant to our query.
-Value-composer
-:	Our prototype uses the crude [mean-based](#value-composer) value-composer.
-	For a discussion on what would be an appropriate $\alpha$ function to use,
-	see [using the value-composer: on tgraphs](#on-tgraphs).
-
-#### Constructing output
-
-We first construct an aggregate tgraph by passing every node and arc (from all
-tgraphs) through the value-composer. If we haven't yet loaded a node or arc in
-a tgraph, we treat it as non-existent in that tgraph.
-
-We then construct an address scheme from this, rooted at the source tag for the
-query. This is done by applying Dijkstra's algorithm to the aggregate tgraph.
-The distance between nodes is given using the intersection-based [distance
-relation](#distance-relation).
-
-We don't restrict the arcs to just being the shortest-path-tree; we instead
-only restrict them to the extent that nodes only have in-arcs from neighbours
-with a smaller "shortest-distance-from-source". This is intended to give some
-extra flexibility when routing. So, the resulting address scheme is a directed
-acyclic graph, rather than a tree.
-
-#### Traversing objects
-
-see "practical details" [LINK]
-
-### Routing
-
-Requires
-:	- $H_s$ from [contact](#contact)
-	- $\bar T$ from [naming](#naming)
-Provides
-:	- $\bar h$ to the user
-
-#### Aggregating information
-
-Agent
-:	indexes
-Resource
-:	tag-document relationships (arcs)
-Seed map
-:	the input map $H_s$
-Score-inferer
-:	Our prototype uses the crude [path-based](#score-inferer) score-inferer. We
-	consider a route $h \rightarrow^t h'$ only if the traversal algorithm has
-	passed through it, which restricts it to tags relevant to our query.
-Value-composer
-:	Our prototype uses the crude [mean-based](#value-composer) value-composer.
-	For a discussion on what would be an appropriate $\alpha$ function to use,
-	see [using the value-composer: on indexes](#on-indexes).
-
-#### Constructing output
-
-Aggregating the information from various indexes gives us a map $E_{\barh}$ of
-tag-document arcs to attributes. For all $(t, d) : w$, where $w = P(t|d)$, we
-want to normalise this to $(t_0, d) : w'$, where $w' = P(t_0|d)$.
-
-For each $t$, let $D(t)$ be the distance between $t$ and $t_0$, as taken from
-the address scheme. For each $(t, d) : w$, we calculate:
-
-$$
-w' = D(t) \frac{P(t_0)}{P(t)} w
-$$
-
-and add $d : w'$ to our results map for the user. If a document is pointed to
-by more than one tag, we get a $w'$ for each tag; we simply use the most
-favourable one.
-
-For a derivation of this, see [ranking results](appendix.html#ranking-results)
-in the appendix.
-
-#### Traversing objects
-
-see "practical details" [LINK]
-
-
-# Practical details
-
-## Using the value-composer
-
-To recap, $\alpha(a, r)$ is the probability that $a$ judges $r$ to be worthless
-(as opposed to not knowing about it), given that $r \notin A_a$.
-
-### On ptables
-
-Various factors that could affect $\alpha(a, r)$ include the size of the ptable
-(how many resources $a$ knows about in total), and whether their friends also
-know about $r$. Developing a satisfactory model of this would be complicated,
-and the benefits are unclear. Complex models generally need more information,
-which raises the cost of calculation.
-
-Due to these reasons, for our prototype we simply set $\alpha$ to be constant.
-As a preliminary estimate, we'll use a low value of $2^{-4}$, intended to
-convey the notion that most agents only have a limited view of the network.
-
-### On tgraphs
-
-Attribute of a node $v$: with tgraphs, node-attributes are expected to be
-defined if the agent has information to do this, regardless of what the actual
-attribute value is. So we set $\alpha = 0$.
-
-Attribute of an arc $e$: as discussed in [value-composer](#value-composer), we
-can make a distinction between arcs whose endpoints are both defined in the
-graph, and the opposite case. So we'll use two constants, a high $\alpha_1$ for
-the former, and a low $\alpha_2$ for the latter.
-
-A further tweak for node attributes is to take the geometric mean instead of
-the arithmetic mean, by converting probabilities to entropies before passing
-them through the composer, then reverting the result back. This is because we
-expect agents' views of the network to follow a power-law distribution, which
-means the judgements for a tag's size will be distributed in the same way.
-Taking the arithmetic mean of probabilities would bias the result in favour of
-larger sizes.
-
-### On indexes
-
-As in the case of tgraphs, we use two constants for the two cases of arcs, a
-high $\alpha_1$ and a low $\alpha_2$.
-
-## Traversing objects
-
-### Naming layer
-
-First a definition: we say a tag $t$ is _completely loaded_ (or _complete_ for
-short) in $g$ if the attributes for itself, all its out-arcs, and all its
-out-nodes have been loaded. This is the maximum amount of information that can
-be retrieved from the current set of resources, for calculating the distance
-between $t$ and its out-nodes. The address scheme constructor needs this.
-
-Recall that a layer has a table holding the local views of agents' judgements.
-We mark a column for a tag-resource $t$ as _complete_ in the table, if $t$ is
-_complete_ in all rows $g$ currently in the table.
-
-We initialise the table rows from the seed tgraphs $G_s$, and start with no
-columns. The table can be expanded in two possible ways:
-
-Add a row
-:	For a new tgraph $g$, _completely load_ all the tags that are currently
-	complete in the table, so that the addition of $g$ as a row does not make
-	any (previously completed tags) incomplete.
-
-Add a column
-:	For a new tag $t$, _completely load_ it in all rows $g$, so that $t$ is
-	then complete in the table.
-
-After each wave of new data, the aggregated resource-value map, and then the
-address scheme, is recalculated.
-
-We have the address scheme constructor stop when it reaches a tag which is not
-complete in the table. Of course we could continue with incomplete information,
-but we thought it would be more prudent to wait until all the relevant data
-becomes available. This should help to reduce instability in the output, which
-is important because another layer (routing) uses it; if it varies wildly
-between successive waves then that layer might not work so well.
-
-So the address scheme will have a maximum of one incomplete tag, and possibly
-references to tgraphs not yet added to our table. The incomplete tag, along
-with the tgraph with the "shortest-distance-to-source", become valid candidates
-for being added to the table.
-
-In choosing between the expansion methods, we prefer adding columns to adding
-rows; we only add a new row if there is no incomplete tag to add, or if it is
-"further" than some predefined threshold, relative to the nearest tgraph. (In
-our prototype, we set this to $2^{-2}$.)
-
-This preference is based on the assumption that most naming needs should be
-satisfiable by a small neighbourhood around our seeds, and that judgements of
-tag-tag relationships should be similar across the entire network. (If someone
-claims to know a tag's related tags, then it's likely that this knowledge
-covers a large part of all related tags defined by the entire network.)
-
-### Routing layer
-
-Define the _potential_ of a lookup $(t, h)$ to be $P(t_0, t, h)$. We estimate
-this as $P(t_0|t) P(t|h) P(h)$[^trvrpo], which assumes that $P(t_0|t)$, $P(h)$
-are independent.
-
-[^trvrpo]: ie. similarity of $t$ to $t_0$, relevance of $h$ to $t$, and score
-of $h$, respectively.
-
-As with other layers, we have a table of loaded attributes. Here however, we
-can be more focused when searching through indexes. Instead of looking up all
-the tags for an entire row, we only partially load each row; all non-loaded
-cells are assumed to be non-existent in the index for the row, until they are
-loaded.
-
-We initialise the table rows from the seed indexes $H_s$, and an empty address
-scheme (ie. no columns). The table can be expanded in two possible ways:
-
-Add a row
-:	For a new index $h$, select all tags that lie on a path between $t_s$ and
-	$t_0$ in the address scheme, where $t_s$ is any tag that we reached $h$ by.
-
-On address scheme update
-:	Our prototype implementation has no way of detecting how the address scheme
-	changed, so we just re-add all the rows as above. For seed rows, we select
-	_all_ tags in the address scheme, since "reached-by" doesn't apply to seed
-	tags. Of course, lookups that have already completed, are skipped.
-
-Unlike naming, no other functional component is dependent on the output of this
-layer; the results are only returned to the user. So we shift our focus from
-output stability to responsiveness - updating results as soon as possible when
-new information arrives.
-
-We retrieve data asynchronously, with pending lookups held in a priority queue,
-ordered by lookup potential. When the user asks for more results, we return
-immediately after picking an expansion method and adding its relevant lookups
-to the queue, instead of waiting for them to finish. The user can poll query
-progress; each time this occurs, we generate aggregated results using the data
-retrieved so far.
-
-The aggregated results might also contain references to new indexes as well as
-documents, in which case the most relevant index (scored in the same way as
-documents; this is described elsewhere) becomes a valid candidate for being
-added to the table.
-
-The choice of expansion method proceeds as follows. Define the _potential_
-
-- of a not-yet-added tag $t$, to be the highest potential of any $(t, h)$ over
-  all rows $h$.
-- of a not-yet-added index $h$, to be the highest potential of any $(t, h)$
-  that _would be selected_ if $h$ were to be added as a row.
-- of the current lookups queue, to be the highest potential of any $(t, h)$
-  currently contained within it.
-
-We compare the potential of the incomplete tag $t$, the new-index candidate
-$h$, and the current lookups queue. (If any of these do not exist, they are
-ignored.) If the most favourable potential out of these is:
-
-- that of the lookups queue, then we wait for lookups to continue
-- that of $t$, then we request an address scheme update
-- that of $h$, then we add it as a row
-
-Finally, if all three are non-existent (ie. no pending lookups, no incomplete
-tag, and no indexes to add), then we request an address scheme update.
+The form of $\alpha$ will depend on the use context; this is discussed below.
+
+### Picking $\alpha$
+
+In some cases, the set of useful resources is sparse, e.g. if the attribute
+represents an endorsement (in ptables), or a non-trivial binary relationship
+(routes). We'd like to not define the non-useful resource at all, to avoid
+redundancy, and only implicitly mark it with a neutral or "zero" attribute.
+
+In other cases, all attributes are useful (tgraph nodes), and there is no such
+thing as a zero attribute. Here, we expect to explicitly mention all nodes that
+we are aware of, so $\alpha = 0$.
+
+Most of the $\alpha(a, r)$ estimates we use in our prototype are constant. More
+sophisticated estimates would use information about both $a$ and $r$, such as
+the size and neighbours of $a$. We largely avoided this approach to keep things
+simple; moreover, complex models generally need more information, which raises
+the cost of calculation.
+
+For arc resources (e.g. routes), we have a simple non-constant heuristic which
+isn't too costly to calculate. Consider an arc $e = (v_s, v_t)$ in a graph $G$.
+The meaning of $e$ is fully determined by $v_s$, $v_t$, so any agent that can
+judge both $v_s$ and $v_t$ individually, should be able to judge $e$. That is,
+if $e \notin G$ but $v_s, v_t \in G$, then $\alpha$ is high[^vcmped], and for
+$v_s \notin G$ or $v_t \notin G$, $\alpha$ is low.
+
+[^vcmped]: Either the agent judges $e$ to be not worth mentioning, or it has
+overlooked the possibility of $e$. We assume the latter is _unlikely_, which is
+reasonable since we already trust them enough to be asking them for judgements.
+
+In summary:
+
+ptable (nodes)
+:	We use a low constant of $2^{-4}$, intended to reflect the fact that most
+	agents only have a limited view of the network.
+tgraph (nodes)
+:	We use $\alpha = 0$, as discussed.
+tgraph (arcs), index (arcs)
+:	We use $\alpha = 2^{-1}$ and $\alpha = 2^{-4}$ for the high and low cases
+	respectively, as discussed in the simple heuristic for routes.
+
+A further tweak for tgraph nodes is to take the geometric mean instead of the
+arithmetic mean. This is because we expect agents' views of the network to
+follow a power-law distribution, which means the judgements for a tag's size
+will be distributed in the same way. Taking the arithmetic mean of would bias
+the result in favour of larger sizes.
+
+Ambitious methods might include training on a prototype network, or dynamic
+learning from an active network. It must be noted however, that the theoretical
+model is not particularly robust anyway, so their actual benefit is unclear.
 

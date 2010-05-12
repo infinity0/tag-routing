@@ -48,7 +48,7 @@ fixup() {
 }
 
 fixup_gz() { zcat "$1" | fixup | $REPGZ; }
-wrap() { $FIXUP "$1" > "$1.tmp"; }
+wrap() { $FIXUP "$1" > "$1.tmp" || { rm "$1.tmp"; false; }; }
 wrap_co() { $FIXUP "$1" > /dev/null; }
 
 for i in "$@"; do
