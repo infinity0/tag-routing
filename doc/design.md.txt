@@ -24,8 +24,6 @@ the exact meaning should be clear from context.
 
 ### index
 
-[DIAG] index
-
 An **index** is a set of arcs. Each arc is either a tag-document or tag-index
 relation, and its attribute represents their _similarity_.
 
@@ -44,8 +42,6 @@ Along with a routing table, we need an address scheme to know which queries to
 make; this is discussed in the next section.
 
 ### tgraph
-
-[DIAG] tgraph
 
 A **tgraph** (tag-graph) is a graph. Each node is a tag or a pointer to another
 tgraph, and its attribute represents its _size_. Each arc is either a tag-tag
@@ -83,8 +79,6 @@ semi-ubiquity of language to allow tags to be routed over.
 
 ### ptable
 
-[DIAG] ptable
-
 A **ptable** (preference table) is a set of nodes. Each node is a pointer to an
 index or a tgraph, and its attribute represents how likely it can satisfy a
 query.
@@ -110,10 +104,16 @@ data planes. This allows all the layers to run concurrently; operations that
 retrieve remote objects do not block other layers, so that they can do other
 work whilst waiting for the results.
 
-Each layer follows a basic structural template:
+Each layer follows a basic structural template laid out in the diagram below.
+Circles represent algorithmic modules, and square blocks represent data
+structures that these modules act upon.
+
+<object class="diagram" data="res/layer.svg" type="image/svg+xml" id="svg" width="560" height="560"></object>
+
+The components are as follows:
 
 - A set of **data sources** (agents). These may be large objects, so we follow
-  a model that supports partial loading - the "local view" of the object. This
+  a model that supports partial loading - the _local view_ of the object. This
   can be visualised as a table, where the rows are agents, and columns are
   resources. Each cell can hold an attribute, or a sentinel value ("not yet
   loaded" or "attribute doesn't exist").
@@ -135,8 +135,6 @@ Each layer follows a basic structural template:
 [^laytb]: Our implementation doesn't actually use a table structure, but this
 is a simple and useful description, which is basically equivalent.
 
-[DIAG] single layer internals
-
 Higher layers can request more input data from lower layers, if needed[^layex].
 The top layer (routing) receives requests from the user, and the bottom layer
 (contact) uses data from the social network only, independently of any query.
@@ -148,17 +146,19 @@ input before retrieving more.
 [^layex]: eg. if all available seed indexes have been exhausted, and nothing
 useful returned, we need to ask for more.
 
-[DIAG] layers and their data dependencies
+<object class="diagram" data="res/layers.svg" type="image/svg+xml" id="svg" width="400" height="400"></object>
 
 The above diagram depicts the inputs and outputs of each layer, and how they
-relate to each other and to the query initiator. Notes:
+relate to each other and to the query initiator. The labels represent the
+outputs of each layer, and the arrowheads represent the input seeds or other
+inputs of the layer, depending on column. Notes:
 
-Seed map
+Input seeds
 :	The routing and naming layers both receive their seed map from the contact
 	layer. The contact layer itself implicitly receives a single seed identity,
 	the query initiator's own identity. (This can be thought of as a singleton
 	map of the seed identity mapped to the maximum possible score.)
-Other input/output
+Other input
 :	The contact layer accepts no input other than the seed identity; it outputs
 	seed indexes and tgraphs. The naming layer accepts the query tag as extra
 	input, and outputs an address scheme. The routing layer accepts this

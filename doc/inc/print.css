@@ -19,8 +19,12 @@ body {
 	font-family: "Georgia";
 }
 
-.footnotes {
-	font-size: 85%;
+.footnotes > hr { display: none; }
+.footnotes, .fnholder { font-size: 85%; }
+.fnholder p { margin: 0; }
+.fnline {
+	width: 25%;
+	margin: auto 0 0;
 }
 
 /* Layout */

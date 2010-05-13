@@ -357,7 +357,7 @@ in our calculations, we first convert probability attributes to entropy ones.
 
 ### Query closeness
 
-<iframe src="res/closeness.html" width="720" height="800" frameborder="0"></iframe>
+<iframe src="../stat/closeness.html" width="720" height="800" frameborder="0"></iframe>
 
 ## Future work
 

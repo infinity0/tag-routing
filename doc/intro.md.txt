@@ -140,15 +140,15 @@ allows for fairly simple, yet effective, routing algorithms.
 
 [^dhtperf]: eg. expected number of hops for a lookup
 
-Informally, a numerical address space can be partitioned hierarchically, e.g.
-by taking successively larger prefixes of an address. This allows greedy
-routing to work effectively, by finding the neighbour which shares the smallest
-partition with the desired target node. (For instance, in IP routing, this is
-just the "longest-prefix-match" method.)
+<object class="rdiag" data="res/hier.svg" type="image/svg+xml" id="svg" width="240" height="360"></object>
 
-[DIAG] diagram of hierarchical partitioning, [`99Kle`] kleinberg "small world"
+Informally, a numerical address space can be partitioned hierarchically (see
+right), e.g. by taking successively larger prefixes of an address. This allows
+for a greedy routing scheme, by finding the neighbour which shares the smallest
+partition with the query target node. An abstract example of this is explored
+in [`99Kle`]; another example is "longest-prefix-match" in IP routing.
 
-Two of these ideas seemed to fit well together: we can try to make the
+Two of the above ideas seemed to fit well together: we can try to make the
 query-shifting aspect of "human" routing more precise, by using the idea of a
 structured address space. This could then allow for a simple routing algorithm.
 Semantic tags are not as naturally structured as numerical addresses however,

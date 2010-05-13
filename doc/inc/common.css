@@ -16,10 +16,19 @@ dd { margin-left: 2em; }
 
 .footnoteRef { font-size: 85%; }
 
-object.graph {
+object.graph, object.diagram {
 	margin: 0 auto;
 	display: block;
+}
+
+object.graph {
 	padding-right: 2em;
+}
+
+object.rdiag {
+	display: block;
+	float: right;
+	margin: -1em 0 0.5em 1em;
 }
 
 /* workaround pandoc bad generation of footnote html */

@@ -96,6 +96,7 @@ window.onload = function() {
 		incSect(list[i]);
 	}
 
+	// page numbers in the TOC
 	var line = toc.firstChild.getElementsByTagName('a');
 	for (var i=0; i<line.length; ++i) {
 		ah = line[i]
@@ -103,6 +104,24 @@ window.onload = function() {
 		obj.appendChild(document.createTextNode(ah.title));
 		obj.className = "pageno";
 		ah.parentNode.insertBefore(obj, ah);
+	}
+
+	// footnotes on the right pages
+	var repl = document.getElementsByClassName("fnholder");
+	for (var i=0; i<repl.length; ++i) {
+		var fnh = repl[i];
+		var hr = document.createElement('hr');
+		hr.className = "fnline";
+		fnh.appendChild(hr);
+		var ol = document.createElement('ol');
+		var ids = fnh.id.split("-");
+		ol.start = ids[1];
+		for (var j=1; j<ids.length; ++j) {
+			li = document.getElementById("fn" + ids[j]);
+			li.parentNode.removeChild(li);
+			ol.appendChild(li);
+		}
+		fnh.appendChild(ol);
 	}
 
 }
