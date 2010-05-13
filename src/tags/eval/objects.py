@@ -769,6 +769,20 @@ class TagInfo(namedtuple('TagInfo', 'tag docs rtag prod worldsize')):
 		"""
 		return f1_score(set(self.docs), set(results))
 
+	def score_triple(self, results):
+		"""
+		@return: (Precision, Recall, F1_score) of results set wrt this tag's documents.
+		"""
+		real = len(self.docs)
+		test = len(results)
+		if test == 0:
+			return (1.0, 1.0, 1.0) if real == 0 else (0.0, 0.0, 0.0)
+		elif real == 0:
+			return (0.0, 0.0, 0.0)
+
+		ix = float(len(set(self.docs) & set(results)))
+		return (ix/test, ix/real, f1_score(real, test, ix))
+
 
 
 class IDInfo(namedtuple('IDInfo', 'id soc tgr idx rel_h')):
@@ -792,7 +806,9 @@ class QueryReport(namedtuple('QueryReport', 'id tag steps')):
 	@classmethod
 	def from_chapters(cls, chapters):
 		intro = chapters.pop(0)
-		id, tag = re.search(r"\[(.*?):(.*?)\]", intro[0][0]).groups()
+		id, qtag = re.search(r"\[(.*?):(.*?)\]", intro[0][0]).groups()
+		# ignore empty line
+		if len(chapters[-1]) == 1 and len(chapters[-1][0]) == 1 and not chapters[-1][0][0]: chapters.pop()
 
 		steps = {}
 		for head, addr, res in chapters:
@@ -821,7 +837,7 @@ class QueryReport(namedtuple('QueryReport', 'id tag steps')):
 
 			steps[step] = StepReport(g_addr, res)
 
-		return QueryReport(id, tag, steps)
+		return QueryReport(id, qtag, steps)
 
 
 

@@ -88,6 +88,7 @@ def f1_score(real, test, ix=None):
 	else:
 		precision = float(ix)/test
 		recall = float(ix)/real
+	if (precision+recall) == 0: return 0
 	return float(2*precision*recall)/(precision+recall)
 
 

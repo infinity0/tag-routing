@@ -282,7 +282,7 @@ in several properties, the easiest one to calculate being the node degree.
 Firstly, we verified that our crawl of the social network satisfies a power-law
 distribution in node-degree:
 
-<object class="graph" data="../stat/socgr.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
+<object class="graph" data="../stat/socgr.svg" type="image/svg+xml" width="480" height="360"></object>
 
 This is a relatively small sample size (256), but it's clear that it does
 follow the expected distribution.
@@ -293,8 +293,8 @@ indexes and tgraphs[^testar]:
 [^testar]: we model an arc $p_0 \rightarrow p$ if a route $p_0 \rightarrow^t p$
 exists for any tag $t$.
 
-<object class="graph" data="../stat/sprdgr.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
-<object class="graph" data="../stat/prodgr.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
+<object class="graph" data="../stat/sprdgr.svg" type="image/svg+xml" width="480" height="360"></object>
+<object class="graph" data="../stat/prodgr.svg" type="image/svg+xml" width="480" height="360"></object>
 
 Clearly, the tgraphs network satisfies a power-law distribution. The plot for
 the indexes network has a split in the data; this can be explained by the way
@@ -306,13 +306,13 @@ explains the discrepancy between odd/even degree frequencies[^testdg].
 We confirmed this by counting only in-degree / out-degree, which both give
 clear power-law distributions:
 
-<object class="graph" data="../stat/prodgr_i.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
-<object class="graph" data="../stat/prodgr_o.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
+<object class="graph" data="../stat/prodgr_i.svg" type="image/svg+xml" width="480" height="360"></object>
+<object class="graph" data="../stat/prodgr_o.svg" type="image/svg+xml" width="480" height="360"></object>
 
 We also tested for a power-law distribution in the document-count for each tag,
 over our crawled tags:
 
-<object class="graph" data="../stat/tags.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
+<object class="graph" data="../stat/tags.svg" type="image/svg+xml" width="480" height="360"></object>
 
 This could indicate that our idea on hierarchical partition over the tags is
 achievable on this data set. On the other hand, it could be that a few users
@@ -332,8 +332,6 @@ It became apparent that our mean-based value-composer was not very effective.
 To start with, we compared the "ideal"[^explad] address scheme for the sample,
 with the address scheme that our search application generated from all the
 separate data sources. At first, these differed greatly.
-
-[DIAG] comparing early address schemes
 
 It seems that, at least some agents will give high values for resources that
 don't "deserve" them, even when all agents are honest. So, assuming that most
@@ -395,8 +393,8 @@ each query, and also the out-degree of $V_s$ and in-degree of $V_t$. (Both
 $V_s$ and $V_t$ are defined in the section on closeness, and the degree of a
 set of nodes is given in the glossary.)
 
-<object class="graph" data="../stat/close_soc.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
-<object class="graph" data="../stat/close_tag.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
+<object class="graph" data="../stat/close_soc.svg" type="image/svg+xml" width="480" height="360"></object>
+<object class="graph" data="../stat/close_tag.svg" type="image/svg+xml" width="480" height="360"></object>
 
 The first graph plots closeness against $V_s$ out-degree for all ids, split
 into per-tag samples. The second graph plots closeness against $V_t$ in-degree
@@ -414,21 +412,30 @@ a "natural" property. We didn't explore this in further depth, however.
 
 We then ran these 256 queries and calculated their $p$, $r$, and $f$ scores.
 
-[DIAG] results
-
-(tests looks very shaky atm, some give a minor fraction of all available
-results, some give nothing, a few go haywire)
+<object class="graph" data="../stat/res_f1.svg" type="image/svg+xml" width="480" height="360"></object>
+<object class="graph" data="../stat/res_precis.svg" type="image/svg+xml" width="480" height="360"></object>
+<object class="graph" data="../stat/res_recall.svg" type="image/svg+xml" width="480" height="360"></object>
 
 ## Comments
 
-Our results are mainly poor. Rather than giving meaningful performance trends
-as we hoped, we ended up with small result sets for each query, giving a
-scattered sample of mostly low scores.
+Our results are generally poor, considering our original objectives. The fairly
+high F1 and precision scores are comforting, but this is likely more to do with
+our simple data generation model (which only produces "correct" document-tag
+associations) than the effectiveness of our implementation.
 
-Instead of attempting such a general performance test as we did, we should have
-focused on a few distinctive queries, and examined these in detail. In the end,
-we got more useful information about our implementation by tracing the process
-of a query, rather than by looking at our test results.
+The data has several "cut-off" points - for example, none of the recall scores
+go above $0.5$ even for queries with high closeness. Also, no query below about
+$c \approx 0.002$ came back with any results _at all_. These strongly suggest
+that our system still has local "horizons", beyond which it's hard to get any
+information about. This means that the original objective of scalability has
+not been met.
+
+However, our system is fairly complex, and there are various known issues with
+both the design and implementation that would all work to reduce its overall
+effectiveness. We explored the execution of some queries in greater detail to
+try to understand why our results occured, and see if this could be improved.
+
+## Reflections
 
 It was typical to obtain several dozen seed tgraphs, and several hundred seed
 indexes. Our design is to query all of these for each additional tag, which
@@ -444,11 +451,11 @@ make a choice between asking for data from lower layers, or to continue with
 itself. The [traversal algorithm](design.html#routing) we specified turned out
 to be poor, and we had to tweak it manually. Even then, we would get sporadic
 behaviour, such as choosing to increase the address scheme many times in a row,
-then choosing to continue with lookups many times.[DIAG] exec trace
+then choosing to continue with lookups many times.
 
-The system should work better, if we instead ran every layer in parallel. This
-would increase the complexity of synchronization, but we wouldn't need to
-devise complex choice algorithms in the routing layer. We would need each layer
+Things would work better if we instead ran every layer in parallel. This would
+increase the complexity of synchronization, but we wouldn't need to devise
+such complex choice algorithms in the routing layer. We would need each layer
 to pause itself automatically, but this seems much simpler.
 
 A case could certainly be made for the sample data being of poor quality. When
@@ -473,16 +480,21 @@ would have defeated the whole point. We were also required to collect data to
 test the system with. This had to be compatible with our system; cutting down
 any component would have rendered this pointless, too.
 
-Our results were not satisfactory. Although initial tests on a tiny sample
-seemed promising, results for a significantly-sized network were poor. There
-are many possible reasons for this, discussed [above](#comments); however,
-ultimately this means that we had far too high an expectation of our system.
+Although initial tests on a tiny sample seemed promising, our results for a
+mid-sized network were unsatisfactory. There are many possible reasons for
+this (discussed [above](#comments)), however ultimately this means that we had
+far too high an expectation of our system. Instead of attempting a general
+performance test, we should have focused on more distinctive queries, and
+examined these in detail. In the end, we got more useful information about our
+implementation by tracing the process of a query, rather than by looking at our
+test results as a whole.
 
 On the up side however, we have developed a decentralised semantic searching
-framework out of fairly simple initial ideas. Although the system as a whole is
-highly complex, it is made from a combination of many individual modules. These
-are all well-defined and shielded from each other, so that future improvements
-in one component should not need a complete restructuring of the entire system.
+framework out of fairly simple initial ideas. We are optimistic that our basic
+approach is sound. Although the system as a whole is highly complex, it is made
+from a combination of many individual modules. These are all well-defined and
+shielded from each other, so that future improvements in one component should
+not need a complete restructuring of the entire system.
 
 A full list of directions for taking this project further is available in the
 [appendix](appendix.html#future-work). The most important ones, in our view,

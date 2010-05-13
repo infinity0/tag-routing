@@ -404,6 +404,8 @@ Evaluation
 	   query](evaluate.html#query-difficulty)
 
 
+# Project Proposal
+
 # Meta
 
 These documents were prepared in [pandoc markdown](http://johnmacfarlane.net/pandoc/).

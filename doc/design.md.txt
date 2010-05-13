@@ -108,7 +108,7 @@ Each layer follows a basic structural template laid out in the diagram below.
 Circles represent algorithmic modules, and square blocks represent data
 structures that these modules act upon.
 
-<object class="diagram" data="res/layer.svg" type="image/svg+xml" id="svg" width="560" height="560"></object>
+<object class="diagram" data="res/layer.svg" type="image/svg+xml" width="560" height="560"></object>
 
 The components are as follows:
 
@@ -146,12 +146,11 @@ input before retrieving more.
 [^layex]: eg. if all available seed indexes have been exhausted, and nothing
 useful returned, we need to ask for more.
 
-<object class="diagram" data="res/layers.svg" type="image/svg+xml" id="svg" width="400" height="400"></object>
+<object class="diagram" data="res/layers.svg" type="image/svg+xml" width="400" height="400"></object>
 
 The above diagram depicts the inputs and outputs of each layer, and how they
-relate to each other and to the query initiator. The labels represent the
-outputs of each layer, and the arrowheads represent the input seeds or other
-inputs of the layer, depending on column. Notes:
+relate to each other and to the subject query. The labels represent outputs,
+whereas the arrowheads represent the inputs, divided into two types:
 
 Input seeds
 :	The routing and naming layers both receive their seed map from the contact
@@ -302,8 +301,6 @@ matching the subnet prefix against the entries in the routing table. For DHTs,
 both "size" and "similarity" are defined with the choice of address space. In
 the case of semantic routing, a tag's "size" corresponds to how "general" it
 is, and its "similarity" to another tag corresponds to how related they are.
-
-[DIAG] (tag similarities, etc)
 
 Most information retrieval models [`98Cr+`] focus on associating documents with
 tags; we also need to model the relationships _between_ tags. We came up with a

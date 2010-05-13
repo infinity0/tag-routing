@@ -596,20 +596,39 @@ class SampleStats(object):
 		return AddrSchemeEval(prune, local, world)
 
 
-	def printReports(self, reports, pretty=False, steplo=0x08, fp=sys.stdout):
-		lines = [('closeness', 'addr_scheme_score', 'results_score')]
+	def printReports(self, reports, eaddr=False, pretty=False, steplo=0x08, closeness=None, fp=sys.stdout):
+		lines = [['close', 'steps', 'precision', 'recall', 'f1_score']]
+		if eaddr:
+			lines[0].append('addr_scheme_score')
+		if closeness is None:
+			closeness = self.closeness
+
+		tincache = {}
+		total = len(reports)
+		i = 1
 		for rep in reports:
-			close = self.closeness(rep.id, rep.tag)
-			tinfo = self.getTagInfo(rep.tag)
-			for s, stepr in rep.steps.iteritems():
+			close = closeness(rep.id, rep.tag)
+
+			if rep.tag in tincache:
+				tinfo = tincache[rep.tag]
+			else:
+				tinfo = self.getTagInfo(rep.tag)
+				tincache[rep.tag] = tinfo
+
+			for s, stepr in sorted(rep.steps.iteritems()):
 				if s < steplo: continue
-				lines.append((close, self.evaluateScheme(stepr.scheme).score_world(), tinfo.f1_score(stepr.results)))
+				line = [str(close), str(s)] + list(tinfo.score_triple(stepr.results))
+				if eaddr:
+					line.append(self.evaluateScheme(stepr.scheme).score_world())
+				lines.append(line)
+			LOG.info("%s/%s reports processed" % (i, total))
+			i += 1
 
 		if pretty:
 			lines.insert(1, None)
-			write_align_column(lines, 3, fp=fp)
+			write_align_column(lines, len(lines[0]), fp=fp)
 		else:
-			print '#',
+			print >>fp, '#',
 			for line in lines:
 				print >>fp, ' '.join(str(v) for v in line)
 

@@ -323,7 +323,8 @@ class Evaluation(object):
 		reports = []
 		for arg in args:
 			with open(os.path.join(self.dir_res, arg)) as fp:
-				reports.append(QueryReport.from_chapters(read_chapters(fp)))
+				chaps = read_chapters(fp)
+				reports.append(QueryReport.from_chapters(chaps))
 
 		stats.printReports(reports, pretty=self.pretty)
 

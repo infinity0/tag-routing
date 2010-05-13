@@ -140,7 +140,7 @@ allows for fairly simple, yet effective, routing algorithms.
 
 [^dhtperf]: eg. expected number of hops for a lookup
 
-<object class="rdiag" data="res/hier.svg" type="image/svg+xml" id="svg" width="240" height="360"></object>
+<object class="rdiag" data="res/hier.svg" type="image/svg+xml" width="240" height="360"></object>
 
 Informally, a numerical address space can be partitioned hierarchically (see
 right), e.g. by taking successively larger prefixes of an address. This allows
