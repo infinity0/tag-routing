@@ -24,7 +24,7 @@ the exact meaning should be clear from context.
 
 ### index
 
-[DIAG]
+[DIAG] index
 
 An **index** is a set of arcs. Each arc is either a tag-document or tag-index
 relation, and its attribute represents their _similarity_.
@@ -45,7 +45,7 @@ make; this is discussed in the next section.
 
 ### tgraph
 
-[DIAG]
+[DIAG] tgraph
 
 A **tgraph** (tag-graph) is a graph. Each node is a tag or a pointer to another
 tgraph, and its attribute represents its _size_. Each arc is either a tag-tag
@@ -82,6 +82,8 @@ mathematics allows numerical addresses to be routed over, we exploit the
 semi-ubiquity of language to allow tags to be routed over.
 
 ### ptable
+
+[DIAG] ptable
 
 A **ptable** (preference table) is a set of nodes. Each node is a pointer to an
 index or a tgraph, and its attribute represents how likely it can satisfy a
@@ -186,10 +188,10 @@ we will discuss each separately.
 This is the simplest layer. The problem of infering scores reduces down to that
 of a trust metric. This is an algorithm that assigns an objective score to each
 agent, given agents' subjective scores of other agents and a single seed agent.
-Developing a trust metric is beyond the scope of this project, and various
-algorithms exist already[REF]. A real deployment of this system would use the
-latest available methods; our prototype only returns an identity's immediate
-neighbours.[EXTN]
+Developing a trust metric is beyond the scope of our project; there are various
+existing algorithms [`04Lev`][`09Da+`]. A real deployment of this system would
+use state-of-the-art methods; our prototype only returns the seed identity's
+immediate neighbours.
 
 **Constructing output** is straightforward. We have an aggregated ptable; we
 just split it up by object type to get two tables, one with only tgraphs in,
@@ -286,8 +288,6 @@ we pass the request onto the naming layer.
 
 ## Address space
 
-[DIAG] (ip subnets, etc)
-
 As discussed [earlier](intro.html#initial-observations), routing schemes use a
 structured address space that has two properties over its address space:
 
@@ -305,19 +305,20 @@ is, and its "similarity" to another tag corresponds to how related they are.
 
 [DIAG] (tag similarities, etc)
 
-There are various methods of defining a mathematical space over semantic tags.
-[REF] In the end, we settled on a simple probabilistic model. Define:
+Most information retrieval models [`98Cr+`] focus on associating documents with
+tags; we also need to model the relationships _between_ tags. We came up with a
+fairly simple probabilistic model for this. Define:
 
 - $d \circ t$ represents the event ($d$ satisfies a query for $t$)
-- $B_{d,t}$ is a binary r.v. with $B_{d,t}(1) = P(d \circ t)$
+- $R_{d,t}$ is a binary r.v. with $R_{d,t}(1) = P(d \circ t)$
 - $D$ is a r.v. evenly distributed over all documents.
 - $E_X(f(X))$ is the expected value of $f(X)$ over $X$.
 
-$B_{d,t}$ are the "fundamental" variables of our representation of the world,
+$R_{d,t}$ are the "fundamental" variables of our representation of the world,
 that must be measured (somehow); the expressions given below are combinations
 of these. We define _similarity_ and _size_ as follows:
 
-- an index arc $(t, d)$ has _similarity_: $P(d \circ t) = B_{d,t}(1)$
+- an index arc $(t, d)$ has _similarity_: $P(d \circ t) = R_{d,t}(1)$
 
 - a tgraph arc $(t, t')$ has _similarity_: $E_D(P(D \circ t | D \circ t'))$
 
@@ -337,7 +338,7 @@ objects are, which would also affect its usefulness. We'll keep things simple
 and ignore this for now.
 
 In the rest of our analysis, we simplify this greatly. Instead of considering
-$B_{d,t}$ as a random variable, we take a "typical query" and collapse this
+$R_{d,t}$ as a random variable, we take a "typical query" and collapse this
 down into either $0$ or $1$, so that either $d \circ t$ or not. Then in the
 average case, and defining $P(x) = E_D(P(D \circ x))$:
 
@@ -453,7 +454,7 @@ It's impossible to determine the accuracy of the input data from only the data
 itself, since any input is potentially true. We need either a pre-existing
 expection of what the information should look like, or a model of how its
 meta-information (eg. its source agents) affects its accuracy. Both approaches
-are outside of the scope of this project.[EXTN]
+are outside of the scope of this project.
 
 We will use a very basic algorithm - the score-weighted mean of each agent's
 value judgement for that resource. In our case, both the score and the value

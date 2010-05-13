@@ -21,15 +21,12 @@ use indexing algorithms that produce decidedly better results than competitors.
 This creates conditions of oligopoly, which is inherently vulnerable to both
 abuse and attack. Large providers are trusted by a great number of clients, so
 more people are affected when this trust is broken. We have already seen cases
-of providers censoring their search results, both voluntarily[^censor1] and
-under coercion[^censor2]. Privacy is also a concern: providers can monitor
-client usage of the service, and build up a profile of personal activities.
+of providers censoring their search results, both voluntarily and being forced
+to it[^censor]. Privacy is also a concern: providers can monitor client usage
+of the service, and build up a profile of personal activities.
 
-[^censor1]: Google stopped returning results to CNET's website, because they
-published an article that the CEO disliked. [REF]
-
-[^censor2]: Google was also forced by the Chinese government to censor many
-search results from its service in China. [REF]
+[^censor]: For example, legal pressure in the form of censorship laws and
+takedown notices, but also self-censorship over perceptions of sensitivity.
 
 An alternative approach is to perform dynamic routing using query semantics.
 Instead of a simple client-provider model where a single query is a single
@@ -53,20 +50,23 @@ models, but some common themes include:
 
 Key-based routing
 :	The network defines an address space and a distance metric, where each
-	address is represented by a binary key. (DHTs, Freenet, GNUnet[REF])
+	address is represented by a binary key. For instance, Distributed Hash
+	Tables (DHTs) e.g. [`01St+`], Freenet [`wFre`], GNUnet [`wGnN`].
 Mesh networks
 :	Various heuristics are used to maintain structure and performance, such as
-	random walks, bandwidth detection, index delegation, etc. (Gnutella[REF])
+	random walks, bandwidth detection, index delegation, etc. For instance,
+	Gnutella [`wGtl`].
 Social relationships
 :	Nodes prefer to peer with trusted friends. This provides better security
-	properties, and a more predictable network structure. (OneSwarm, Freenet[REF])
+	properties, and a more predictable network structure. For instance,
+	OneSwarm [`wOSw`], Freenet.
 
-A more comprehensive survey of peer-to-peer searching is presented in [REF]].
+A more comprehensive survey of peer-to-peer search is presented in [`06Ri+`].
 Using the terminology of that paper, this project develops and evaluates a
 _probability-based model_ of information retrieval intended to support
 _comprehensive keyword search_ (as opposed to _partial keyword search_).
 
-Existing research into peer-to-peer semantic search include [REF]][REF]].
+Existing research into peer-to-peer semantic search include [`04Te+`][`07Co+`].
 None of these are currently deployed in real systems; we were unaware of them
 during the initial stages of our project, and our design differs considerably
 from these.
@@ -94,7 +94,7 @@ Robustness
 Most major currently-deployed systems have at least one incompatibility with
 the above. For example, DHTs are scalable, and will reach data if it exists on
 the network, but addresses have no relation to the semantics of the data. Many
-mesh networks (eg. Gnutella[REF]) can perform keyword search, but do not
+mesh networks (eg. Gnutella [`wGtl`]) can perform keyword search, but do not
 attempt to reach all relevant data on the network.
 
 ## Potential issues
@@ -120,7 +120,7 @@ acknowledged that building these to be both scalable and secure is a difficult
 problem. However, nothing suggests that this is an inherently impossible task;
 and once a problem is solved, future generations may reap the benefits without
 having to expend the initial development cost. Recent designs based on social
-networks have been promising, and we will use this as an inspiration.[REF]
+networks have been promising [`10LLK`], and we take inspiration from these.
 
 ## Initial observations
 
@@ -142,11 +142,11 @@ allows for fairly simple, yet effective, routing algorithms.
 
 Informally, a numerical address space can be partitioned hierarchically, e.g.
 by taking successively larger prefixes of an address. This allows greedy
-routing to work effectively, ie. by finding the neighbour which shares the
-smallest partition with the desired target node. (In IP routing, this is just
-"longest-prefix-match", which we are all familiar with.)
+routing to work effectively, by finding the neighbour which shares the smallest
+partition with the desired target node. (For instance, in IP routing, this is
+just the "longest-prefix-match" method.)
 
-[DIAG] diagram of hierarchical partitioning, [REF] kleinberg "small world"
+[DIAG] diagram of hierarchical partitioning, [`99Kle`] kleinberg "small world"
 
 Two of these ideas seemed to fit well together: we can try to make the
 query-shifting aspect of "human" routing more precise, by using the idea of a
@@ -160,14 +160,14 @@ each address will point to many resources. Being able to reach all resources
 for a single tag is equivalent to being able to reach any arbitrary resource
 for that tag. Our DHT-inspired design aims to support the latter; however,
 bounding the cost of finding extra resources is a more complex problem, which
-we didn't have time to explore.[EXTN]
+we didn't have time to explore.
 
 Finally, we based our system on a social foundation. Research has shown that
 analysing network structure can offer resistance against malicious information.
 A major reason is because social relationships are much more expensive to
 attack than simple algorithms that make naive assumptions about input data.
-Examples include Google's PageRank[REF], trust metrics such as Advogato[REF],
-and sybil detection algorithms such as SybilInfer[REF].
+Examples include Google's PageRank [`98Br+`], trust metrics such as Advogato
+[`wAdv`], and sybil detection algorithms such as SybilInfer [`09Da+`].
 
 ## Working assumptions
 
@@ -205,8 +205,8 @@ next chapter - refer there if clarification is needed._
 - We consider **objects to be immutable**. For example, we intended the sharing
   of indexes via ptable pointers to be a space-saving measure, instead of an
   action of delegation. In this respect, our objects are more like git commits
-  rather than web pages, and object links are more like git submodule pointers
-  rather than web hyperlinks.
+  [`wGOM`] rather than web pages, and object links are more like git submodule
+  pointers rather than web hyperlinks.
 
   This data model is more secure, and in our system it also keeps the issue of
   trust contained in the social layer, a property that some components depend

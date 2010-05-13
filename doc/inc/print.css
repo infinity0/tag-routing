@@ -1,6 +1,12 @@
-#mainmenu {
-	display: none;
-}
+/* Printing */
+
+.pg-bk-b { page-break-before: always; }
+.pg-bk-a { page-break-after: always; }
+
+h1 { page-break-before: always; }
+h1.title { page-break-before: auto; }
+
+/* Formatting */
 
 h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 	text-decoration: none;
@@ -13,13 +19,13 @@ body {
 	font-family: "Georgia";
 }
 
-h1 {
-	page-break-before: always;
+.footnotes {
+	font-size: 85%;
 }
 
-h1.title {
-	page-break-before: auto;
-}
+/* Layout */
+
+#mainmenu { display: none; }
 
 #TOC > ul {
 	margin-left: -0.2em;

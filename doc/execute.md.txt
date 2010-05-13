@@ -76,7 +76,7 @@ The prototype implementation code can be divided into:
 	"algorithmic components" are represented by Java interfaces (plus basic
 	implementations, also as described), to allow for future improvements.
 
-[^archex]: `java.util.concurrent.Executor`[REF]
+[^archex]: `java.util.concurrent.Executor` [`wJEx`]
 
 The general utilities can be further divided into:
 
@@ -101,7 +101,7 @@ The general utilities can be further divided into:
 
 ### Design patterns
 
-The Java Collections Framework[REF] is simple and flexible, and we built most
+The Java Collections Framework [`wJCo`] is simple and flexible; we built most
 of our data structures on top of it. In many cases, these provide alternative
 views of existing structures, such as combining two maps into one, chaining
 many iterators together, etc. It is generally more space-efficient to expose
@@ -153,13 +153,13 @@ language would've helped the performance issues significantly.
 
 We made use of the following external libraries:
 
-flickrapi[REF]
-:	Python bindings for Flickr's online API[REF].
-python-futures[REF]
+python-flickrapi [`wPFk`]
+:	Python bindings for Flickr's online API [`wFkA`].
+python-futures [`wPFu`]
 :	A high-level multithreading framework, inspired by `java.util.concurrent`.
 	We used this to run flickrapi in parallel to reduce network IO waits; this
-	is discussed below[LINK].
-igraph[REF]
+	is discussed [below](#network-io).
+igraph [`wiGr`]
 :	A general-purpose graph library written in C, with a python interface
 	available. We used this to store and manipulate graph objects, and for
 	data serialisation.
@@ -197,10 +197,10 @@ To speed this up, we used multithreading to start many calls in parallel. We
 also extended flickrapi to use persistent HTTP connections (per thread), rather
 than opening a new TCP connection for each call. Since each thread's task is
 only to wait for a system call to return, the lack of true multithreading in
-Python (due to the GIL[REF]) was not a problem.
+Python (due to the GIL [`wGIL`]) was not a problem.
 
 An alternative approach would be to use an asynchronous event-based IO model
-(the _reactor_ pattern), like the popular Twisted library[REF]. However, we
+(the _reactor_ pattern), like the popular Twisted library [`wTwi`]. However, we
 never intended the sample generator to be production code, so we preferred the
 simplicity of threads, over the flexibility and performance of event-based
 models.
@@ -209,16 +209,15 @@ models.
 
 Since we were dealing with data sizes larger than our RAM, we needed to store
 (e.g.) semi-completed objects and request parameters on disk. At first, we used
-Python's standard `pickle` module[REF] to de/serialise our objects, and the
-standard `shelve` module[REF] to store this data. This proved inadequate, and
-we had to optimise heavily.
+Python's standard `pickle` module to de/serialise our objects, and the standard
+`shelve` module to store this data. This proved inadequate, and we had to
+optimise heavily.
 
 The first major optimisation was to use a custom `pickle` format for `Graph`
 objects. `pickle` was leaking huge amounts of memory when deserialising large
 graphs; we tried to debug this, and discovered that storing the graph as a
-gzip-compressed GraphML is much more efficient (both in storage space and
-serialisation time)[REF] than the standard pickle format, and also solves the
-memory leak.
+gzip-compressed GraphML is much more efficient (in both space and time) than
+the standard pickle format, and also solves the memory leak.
 
 The next major optimisation was to store different components of a large object
 separately. The `shelve` module will deserialise an entire object when it's
@@ -237,19 +236,20 @@ for development) to store short-lived temporary files.
 
 We needed a common data format for sharing data between the search application
 and the sample generator. After a brief look into the formats available, we
-decided on GraphML[REF].
+decided on GraphML [`wGrM`].
 
 There are very few clean, simple, Java graph libraries that have good support
 for serialising complex graphs. GraphML seemed to be better supported than the
-DOT format[REF], and JUNG is a library that we felt most suited our needs. Even
-so, we had to heavily subclass its `GraphMLReader`, which involved much poking
-around its implementation details, just to read attributes of the correct type.
-This also required reading a significant part of the GraphML specification.
+DOT format [`wDOT`], and JUNG [`wJNG`] is a library that we felt most suited
+our needs. Even so, we had to heavily subclass its `GraphMLReader` to read
+attributes of the correct type, which involved much poking around its
+implementation details. This also required reading a significant part of the
+GraphML specification.
 
 Luckily our graph library on the Python side, `igraph`, is good at both reading
 and writing GraphML, and we didn't have to do any extra work here. It can also
 write in the DOT format, which meant we could visualise some of the simpler
-graphs that were generated, by running them through Graphviz[REF].
+graphs that were generated, by running them through Graphviz [`wGvi`].
 
 
 # Testing
@@ -282,7 +282,7 @@ in several properties, the easiest one to calculate being the node degree.
 Firstly, we verified that our crawl of the social network satisfies a power-law
 distribution in node-degree:
 
-[DIAG] socgr.svg
+<object class="graph" data="../stat/socgr.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
 
 This is a relatively small sample size (256), but it's clear that it does
 follow the expected distribution.
@@ -293,9 +293,8 @@ indexes and tgraphs[^testar]:
 [^testar]: we model an arc $p_0 \rightarrow p$ if a route $p_0 \rightarrow^t p$
 exists for any tag $t$.
 
-[DIAG] sprdgr.svg
-
-[DIAG] prodgr.svg
+<object class="graph" data="../stat/sprdgr.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
+<object class="graph" data="../stat/prodgr.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
 
 Clearly, the tgraphs network satisfies a power-law distribution. The plot for
 the indexes network has a split in the data; this can be explained by the way
@@ -307,14 +306,13 @@ explains the discrepancy between odd/even degree frequencies[^testdg].
 We confirmed this by counting only in-degree / out-degree, which both give
 clear power-law distributions:
 
-[DIAG] prodgr_i.svg
-
-[DIAG] prodgr_o.svg
+<object class="graph" data="../stat/prodgr_i.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
+<object class="graph" data="../stat/prodgr_o.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
 
 We also tested for a power-law distribution in the document-count for each tag,
 over our crawled tags:
 
-[DIAG] tags.svg
+<object class="graph" data="../stat/tags.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
 
 This could indicate that our idea on hierarchical partition over the tags is
 achievable on this data set. On the other hand, it could be that a few users
@@ -347,8 +345,8 @@ A much better way of combining resource values would be to model them as belief
 distributions. We can use an aggregation algorithm that reduces the variance of
 an aggregated distribution, if formed from many similar values. (Using the mean
 would fit this, as per the Central Limit Theorem.) A recently-developed system
-for evaulating skill over the result of many games uses similar principles.[REF]
-[EXTN][MORE]footnote?
+that evaulates skill over the result of many games uses similar principles
+[`wTru`].
 
 We didn't attempt this, since it would require redesigning our entire prototype
 to reason about distributions and not probabilities, which is more complex.
@@ -364,7 +362,7 @@ perfect"
 
 We didn't devise any tests for how well the score-inferer works. This would
 involve simulating an attack on the system; this would have taken us far beyond
-our time and resource constraints.[EXTN]
+our time and resource constraints.
 
 ## Full testing
 
@@ -392,18 +390,31 @@ to find even rare documents, but we have tried to keep the threshold low, at 4
 documents, rather than a higher value.
 
 From these, we constructed 256 queries by pairing each seed identity with each
-subject tag. We calculated the [closeness](evaluate.html#query-rating) for each
-query, and also the out-degree of $V_s$ and in-degree of $V_t$.[^fullde]
+subject tag. We calculated the [closeness](evaluate.html#query-difficulty) for
+each query, and also the out-degree of $V_s$ and in-degree of $V_t$. (Both
+$V_s$ and $V_t$ are defined in the section on closeness, and the degree of a
+set of nodes is given in the glossary.)
 
-[^fullde]: definition of "degree" of a set of nodes is given in the glossary.
+<object class="graph" data="../stat/close_soc.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
+<object class="graph" data="../stat/close_tag.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
 
-compare closeness vs those degree measures [MORE]
+The first graph plots closeness against $V_s$ out-degree for all ids, split
+into per-tag samples. The second graph plots closeness against $V_t$ in-degree
+for all tags, split into per-id samples.[^fullcl] For each graph, the range of
+samples is sorted by the relevant degree measure, with #0 having the lowest and
+#f having the highest. The full table of results is available in the [results
+section](appendix.html#query-closeness) of the appendix.
 
-[DIAG]
+[^fullcl]: A 3-D plot was also attempted, but it was too messy.
 
-Run tests [MORE]
+As expected, our closeness measure has a rough but obvious positive correlation
+with the degree of both $V_s$ and $V_t$. This hints that _closeness_ might also
+follow a power-law distribution (as node degree), which would suggest that it's
+a "natural" property. We didn't explore this in further depth, however.
 
-[DIAG]
+We then ran these 256 queries and calculated their $p$, $r$, and $f$ scores.
+
+[DIAG] results
 
 (tests looks very shaky atm, some give a minor fraction of all available
 results, some give nothing, a few go haywire)
@@ -424,21 +435,21 @@ indexes. Our design is to query all of these for each additional tag, which
 reduces performance as most of them will be irrelevant. This was the result of
 a flawed data generation model; most flickr users do belong to many groups, but
 not all of these are suitable as a seed. A better approach would be to point to
-most groups only via routes, rather than in ptables.[EXTN]
+most groups only via routes, rather than in ptables.
 
 Our prototype turned out to be highly dependent on the traversal algorithm in
 the routing layer. This seems to be a result of implementing the naming and
 contact layers to execute only when requested - the routing layer then has to
 make a choice between asking for data from lower layers, or to continue with
-itself. The choice algorithm we specified [LINK] turned out to be poor, and we
-had to tweak it manually. Even then, we would get sporadic behaviour, such as
-choosing to increase the address scheme many times in a row, then choosing to
-continue with lookups many times. [DIAG] (give an example in the appendix?)
+itself. The [traversal algorithm](design.html#routing) we specified turned out
+to be poor, and we had to tweak it manually. Even then, we would get sporadic
+behaviour, such as choosing to increase the address scheme many times in a row,
+then choosing to continue with lookups many times.[DIAG] exec trace
 
 The system should work better, if we instead ran every layer in parallel. This
 would increase the complexity of synchronization, but we wouldn't need to
 devise complex choice algorithms in the routing layer. We would need each layer
-to pause itself automatically, but this seems much simpler.[EXTN]
+to pause itself automatically, but this seems much simpler.
 
 A case could certainly be made for the sample data being of poor quality. When
 evaluating generated address schemes, we found that even the "ideal" schemes
@@ -474,12 +485,13 @@ are all well-defined and shielded from each other, so that future improvements
 in one component should not need a complete restructuring of the entire system.
 
 A full list of directions for taking this project further is available in the
-appendix[LINK]. The most important ones, in our view, would be:
+[appendix](appendix.html#future-work). The most important ones, in our view,
+would be:
 
-- make the layers run fully in parallel
-- review the model of the address space
-- find a better data source to run tests on
-- explore better resource-value metrics
+1. make the layers run fully concurrently
+2. review the model of the address space, and the algorithms that use it
+3. find a better data source to run tests on, and improve the generator
+4. explore the use of belief distributions for the value-composer
 
 In conclusion, and despite the setbacks, we think this project has been a
 useful endeavour. Even though it has not demonstrably succeeded in its original
@@ -487,5 +499,4 @@ aims, it has given us a better understanding and overview of the problems that
 must be solved in order to build a complex decentralised system, and the amount
 of work involved in doing so. We hope that our project has been interesting to
 readers, and that our contribution can be built upon in the future.
-
 

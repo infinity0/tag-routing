@@ -1,18 +1,13 @@
 == Urgent tasks ==
 
-- define "route" earlier
 - change links to chapter references
+- change date dashes to little dashes
 
 <object data="../stat/tags.svg" type="image/svg+xml" id="svg" width="480" height="360"></object>
 
-POTENTIAL CUTS:
-- design:
-	derivation "score inferer" - <211
-	derivation "value composer" - <253
-(~400)
-"The interaction between layers is co-ordinated by implementing each layer as a state machine"
+## TODO and related tags
 
-FIX AGGREGATION-OVERVIEW TABLE
+TODO DIAG LINK MORE LESS EXTN REF
 
 possibly reinsert "imagine your browser"
 
@@ -77,15 +72,4 @@ run:
 - Contact should be split off from this, since the information it uses is independent of any query; it can go in QueryEnvironment
 - we also need to extend MessageReceiver.recv() to accept a "sender" argument, or something
 - this is so that Contact knows who to send replies back to...
-
-== Documentation ==
-
-## TODO and related tags
-
-- `DIAG`: draw appropriate diagram here
-- `TODO`: open issue; resolve or explain why we leave it open
-- `MORE`: expand
-- `LESS`: reduce
-- `EXTN`: a pointer to an external research topic, either potential or existing
-- `REF`: add references for
 

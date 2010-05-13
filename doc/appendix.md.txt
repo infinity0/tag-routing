@@ -3,30 +3,113 @@
 
 # Bibliography
 
-etc etc etc
-[MORE]
+## Papers
 
+[`78Fre`] L. C. Freeman, _Centrality in social networks: Conceptual
+clarification_, **1978**. doi:10.1016/0378-8733(78)90021-7
 
-TrueSkill http://research.microsoft.com/en-us/projects/trueskill/details.aspx
+[`98Br+`] S. Brin, L. Page, _The anatomy of a large-scale hypertextual Web
+search engine_, **1998-04**. doi:10.1016/S0169-7552(98)00110-X
 
-Dangalchev, C. Residual closeness in networks, 2006.
+[`98Cr+`] F. Crestani, M. Lalmas, C. J. Van Rijsbergen, I. Campbell, _A survey
+of probabilistic models in information retrieval_, **1998-12**.
+doi:10.1145/299917.299920
 
-[SURV]: John Risson, Tim Moors, Survey of research towards robust
-peer-to-peer networks: Search methods, _Computer Networks_, **Volume 50**,
-**Issue 17**, 5 December 2006, Pages 3485-3521, ISSN 1389-1286, DOI:
-[10.1016/j.comnet.2006.02.001](http://www.sciencedirect.com/science/article/B6VRG-4JD0XYW-1/2/07e1ec0ba8cbe65f8f094cd99612b149).
+[`99Kle`] J. Kleinberg, _The Small-World Phenomenon: An Algorithmic
+Perspective_, **1999-10**. doi:10.1145/335305.335325
 
-[REF] REMINDIN'
+[`00Cl+`] Ian Clarke, Oscar Sandberg, Brandon Wiley, Theodore W. Hong,
+_Freenet: A Distributed Anonymous Information Storage and Retrieval System_,
+**2000-12**.
 
-[REF] Harnessing.
+[`01St+`] I. Stoica, R. Morris, D. Karger, M. F. Kaashoek, H. Balakrishnan,
+_Chord: A scalable peer-to-peer lookup service for internet applications_,
+**2001-08**. doi:http://doi.acm.org/10.1145/383059.383071
 
+[`03Gro`] C. Grothoff, _An Excess-Based Economic Model for Resource Allocation
+in Peer-to-Peer Networks_, **2003-03**.
 
-## Comparison
+[`04Lev`] R. Levien, _Attack Resistant Trust Metrics_, **2004-07**.
 
-Our design differs considerably from these; for example, REMINDIN's design is
-more ontology focused, whereas ours draws from existing non-semantic routing
-principles, DHTs in particular. Our design also has a well-defined (albeit
-underdeveloped) model of the address space (unlike Harnessing). [MORE]
+[`04Te+`] C. Tempich, S. Staab, A. Wranik, _REMINDIN': semantic query routing
+in peer-to-peer networks_, **2004-05**. doi:10.1145/988672.988759
+
+[`04Cl+`] A. Clauset, M. E. J. Newman, C. Moore, _Finding community structure
+in very large networks_, **2004-12**. doi:10.1103/PhysRevE.70.066111
+
+[`05Po+`] P. Pons, M. Latapy, _Computing communities in large networks using
+random walks_, 2005-12. arXiv:physics/0512106
+
+[`06Dan`] C. Dangalchev, _Residual closeness in networks_, **2006-06**.
+doi:10.1016/j.physa.2005.12.020
+
+[`06He+`] R. Herbirch, T. Graepel, _TrueSkill: A Bayesian Skill Rating System_,
+**2006-06**.
+
+[`06Ri+`] J. Risson, T. Moors, _Survey of research towards robust peer-to-peer
+networks: Search methods_, **2006-12**. doi:10.1016/j.comnet.2006.02.001
+
+[`07Co+`] E. Cohen, A. Fiat, H. Kaplan, _Associative search in peer to peer
+networks: Harnessing latent semantics_, **2007-06**.
+doi:10.1016/j.comnet.2006.09.014
+
+[`07Ra+`] U. N. Raghavan, R. Albert, S. Kumara, _Near linear time algorithm to
+detect community structures in large-scale networks_, **2007-09**.
+doi:10.1103/PhysRevE.76.036106
+
+[`09Da+`] G. Danezis, P. Mittal, _SybilInfer: Detecting Sybil Nodes using
+Social Networks_, **2009-02**.
+
+[`10LLK`] C. Lesniewski-Laas, M. F. Kaashoek, _Whānau: A Sybil-proof
+Distributed Hash Table_, **2010-04**.
+
+## Websites
+
+[`wAdv`] Advogato. http://www.advogato.com/ (see also [`04Lev`])
+
+[`wDel`] Delicious. http://delicious.com/
+
+[`wDOT`] The DOT Language. http://www.graphviz.org/doc/info/lang.html
+
+[`wFkA`] Flickr: API Documentation. http://www.flickr.com/services/api/
+
+[`wFlr`] Flickr. http://www.flickr.com/
+
+[`wFre`] The Freenet Project. http://www.freenetproject.org/ (see also [`00Cl+`])
+
+[`wGIL`] Python documentation: Thread State and the Global Interpreter Lock. http://docs.python.org/c-api/init.html#thread-state-and-the-global-interpreter-lock
+
+[`wGit`] Git. Fast Version Control System. http://git-scm.com/
+
+[`wGnN`] GNUnet. http://www.gnunet.org/ (see also [`03Gro`])
+
+[`wGOM`] The Git Object Model. http://book.git-scm.com/1_the_git_object_model.html
+
+[`wGrM`] The GraphML File Format. http://graphml.graphdrawing.org/
+
+[`wGtl`] Gnutella Protocol Specification. http://wiki.limewire.org/index.php?title=GDF
+
+[`wGvi`] Graphviz: Graph Visualization Software. http://www.graphviz.org/
+
+[`wiGr`] The igraph library for complex network research. http://igraph.sourceforge.net/
+
+[`wJCo`] The Java Tutorials: Collections. http://java.sun.com/docs/books/tutorial/collections/index.html
+
+[`wJEx`] The Java Tutorials: Executor interfaces. http://java.sun.com/docs/books/tutorial/essential/concurrency/exinter.html
+
+[`wJNG`] JUNG: Java Universal Network/Graph Framework. http://jung.sourceforge.net/
+
+[`wLfm`] last.fm. http://www.last.fm/
+
+[`wOSw`] OneSwarm: Privacy preserving P2P. http://oneswarm.cs.washington.edu/
+
+[`wPFk`] Python Flickr API kit. http://stuvel.eu/projects/flickrapi
+
+[`wPFu`] A futures implementation for Python. http://code.google.com/p/pythonfutures/
+
+[`wTru`] TrueSkill. http://research.microsoft.com/en-us/projects/trueskill/default.aspx (see also [`06He+`])
+
+[`wTwi`] Twisted. http://twistedmatrix.com/trac/
 
 
 # Appendices
@@ -206,9 +289,9 @@ We want to measure the closeness of a seed identity to a subject tag.
 
 We start by looking at existing measures of closeness. One standard definition
 for the closeness of a node $v$ in a graph, is the inverse-sum of the geodesic
-distances to all other nodes[REF]. This does not work for disconnected graphs
-where distances can be infinite; variants that work around this, include using
-the sum-inverse[REF] and sum-inverse-exponent[REF] of the distances instead.
+distances to all other nodes [`79Fre`]. This does not work for disconnected
+graphs where distances can be infinite; variants that work around this include
+using the sum-inverse and sum-inverse-exponent [`06Dan`] of the distances.
 
 We look at this last version more closely; its advantages include having closed
 formulas for closeness in simple graphs (stars, lines, etc). The closeness of a
@@ -249,9 +332,9 @@ $$
 C(v_0, V_t) = \sum_{v \in V_t} 2^{-d_G(v_0, v)}
 $$
 
-(We leave out the $\setminus v_0$ requirement; this was only added in [REF] so
-the closeness of an isolated graph is $0$. Further, $v_0$ is always present in
-$V$, so it always removes a constant value, but in our extension above and
+(We leave out the $\setminus v_0$ requirement; this was only added in [`06Dan`]
+so the closeness of an isolated graph is $0$. Further, $v_0$ is always present
+in $V$, so it always removes a constant value, but in our extension above and
 below, this isn't true; we mustn't make an arbitrary non-constant adjustment.)
 
 We can tweak this further, to give the closeness of a set of nodes $V_s$
@@ -269,15 +352,56 @@ result in more work, since we can't predict which index is the minimum.
 Of course, the above definitions all assume an additive distance relation. So
 in our calculations, we first convert probability attributes to entropy ones.
 
+<div class="pg-bk-b"></div>
 ## Results
 
 ### Query closeness
 
-[DIAG] iframe table
+<iframe src="res/closeness.html" width="720" height="800" frameborder="0"></iframe>
 
 ## Future work
 
-(basically scrape all the [EXTN] tags from the rest of the text)
+This section gives an overview of all the potential areas of improvements that
+we weren't able to explore in depth during the course of our project. Refer
+back to the relevant chapters of a more detailed discussion of each topic.
+
+Theory
+
+:	1. Review the [address space](design.html#address-space) model, including
+	   the problem of the triple intersection.
+
+	2. Explore the cost of trying to [reach](intro.html#objectives) all
+	   relevant documents
+
+Architecture
+
+:	1. Make the [layers](design.html#architecture) run fully concurrently, each
+	   with their own independent start/pause control.
+
+Trust and authentication
+
+:	1. Make the [contact layer](design.html#contact) use a better trust metric,
+	   and hook up a working traversal algorithm for it.
+
+	2. Develop the [score-inferer](design.html#score-inferer) further: theory
+	   of its objectives, an attack model, and a test framework.
+
+Information aggregation
+
+:	1. Explore the use of belief distributions instead of probabilities in the
+	   [value composer](design.html#value-composer).
+
+	2. Explore more sophisticated algorithms that (e.g.) model implicit
+	   expectations for data, or use metadata as part of the valuation.
+
+Evaluation
+
+:	1. Develop a better [sample generator](evaluate.html#processing), that
+	   assigns far less seeds to each identity and maybe instead moves this
+	   information into the personal producer.
+
+	2. Explore other ways to measure the [difficulty of a
+	   query](evaluate.html#query-difficulty)
 
 
 # Meta
@@ -294,8 +418,6 @@ levels.
 # Unfinished notes
 
 ## Optimisation
-
-[MOVE] to appendix
 
 ### Data structures
 
@@ -477,7 +599,7 @@ work to cancel each other out. In the case of a system under attack, this will
 not be the case. However, only looking at the received values for attributes
 cannot distinguish between an attack and actual value differences; so this must
 be detected in some other way. Our project won't present any methods for doing
-this, but network structure analysis is a common approach type.[EXTN]
+this, but network structure analysis is a common approach type.
 
 The exact attribute types we use are discussed [elsewhere](#data-structures).
 Generally, we use probability-based attributes, which are well-defined and can

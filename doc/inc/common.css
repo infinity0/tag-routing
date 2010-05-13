@@ -16,6 +16,12 @@ dd { margin-left: 2em; }
 
 .footnoteRef { font-size: 85%; }
 
+object.graph {
+	margin: 0 auto;
+	display: block;
+	padding-right: 2em;
+}
+
 /* workaround pandoc bad generation of footnote html */
 a.footnoteRef { text-decoration: none; }
 a.footnoteRef > sup { text-decoration: underline; }
