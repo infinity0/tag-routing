@@ -3,8 +3,8 @@
 
 # Generating data
 
-Since our system is entirely new, there are no existing samples of data which
-can be directly for its objects. Rather than generate entirely new data from
+Since our data model is new, there are no existing networks that can be used
+directly to test our system. Rather than generate a network entirely from
 scratch, we decided to collect data from existing resource-sharing services,
 and process it to fit our data model.
 
@@ -81,8 +81,8 @@ most suitable to base our test data on.
 
 Both Last.fm and Flickr have well-documented APIs; the Delicious API is still
 under development. Crucially, Flickr groups can hold resources. Last.fm groups
-only displays stats for members, and Delicious had no API support for groups at
-the time of writing. Therefore, we decided to use Flickr.
+only display statistics about its members, and Delicious had no API support
+for groups at the time of writing. Therefore, we decided to use Flickr.
 
 ### Flickr overview
 
@@ -149,7 +149,7 @@ preconceived ideas of the information tgraphs would contain, and how they would
 be structured. So we generate new producers from the existing producers, for
 producing tgraphs. Our model aims to satisfy the following properties:
 
-- tgraph producers have a larger view of the network (ie. larger resource set)
+- tgraph producers have a larger view of the network (i.e. larger resource set)
   than index producers
 - the size of each view follows a power-law distribution (as for indexes)
 - the views are interest-oriented (as for indexes)
@@ -207,7 +207,7 @@ gives a measure of their similarity (0 is worst, 1 is best).
 
 Given a map of queries to their results $\{ (z,t) : R \}$ we want a way of
 scoring the result, and comparing this against a measurement of how ideally
-"hard" the query would have been to satisfy.
+"difficult" the query would have been to satisfy.
 
 In terms of plotting a graph, the query difficulty is our independent variable,
 and the results score is our dependent variable.
@@ -225,19 +225,19 @@ Recall
 F1-score
 :	$f = 2pr / (p+r) = 2 |R \cap S| / (|S| + |R|)$
 
-It is widely acknowledged that acheiving high $p$ _and_ $r$ is hard, so we will
-consider these separately. $f$ is just the harmonic mean of $p$ and $r$, which
-will be high only if both $p$ and $r$ are high.
+It is generally hard to achieve both high $p$ _and_ $r$, so we will consider
+these separately. $f$ is just the harmonic mean of $p$ and $r$, which will be
+high only if both $p$ and $r$ are high.
 
 There are also ways to evaluate results' ranking. However, we did not give any
 special consideration for ranking documents, nor for ranking our sample data.
-In any case, we didn't have the time to explore such evaluation metrics;
+In any case, we didn't have the time to explore such evaluation metrics.
 
 ### Query difficulty
 
 As for the "difficulty" of a query, we were not aware of any existing metric
-that could be neatly applied to our system, with all its network components. So
-we tried to come up with our own metric.
+that could be neatly applied to our system, with its unique data model. So we
+tried to come up with our own metric.
 
 To judge "difficulty", we can use some sort of "closeness" measure between a
 seed identity and a query tag. This concept is more directly relevant, but is
@@ -252,24 +252,23 @@ where $V_s$, $V_t$ are the sets of indexes we start from and end at; and
 $d_G(u, v)$ is the geodesic distance between two indexes $u$, $v$. For a more
 detailed discussion, see [closeness](appendix.html#closeness) in the appendix.
 
-A more sophisticated difficulty metric might be to calculate the total length of
-the minimal subgraph which holds all non-redundant paths from $V_s$ to $V_t$.
-However, this would be more complex to calculate efficiently.
+A more sophisticated metric could be "the total length of the minimal subgraph
+which holds all non-redundant paths from $V_s$ to $V_t$". However, this would
+be more complex and costly to calculate.
 
 ### Query steps
 
-A third variable that we have so far ignored above is the number of steps to
-run our search application for - recall that there is no termination condition
-other than what the user says, and beyond that, searching the entire network.
+A third variable that we have so far ignored is the number of steps to run our
+search application for. (Recall that there is no termination condition other
+than what the user says, and beyond that, searching the entire network.)
 
 As the number of steps increases, we expect that recall will increase, whereas
 precision will increase until "near" results are exhausted, then hopefully
-only decrease slightly. It would be nice to evaluate this more precisely, but
-we have no time for this.
+only decrease slightly. It would be nice to evaluate this more precisely; we
+had no time for this.
 
-However, it's trivial to have the system print out a results report after a
-given number of steps $s$, then continue and repeat. We will do this for all
-queries, with $s \in \{ 16, 32, 64 \}$, and plot (results score) vs (query
-difficulty) as described above, for the results at each of these steps, and
-make brief comments on these sets of evaluations.
+However, it's easy to have the application print out a results report after a
+given number of steps $s$, then continue with its procress. We will do this for
+all our test queries, with $s \in \{ 16, 32, 64 \}$, and plot (results score)
+vs (query difficulty) for the results at each of these steps.
 

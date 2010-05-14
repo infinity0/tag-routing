@@ -5,8 +5,8 @@
 
 ## Background
 
-The world wide web is the largest information network ever created; currently,
-search is a service; providers employ crawlers to navigate this network, and
+The world wide web is the largest information network ever created. Currently,
+search is a service: providers employ crawlers to navigate this network, and
 extract and summarise information from the documents visited, into a form which
 is suitable for insertion into a database. "Searching the web" usually means
 querying these pre-built databases, rather than dynamically routing your way
@@ -94,7 +94,7 @@ Robustness
 Most major currently-deployed systems have at least one incompatibility with
 the above. For example, DHTs are scalable, and will reach data if it exists on
 the network, but addresses have no relation to the semantics of the data. Many
-mesh networks (eg. Gnutella [`wGtl`]) can perform keyword search, but do not
+mesh networks (e.g. Gnutella [`wGtl`]) can perform keyword search, but do not
 attempt to reach all relevant data on the network.
 
 ## Potential issues
@@ -128,7 +128,7 @@ Our first ideas drew upon our experiences and pre-conceptions on how we humans
 try to locate things. Two themes stand out:
 
 - keeping knowledge on who knows what, and use this to direct query routes.
-- shifting the query subject to increase recall or precision - eg. broadening
+- shifting the query subject to increase recall or precision - e.g. broadening
   increases the recall, and re-specialising increases the precision
 
 We also drew from our existing background knowledge on decentralised storage
@@ -138,7 +138,7 @@ the size of the network. These generally have a well-defined address space with
 a distance metric, where each address can be represented as a binary key. This
 allows for fairly simple, yet effective, routing algorithms.
 
-[^dhtperf]: eg. expected number of hops for a lookup
+[^dhtperf]: e.g. expected number of hops for a lookup
 
 <object class="rdiag" data="res/hier.svg" type="image/svg+xml" width="240" height="360"></object>
 

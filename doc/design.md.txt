@@ -4,8 +4,7 @@
 # Search framework
 
 Here, we present a high-level overview of the framework we developed, and the
-reasoning for our design choices. More specific details, such as object
-specifications and algorithm descriptions, are discussed [later](#details).
+reasoning for our design choices.
 
 ## Data model
 
@@ -19,8 +18,8 @@ All our objects are structures that map items (nodes, arcs) to attributes. To
 avoid potential ambiguity, we refer to such objects as _agents_[^dataob], and
 such items as _resources_.
 
-[^dataob]: We sometimes refer to the maintainers of these objects as agents;
-the exact meaning should be clear from context.
+[^dataob]: We also refer to the objects' maintainers as agents; the context
+should make it clear what we mean.
 
 ### index
 
@@ -143,8 +142,8 @@ been searched. In practice, we only automatically send requests for more data
 until a set number of results have been returned; after that we wait for user
 input before retrieving more.
 
-[^layex]: eg. if all available seed indexes have been exhausted, and nothing
-useful returned, we need to ask for more.
+[^layex]: e.g. if none of the current seed indexes return anything useful, we
+need to ask for more.
 
 <object class="diagram" data="res/layers.svg" type="image/svg+xml" width="400" height="400"></object>
 
@@ -217,7 +216,7 @@ operation. We therefore try to reduce instability between successive updates,
 by only constructing the address scheme from a self-contained set of data, i.e.
 a selection of tags such that all the tags are loaded in all the rows[^nametr].
 Output is only returned from the last time the table was in this condition, so
-in our implementation of this layer is effectively blocking. Our traversal
+our implementation of this layer effectively blocks on this. Our traversal
 algorithm therefore tries to achieve such a condition as quickly as possible.
 
 [^nametr]: which ensures that the part of the address scheme for these tags
@@ -269,7 +268,7 @@ are related to the ones we originally reached that index by. (If this index is
 a seed, then we are forced to lookup all tags.)
 
 We initialise our table rows from the seed indexes, and an empty address scheme
-(ie. no columns). When we receive a request for more data, we can pick one of:
+(i.e. no columns). When we receive a request for more data, we can pick one of:
 
 - allow the currently queued lookups to continue, i.e. do nothing.
 - add another data source (row in the table), by selecting some lookups and
@@ -288,7 +287,7 @@ we pass the request onto the naming layer.
 ## Address space
 
 As discussed [earlier](intro.html#initial-observations), routing schemes use a
-structured address space that has two properties over its address space:
+structured address space that has two properties over its addresses:
 
 - A measure of the size of an address[^addrse]
 - A measure of the overlap or similarity between two addresses.
@@ -299,8 +298,8 @@ and sets of addresses.
 In CIDR, "size" is given by the subnet mask, and "similarity" is given by
 matching the subnet prefix against the entries in the routing table. For DHTs,
 both "size" and "similarity" are defined with the choice of address space. In
-the case of semantic routing, a tag's "size" corresponds to how "general" it
-is, and its "similarity" to another tag corresponds to how related they are.
+the case of semantic routing, a tag's "size" can mean how "general" it is, and
+its "similarity" to another tag can mean how semantically related they are.
 
 Most information retrieval models [`98Cr+`] focus on associating documents with
 tags; we also need to model the relationships _between_ tags. We came up with a
@@ -330,9 +329,9 @@ union of all its documents[^addrlk]. Then:
 
 - a tgraph node $(g)$ has _size_: $E_D(P(\bigvee_{t' \in g} D \circ t'))$
 
-[^addrlk]: These interpretations give no information on how well-connected the
-objects are, which would also affect its usefulness. We'll keep things simple
-and ignore this for now.
+[^addrlk]: Note that these ignore how well-connected the objects are, which
+would also affect its usefulness. Again, we'll overlook this for the sake of
+simplicity.
 
 In the rest of our analysis, we simplify this greatly. Instead of considering
 $R_{d,t}$ as a random variable, we take a "typical query" and collapse this
@@ -353,7 +352,7 @@ and store an undirected tgraph; they contain the same information.)
 ### Distance relation
 
 Let $(M, \circ)$ be a **monoid** with a _linear ordering_ over $\sqsubseteq$,
-_identity element_ $I$, and which only contains _non-negative_ elements, ie.
+_identity element_ $I$, and which only contains _non-negative_ elements, i.e.
 $\forall m \in M: I \sqsubseteq m$. A **distance relation** over a set $S$ is a
 partial function $D \subseteq S \times S \to M$ satisfying:
 
@@ -399,8 +398,8 @@ Given
 Return
 :	- a target agent-score map, that covers all agents in the input
 
-We model paths between agents by selecting routes as discussed in the section
-on layer architecture.
+We model paths between agents by selecting routes as discussed in
+[routing](#routing).
 
 Let $x$ be the agent we want to infer a score for. A simple model is to assign
 a path-score for the shortest path between $x$ and each seed agent $a$, then
@@ -437,7 +436,7 @@ resources. This is required by all the layers, and the model presented here is
 general enough to be applied to all of these. The problem can be specified as:
 
 Given
-:	- a set of agents, with their inferred score, and resource-value maps
+:	- a set of agents, with their inferred score, and resource-value judgements
 	$$
 	a : (s, \{ r : v \})
 	$$
@@ -450,13 +449,13 @@ Return
 It's impossible to determine the accuracy of the input data from only the data
 itself, since any input is potentially true. We need either a pre-existing
 expection of what the information should look like, or a model of how its
-meta-information (eg. its source agents) affects its accuracy. Both approaches
+meta-information (e.g. its source agents) affects its accuracy. Both approaches
 are outside of the scope of this project.
 
 We will use a very basic algorithm - the score-weighted mean of each agent's
 value judgement for that resource. In our case, both the score and the value
 are bounded, and it's hoped that this can hinder some basic attacks against
-mean-based composers (eg. judging a value to be infinity).
+mean-based composers (e.g. judging a value to be infinity).
 
 The score-weighted mean value for resource $r$, over all agents, is:
 
@@ -471,13 +470,13 @@ $$
 \bar v_r = \frac{\sum_{a} s_a \hat v_{ar}}{\sum_a s_a}
 \quad ; \quad
 \hat v_{ar} = \left\{ \begin{array}{llr} \\
-  v_{ar} & : r \in R_a & (0) \\
-  \alpha(a,r).0 + (1 - \alpha(a,r)).\bar v_r & : r \notin R_a & (1) \\
+  v_{ar} & : r \in a & (0) \\
+  \alpha(a,r).0 + (1 - \alpha(a,r)).\bar v_r & : r \notin a & (1) \\
 \end{array} \right
 $$
 
-where $\alpha(a,r)$ is the probability that agent $a$ has judged resource $r$
-to be worthless, given $(1)$.
+where $\alpha(a,r)$ is the probability that $a$ has judged $r$ to be worthless,
+given $(1)$.
 
 The above definition has $\bar v_r$ on the RHS; after rearranging, we get:
 
@@ -538,7 +537,8 @@ follow a power-law distribution, which means the judgements for a tag's size
 will be distributed in the same way. Taking the arithmetic mean of would bias
 the result in favour of larger sizes.
 
-Ambitious methods might include training on a prototype network, or dynamic
-learning from an active network. It must be noted however, that the theoretical
-model is not particularly robust anyway, so their actual benefit is unclear.
+More ambitious methods might include training on a prototype network, or
+dynamic learning from an active network. It must be noted however, that the
+underlying theoretical model is not particularly robust anyway, so their actual
+benefit is unclear.
 

@@ -19,6 +19,10 @@ body {
 	font-family: "Georgia";
 }
 
+code {
+	font-size: 10.5pt
+}
+
 .footnotes > hr, .footnoteBackLink { display: none; }
 .footnotes, .fnholder { font-size: 85%; }
 .fnholder p { margin: 0; }
@@ -37,10 +41,12 @@ body {
 
 #TOC li {
 	list-style-type: decimal;
-	border-left: 1pt ridge black;
+	/*border-left: 1pt ridge black;*/
+	margin-left: 1em;
 }
 
-#TOC li > a {
+#TOC li > span {
+/*#TOC li > a {*/
 	display: block;
 	text-decoration: none;
 	border-bottom: 1px dotted black;
@@ -49,4 +55,9 @@ body {
 
 #TOC li div.pageno {
 	float: right;
+}
+
+#TOC > ul > li {
+	list-style-type: none;
+	margin-left: -1em;
 }

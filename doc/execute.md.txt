@@ -69,14 +69,12 @@ The prototype implementation code can be divided into:
 	`QueryEnvironment`
 	:	The environment of the query - the components that a query process
 		needs, but is not specific to the query itself. This includes e.g. an
-		`Executor`[^archex] for scheduling jobs, and the interface to the
+		`Executor` [`wJEx`] for scheduling jobs, and the interface to the
 		storage layer.
 `tags.proto.*.*` (layers)
 :	The layers as described in [architecture - layers](design.html#layers). The
 	"algorithmic components" are represented by Java interfaces (plus basic
 	implementations, also as described), to allow for future improvements.
-
-[^archex]: `java.util.concurrent.Executor` [`wJEx`]
 
 The general utilities can be further divided into:
 
@@ -112,17 +110,17 @@ classes in constructing the more complex views.
 
 We found good use for the _adapter_ pattern. Our `StoreControl` provides a
 consistent interface to interact with different storage layers; implementations
-wrap around and hide these differences. We implemented both the path-based
-score-inferer and the mean-based value-composer as general utility classes;
-adapters were also used to wrap this functionality inside an interface expected
-by the layers that used these components.
+wrap around and hide these differences. We built the path-based score-inferer
+and the mean-based value-composer as general utility classes; adapters were
+used to wrap this functionality inside the interfaces expected by the layers
+that use these components.
 
 We also used the _factory_ and _builder_ patterns to make object creation code
 more extensible. Use cases include creating local views of remote objects, and
 deserialising objects from input streams.
 
 The interaction between layers is co-ordinated by implementing each layer as a
-state machine - it cannot receive requests during a state transition (ie. when
+state machine - it cannot receive requests during a state transition (i.e. when
 it is currently processing a previous request). This simplifies the execution
 logic, and reduces the critical objects that need to be synchronised on.
 
@@ -145,24 +143,24 @@ libraries via the interactive interpreter.
 
 We did run into many problems, such as poor high-level multithreading support,
 and performance and memory leak issues which became important at the scales we
-were processing data at (we had initially overlooked this). However, ultimately
-it probably did save us time, and it's uncertain that using a more low-level
+were processing data at (we had initially overlooked this). However, overall it
+probably did save us time, and it's uncertain that using a more low-level
 language would've helped the performance issues significantly.
 
 ### Libraries
 
 We made use of the following external libraries:
 
-python-flickrapi [`wPFk`]
-:	Python bindings for Flickr's online API [`wFkA`].
-python-futures [`wPFu`]
-:	A high-level multithreading framework, inspired by `java.util.concurrent`.
-	We used this to run flickrapi in parallel to reduce network IO waits; this
-	is discussed [below](#network-io).
-igraph [`wiGr`]
-:	A general-purpose graph library written in C, with a python interface
-	available. We used this to store and manipulate graph objects, and for
-	data serialisation.
+python-flickrapi
+:	Python bindings [`wPFk`] for Flickr's online API [`wFkA`].
+python-futures
+:	A high-level multithreading framework [`wPFu`], inspired by
+	`java.util.concurrent`. We used this to run flickrapi in parallel to reduce
+	network IO waits; this is discussed [below](#network-io).
+igraph
+:	A general-purpose graph library written in C [`wiGr`], with a python
+	interface available. We used this to store and manipulate graph objects,
+	and for data serialisation.
 
 ### Structure
 
@@ -185,8 +183,8 @@ corresponding to a Python module:
 ### Performance
 
 We had to deal with many performance issues during the implementation of the
-sample generator. Although we used Python, it was not the main cause of these
-issues; the CPU-intensive methods were all C libraries.
+sample generator. (Though we used Python, it was not the main cause of these
+issues; the CPU-intensive methods all belonged to C libraries.)
 
 #### Network IO
 
@@ -258,9 +256,10 @@ We had originally planned to do more extensive testing of our system, and for
 much larger sets of data. However, unforeseen difficulties (detailed elsewhere)
 along with our time constraint, meant that we had to cut back on these.
 
-The original plan was to generate a sample from a crawl of several thousand
-users. However, it soon became clear that this would be impossible with our
-resources, even with our heavy optimisations.
+Despite this, we had still hoped to generate a sample from a crawl of several
+thousand users. However it soon became clear (after initial runs of the sample
+generator) that this would be impossible with our resources, even with our
+heavy optimisations.
 
 To verify that the sample generator was working correctly, we did an initial
 crawl of 16 users starting from a randomly selected seed. We also crawled 313
@@ -269,7 +268,7 @@ and 56 tgraphs. We ran the search application on this sample; in most cases it
 could find most documents associated with a tag in a reasonable amount of
 lookups, just because the network was so small.
 
-The largest complete sample we managed to achieve was from an inital crawl of
+The largest complete sample we managed to achieve was from an initial crawl of
 256 users and 8,597 groups. We retrieved 411,872 photos and 128,409 tags, and
 generated 8,853 indexes and 438 tgraphs.
 
@@ -303,11 +302,12 @@ but much smaller than $p_1$, then we would generate $p_0 \rightarrow p_1$ but
 not vice versa. Most of the time however, links will be bi-directional; this
 explains the discrepancy between odd/even degree frequencies[^testdg].
 
-We confirmed this by counting only in-degree / out-degree, which both give
-clear power-law distributions:
+To confirm this, we plotted in-degree and out-degree separately:
 
 <object class="graph" data="../stat/prodgr_i.svg" type="image/svg+xml" width="480" height="360"></object>
 <object class="graph" data="../stat/prodgr_o.svg" type="image/svg+xml" width="480" height="360"></object>
+
+Each of these do indeed have a clear power-law distribution.
 
 We also tested for a power-law distribution in the document-count for each tag,
 over our crawled tags:
@@ -315,9 +315,9 @@ over our crawled tags:
 <object class="graph" data="../stat/tags.svg" type="image/svg+xml" width="480" height="360"></object>
 
 This could indicate that our idea on hierarchical partition over the tags is
-achievable on this data set. On the other hand, it could be that a few users
-uploaded lots of photos with the same tags, without necessarily indicating any
-structure over the entire tag space.
+achievable on this data set. On the other hand, it just could be that a few
+users uploaded lots of photos with the same tags, without indicating any
+structure over the tag-space as a whole.
 
 [^testdg]: this also applies for the social network sample and the generated
 tgraphs network. This discrepancy was not visible in these cases, we think,
@@ -359,33 +359,30 @@ space](design.html#structured-address-space), rather than "theoretically
 perfect"
 
 We didn't devise any tests for how well the score-inferer works. This would
-involve simulating an attack on the system; this would have taken us far beyond
-our time and resource constraints.
+involve simulating an attack on the system; we didn't have the time for this.
 
 ## Full testing
 
 We take a random sample of 16 identities from our social network crawl, limited
-to only the users that have between 4 (inclusive) and 64 (exclusive) outgoing
-contacts. This accounts for 118 users, or 0.46 of the total, with 2 above and
-136 below the range.
+to only the users that have between [4, 64) outgoing contacts. This accounts
+for 118 users, or 0.46 of the total, with 136 below and 2 above the range.
 
 We do this because anything lower ends up asking the social layer for more
-friends (which we have not implemented), and anything higher uses up our RAM as
-it tries to load all the seed objects from friends' ptables.
+friends (which we have not implemented), and anything higher fills up our RAM
+as it tries to load all the seed objects from friends' ptables.
 
 We believe that this still gives a useful indication on how our system works;
 users with less than 4 friends should be able to obtain results, once we
 implement the social layer more fully.
 
 We take a random sample of 16 tags from our tags crawl, limited to only the
-tags that have between 4 (inclusive) and 4096 (exclusive) associated documents.
-This accounts for 68,808 tags, or 0.54 of the total, with 59,427 above and 174
-above the range.
+tags that have between [4, 4096) associated documents. This accounts for 68,808
+tags, or 0.54 of the total, with 59,427 below and 174 above the range.
 
 We do this for the same reason as above - lower tags give very little results,
-whereas higher ones use up our RAM. This goes against one of the original aims,
-to find even rare documents, but we have tried to keep the threshold low, at 4
-documents, rather than a higher value.
+whereas higher ones fill up our RAM. This goes against one of the original
+aims, to find even rare documents, but we have tried to keep the threshold low,
+at 4 documents, rather than a higher value.
 
 From these, we constructed 256 queries by pairing each seed identity with each
 subject tag. We calculated the [closeness](evaluate.html#query-difficulty) for
@@ -412,9 +409,9 @@ a "natural" property. We didn't explore this in further depth, however.
 
 We then ran these 256 queries and calculated their $p$, $r$, and $f$ scores.
 
-<object class="graph" data="../stat/res_f1.svg" type="image/svg+xml" width="480" height="360"></object>
 <object class="graph" data="../stat/res_precis.svg" type="image/svg+xml" width="480" height="360"></object>
 <object class="graph" data="../stat/res_recall.svg" type="image/svg+xml" width="480" height="360"></object>
+<object class="graph" data="../stat/res_f1.svg" type="image/svg+xml" width="480" height="360"></object>
 
 ## Comments
 
@@ -475,7 +472,7 @@ have to implement. The size of our eventual design also added many practical
 development obstacles such as finding libraries, debugging, performance, etc.
 
 We don't think the work load could have been signficantly reduced. An aim of
-the project was to implement our inital specification; removing any component
+the project was to implement our initial specification; removing any component
 would have defeated the whole point. We were also required to collect data to
 test the system with. This had to be compatible with our system; cutting down
 any component would have rendered this pointless, too.
@@ -500,10 +497,10 @@ A full list of directions for taking this project further is available in the
 [appendix](appendix.html#future-work). The most important ones, in our view,
 would be:
 
-1. make the layers run fully concurrently
-2. review the model of the address space, and the algorithms that use it
-3. find a better data source to run tests on, and improve the generator
-4. explore the use of belief distributions for the value-composer
+1. Wake the layers run fully concurrently
+2. Review the model of the address space, and the algorithms that use it.
+3. Find a better data source to run tests on, and improve the generator.
+4. Explore the use of belief distributions for the value-composer.
 
 In conclusion, and despite the setbacks, we think this project has been a
 useful endeavour. Even though it has not demonstrably succeeded in its original
