@@ -1,7 +1,6 @@
-% Tag-driven routing in a distributed storage network
+% A framework for decentralised semantic routing
 % Ximin Luo
 
-A system for decentralised search.
 
 
 ## Build-depends
@@ -63,8 +62,8 @@ python-futures
 
 1. Make sure you have a flickr API key.
 2. Pick a directory to store scrape data
-3. Then, run "src/scrape.py -d $BASEDIR" through each of the rounds in order.
-4. Run "src/fix_attr -d $BASEDIR"
+3. Then, run `src/scrape.py -d $BASEDIR` through each of the rounds in order.
+4. Run `src/postgen -d $BASEDIR`
 5. Test it out
 
 ### Format
